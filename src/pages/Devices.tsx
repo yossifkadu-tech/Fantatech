@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Search, Plus, X, Star } from 'lucide-react';
+import { Search, Plus, X, Star, Sparkles } from 'lucide-react';
 import { useHomeAssistant } from '../hooks/useHomeAssistant';
 import { useLang } from '../contexts/LanguageContext';
 import { TopBar } from '../components/Layout/TopBar';
 import { DeviceCard } from '../components/Devices/DeviceCard';
 import { AddDeviceModal } from '../components/Devices/AddDeviceModal';
+import { AIAssistant } from '../components/AI/AIAssistant';
 
 const FAVORITES_KEY = 'fantatech_favorites';
 
@@ -21,6 +22,7 @@ export function DevicesPage() {
   const [filter, setFilter]       = useState('all');
   const [search, setSearch]       = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [showAI, setShowAI]       = useState(false);
   const [favorites, setFavorites] = useState<string[]>(loadFavorites);
   const [toast, setToast]         = useState('');
 
@@ -41,8 +43,9 @@ export function DevicesPage() {
     { key: 'cover',        label: t('dev_covers')  },
     { key: 'lock',         label: t('dev_locks')   },
     { key: 'climate',      label: t('dev_climate') },
-    { key: 'media_player', label: t('dev_media')   },
-    { key: 'sensor',       label: t('dev_sensors') },
+    { key: 'media_player',    label: t('dev_media')   },
+    { key: 'sensor',          label: t('dev_sensors') },
+    { key: 'device_tracker',  label: t('dev_wifi')    },
   ];
 
   const baseList =
@@ -85,6 +88,10 @@ export function DevicesPage() {
               </button>
             )}
           </div>
+          <button className="btn btn-ai" onClick={() => setShowAI(true)}>
+            <Sparkles size={16} />
+            <span>AI</span>
+          </button>
           <button className="btn btn-primary btn-add-device" onClick={() => setShowModal(true)}>
             <Plus size={16} />
             <span>{t('dev_add')}</span>
@@ -133,6 +140,9 @@ export function DevicesPage() {
           onAdded={handleAdded}
         />
       )}
+
+      {/* AI Assistant */}
+      {showAI && <AIAssistant onClose={() => setShowAI(false)} />}
 
       {/* Toast notification */}
       {toast && <div className="toast">{toast}</div>}

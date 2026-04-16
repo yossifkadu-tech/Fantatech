@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Cpu, ShieldCheck, Settings, Zap } from 'lucide-react';
+import { LayoutDashboard, Cpu, ShieldCheck, Settings, Zap, LogOut } from 'lucide-react';
 import { useLang } from '../../contexts/LanguageContext';
+import { logout } from '../../stores/authStore';
 
 export function Sidebar() {
   const { t } = useLang();
@@ -36,6 +37,12 @@ export function Sidebar() {
           </li>
         ))}
       </ul>
+
+      {/* Logout */}
+      <button className="sidebar-logout" onClick={logout}>
+        <LogOut size={17} strokeWidth={1.8} />
+        <span>{t('auth_logout')}</span>
+      </button>
 
       {/* Footer */}
       <div className="sidebar-footer">

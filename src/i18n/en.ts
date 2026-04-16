@@ -118,6 +118,9 @@ export default {
   dev_add_cancel: 'Cancel',
   dev_add_success: 'Device added!',
   dev_favorites: 'Favorites',
+  dev_wifi: 'WiFi',
+  ai_subtitle: 'Smart Home Assistant',
+  ai_placeholder: 'Ask anything...',
 
   // Auth
   auth_subtitle: 'Secure Smart Home System',

@@ -60,7 +60,7 @@ export function DeviceCard({ entity, isFavorite, onToggleFavorite }: Props) {
     >
       <div className="device-card-top">
         <div className="device-icon-wrap">
-          <SmartIcon domain={domain} subtype={detectSubtype(entity)} isOn={isOn} size={44} />
+          <SmartIcon domain={domain} subtype={detectSubtype(entity)} isOn={isOn} size={52} />
         </div>
         <div className="card-top-right">
           {onToggleFavorite && (

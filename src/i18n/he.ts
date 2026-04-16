@@ -126,6 +126,9 @@ export default {
   dev_add_cancel: 'ביטול',
   dev_add_success: 'המכשיר נוסף!',
   dev_favorites: 'מועדפים',
+  dev_wifi: 'WiFi',
+  ai_subtitle: 'עוזר חכם לבית',
+  ai_placeholder: 'שאל שאלה...',
 
   // Auth
   auth_subtitle: 'מערכת בית חכם מאובטחת',

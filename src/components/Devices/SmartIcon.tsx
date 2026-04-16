@@ -25,8 +25,10 @@ const GRADIENTS: Record<string, [string, string]> = {
   alarm_control_panel: ['#ef4444', '#b91c1c'],
   fan:          ['#0ea5e9', '#0284c7'],
   humidifier:   ['#22d3ee', '#06b6d4'],
-  vacuum:       ['#a78bfa', '#7c3aed'],
-  default:      ['#3b82f6', '#1d4ed8'],
+  vacuum:        ['#a78bfa', '#7c3aed'],
+  device_tracker:['#0ea5e9', '#0284c7'],
+  wifi:          ['#0ea5e9', '#0284c7'],
+  default:       ['#3b82f6', '#1d4ed8'],
 };
 
 const OFF_BG = ['#1e293b', '#0f172a'] as [string, string];
@@ -118,6 +120,13 @@ function Symbol({ domain, subtype, isOn }: { domain: string; subtype?: string; i
     return <><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" fill="none" stroke={c} strokeWidth={sw}/>
       <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" fill="none" stroke={c} strokeWidth={sw} strokeLinecap="round"/>
       {isOn && <line x1="12" y1="2" x2="12" y2="4" stroke={c} strokeWidth={sw+1} strokeLinecap="round"/>}</>
+
+  // WiFi / device_tracker
+  if (domain === 'device_tracker' || domain === 'wifi')
+    return <><path d="M5 12.55a11 11 0 0 1 14.08 0" fill="none" stroke={c} strokeWidth={sw} strokeLinecap="round"/>
+      <path d="M1.42 9a16 16 0 0 1 21.16 0" fill="none" stroke={c} strokeWidth={sw} strokeLinecap="round"/>
+      <path d="M8.53 16.11a6 6 0 0 1 6.95 0" fill="none" stroke={c} strokeWidth={sw} strokeLinecap="round"/>
+      <circle cx="12" cy="20" r="1.5" fill={c}/></>
 
   // Default
   return <><circle cx="12" cy="12" r="7" fill="none" stroke={c} strokeWidth={sw}/>
