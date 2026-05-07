@@ -8,6 +8,7 @@ import HistoryPage from './pages/HistoryPage'
 import NotificationsPage from './pages/NotificationsPage'
 import RoomsPage from './pages/RoomsPage'
 import NetworkPage from './pages/NetworkPage'
+import AcPage from './pages/AcPage'
 import SettingsPage from './pages/SettingsPage'
 import HubSetup from './pages/HubSetup'
 import SecurityPage from './pages/SecurityPage'
@@ -103,16 +104,16 @@ function AppInner() {
   }, [reload])
 
   const TABS = [
-    { id: 'dashboard',     label: t.home,              icon: '🏠' },
-    { id: 'devices',       label: t.devices,           icon: '💡' },
-    { id: 'scenes',        label: t.scenes_title,      icon: '🎬' },
-    { id: 'cameras',       label: t.cameras_title,     icon: '📷' },
-    { id: 'automations',   label: t.automations,       icon: '⚡' },
-    { id: 'security',      label: t.security,          icon: '🔒' },
-    { id: 'rooms',         label: t.rooms,             icon: '🛋️' },
-    { id: 'network',       label: t.network,           icon: '📶' },
-    { id: 'notifications', label: t.notifications_tab, icon: '🔔', badge: unreadNotifs },
-    { id: 'settings',      label: t.settings,          icon: '⚙️' },
+    { id: 'dashboard',     label: t.home,                          icon: '🏠' },
+    { id: 'devices',       label: t.devices,                       icon: '💡' },
+    { id: 'ac',            label: t.ac_page_title ?? 'מזגנים',     icon: '❄️' },
+    { id: 'scenes',        label: t.scenes_title,                  icon: '🎬' },
+    { id: 'cameras',       label: t.cameras_title,                 icon: '📷' },
+    { id: 'automations',   label: t.automations,                   icon: '⚡' },
+    { id: 'security',      label: t.security,                      icon: '🔒' },
+    { id: 'rooms',         label: t.rooms,                         icon: '🛋️' },
+    { id: 'notifications', label: t.notifications_tab,             icon: '🔔', badge: unreadNotifs },
+    { id: 'settings',      label: t.settings,                      icon: '⚙️' },
   ]
 
   // Show setup screen if hub is unreachable (and we're not in dev with VITE_HUB_URL)
@@ -178,24 +179,40 @@ function AppInner() {
             </div>
           </div>
 
-          {/* Right: server status + version */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3 }}>
-            {/* WS connection status */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5,
-              background: wsConnected ? 'rgba(34,197,94,0.1)' : 'rgba(245,158,11,0.1)',
-              border: `1px solid ${wsConnected ? '#22c55e44' : '#f59e0b44'}`,
-              borderRadius: 20, padding: '2px 8px',
-            }}>
-              <div style={{ width: 6, height: 6, borderRadius: '50%', background: wsConnected ? '#22c55e' : '#f59e0b',
-                boxShadow: wsConnected ? '0 0 6px #22c55e' : '0 0 6px #f59e0b',
-              }} />
-              <span style={{ fontSize: 10, fontWeight: 600, color: wsConnected ? '#22c55e' : '#f59e0b' }}>
-                {wsConnected ? t.connected : t.connecting}
-              </span>
-            </div>
-            {/* Version */}
-            <div style={{ fontSize: 9, color: '#334155' }}>
-              v{APP_VERSION}{hubVersion ? ` · Hub v${hubVersion}` : ''}
+          {/* Right: network icon + server status + version */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {/* Network scan icon button */}
+            <button
+              onClick={() => setTab('network')}
+              title={t.network ?? 'Network'}
+              style={{
+                background: tab === 'network' ? 'rgba(56,189,248,0.15)' : 'transparent',
+                border: `1px solid ${tab === 'network' ? '#38bdf8' : '#334155'}`,
+                borderRadius: 8, padding: '4px 8px', cursor: 'pointer',
+                fontSize: 16, lineHeight: 1,
+              }}
+            >
+              📶
+            </button>
+
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3 }}>
+              {/* WS connection status */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5,
+                background: wsConnected ? 'rgba(34,197,94,0.1)' : 'rgba(245,158,11,0.1)',
+                border: `1px solid ${wsConnected ? '#22c55e44' : '#f59e0b44'}`,
+                borderRadius: 20, padding: '2px 8px',
+              }}>
+                <div style={{ width: 6, height: 6, borderRadius: '50%', background: wsConnected ? '#22c55e' : '#f59e0b',
+                  boxShadow: wsConnected ? '0 0 6px #22c55e' : '0 0 6px #f59e0b',
+                }} />
+                <span style={{ fontSize: 10, fontWeight: 600, color: wsConnected ? '#22c55e' : '#f59e0b' }}>
+                  {wsConnected ? t.connected : t.connecting}
+                </span>
+              </div>
+              {/* Version */}
+              <div style={{ fontSize: 9, color: '#334155' }}>
+                v{APP_VERSION}{hubVersion ? ` · Hub v${hubVersion}` : ''}
+              </div>
             </div>
           </div>
         </div>
@@ -218,12 +235,13 @@ function AppInner() {
           <>
             {tab === 'dashboard'   && <Dashboard     devices={devices} wsConnected={wsConnected} onNavigate={setTab} onReload={reload} tablet={tablet} />}
             {tab === 'devices'     && <DevicesPage    devices={devices} onReload={reload} tablet={tablet} />}
+            {tab === 'ac'          && <AcPage         devices={devices} onReload={reload} />}
             {tab === 'scenes'      && <ScenesPage     devices={devices} tablet={tablet} />}
             {tab === 'cameras'     && <CamerasPage    devices={devices} />}
             {tab === 'automations' && <AutomationsPage devices={devices} />}
             {tab === 'security'    && <SecurityPage   devices={devices} onReload={reload} />}
             {tab === 'rooms'       && <RoomsPage />}
-            {tab === 'network'        && <NetworkPage />}
+            {tab === 'network'     && <NetworkPage />}
             {tab === 'notifications'  && <NotificationsPage />}
             {tab === 'settings'       && <SettingsPage />}
           </>

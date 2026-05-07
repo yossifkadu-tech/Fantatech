@@ -612,6 +612,14 @@ const T = {
     auto_scene_label: '🎬 Scene',
     details_btn: 'Details ›',
     other: 'Other',
+    ac_page_title: 'Air Conditioners',
+    ac_units_word: 'units',
+    ac_on_word: 'on',
+    ac_off_word: 'off',
+    ac_all_on: 'All ON',
+    ac_all_off: 'All OFF',
+    ac_no_acs: 'No ACs added',
+    ac_no_acs_hint: 'Go to Devices → + Add → ❄️ Add AC',
   },
 
   /* ═══════════════════════════════ HEBREW ════════════════════════════════ */
@@ -1175,6 +1183,14 @@ const T = {
     auto_scene_label: '🎬 סצנה',
     details_btn: 'לפרטים ›',
     other: 'אחר',
+    ac_page_title: 'מזגנים',
+    ac_units_word: 'יחידות',
+    ac_on_word: 'פועל',
+    ac_off_word: 'כבוי',
+    ac_all_on: 'הכל ON',
+    ac_all_off: 'הכל OFF',
+    ac_no_acs: 'לא נוספו מזגנים',
+    ac_no_acs_hint: 'עבור למכשירים → + הוסף → ❄️ הוסף מזגן',
   },
 
   /* ═══════════════════════════════ ARABIC ════════════════════════════════ */
