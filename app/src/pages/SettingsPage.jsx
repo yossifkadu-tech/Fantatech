@@ -3,7 +3,7 @@ import { api, getHubUrl, setHubUrl, clearHubUrl, testHubUrl, discoverHub } from 
 import { useLang, LANG_META } from '../context/LangContext'
 import { loadAds, saveAds } from '../components/SponsoredBanner'
 
-const APP_VERSION = '1.9.0'
+const APP_VERSION = '2.0.0'
 
 export default function SettingsPage() {
   const { lang, t, setLang, rtl } = useLang()

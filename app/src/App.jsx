@@ -15,7 +15,7 @@ import ScenesPage from './pages/ScenesPage'
 import CamerasPage from './pages/CamerasPage'
 import GeminiAssistant from './components/GeminiAssistant'
 
-const APP_VERSION = '1.9.0'
+const APP_VERSION = '2.0.0'
 
 function AppInner() {
   const { t, lang, rtl } = useLang()
