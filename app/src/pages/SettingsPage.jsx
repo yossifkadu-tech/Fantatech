@@ -318,19 +318,44 @@ export default function SettingsPage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
           {Object.entries(LANG_META).map(([code, meta]) => {
             const active = lang === code
+            const LANG_COLORS = {
+              he: '#1d4ed8', en: '#dc2626', ar: '#15803d',
+              ru: '#7c3aed', es: '#d97706', fr: '#0284c7',
+              de: '#475569', pt: '#059669', am: '#b91c1c',
+            }
+            const color = LANG_COLORS[code] || '#1d4ed8'
             return (
               <button key={code} onClick={() => setLang(code)} style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center',
-                gap: 4, padding: '10px 4px', borderRadius: 12,
-                border: active ? '2px solid #1d4ed8' : '2px solid transparent',
-                background: active ? '#1e3a5f' : '#1e293b',
-                color: active ? '#e2e8f0' : '#64748b',
+                gap: 6, padding: '12px 4px', borderRadius: 12,
+                border: `2px solid ${active ? color : '#334155'}`,
+                background: active ? color + '22' : '#0f172a',
                 cursor: 'pointer', transition: 'all .15s',
+                WebkitTapHighlightColor: 'transparent',
               }}>
-                <span style={{ fontSize: 26, lineHeight: 1 }}>{meta.flag}</span>
-                <span style={{ fontSize: 11, fontWeight: active ? 700 : 400, textAlign: 'center' }}>
+                {/* Colored circle with 2-letter code — works on all Android */}
+                <div style={{
+                  width: 36, height: 36, borderRadius: '50%',
+                  background: active ? color : '#1e293b',
+                  border: `2px solid ${active ? color : '#334155'}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 12, fontWeight: 800, color: active ? '#fff' : '#64748b',
+                  letterSpacing: 0.5,
+                }}>
+                  {code.toUpperCase()}
+                </div>
+                <span style={{
+                  fontSize: 11, fontWeight: active ? 700 : 400,
+                  textAlign: 'center', color: active ? '#f1f5f9' : '#64748b',
+                  lineHeight: 1.3,
+                }}>
                   {meta.name}
                 </span>
+                {active && (
+                  <div style={{
+                    width: 6, height: 6, borderRadius: '50%', background: color,
+                  }} />
+                )}
               </button>
             )
           })}

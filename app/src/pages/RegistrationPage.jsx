@@ -4,7 +4,7 @@
  * On submit: saves user object to localStorage('fantatech_user') and calls onComplete().
  */
 import { useState } from 'react'
-import { useLang } from '../context/LangContext'
+import { useLang, LANG_META } from '../context/LangContext'
 
 /* ─── Plan definitions ───────────────────────────────────────────────── */
 // Features left intentionally minimal — to be filled in a future update.
@@ -128,8 +128,15 @@ function Field({ label, type = 'text', value, onChange, placeholder, error, rtl 
 }
 
 /* ─── Main component ─────────────────────────────────────────────────── */
+/* Language color palette (same as SettingsPage) */
+const LANG_COLORS = {
+  he: '#1d4ed8', en: '#dc2626', ar: '#15803d',
+  ru: '#7c3aed', es: '#d97706', fr: '#0284c7',
+  de: '#475569', pt: '#059669', am: '#b91c1c',
+}
+
 export default function RegistrationPage({ onComplete }) {
-  const { t, rtl } = useLang()
+  const { t, rtl, lang, setLang } = useLang()
 
   const [plan,   setPlan]   = useState('free')
   const [name,   setName]   = useState('')
@@ -178,6 +185,50 @@ export default function RegistrationPage({ onComplete }) {
       padding: '32px 16px 48px',
       overflowY: 'auto',
     }} dir={rtl ? 'rtl' : 'ltr'}>
+
+      {/* ── Language picker (top bar) ── */}
+      <div style={{
+        display: 'flex', flexWrap: 'wrap', gap: 6,
+        justifyContent: 'center', marginBottom: 24,
+        maxWidth: 400,
+      }}>
+        {Object.entries(LANG_META).map(([code, meta]) => {
+          const active = lang === code
+          const color = LANG_COLORS[code] || '#1d4ed8'
+          return (
+            <button
+              key={code}
+              onClick={() => setLang(code)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 5,
+                padding: '5px 10px', borderRadius: 20,
+                border: `1.5px solid ${active ? color : '#334155'}`,
+                background: active ? color + '22' : '#1e293b',
+                cursor: 'pointer',
+                WebkitTapHighlightColor: 'transparent',
+                transition: 'all .15s',
+              }}
+            >
+              <span style={{
+                width: 20, height: 20, borderRadius: '50%',
+                background: active ? color : '#334155',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 9, fontWeight: 800, color: '#fff',
+                flexShrink: 0,
+              }}>
+                {code.toUpperCase()}
+              </span>
+              <span style={{
+                fontSize: 11, fontWeight: active ? 700 : 400,
+                color: active ? '#f1f5f9' : '#64748b',
+                whiteSpace: 'nowrap',
+              }}>
+                {meta.name}
+              </span>
+            </button>
+          )
+        })}
+      </div>
 
       {/* ── Header ── */}
       <div style={{ textAlign: 'center', marginBottom: 32 }}>

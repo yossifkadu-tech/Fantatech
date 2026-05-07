@@ -190,8 +190,24 @@ function AppInner() {
             </div>
           </div>
 
-          {/* Right: network icon + server status + version */}
+          {/* Right: lang + network icon + server status + version */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {/* Quick language switcher */}
+            <button
+              onClick={() => setTab('settings')}
+              title={t.language ?? 'Language'}
+              style={{
+                background: 'transparent',
+                border: '1px solid #334155',
+                borderRadius: 8, padding: '4px 8px', cursor: 'pointer',
+                fontSize: 12, fontWeight: 700, color: '#94a3b8', lineHeight: 1,
+                letterSpacing: 0.5,
+                WebkitTapHighlightColor: 'transparent',
+              }}
+            >
+              {lang.toUpperCase()}
+            </button>
+
             {/* Network scan icon button */}
             <button
               onClick={() => setTab('network')}
@@ -201,6 +217,7 @@ function AppInner() {
                 border: `1px solid ${tab === 'network' ? '#38bdf8' : '#334155'}`,
                 borderRadius: 8, padding: '4px 8px', cursor: 'pointer',
                 fontSize: 16, lineHeight: 1,
+                WebkitTapHighlightColor: 'transparent',
               }}
             >
               📶
