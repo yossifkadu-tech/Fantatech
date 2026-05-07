@@ -15,6 +15,7 @@ import SecurityPage from './pages/SecurityPage'
 import ScenesPage from './pages/ScenesPage'
 import CamerasPage from './pages/CamerasPage'
 import CyberPage from './pages/CyberPage'
+import RegistrationPage from './pages/RegistrationPage'
 import GeminiAssistant from './components/GeminiAssistant'
 
 const APP_VERSION = '2.0.0'
@@ -25,6 +26,7 @@ function AppInner() {
   const [hubVersion, setHubVersion] = useState(null)
   const [hubReady, setHubReady] = useState(null)   // null=checking, true, false
   const [tablet]                = useState(() => window.innerWidth >= 600)
+  const [registered, setRegistered] = useState(() => !!localStorage.getItem('fantatech_user'))
   const [unreadNotifs, setUnreadNotifs] = useState(0)
   const { devices, loading, reload, updateDeviceState, setOnline } = useDevices()
 
@@ -117,6 +119,13 @@ function AppInner() {
     { id: 'notifications', label: t.notifications_tab,             icon: '🔔', badge: unreadNotifs },
     { id: 'settings',      label: t.settings,                      icon: '⚙️' },
   ]
+
+  // Show registration on first launch (before hub check)
+  if (!registered) {
+    return (
+      <RegistrationPage onComplete={() => setRegistered(true)} />
+    )
+  }
 
   // Show setup screen if hub is unreachable (and we're not in dev with VITE_HUB_URL)
   if (hubReady === false && !import.meta.env.VITE_HUB_URL) {
