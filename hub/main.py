@@ -12,13 +12,13 @@ from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv()
 
-from routers import devices, rules, history, rooms, ws, network, ai, ac, matter, zigbee, tuya, scenes, timers, camera, notifications as notif_router
+from routers import devices, rules, history, rooms, ws, network, ai, ac, matter, zigbee, tuya, scenes, timers, camera, notifications as notif_router, cyber
 from database import init_db, update_device_state, get_device, get_all_devices, add_history, get_wifi_profiles, add_notification
 from mqtt_client import start as mqtt_start, register_handler, publish
 from rule_engine import start as rules_start
 from ws_manager import manager
 
-HUB_VERSION = "1.9.0"
+HUB_VERSION = "2.0.0"
 IS_WIN = platform.system() == "Windows"
 
 app = FastAPI(title="Fantatech Home & Security", version=HUB_VERSION)
@@ -43,6 +43,7 @@ app.include_router(scenes.router,  prefix="/api/scenes",   tags=["scenes"])
 app.include_router(timers.router,  prefix="/api/timers",   tags=["timers"])
 app.include_router(camera.router,       prefix="/api/camera",        tags=["camera"])
 app.include_router(notif_router.router, prefix="/api/notifications", tags=["notifications"])
+app.include_router(cyber.router,        prefix="/api/cyber",         tags=["cyber"])
 
 
 # ג”€ג”€ MQTT broker auto-start ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€

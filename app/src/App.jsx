@@ -14,6 +14,7 @@ import HubSetup from './pages/HubSetup'
 import SecurityPage from './pages/SecurityPage'
 import ScenesPage from './pages/ScenesPage'
 import CamerasPage from './pages/CamerasPage'
+import CyberPage from './pages/CyberPage'
 import GeminiAssistant from './components/GeminiAssistant'
 
 const APP_VERSION = '2.0.0'
@@ -111,6 +112,7 @@ function AppInner() {
     { id: 'cameras',       label: t.cameras_title,                 icon: '📷' },
     { id: 'automations',   label: t.automations,                   icon: '⚡' },
     { id: 'security',      label: t.security,                      icon: '🔒' },
+    { id: 'cyber',         label: t.cyber_nav ?? 'סייבר',          icon: '🛡️' },
     { id: 'rooms',         label: t.rooms,                         icon: '🛋️' },
     { id: 'notifications', label: t.notifications_tab,             icon: '🔔', badge: unreadNotifs },
     { id: 'settings',      label: t.settings,                      icon: '⚙️' },
@@ -240,6 +242,7 @@ function AppInner() {
             {tab === 'cameras'     && <CamerasPage    devices={devices} />}
             {tab === 'automations' && <AutomationsPage devices={devices} />}
             {tab === 'security'    && <SecurityPage   devices={devices} onReload={reload} />}
+            {tab === 'cyber'       && <CyberPage />}
             {tab === 'rooms'       && <RoomsPage />}
             {tab === 'network'     && <NetworkPage />}
             {tab === 'notifications'  && <NotificationsPage />}

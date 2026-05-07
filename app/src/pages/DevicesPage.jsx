@@ -37,7 +37,7 @@ export default function DevicesPage({ devices, onReload, tablet }) {
   const [rooms, setRooms]           = useState([])
   const [filter, setFilter]         = useState('all')
   const [search, setSearch]         = useState('')
-  const [addMode, setAddMode]       = useState(null) // null | 'menu' | 'manual' | 'qr' | 'network' | 'ac' | 'moes'
+  const [addMode, setAddMode]       = useState(null) // null | 'menu' | 'manual' | 'qr' | 'network' | 'ac' | 'moes' | 'switches'
   const [showAdd, setShowAdd]       = useState(false)
   const [addForm, setAddForm]       = useState(EMPTY_FORM)
   const [renameTarget, setRenameTarget] = useState(null)   // full device object
@@ -236,12 +236,13 @@ export default function DevicesPage({ devices, onReload, tablet }) {
             <h3 style={{ margin: '0 0 16px', color: '#e2e8f0', textAlign: 'center' }}>{t.dev_add_menu_title}</h3>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
               {[
-                { icon: '❄️', title: t.add_ac,          sub: t.ac_sub,       action: () => setAddMode('ac') },
-                { icon: '📡', title: t.moes_gateway,    sub: t.moes_sub,     action: () => setAddMode('moes') },
-                { icon: '📷', title: t.scan_qr_btn,    sub: t.qr_sub,       action: () => setAddMode('qr') },
-                { icon: '🔍', title: t.scan_network_btn, sub: t.network_sub, action: () => setAddMode('network') },
-                { icon: '✏️', title: t.manual_btn,     sub: t.manual_sub,   action: () => { setAddMode('manual'); setShowAdd(true); setAddForm(EMPTY_FORM); setError('') } },
-                { icon: '📥', title: t.import_json,    sub: t.import_sub,   action: () => { document.getElementById('dev-import-input').click() } },
+                { icon: '❄️', title: t.add_ac,            sub: t.ac_sub,         action: () => setAddMode('ac') },
+                { icon: '🔌', title: t.add_switches ?? 'מפסקים חכמים', sub: t.switches_sub ?? 'Sonoff · Shelly · Tasmota', action: () => setAddMode('switches') },
+                { icon: '📡', title: t.moes_gateway,      sub: t.moes_sub,       action: () => setAddMode('moes') },
+                { icon: '📷', title: t.scan_qr_btn,      sub: t.qr_sub,         action: () => setAddMode('qr') },
+                { icon: '🔍', title: t.scan_network_btn,  sub: t.network_sub,    action: () => setAddMode('network') },
+                { icon: '✏️', title: t.manual_btn,       sub: t.manual_sub,     action: () => { setAddMode('manual'); setShowAdd(true); setAddForm(EMPTY_FORM); setError('') } },
+                { icon: '📥', title: t.import_json,      sub: t.import_sub,     action: () => { document.getElementById('dev-import-input').click() } },
               ].map(item => (
                 <button key={item.title} onClick={item.action} style={{
                   background: '#1e3a5f', border: '1px solid #3b82f6', borderRadius: 12,
@@ -269,6 +270,15 @@ export default function DevicesPage({ devices, onReload, tablet }) {
             <QrScanner onResult={handleQrResult} onClose={() => setAddMode(null)} />
           </div>
         </div>
+      )}
+
+      {/* ── Smart Switch Scan modal ─────────────────────────────────────────── */}
+      {addMode === 'switches' && (
+        <SmartSwitchModal
+          rooms={rooms}
+          onAddDevice={async (dev) => { await api.post('/devices/', dev); onReload() }}
+          onClose={() => setAddMode(null)}
+        />
       )}
 
       {/* ── Network Scan modal ──────────────────────────────────────────────── */}
@@ -807,6 +817,208 @@ function AcAddModal({ rooms, onClose, onAdded }) {
             </button>
           </div>
         )}
+      </div>
+    </div>
+  )
+}
+
+/* ── Smart Switch Modal ────────────────────────────────────────────────────── */
+/**
+ * Dedicated scanner for Tasmota / Shelly / Sonoff / ESPHome devices.
+ * Calls the same /network/scan-devices endpoint but filters + labels
+ * specifically for smart switch types. Also lets the user add by IP directly.
+ */
+function SmartSwitchModal({ rooms, onAddDevice, onClose }) {
+  const { t } = useLang()
+  const [scanning, setScanning] = useState(false)
+  const [results, setResults]   = useState([])
+  const [adding, setAdding]     = useState(null)
+  const [added, setAdded]       = useState({})
+  const [err, setErr]           = useState('')
+  const [manualIp, setManualIp] = useState('')
+  const [manualName, setManualName] = useState('')
+  const [manualRoom, setManualRoom] = useState('')
+  const [manualType, setManualType] = useState('switch')
+  const [addingManual, setAddingManual] = useState(false)
+
+  const SWITCH_TYPES = [
+    { value: 'tasmota', label: 'Tasmota (Sonoff/generic)', icon: '🔌' },
+    { value: 'shelly',  label: 'Shelly',                   icon: '🔌' },
+    { value: 'esphome', label: 'ESPHome',                  icon: '⚡' },
+    { value: 'switch',  label: t.dev_type_switch,          icon: '🔌' },
+  ]
+
+  const runScan = async () => {
+    setScanning(true); setResults([]); setErr('')
+    try {
+      const r = await api.get('/network/scan-devices')
+      // Filter to smart-switch relevant device types
+      const switchTypes = new Set(['tasmota', 'shelly', 'esphome', 'switch', 'generic', 'mdns'])
+      const filtered = (r.data || []).filter(d => {
+        const dt = (d.device_type || '').toLowerCase()
+        const name = (d.name || '').toLowerCase()
+        return switchTypes.has(dt)
+          || name.includes('sonoff') || name.includes('shelly')
+          || name.includes('tasmota') || name.includes('esp')
+          || name.includes('switch')
+          // Also include devices with port 80 open (likely web-configurable)
+          || (!d.device_type && d.ip)
+      })
+      setResults(filtered)
+      if (!filtered.length) setErr(t.ns_no_devices ?? 'No smart switches found. Try adding by IP below.')
+    } catch (e) {
+      setErr(e?.response?.data?.detail || t.error)
+    }
+    setScanning(false)
+  }
+
+  const addFound = async (dev) => {
+    const id = (dev.ip || dev.name || '').replace(/[\s.]/g, '_') || `sw_${Date.now()}`
+    const typeMap = { tasmota: 'switch', shelly: 'switch', esphome: 'switch' }
+    const record = {
+      id, name: dev.name || dev.ip || 'Smart Switch',
+      protocol: 'wifi', type: typeMap[dev.device_type] || 'switch',
+      label: dev.device_type || 'wifi-switch',
+      topic_state: `devices/${id}/state`, topic_cmd: `devices/${id}/cmd`,
+      room: '', config: { ip: dev.ip, source: 'switch_scan', device_type: dev.device_type },
+    }
+    setAdding(id)
+    try { await onAddDevice(record); setAdded(p => ({ ...p, [id]: true })) } catch {}
+    setAdding(null)
+  }
+
+  const addByIp = async () => {
+    if (!manualIp.trim()) return
+    const ip = manualIp.trim()
+    const id = ip.replace(/\./g, '_')
+    const record = {
+      id, name: manualName.trim() || `Switch ${ip}`,
+      protocol: 'wifi', type: manualType,
+      label: manualType, room: manualRoom,
+      topic_state: `devices/${id}/state`, topic_cmd: `devices/${id}/cmd`,
+      config: { ip, source: 'manual_ip' },
+    }
+    setAddingManual(true)
+    try { await onAddDevice(record); setManualIp(''); setManualName('') } catch {}
+    setAddingManual(false)
+  }
+
+  const typeIcon = dt => {
+    if (!dt) return '📱'
+    if (dt === 'tasmota') return '🔌'
+    if (dt === 'shelly') return '🔌'
+    if (dt === 'esphome') return '⚡'
+    return '🔌'
+  }
+
+  return (
+    <div style={overlay}>
+      <div style={{ ...modal, maxHeight: '90vh' }}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 24 }}>🔌</span>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 14, color: '#38bdf8' }}>
+                {t.add_switches ?? 'Smart Switches'}
+              </div>
+              <div style={{ fontSize: 10, color: '#475569' }}>Sonoff · Shelly · Tasmota · ESPHome</div>
+            </div>
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: 20 }}>✕</button>
+        </div>
+
+        {/* Scan button */}
+        <button onClick={runScan} disabled={scanning} style={{ ...btn('#1d4ed8'), width: '100%', marginBottom: 12, opacity: scanning ? 0.7 : 1 }}>
+          {scanning ? `⏳ ${t.ns_scanning ?? 'Scanning...'}` : `🔍 ${t.ns_start_btn ?? 'Scan Network'}`}
+        </button>
+
+        {scanning && (
+          <div style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap', fontSize: 11, color: '#64748b', marginBottom: 10 }}>
+            {['Tasmota', 'Shelly', 'ESPHome', 'Sonoff'].map(s => (
+              <span key={s} style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 6, padding: '2px 8px' }}>⏳ {s}</span>
+            ))}
+          </div>
+        )}
+
+        {err && <div style={errBox}>{err}</div>}
+
+        {/* Results */}
+        {results.length > 0 && (
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ fontSize: 12, color: '#64748b', marginBottom: 8 }}>
+              {results.length} {t.ns_found_suffix ?? 'devices found'}:
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: '30vh', overflowY: 'auto' }}>
+              {results.map((dev, i) => {
+                const id = (dev.ip || dev.name || '').replace(/[\s.]/g, '_') || `net_${i}`
+                const isAdded = added[id]
+                return (
+                  <div key={i} style={{
+                    background: '#0f172a', border: '1px solid #334155',
+                    borderRadius: 10, padding: '10px 12px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
+                  }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                        <span style={{ fontWeight: 700, color: '#e2e8f0', fontSize: 13 }}>
+                          {typeIcon(dev.device_type)} {dev.name || dev.ip}
+                        </span>
+                        {dev.device_type && (
+                          <span style={{ fontSize: 10, background: '#1e3a5f', border: '1px solid #3b82f6', borderRadius: 4, padding: '1px 6px', color: '#93c5fd' }}>
+                            {dev.device_type}
+                          </span>
+                        )}
+                      </div>
+                      {dev.ip && <div style={{ fontSize: 11, color: '#475569', marginTop: 2, direction: 'ltr' }}>{dev.ip}</div>}
+                    </div>
+                    <button
+                      onClick={() => addFound(dev)}
+                      disabled={adding === id || isAdded}
+                      style={{ ...btn(isAdded ? '#14532d' : '#22c55e'), padding: '6px 12px', fontSize: 12, flexShrink: 0, opacity: adding === id ? 0.7 : 1 }}>
+                      {isAdded ? '✅' : adding === id ? '...' : `+ ${t.add}`}
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Divider */}
+        <div style={{ fontSize: 12, color: '#475569', textAlign: 'center', margin: '12px 0 10px', borderTop: '1px solid #334155', paddingTop: 12 }}>
+          — {t.sw_add_by_ip ?? 'Or add manually by IP address'} —
+        </div>
+
+        {/* Manual IP add */}
+        <label style={lbl}>IP {t.address ?? 'Address'}</label>
+        <input value={manualIp} onChange={e => setManualIp(e.target.value)}
+          placeholder="192.168.1.55" style={{ ...inp, direction: 'ltr' }} />
+
+        <label style={lbl}>{t.device_name}</label>
+        <input value={manualName} onChange={e => setManualName(e.target.value)}
+          placeholder="Living Room Switch" style={inp} />
+
+        <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ flex: 1 }}>
+            <label style={lbl}>{t.device_type}</label>
+            <select value={manualType} onChange={e => setManualType(e.target.value)} style={{ ...inp, marginBottom: 0 }}>
+              {SWITCH_TYPES.map(st => <option key={st.value} value={st.value}>{st.icon} {st.label}</option>)}
+            </select>
+          </div>
+          <div style={{ flex: 1 }}>
+            <label style={lbl}>{t.device_room}</label>
+            <select value={manualRoom} onChange={e => setManualRoom(e.target.value)} style={{ ...inp, marginBottom: 0 }}>
+              <option value="">{t.no_room}</option>
+              {rooms.map(r => <option key={r.id} value={r.id}>{r.icon} {r.name}</option>)}
+            </select>
+          </div>
+        </div>
+
+        <button onClick={addByIp} disabled={!manualIp.trim() || addingManual}
+          style={{ ...btn('#22c55e'), width: '100%', marginTop: 10, opacity: addingManual ? 0.7 : 1 }}>
+          {addingManual ? '...' : `➕ ${t.add ?? 'Add'}`}
+        </button>
       </div>
     </div>
   )
