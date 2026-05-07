@@ -133,10 +133,10 @@ function DeviceScanner() {
     const hTimer = setInterval(() => {
       hIdx = (hIdx + 1) % hints.length
       setProgress(hints[hIdx])
-    }, 5000)
+    }, 1800)
 
     try {
-      const r = await api.get('/network/scan-devices', { timeout: 35000 })
+      const r = await api.get('/network/scan-devices', { timeout: 15000 })
       clearInterval(hTimer)
       setDevices(r.data)
       setProgress('')
