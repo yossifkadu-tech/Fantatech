@@ -1,35 +1,38 @@
 /**
  * AcCard — full AC control card with timer support.
  * Supports: Sensibo, MQTT, Tuya protocols.
- * Brands: תדיראן, אלקטרה, גנרל, מיצובישי, דייקין, LG, Samsung, Gree, Haier…
+ * Brands: Tadiran, Electra, General, Mitsubishi, Daikin, LG, Samsung, Gree, Haier…
  */
 import { useState, useEffect } from 'react'
 import { api } from '../hooks/useHub'
-
-const MODES = [
-  { id: 'cool', label: 'קירור', icon: '❄️' },
-  { id: 'heat', label: 'חימום', icon: '🔥' },
-  { id: 'fan',  label: 'מאוורר', icon: '💨' },
-  { id: 'dry',  label: 'ייבוש',  icon: '💧' },
-  { id: 'auto', label: 'אוטו',   icon: '🔄' },
-]
-
-const FANS = [
-  { id: 'auto',   label: 'אוטו' },
-  { id: 'quiet',  label: 'שקט'  },
-  { id: 'low',    label: 'נמוך' },
-  { id: 'medium', label: 'בינוני' },
-  { id: 'high',   label: 'גבוה' },
-]
-
-const TIMER_OPTIONS = [
-  { label: '30 דק׳', min: 30 },
-  { label: '1 שעה',  min: 60 },
-  { label: '2 שעות', min: 120 },
-  { label: '3 שעות', min: 180 },
-]
+import { useLang } from '../context/LangContext'
 
 export default function AcCard({ device, onUpdate, roomName }) {
+  const { t } = useLang()
+
+  const MODES = [
+    { id: 'cool', label: t.ac_mode_cool, icon: '❄️' },
+    { id: 'heat', label: t.ac_mode_heat, icon: '🔥' },
+    { id: 'fan',  label: t.ac_mode_fan,  icon: '💨' },
+    { id: 'dry',  label: t.ac_mode_dry,  icon: '💧' },
+    { id: 'auto', label: t.ac_mode_auto, icon: '🔄' },
+  ]
+
+  const FANS = [
+    { id: 'auto',   label: t.fan_auto   },
+    { id: 'quiet',  label: t.fan_quiet  },
+    { id: 'low',    label: t.fan_low    },
+    { id: 'medium', label: t.fan_medium },
+    { id: 'high',   label: t.fan_high   },
+  ]
+
+  const TIMER_OPTIONS = [
+    { label: t.ac_timer_30min, min: 30  },
+    { label: t.ac_timer_1h,    min: 60  },
+    { label: t.ac_timer_2h,    min: 120 },
+    { label: t.ac_timer_3h,    min: 180 },
+  ]
+
   const state      = device.state || {}
   const isOn       = state.state === 'ON'
   const online     = device.online
@@ -39,7 +42,6 @@ export default function AcCard({ device, onUpdate, roomName }) {
   const [timerLoading, setTimerLoading] = useState(false)
   const [customMin, setCustomMin] = useState('')
 
-  // Load active timers for this device
   useEffect(() => {
     loadTimers()
   }, [device.id])
@@ -82,7 +84,7 @@ export default function AcCard({ device, onUpdate, roomName }) {
       setShowTimer(false)
       setCustomMin('')
     } catch (e) {
-      alert(e?.response?.data?.detail || 'שגיאה בהגדרת טיימר')
+      alert(e?.response?.data?.detail || t.ac_timer_error)
     }
     setTimerLoading(false)
   }
@@ -102,14 +104,13 @@ export default function AcCard({ device, onUpdate, roomName }) {
 
   const hasTimer = activeTimers.length > 0
 
-  // Format remaining time for a timer
   const fmtRemaining = (firesAt) => {
     const diff = firesAt - Math.floor(Date.now() / 1000)
-    if (diff <= 0) return 'כיבוי...'
+    if (diff <= 0) return t.ac_timer_off_soon
     const h = Math.floor(diff / 3600)
     const m = Math.floor((diff % 3600) / 60)
-    if (h > 0) return `${h}ש׳ ${m}ד׳`
-    return `${m} דק׳`
+    if (h > 0) return `${h}${t.ac_timer_h} ${m}${t.ac_timer_m}`
+    return `${m} ${t.ac_timer_min}`
   }
 
   return (
@@ -135,7 +136,7 @@ export default function AcCard({ device, onUpdate, roomName }) {
                 <div style={{ fontSize: 10, color: '#38bdf8' }}>{device.label}</div>
               )}
               <div style={{ fontSize: 10, color: '#475569' }}>
-                {roomName || 'ללא חדר'} · {device.protocol}
+                {roomName || t.no_room} · {device.protocol}
               </div>
             </div>
           </div>
@@ -166,11 +167,11 @@ export default function AcCard({ device, onUpdate, roomName }) {
           borderRadius: 8, padding: '5px 10px', marginBottom: 8,
         }}>
           <span style={{ fontSize: 12, color: '#fcd34d' }}>
-            ⏰ כיבוי אוטומטי בעוד {fmtRemaining(timer.fires_at)}
+            {t.ac_timer_auto_off} {fmtRemaining(timer.fires_at)}
           </span>
           <button onClick={() => cancelTimer(timer.id)} style={{
             background: 'none', border: 'none', color: '#f59e0b', cursor: 'pointer', fontSize: 12,
-          }}>✕ בטל</button>
+          }}>{t.ac_timer_cancel}</button>
         </div>
       ))}
 
@@ -242,7 +243,7 @@ export default function AcCard({ device, onUpdate, roomName }) {
           fontSize: 11, cursor: 'pointer', fontWeight: 600,
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
         }}>
-        ⏰ {hasTimer ? `טיימר פעיל` : 'הגדר טיימר כיבוי'}
+        ⏰ {hasTimer ? t.ac_timer_active : t.ac_timer_set_label}
       </button>
 
       {/* Timer panel */}
@@ -252,7 +253,7 @@ export default function AcCard({ device, onUpdate, roomName }) {
           borderRadius: 10, padding: 12,
         }}>
           <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 8, fontWeight: 600 }}>
-            ⏰ כבה מזגן אוטומטית אחרי:
+            {t.ac_timer_panel_title}
           </div>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
             {TIMER_OPTIONS.map(opt => (
@@ -270,12 +271,12 @@ export default function AcCard({ device, onUpdate, roomName }) {
               type="number"
               value={customMin}
               onChange={e => setCustomMin(e.target.value)}
-              placeholder="דקות..."
+              placeholder={t.ac_timer_minutes_ph}
               min={1} max={480}
               style={{
                 flex: 1, padding: '7px 10px', borderRadius: 8,
                 border: '1px solid #334155', background: '#1e293b',
-                color: '#f1f5f9', fontSize: 12, direction: 'rtl',
+                color: '#f1f5f9', fontSize: 12,
               }}
             />
             <button
@@ -287,7 +288,7 @@ export default function AcCard({ device, onUpdate, roomName }) {
                 color: '#fff', cursor: customMin ? 'pointer' : 'default',
                 fontSize: 12, fontWeight: 600,
               }}>
-              ✓ הגדר
+              {t.ac_timer_set_btn}
             </button>
           </div>
         </div>
@@ -296,7 +297,7 @@ export default function AcCard({ device, onUpdate, roomName }) {
       {/* Offline */}
       {!online && (
         <div style={{ fontSize: 11, color: '#ef4444', marginTop: 8, textAlign: 'center' }}>
-          ● לא מחובר
+          {t.ac_offline}
         </div>
       )}
     </div>

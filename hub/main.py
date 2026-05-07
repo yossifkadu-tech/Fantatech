@@ -12,8 +12,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv()
 
-from routers import devices, rules, history, rooms, ws, network, ai, ac, matter, zigbee, tuya, scenes, timers, camera
-from database import init_db, update_device_state, get_device, get_all_devices, add_history, get_wifi_profiles
+from routers import devices, rules, history, rooms, ws, network, ai, ac, matter, zigbee, tuya, scenes, timers, camera, notifications as notif_router
+from database import init_db, update_device_state, get_device, get_all_devices, add_history, get_wifi_profiles, add_notification
 from mqtt_client import start as mqtt_start, register_handler, publish
 from rule_engine import start as rules_start
 from ws_manager import manager
@@ -41,7 +41,8 @@ app.include_router(zigbee.router,  prefix="/api/zigbee",   tags=["zigbee"])
 app.include_router(tuya.router,    prefix="/api/tuya",     tags=["tuya"])
 app.include_router(scenes.router,  prefix="/api/scenes",   tags=["scenes"])
 app.include_router(timers.router,  prefix="/api/timers",   tags=["timers"])
-app.include_router(camera.router,  prefix="/api/camera",   tags=["camera"])
+app.include_router(camera.router,       prefix="/api/camera",        tags=["camera"])
+app.include_router(notif_router.router, prefix="/api/notifications", tags=["notifications"])
 
 
 # ג”€ג”€ MQTT broker auto-start ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€
@@ -123,8 +124,23 @@ async def on_mqtt_message(topic: str, payload):
         online = payload if isinstance(payload, bool) else str(payload).lower() == "true"
         d = await get_device(device_id)
         if d:
+            prev_online = d.get("online", True)
             await update_device_state(device_id, d["state"], online=online)
             await manager.broadcast("device_online", {"id": device_id, "online": online})
+            if prev_online and not online:
+                await add_notification(
+                    type_="warning", category="device",
+                    title=f"Device offline: {d['name']}",
+                    message=f"Lost connection to '{d['name']}' ({device_id})",
+                    device_id=device_id, device_name=d["name"],
+                )
+            elif not prev_online and online:
+                await add_notification(
+                    type_="info", category="device",
+                    title=f"Device online: {d['name']}",
+                    message=f"'{d['name']}' reconnected",
+                    device_id=device_id, device_name=d["name"],
+                )
 
     # ג”€ג”€ Tasmota: tele/{topic}/STATE ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€
     elif len(parts) == 3 and parts[0] == "tele" and parts[2] == "STATE":
@@ -274,6 +290,13 @@ async def startup():
 
     await _auto_connect_wifi()
     await _subscribe_zigbee_devices()
+
+    # Log hub startup as a system notification
+    await add_notification(
+        type_="info", category="system",
+        title=f"Hub started v{HUB_VERSION}",
+        message=f"Fantatech Hub is running at {ip}:{port}",
+    )
 
 
 async def _subscribe_zigbee_devices():

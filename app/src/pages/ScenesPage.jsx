@@ -4,28 +4,30 @@ import { useLang } from '../context/LangContext'
 
 const SCENE_ICONS = ['🎬', '🌙', '☀️', '🏠', '🎮', '🍽️', '🛏️', '🏋️', '🎉', '🌿', '❄️', '🔥', '💡', '🔒', '🌅']
 
-const ACTION_TYPES = [
-  { id: 'on',         label: '▶ הדלק',        forTypes: ['light','switch','dimmer','color','fan','lock','ac'] },
-  { id: 'off',        label: '⏹ כבה',          forTypes: ['light','switch','dimmer','color','fan','lock','ac'] },
-  { id: 'toggle',     label: '🔀 החלף',        forTypes: ['light','switch','dimmer','color','fan'] },
-  { id: 'brightness', label: '🔆 בהירות',       forTypes: ['dimmer','color','light'] },
-  { id: 'lock',       label: '🔒 נעל',          forTypes: ['lock'] },
-  { id: 'unlock',     label: '🔓 פתח',          forTypes: ['lock'] },
-  { id: 'ac',         label: '❄️ הגדר מזגן',   forTypes: ['ac'] },
-]
-
 const DEVICE_ICONS = {
   light: '💡', switch: '🔌', dimmer: '🔆', color: '🎨',
   sensor: '🌡️', camera: '📷', lock: '🔒', fan: '🌀', ac: '❄️',
 }
 
+function getActionTypes(t) {
+  return [
+    { id: 'on',         label: t.action_on,             forTypes: ['light','switch','dimmer','color','fan','lock','ac'] },
+    { id: 'off',        label: t.action_off,            forTypes: ['light','switch','dimmer','color','fan','lock','ac'] },
+    { id: 'toggle',     label: t.action_toggle,         forTypes: ['light','switch','dimmer','color','fan'] },
+    { id: 'brightness', label: t.action_brightness_type, forTypes: ['dimmer','color','light'] },
+    { id: 'lock',       label: t.action_lock,           forTypes: ['lock'] },
+    { id: 'unlock',     label: t.action_unlock,         forTypes: ['lock'] },
+    { id: 'ac',         label: t.action_ac,             forTypes: ['ac'] },
+  ]
+}
+
 export default function ScenesPage({ devices }) {
-  const { t, lang } = useLang()
+  const { t, rtl } = useLang()
   const [scenes, setScenes]     = useState([])
   const [loading, setLoading]   = useState(true)
-  const [running, setRunning]   = useState({})   // scene_id → bool
-  const [runMsg, setRunMsg]     = useState({})   // scene_id → msg
-  const [editScene, setEditScene] = useState(null) // null | scene object
+  const [running, setRunning]   = useState({})
+  const [runMsg, setRunMsg]     = useState({})
+  const [editScene, setEditScene] = useState(null)
   const [showEditor, setShowEditor] = useState(false)
 
   const load = async () => {
@@ -45,14 +47,14 @@ export default function ScenesPage({ devices }) {
       const r = await api.post(`/scenes/${scene.id}/execute`)
       setRunMsg(p => ({ ...p, [scene.id]: { ok: true, text: r.data.message } }))
     } catch (e) {
-      setRunMsg(p => ({ ...p, [scene.id]: { ok: false, text: e?.response?.data?.detail || 'שגיאה בהפעלת הסצנה' } }))
+      setRunMsg(p => ({ ...p, [scene.id]: { ok: false, text: e?.response?.data?.detail || t.error } }))
     }
     setRunning(p => ({ ...p, [scene.id]: false }))
     setTimeout(() => setRunMsg(p => ({ ...p, [scene.id]: null })), 3500)
   }
 
   const deleteScene = async (scene) => {
-    if (!confirm(`למחוק את הסצנה "${scene.name}"?`)) return
+    if (!confirm(`${t.delete} "${scene.name}"?`)) return
     try {
       await api.delete(`/scenes/${scene.id}`)
       load()
@@ -72,12 +74,12 @@ export default function ScenesPage({ devices }) {
   if (loading) return (
     <div style={{ textAlign: 'center', padding: 60, color: '#475569' }}>
       <div style={{ fontSize: 36 }}>⏳</div>
-      <p style={{ marginTop: 12 }}>טוען סצנות...</p>
+      <p style={{ marginTop: 12 }}>{t.loading}</p>
     </div>
   )
 
   return (
-    <div>
+    <div style={{ direction: rtl ? 'rtl' : 'ltr' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <div>
           <h2 style={{ margin: 0, color: '#e2e8f0', fontSize: 18 }}>🎬 {t.scenes_title}</h2>
@@ -125,7 +127,7 @@ export default function ScenesPage({ devices }) {
               setEditScene(null)
               load()
             } catch (e) {
-              alert(e?.response?.data?.detail || 'שגיאה בשמירה')
+              alert(e?.response?.data?.detail || t.error)
             }
           }}
           onClose={() => { setShowEditor(false); setEditScene(null) }}
@@ -137,6 +139,7 @@ export default function ScenesPage({ devices }) {
 
 /* ── Scene card ─────────────────────────────────────────────────────────────── */
 function SceneCard({ scene, devices, running, runMsg, onRun, onEdit, onDelete }) {
+  const { t } = useLang()
   const devMap = Object.fromEntries(devices.map(d => [d.id, d]))
 
   return (
@@ -149,11 +152,11 @@ function SceneCard({ scene, devices, running, runMsg, onRun, onEdit, onDelete })
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontWeight: 700, fontSize: 15, color: '#f1f5f9' }}>{scene.name}</div>
           <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
-            {scene.actions.length} פעולות
+            {scene.actions.length} {t.scene_actions_count}
             {scene.actions.slice(0, 3).map((a, i) => {
               const dev = devMap[a.device_id]
               return dev ? (
-                <span key={i} style={{ marginRight: 6 }}>
+                <span key={i} style={{ marginInlineStart: 6 }}>
                   {DEVICE_ICONS[dev.type] || '🔌'} {dev.name}
                   <span style={{ color: '#334155' }}> ·</span>
                 </span>
@@ -165,7 +168,7 @@ function SceneCard({ scene, devices, running, runMsg, onRun, onEdit, onDelete })
           ...btn('#22c55e'), padding: '8px 16px', flexShrink: 0,
           opacity: running ? 0.6 : 1, minWidth: 64, fontSize: 13,
         }}>
-          {running ? '⏳' : '▶ הפעל'}
+          {running ? '⏳' : t.scene_run_btn}
         </button>
       </div>
 
@@ -182,10 +185,10 @@ function SceneCard({ scene, devices, running, runMsg, onRun, onEdit, onDelete })
 
       <div style={{ display: 'flex', gap: 1, borderRadius: '0 0 8px 8px', overflow: 'hidden', marginTop: 4 }}>
         <button onClick={onEdit} style={{ flex: 1, padding: '6px 4px', border: '1px solid #334155', background: '#1e293b', color: '#94a3b8', cursor: 'pointer', fontSize: 11, fontWeight: 600 }}>
-          ✏️ ערוך
+          ✏️ {t.edit}
         </button>
         <button onClick={onDelete} style={{ flex: 1, padding: '6px 4px', border: '1px solid #334155', background: '#1e293b', color: '#ef4444', cursor: 'pointer', fontSize: 11, fontWeight: 600 }}>
-          🗑️ מחק
+          🗑️ {t.delete}
         </button>
       </div>
     </div>
@@ -194,6 +197,7 @@ function SceneCard({ scene, devices, running, runMsg, onRun, onEdit, onDelete })
 
 /* ── Scene editor modal ─────────────────────────────────────────────────────── */
 function SceneEditor({ scene, devices, onSave, onClose }) {
+  const { t, rtl } = useLang()
   const [name, setName]       = useState(scene.name)
   const [icon, setIcon]       = useState(scene.icon)
   const [actions, setActions] = useState(scene.actions || [])
@@ -217,26 +221,28 @@ function SceneEditor({ scene, devices, onSave, onClose }) {
   }
 
   const save = async () => {
-    if (!name.trim()) { setErr('הכנס שם לסצנה'); return }
+    if (!name.trim()) { setErr(t.scene_name_required); return }
     setSaving(true)
     await onSave({ id: scene.id, name: name.trim(), icon, actions })
     setSaving(false)
   }
 
+  const dir = rtl ? 'rtl' : 'ltr'
+
   return (
     <div style={overlay}>
-      <div style={{ ...modal, maxHeight: '92vh' }}>
+      <div style={{ ...modal, direction: dir }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-          <h3 style={{ margin: 0 }}>{scene.id ? '✏️ ערוך סצנה' : '🎬 סצנה חדשה'}</h3>
+          <h3 style={{ margin: 0 }}>{scene.id ? t.scene_edit_title : t.scene_new_title}</h3>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: 20 }}>✕</button>
         </div>
 
         {/* Name */}
-        <label style={lbl}>שם הסצנה</label>
-        <input value={name} onChange={e => setName(e.target.value)} placeholder="לילה, בוקר, סרט..." style={inp} autoFocus />
+        <label style={lbl}>{t.scene_name_label}</label>
+        <input value={name} onChange={e => setName(e.target.value)} placeholder={t.scene_name_placeholder} style={{ ...inp, direction: dir }} autoFocus />
 
         {/* Icon picker */}
-        <label style={lbl}>אייקון</label>
+        <label style={lbl}>{t.scene_icon_label}</label>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 14 }}>
           {SCENE_ICONS.map(ic => (
             <button key={ic} onClick={() => setIcon(ic)} style={{
@@ -249,7 +255,7 @@ function SceneEditor({ scene, devices, onSave, onClose }) {
         </div>
 
         {/* Actions */}
-        <label style={lbl}>פעולות ({actions.length})</label>
+        <label style={lbl}>{t.actions_label} ({actions.length})</label>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 10, maxHeight: '35vh', overflowY: 'auto' }}>
           {actions.map((action, idx) => (
             <ActionRow
@@ -262,22 +268,22 @@ function SceneEditor({ scene, devices, onSave, onClose }) {
           ))}
           {actions.length === 0 && (
             <div style={{ textAlign: 'center', padding: '16px 0', color: '#475569', fontSize: 12 }}>
-              אין פעולות — לחץ הוסף
+              {t.scene_no_actions}
             </div>
           )}
         </div>
 
         <button onClick={addAction} style={{ ...btn('#334155'), width: '100%', marginBottom: 14, fontSize: 12 }}>
-          + הוסף פעולה
+          {t.scene_add_action_btn}
         </button>
 
         {err && <div style={errBox}>{err}</div>}
 
         <div style={{ display: 'flex', gap: 8 }}>
           <button onClick={save} disabled={saving} style={{ ...btn('#22c55e'), flex: 1, opacity: saving ? 0.7 : 1 }}>
-            {saving ? '⏳ שומר...' : scene.id ? '💾 שמור שינויים' : '✅ צור סצנה'}
+            {saving ? t.saving : scene.id ? t.scene_edit_save_btn : t.scene_save_btn}
           </button>
-          <button onClick={onClose} style={btn('#475569')}>ביטול</button>
+          <button onClick={onClose} style={btn('#475569')}>{t.cancel}</button>
         </div>
       </div>
     </div>
@@ -286,9 +292,12 @@ function SceneEditor({ scene, devices, onSave, onClose }) {
 
 /* ── Single action row ──────────────────────────────────────────────────────── */
 function ActionRow({ action, devices, onChange, onRemove }) {
+  const { t, rtl } = useLang()
+  const ACTION_TYPES = getActionTypes(t)
   const device = devices.find(d => d.id === action.device_id) || devices[0]
-  const availableTypes = ACTION_TYPES.filter(t => !device || t.forTypes.includes(device.type))
-  const currentType = availableTypes.find(t => t.id === action.type) || availableTypes[0]
+  const availableTypes = ACTION_TYPES.filter(at => !device || at.forTypes.includes(device.type))
+  const currentType = availableTypes.find(at => at.id === action.type) || availableTypes[0]
+  const dir = rtl ? 'rtl' : 'ltr'
 
   return (
     <div style={{ background: '#0f172a', border: '1px solid #334155', borderRadius: 10, padding: 10 }}>
@@ -301,7 +310,7 @@ function ActionRow({ action, devices, onChange, onRemove }) {
             const defaultType = dev?.type === 'ac' ? 'ac' : dev?.type === 'lock' ? 'lock' : 'on'
             onChange({ device_id: e.target.value, type: defaultType, params: {} })
           }}
-          style={{ ...inp, flex: 2, marginBottom: 0, fontSize: 11, padding: '5px 8px' }}>
+          style={{ ...inp, flex: 2, marginBottom: 0, fontSize: 11, padding: '5px 8px', direction: dir }}>
           {devices.map(d => (
             <option key={d.id} value={d.id}>{DEVICE_ICONS[d.type] || '🔌'} {d.name}</option>
           ))}
@@ -311,9 +320,9 @@ function ActionRow({ action, devices, onChange, onRemove }) {
         <select
           value={action.type}
           onChange={e => onChange({ type: e.target.value, params: {} })}
-          style={{ ...inp, flex: 1, marginBottom: 0, fontSize: 11, padding: '5px 8px' }}>
-          {availableTypes.map(t => (
-            <option key={t.id} value={t.id}>{t.label}</option>
+          style={{ ...inp, flex: 1, marginBottom: 0, fontSize: 11, padding: '5px 8px', direction: dir }}>
+          {availableTypes.map(at => (
+            <option key={at.id} value={at.id}>{at.label}</option>
           ))}
         </select>
 
@@ -323,7 +332,7 @@ function ActionRow({ action, devices, onChange, onRemove }) {
       {/* Brightness param */}
       {action.type === 'brightness' && (
         <div>
-          <div style={{ fontSize: 10, color: '#64748b', marginBottom: 3 }}>בהירות: {action.params?.brightness || 128}</div>
+          <div style={{ fontSize: 10, color: '#64748b', marginBottom: 3 }}>{t.action_brightness_label}: {action.params?.brightness || 128}</div>
           <input type="range" min={1} max={255}
             value={action.params?.brightness || 128}
             onChange={e => onChange({ params: { brightness: parseInt(e.target.value) } })}
@@ -337,12 +346,12 @@ function ActionRow({ action, devices, onChange, onRemove }) {
           <select
             value={action.params?.mode || 'cool'}
             onChange={e => onChange({ params: { ...action.params, mode: e.target.value } })}
-            style={{ ...inp, flex: 1, marginBottom: 0, fontSize: 11, padding: '4px 6px' }}>
-            <option value="cool">❄️ קירור</option>
-            <option value="heat">🔥 חימום</option>
-            <option value="fan">💨 מאוורר</option>
-            <option value="dry">💧 ייבוש</option>
-            <option value="auto">🔄 אוטו</option>
+            style={{ ...inp, flex: 1, marginBottom: 0, fontSize: 11, padding: '4px 6px', direction: dir }}>
+            <option value="cool">❄️ {t.ac_mode_cool}</option>
+            <option value="heat">🔥 {t.ac_mode_heat}</option>
+            <option value="fan">💨 {t.ac_mode_fan}</option>
+            <option value="dry">💧 {t.ac_mode_dry}</option>
+            <option value="auto">🔄 {t.ac_mode_auto}</option>
           </select>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#1e293b', borderRadius: 8, padding: '4px 8px', border: '1px solid #334155' }}>
             <button onClick={() => onChange({ params: { ...action.params, temperature: Math.max(16, (action.params?.temperature || 24) - 1) } })}
@@ -367,9 +376,9 @@ const btn = (bg, color = '#fff') => ({
 const inp = {
   width: '100%', padding: '10px 12px', marginBottom: 10, borderRadius: 8,
   border: '1px solid #334155', background: '#0f172a', color: '#f1f5f9',
-  fontSize: 13, boxSizing: 'border-box', direction: 'rtl',
+  fontSize: 13, boxSizing: 'border-box',
 }
 const lbl     = { display: 'block', fontSize: 12, color: '#94a3b8', marginBottom: 5 }
 const errBox  = { background: '#7f1d1d', border: '1px solid #ef4444', color: '#fca5a5', borderRadius: 8, padding: '8px 12px', fontSize: 13, marginBottom: 12 }
 const overlay = { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }
-const modal   = { background: '#1e293b', border: '1px solid #334155', borderRadius: 16, padding: 20, width: '92%', maxWidth: 420, direction: 'rtl', overflowY: 'auto' }
+const modal   = { background: '#1e293b', border: '1px solid #334155', borderRadius: 16, padding: 20, width: '92%', maxWidth: 420, overflowY: 'auto' }

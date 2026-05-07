@@ -2,49 +2,58 @@ import { useState, useEffect } from 'react'
 import { api } from '../hooks/useHub'
 import { useLang } from '../context/LangContext'
 
-/* ── Trigger types ─────────────────────────────────────────────────── */
-const TRIGGER_TYPES = [
-  { value: 'time',             icon: '⏰', label: 'לפי שעה' },
-  { value: 'device_state',     icon: '💡', label: 'מצב מכשיר' },
-  { value: 'sensor_threshold', icon: '🌡️', label: 'ערך חיישן' },
-  { value: 'device_online',    icon: '📶', label: 'מכשיר מחובר/מנותק' },
-  { value: 'sunrise',          icon: '🌅', label: 'זריחה' },
-  { value: 'sunset',           icon: '🌇', label: 'שקיעה' },
-]
+function getTriggerTypes(t) {
+  return [
+    { value: 'time',             icon: '⏰', label: t.trigger_time },
+    { value: 'device_state',     icon: '💡', label: t.trigger_device_state },
+    { value: 'sensor_threshold', icon: '🌡️', label: t.trigger_sensor_threshold },
+    { value: 'device_online',    icon: '📶', label: t.trigger_device_online },
+    { value: 'sunrise',          icon: '🌅', label: t.trigger_sunrise },
+    { value: 'sunset',           icon: '🌇', label: t.trigger_sunset },
+  ]
+}
 
-const ACTION_TYPES = [
-  { value: 'device_cmd', icon: '💡', label: 'פקודה למכשיר' },
-  { value: 'delay',      icon: '⏱️', label: 'המתן (שניות)' },
-  { value: 'scene',      icon: '🎬', label: 'הפעל סצנה' },
-]
+function getActionTypes(t) {
+  return [
+    { value: 'device_cmd', icon: '💡', label: t.action_device_cmd },
+    { value: 'delay',      icon: '⏱️', label: t.action_delay },
+    { value: 'scene',      icon: '🎬', label: t.action_scene_run },
+  ]
+}
 
-const CRON_PRESETS = [
-  { label: '🌙 כל יום 22:00',  value: '0 22 * * *' },
-  { label: '☀️ כל יום 07:00',  value: '0 7 * * *' },
-  { label: '🍽️ כל יום 13:00',  value: '0 13 * * *' },
-  { label: '🛏️ כל יום 23:30',  value: '30 23 * * *' },
-  { label: '📅 שישי 22:00',    value: '0 22 * * 5' },
-  { label: '📅 שבת 10:00',     value: '0 10 * * 6' },
-  { label: '🔁 כל שעה',        value: '0 * * * *' },
-  { label: '✏️ מותאם אישית',   value: 'custom' },
-]
+function getCronPresets(t) {
+  return [
+    { label: t.cron_preset_22,   value: '0 22 * * *' },
+    { label: t.cron_preset_07,   value: '0 7 * * *' },
+    { label: t.cron_preset_13,   value: '0 13 * * *' },
+    { label: t.cron_preset_2330, value: '30 23 * * *' },
+    { label: t.cron_preset_fri,  value: '0 22 * * 5' },
+    { label: t.cron_preset_sat,  value: '0 10 * * 6' },
+    { label: t.cron_preset_hourly, value: '0 * * * *' },
+    { label: t.cron_preset_custom, value: 'custom' },
+  ]
+}
 
-const OPERATORS = [
-  { value: 'gt',  label: 'גדול מ-' },
-  { value: 'gte', label: 'גדול או שווה ל-' },
-  { value: 'lt',  label: 'קטן מ-' },
-  { value: 'lte', label: 'קטן או שווה ל-' },
-  { value: 'eq',  label: 'שווה ל-' },
-]
+function getOperators(t) {
+  return [
+    { value: 'gt',  label: t.op_gt  },
+    { value: 'gte', label: t.op_gte },
+    { value: 'lt',  label: t.op_lt  },
+    { value: 'lte', label: t.op_lte },
+    { value: 'eq',  label: t.op_eq  },
+  ]
+}
 
-const SENSOR_PROPS = [
-  { value: 'temperature', label: '🌡️ טמפרטורה (°C)' },
-  { value: 'humidity',    label: '💧 לחות (%)' },
-  { value: 'occupancy',   label: '👤 תנועה' },
-  { value: 'contact',     label: '🚪 דלת/חלון' },
-  { value: 'smoke',       label: '🔥 עשן' },
-  { value: 'power_w',     label: '⚡ צריכת חשמל (W)' },
-]
+function getSensorProps(t) {
+  return [
+    { value: 'temperature', label: t.prop_temperature },
+    { value: 'humidity',    label: t.prop_humidity    },
+    { value: 'occupancy',   label: t.prop_occupancy   },
+    { value: 'contact',     label: t.prop_contact     },
+    { value: 'smoke',       label: t.prop_smoke       },
+    { value: 'power_w',     label: t.prop_power_w     },
+  ]
+}
 
 const EMPTY_FORM = {
   name:    '',
@@ -54,30 +63,30 @@ const EMPTY_FORM = {
   actions: [{ type: 'device_cmd', device_id: '', payload: { state: 'OFF' } }],
 }
 
-/* ── Summary line for a rule ───────────────────────────────────────── */
-function ruleSummary(rule, devices) {
-  const t = rule.trigger
+function ruleSummary(rule, devices, t) {
+  const tr = rule.trigger
   let trigger = ''
-  if (t.type === 'time')             trigger = `⏰ ${t.cron}`
-  else if (t.type === 'sunrise')     trigger = `🌅 זריחה${t.offset_min ? ` +${t.offset_min} דקות` : ''}`
-  else if (t.type === 'sunset')      trigger = `🌇 שקיעה${t.offset_min ? ` +${t.offset_min} דקות` : ''}`
-  else if (t.type === 'device_state') {
-    const dev = devices.find(d => d.id === t.device_id)
-    trigger = `💡 ${dev?.name || t.device_id} = ${t.state || 'כל שינוי'}`
+  const OPERATORS = getOperators(t)
+  if (tr.type === 'time')         trigger = `⏰ ${tr.cron}`
+  else if (tr.type === 'sunrise') trigger = `🌅 ${t.trigger_sunrise}${tr.offset_min ? ` +${tr.offset_min}m` : ''}`
+  else if (tr.type === 'sunset')  trigger = `🌇 ${t.trigger_sunset}${tr.offset_min ? ` +${tr.offset_min}m` : ''}`
+  else if (tr.type === 'device_state') {
+    const dev = devices.find(d => d.id === tr.device_id)
+    trigger = `💡 ${dev?.name || tr.device_id} = ${tr.state || t.auto_any_change}`
   }
-  else if (t.type === 'sensor_threshold') {
-    const dev = devices.find(d => d.id === t.device_id)
-    const op  = OPERATORS.find(o => o.value === t.operator)
-    trigger = `🌡️ ${dev?.name || t.device_id} ${op?.label || ''}${t.value}`
+  else if (tr.type === 'sensor_threshold') {
+    const dev = devices.find(d => d.id === tr.device_id)
+    const op  = OPERATORS.find(o => o.value === tr.operator)
+    trigger = `🌡️ ${dev?.name || tr.device_id} ${op?.label || ''}${tr.value}`
   }
-  else if (t.type === 'device_online') {
-    const dev = devices.find(d => d.id === t.device_id)
-    trigger = `📶 ${dev?.name || t.device_id} ${t.online ? 'מחובר' : 'מנותק'}`
+  else if (tr.type === 'device_online') {
+    const dev = devices.find(d => d.id === tr.device_id)
+    trigger = `📶 ${dev?.name || tr.device_id} ${tr.online ? t.auto_connected : t.auto_disconnected}`
   }
 
   const actions = rule.actions.map(a => {
     if (a.type === 'delay') return `⏱️ ${a.seconds}s`
-    if (a.type === 'scene') return '🎬 סצנה'
+    if (a.type === 'scene') return t.auto_scene_label
     const dev = devices.find(d => d.id === a.device_id)
     const st  = a.payload?.state
     return `${dev?.name || a.device_id || '?'} → ${st || JSON.stringify(a.payload)}`
@@ -86,9 +95,6 @@ function ruleSummary(rule, devices) {
   return { trigger, actions }
 }
 
-/* ═══════════════════════════════════════════════════════════════════════
-   Main Component
-═══════════════════════════════════════════════════════════════════════ */
 export default function AutomationsPage({ devices }) {
   const { t, rtl, locale } = useLang()
   const [rules, setRules]       = useState([])
@@ -161,7 +167,6 @@ export default function AutomationsPage({ devices }) {
     load()
   }
 
-  /* ── Action helpers ── */
   const setAction = (idx, patch) =>
     setForm(f => ({ ...f, actions: f.actions.map((a, i) => i === idx ? { ...a, ...patch } : a) }))
   const addAction  = () =>
@@ -169,8 +174,16 @@ export default function AutomationsPage({ devices }) {
   const removeAction = (idx) =>
     setForm(f => ({ ...f, actions: f.actions.filter((_, i) => i !== idx) }))
 
+  const TRIGGER_TYPES = getTriggerTypes(t)
+  const ACTION_TYPES  = getActionTypes(t)
+  const CRON_PRESETS  = getCronPresets(t)
+  const OPERATORS     = getOperators(t)
+  const SENSOR_PROPS  = getSensorProps(t)
+  const dir = rtl ? 'rtl' : 'ltr'
+  const inpDir = { ...inp, direction: dir }
+
   return (
-    <div>
+    <div style={{ direction: dir }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <div>
@@ -185,9 +198,7 @@ export default function AutomationsPage({ devices }) {
         <div style={{ textAlign: 'center', padding: '60px 20px', color: '#475569' }}>
           <div style={{ fontSize: 56 }}>⚡</div>
           <div style={{ fontSize: 16, fontWeight: 700, color: '#64748b', marginTop: 12 }}>{t.no_rules}</div>
-          <div style={{ fontSize: 13, marginTop: 6, lineHeight: 1.6 }}>
-            {t.no_rules_hint}
-          </div>
+          <div style={{ fontSize: 13, marginTop: 6, lineHeight: 1.6 }}>{t.no_rules_hint}</div>
           <button onClick={openNew} style={{ ...btn('#7c3aed'), margin: '20px auto 0', display: 'block', padding: '12px 28px' }}>
             {t.create_first_rule}
           </button>
@@ -196,14 +207,13 @@ export default function AutomationsPage({ devices }) {
 
       {/* Rules list */}
       {rules.map(rule => {
-        const { trigger, actions } = ruleSummary(rule, devices)
+        const { trigger, actions } = ruleSummary(rule, devices, t)
         return (
           <div key={rule.id} style={{
             background: '#1e293b', border: `1px solid ${rule.enabled ? '#334155' : '#1e293b'}`,
             borderRadius: 14, padding: '14px 16px', marginBottom: 10,
             opacity: rule.enabled ? 1 : 0.6,
           }}>
-            {/* Top row */}
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
               {/* Enable toggle */}
               <div onClick={() => toggleRule(rule)} style={{
@@ -222,11 +232,7 @@ export default function AutomationsPage({ devices }) {
                 <div style={{ fontWeight: 700, fontSize: 15, color: '#f1f5f9', marginBottom: 6 }}>
                   {rule.name}
                 </div>
-                {/* IF/THEN visual */}
-                <div style={{
-                  background: '#0f172a', borderRadius: 8, padding: '8px 12px',
-                  fontSize: 12, lineHeight: 1.8,
-                }}>
+                <div style={{ background: '#0f172a', borderRadius: 8, padding: '8px 12px', fontSize: 12, lineHeight: 1.8 }}>
                   <span style={{ color: '#7c3aed', fontWeight: 700 }}>{t.rule_if}</span>
                   <span style={{ color: '#94a3b8' }}>{trigger}</span>
                   <br/>
@@ -240,14 +246,13 @@ export default function AutomationsPage({ devices }) {
                 )}
               </div>
 
-              {/* Action buttons */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5, flexShrink: 0 }}>
-                <button onClick={() => runNow(rule.id)} title="הפעל עכשיו"
-                  style={{ ...iconBtn('#1d4ed8') }}>▶</button>
-                <button onClick={() => openEdit(rule)} title="ערוך"
-                  style={{ ...iconBtn('#334155') }}>✏️</button>
-                <button onClick={() => remove(rule.id)} title="מחק"
-                  style={{ ...iconBtn('#7f1d1d') }}>🗑️</button>
+                <button onClick={() => runNow(rule.id)} title={t.auto_run_title}
+                  style={iconBtn('#1d4ed8')}>▶</button>
+                <button onClick={() => openEdit(rule)} title={t.edit}
+                  style={iconBtn('#334155')}>✏️</button>
+                <button onClick={() => remove(rule.id)} title={t.delete}
+                  style={iconBtn('#7f1d1d')}>🗑️</button>
               </div>
             </div>
           </div>
@@ -257,7 +262,7 @@ export default function AutomationsPage({ devices }) {
       {/* ══ Create / Edit Modal ══ */}
       {showForm && (
         <div style={overlay}>
-          <div style={{ ...modal, direction: rtl ? 'rtl' : 'ltr' }}>
+          <div style={{ ...modal, direction: dir }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <h3 style={{ margin: 0, color: '#f1f5f9', fontSize: 17 }}>
                 {editId ? t.edit_rule_title : t.new_rule}
@@ -270,24 +275,23 @@ export default function AutomationsPage({ devices }) {
             <label style={lbl}>{t.rule_name}</label>
             <input value={form.name}
               onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-              placeholder="לדוגמה: כבה אורות בלילה"
-              style={inp} autoFocus />
+              placeholder={t.auto_name_placeholder}
+              style={inpDir} autoFocus />
 
             {/* ── TRIGGER ── */}
             <div style={section}>
               <div style={sectionTitle}>🔵 {t.trigger}</div>
-
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
-                {TRIGGER_TYPES.map(t => (
-                  <button key={t.value}
-                    onClick={() => setForm(f => ({ ...f, trigger: { type: t.value, cron: '0 22 * * *', preset: '0 22 * * *' } }))}
+                {TRIGGER_TYPES.map(tt => (
+                  <button key={tt.value}
+                    onClick={() => setForm(f => ({ ...f, trigger: { type: tt.value, cron: '0 22 * * *', preset: '0 22 * * *' } }))}
                     style={{
                       padding: '6px 12px', borderRadius: 8, border: 'none', cursor: 'pointer',
                       fontSize: 12, fontWeight: 600,
-                      background: form.trigger.type === t.value ? '#7c3aed' : '#0f172a',
-                      color: form.trigger.type === t.value ? '#fff' : '#64748b',
+                      background: form.trigger.type === tt.value ? '#7c3aed' : '#0f172a',
+                      color: form.trigger.type === tt.value ? '#fff' : '#64748b',
                     }}>
-                    {t.icon} {t.label}
+                    {tt.icon} {tt.label}
                   </button>
                 ))}
               </div>
@@ -295,20 +299,20 @@ export default function AutomationsPage({ devices }) {
               {/* Time trigger */}
               {form.trigger.type === 'time' && (
                 <>
-                  <label style={lbl}>בחר שעה</label>
+                  <label style={lbl}>{t.auto_select_time}</label>
                   <select value={form.trigger.preset || form.trigger.cron}
                     onChange={e => {
                       const v = e.target.value
                       if (v === 'custom') setForm(f => ({ ...f, trigger: { ...f.trigger, preset: 'custom' } }))
                       else setForm(f => ({ ...f, trigger: { ...f.trigger, cron: v, preset: v } }))
-                    }} style={inp}>
+                    }} style={inpDir}>
                     {CRON_PRESETS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
                   </select>
                   {form.trigger.preset === 'custom' && (
                     <input value={form.trigger.cron}
                       onChange={e => setForm(f => ({ ...f, trigger: { ...f.trigger, cron: e.target.value } }))}
                       placeholder="0 22 * * * (cron expression)"
-                      style={{ ...inp, direction: 'ltr' }} />
+                      style={{ ...inpDir, direction: 'ltr' }} />
                   )}
                 </>
               )}
@@ -316,30 +320,30 @@ export default function AutomationsPage({ devices }) {
               {/* Sunrise/Sunset offset */}
               {(form.trigger.type === 'sunrise' || form.trigger.type === 'sunset') && (
                 <>
-                  <label style={lbl}>הסטה בדקות (אופציונלי)</label>
+                  <label style={lbl}>{t.auto_offset_min}</label>
                   <input type="number" value={form.trigger.offset_min || 0}
                     onChange={e => setForm(f => ({ ...f, trigger: { ...f.trigger, offset_min: parseInt(e.target.value) || 0 } }))}
-                    placeholder="0" style={{ ...inp, direction: 'ltr' }} />
+                    placeholder="0" style={{ ...inpDir, direction: 'ltr' }} />
                 </>
               )}
 
               {/* Device state trigger */}
               {form.trigger.type === 'device_state' && (
                 <>
-                  <label style={lbl}>מכשיר</label>
+                  <label style={lbl}>{t.auto_device_label}</label>
                   <select value={form.trigger.device_id || ''}
                     onChange={e => setForm(f => ({ ...f, trigger: { ...f.trigger, device_id: e.target.value } }))}
-                    style={inp}>
-                    <option value="">-- בחר מכשיר --</option>
+                    style={inpDir}>
+                    <option value="">{t.auto_select_device}</option>
                     {devices.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                   </select>
-                  <label style={lbl}>מצב</label>
+                  <label style={lbl}>{t.auto_state_label}</label>
                   <select value={form.trigger.state || 'ON'}
                     onChange={e => setForm(f => ({ ...f, trigger: { ...f.trigger, state: e.target.value } }))}
-                    style={inp}>
-                    <option value="ON">הופעל (ON)</option>
-                    <option value="OFF">כובה (OFF)</option>
-                    <option value="">כל שינוי</option>
+                    style={inpDir}>
+                    <option value="ON">{t.state_on_lbl}</option>
+                    <option value="OFF">{t.state_off_lbl}</option>
+                    <option value="">{t.state_any_change}</option>
                   </select>
                 </>
               )}
@@ -347,30 +351,30 @@ export default function AutomationsPage({ devices }) {
               {/* Sensor threshold trigger */}
               {form.trigger.type === 'sensor_threshold' && (
                 <>
-                  <label style={lbl}>חיישן</label>
+                  <label style={lbl}>{t.auto_sensor_label}</label>
                   <select value={form.trigger.device_id || ''}
                     onChange={e => setForm(f => ({ ...f, trigger: { ...f.trigger, device_id: e.target.value } }))}
-                    style={inp}>
-                    <option value="">-- בחר חיישן --</option>
+                    style={inpDir}>
+                    <option value="">{t.auto_select_sensor}</option>
                     {devices.filter(d => d.type === 'sensor' || d.state?.temperature !== undefined || d.state?.humidity !== undefined)
                       .map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                   </select>
-                  <label style={lbl}>מאפיין</label>
+                  <label style={lbl}>{t.auto_property_label}</label>
                   <select value={form.trigger.property || 'temperature'}
                     onChange={e => setForm(f => ({ ...f, trigger: { ...f.trigger, property: e.target.value } }))}
-                    style={inp}>
+                    style={inpDir}>
                     {SENSOR_PROPS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
                   </select>
-                  <label style={lbl}>תנאי</label>
+                  <label style={lbl}>{t.auto_condition_label}</label>
                   <div style={{ display: 'flex', gap: 8 }}>
                     <select value={form.trigger.operator || 'gt'}
                       onChange={e => setForm(f => ({ ...f, trigger: { ...f.trigger, operator: e.target.value } }))}
-                      style={{ ...inp, flex: 1, marginBottom: 0 }}>
+                      style={{ ...inpDir, flex: 1, marginBottom: 0 }}>
                       {OPERATORS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                     </select>
                     <input type="number" value={form.trigger.value || 0}
                       onChange={e => setForm(f => ({ ...f, trigger: { ...f.trigger, value: parseFloat(e.target.value) } }))}
-                      style={{ ...inp, width: 80, marginBottom: 0, direction: 'ltr' }} />
+                      style={{ ...inpDir, width: 80, marginBottom: 0, direction: 'ltr' }} />
                   </div>
                   <div style={{ height: 10 }} />
                 </>
@@ -379,19 +383,19 @@ export default function AutomationsPage({ devices }) {
               {/* Device online trigger */}
               {form.trigger.type === 'device_online' && (
                 <>
-                  <label style={lbl}>מכשיר</label>
+                  <label style={lbl}>{t.auto_device_label}</label>
                   <select value={form.trigger.device_id || ''}
                     onChange={e => setForm(f => ({ ...f, trigger: { ...f.trigger, device_id: e.target.value } }))}
-                    style={inp}>
-                    <option value="">-- בחר מכשיר --</option>
+                    style={inpDir}>
+                    <option value="">{t.auto_select_device}</option>
                     {devices.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                   </select>
-                  <label style={lbl}>אירוע</label>
+                  <label style={lbl}>{t.auto_event_label}</label>
                   <select value={form.trigger.online !== false ? 'true' : 'false'}
                     onChange={e => setForm(f => ({ ...f, trigger: { ...f.trigger, online: e.target.value === 'true' } }))}
-                    style={inp}>
-                    <option value="true">✅ התחבר לרשת</option>
-                    <option value="false">❌ התנתק מהרשת</option>
+                    style={inpDir}>
+                    <option value="true">{t.event_connected}</option>
+                    <option value="false">{t.event_disconnected}</option>
                   </select>
                 </>
               )}
@@ -412,47 +416,47 @@ export default function AutomationsPage({ devices }) {
                   marginBottom: 8, border: '1px solid #1e293b',
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                    <div style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>פעולה {idx + 1}</div>
+                    <div style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>{t.auto_action_prefix} {idx + 1}</div>
                     {form.actions.length > 1 && (
                       <button onClick={() => removeAction(idx)}
                         style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 16 }}>✕</button>
                     )}
                   </div>
 
-                  <label style={lbl}>סוג פעולה</label>
+                  <label style={lbl}>{t.auto_action_type}</label>
                   <select value={action.type}
                     onChange={e => setAction(idx, { type: e.target.value, device_id: '', payload: { state: 'OFF' }, seconds: 5 })}
-                    style={inp}>
-                    {ACTION_TYPES.map(t => <option key={t.value} value={t.value}>{t.icon} {t.label}</option>)}
+                    style={inpDir}>
+                    {ACTION_TYPES.map(at => <option key={at.value} value={at.value}>{at.icon} {at.label}</option>)}
                   </select>
 
                   {action.type === 'device_cmd' && (
                     <>
-                      <label style={lbl}>מכשיר</label>
+                      <label style={lbl}>{t.auto_device_label}</label>
                       <select value={action.device_id}
                         onChange={e => setAction(idx, { device_id: e.target.value })}
-                        style={inp}>
-                        <option value="">-- בחר מכשיר --</option>
+                        style={inpDir}>
+                        <option value="">{t.auto_select_device}</option>
                         {devices.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                       </select>
-                      <label style={lbl}>פקודה</label>
+                      <label style={lbl}>{t.auto_command_label}</label>
                       <select value={action.payload?.state || 'OFF'}
                         onChange={e => setAction(idx, { payload: { state: e.target.value } })}
-                        style={inp}>
-                        <option value="ON">💡 הדלק (ON)</option>
-                        <option value="OFF">🌙 כבה (OFF)</option>
-                        <option value="TOGGLE">🔄 החלף מצב</option>
+                        style={inpDir}>
+                        <option value="ON">{t.cmd_on_lbl}</option>
+                        <option value="OFF">{t.cmd_off_lbl}</option>
+                        <option value="TOGGLE">{t.cmd_toggle_lbl}</option>
                       </select>
                     </>
                   )}
 
                   {action.type === 'delay' && (
                     <>
-                      <label style={lbl}>המתן (שניות)</label>
+                      <label style={lbl}>{t.auto_delay_label}</label>
                       <input type="number" min={1} max={3600}
                         value={action.seconds || 5}
                         onChange={e => setAction(idx, { seconds: parseInt(e.target.value) || 5 })}
-                        style={{ ...inp, direction: 'ltr' }} />
+                        style={{ ...inpDir, direction: 'ltr' }} />
                     </>
                   )}
                 </div>
@@ -510,13 +514,11 @@ const section = {
   background: '#0f172a', border: '1px solid #1e293b',
   borderRadius: 12, padding: '14px', marginBottom: 14,
 }
-const sectionTitle = {
-  fontSize: 13, fontWeight: 700, color: '#94a3b8', marginBottom: 10,
-}
+const sectionTitle = { fontSize: 13, fontWeight: 700, color: '#94a3b8', marginBottom: 10 }
 const inp = {
   width: '100%', padding: '9px 12px', marginBottom: 10, borderRadius: 8,
   border: '1px solid #334155', background: '#1e293b', color: '#f1f5f9',
-  fontSize: 14, boxSizing: 'border-box', direction: 'rtl',
+  fontSize: 14, boxSizing: 'border-box',
 }
 const lbl = { display: 'block', fontSize: 12, color: '#64748b', marginBottom: 4 }
 const overlay = { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: 16 }

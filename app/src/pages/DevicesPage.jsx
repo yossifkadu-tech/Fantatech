@@ -5,23 +5,35 @@ import AcCard from '../components/AcCard'
 import QrScanner from '../components/QrScanner'
 import { useLang } from '../context/LangContext'
 
-const TYPES = [
-  { value: 'switch', label: 'מתג/שקע', icon: '🔌' },
-  { value: 'light',  label: 'נורה',    icon: '💡' },
-  { value: 'dimmer', label: 'דימר',    icon: '🔆' },
-  { value: 'color',  label: 'RGB',     icon: '🎨' },
-  { value: 'ac',     label: 'מזגן',    icon: '❄️' },
-  { value: 'sensor', label: 'חיישן',   icon: '🌡️' },
-  { value: 'camera', label: 'מצלמה',   icon: '📷' },
-  { value: 'lock',   label: 'מנעול',   icon: '🔒' },
-  { value: 'fan',    label: 'מאוורר',  icon: '🌀' },
-]
 const PROTOCOLS = ['wifi', 'zigbee', 'zwave', 'matter', 'custom']
+
+const getDevTypes = (t) => [
+  { value: 'switch', label: t.dev_type_switch, icon: '🔌' },
+  { value: 'light',  label: t.dev_type_light,  icon: '💡' },
+  { value: 'dimmer', label: t.dev_type_dimmer, icon: '🔆' },
+  { value: 'color',  label: t.dev_type_color,  icon: '🎨' },
+  { value: 'ac',     label: t.dev_type_ac,     icon: '❄️' },
+  { value: 'sensor', label: t.dev_type_sensor, icon: '🌡️' },
+  { value: 'camera', label: t.dev_type_camera, icon: '📷' },
+  { value: 'lock',   label: t.dev_type_lock,   icon: '🔒' },
+  { value: 'fan',    label: t.dev_type_fan,    icon: '🌀' },
+]
+
+const getSubTypes = (t) => [
+  { value: 'switch', label: `🔌 ${t.dev_type_switch}` },
+  { value: 'light',  label: `💡 ${t.dev_type_light}` },
+  { value: 'sensor', label: `🌡️ ${t.dev_type_sensor}` },
+  { value: 'motion', label: `👤 ${t.motion_sensors}` },
+  { value: 'door',   label: `🚪 ${t.door_sensors}` },
+  { value: 'smoke',  label: `🔥 ${t.smoke_detectors}` },
+  { value: 'lock',   label: `🔒 ${t.dev_type_lock}` },
+]
 const EMPTY_FORM = { id: '', name: '', protocol: 'wifi', type: 'switch',
                      topic_state: '', topic_cmd: '', room: '', label: '', config: {} }
 
-export default function DevicesPage({ devices, onReload }) {
-  const { t }                        = useLang()
+export default function DevicesPage({ devices, onReload, tablet }) {
+  const { t, rtl }                   = useLang()
+  const TYPES                        = getDevTypes(t)
   const [rooms, setRooms]           = useState([])
   const [filter, setFilter]         = useState('all')
   const [search, setSearch]         = useState('')
@@ -43,8 +55,7 @@ export default function DevicesPage({ devices, onReload }) {
   /* ── QR result handler ──────────────────────────────────────────────────── */
   const handleQrResult = (parsed) => {
     if (parsed._type === 'wifi') {
-      // WiFi QR → show in network page (just alert for now)
-      alert(`רשת WiFi נמצאה:\nSSID: ${parsed.ssid}\nסיסמה: ${parsed.password || '(פתוחה)'}`)
+      alert(`${t.wifi_available_networks}\nSSID: ${parsed.ssid}\n${t.enter_password}: ${parsed.password || t.wifi_open}`)
       setAddMode(null)
       return
     }
@@ -75,16 +86,16 @@ export default function DevicesPage({ devices, onReload }) {
     reader.onload = async (ev) => {
       try {
         const importedDevices = JSON.parse(ev.target.result)
-        if (!Array.isArray(importedDevices)) throw new Error('הקובץ אינו מערך JSON')
+        if (!Array.isArray(importedDevices)) throw new Error('invalid JSON array')
         let ok = 0, fail = 0
         for (const d of importedDevices) {
           try { await api.post('/devices/', d); ok++ } catch { fail++ }
         }
-        alert(`יובאו ${ok} מכשירים${fail ? `, ${fail} נכשלו` : ''} ✅`)
+        alert(`${ok} ${t.devices}${fail ? ` | ${fail} ${t.error}` : ''} ✅`)
         setAddMode(null)
         onReload()
       } catch (err) {
-        alert(`שגיאה: ${err.message}`)
+        alert(`${t.error}: ${err.message}`)
       }
     }
     reader.readAsText(file)
@@ -92,7 +103,7 @@ export default function DevicesPage({ devices, onReload }) {
 
   /* ── Add device ─────────────────────────────────────────────────────────── */
   const addDevice = async () => {
-    if (!addForm.id || !addForm.name) { setError('מלא ID ושם'); return }
+    if (!addForm.id || !addForm.name) { setError(t.fill_id_name); return }
     const data = {
       ...addForm,
       topic_state: addForm.topic_state || `devices/${addForm.id}/state`,
@@ -105,12 +116,12 @@ export default function DevicesPage({ devices, onReload }) {
       setAddForm(EMPTY_FORM)
       setError('')
       onReload()
-    } catch (e) { setError(e?.response?.data?.detail || 'שגיאה') }
+    } catch (e) { setError(e?.response?.data?.detail || t.error) }
   }
 
   /* ── Delete device ──────────────────────────────────────────────────────── */
   const deleteDevice = async (device) => {
-    if (!confirm(`למחוק את "${device.name}"?`)) return
+    if (!confirm(`${t.confirm_delete_device} "${device.name}"?`)) return
     try {
       await api.delete(`/devices/${device.id}`)
       onReload()
@@ -133,7 +144,7 @@ export default function DevicesPage({ devices, onReload }) {
 
   /* ── Save rename ────────────────────────────────────────────────────────── */
   const saveRename = async () => {
-    if (!renameName.trim()) { setError('שם לא יכול להיות ריק'); return }
+    if (!renameName.trim()) { setError(t.dev_name_empty); return }
     setSaving(true)
     try {
       await api.put(`/devices/${renameTarget.id}/rename`, {
@@ -144,7 +155,7 @@ export default function DevicesPage({ devices, onReload }) {
       setError('')
       onReload()
     } catch (e) {
-      setError(e?.response?.data?.detail || 'שגיאה בשמירה')
+      setError(e?.response?.data?.detail || t.error)
     }
     setSaving(false)
   }
@@ -167,28 +178,28 @@ export default function DevicesPage({ devices, onReload }) {
   const connected = devices.filter(d => d.online).length
 
   return (
-    <div>
+    <div style={{ direction: rtl ? 'rtl' : 'ltr' }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
         <div>
-          <h2 style={{ margin: 0, color: '#e2e8f0', fontSize: 18 }}>מכשירים</h2>
+          <h2 style={{ margin: 0, color: '#e2e8f0', fontSize: 18 }}>{t.devices}</h2>
           <div style={{ fontSize: 12, color: connected > 0 ? '#22c55e' : '#475569', marginTop: 2 }}>
-            ● {connected} מחוברים מתוך {devices.length}
+            ● {connected} {t.connected_count} / {devices.length}
           </div>
         </div>
         <button onClick={() => setAddMode('menu')} style={btn('#38bdf8', '#0f172a')}>
-          + הוסף
+          + {t.add}
         </button>
       </div>
 
       {/* Search */}
       <input value={search} onChange={e => setSearch(e.target.value)}
-        placeholder="🔍 חיפוש לפי שם או ספק..."
-        style={{ ...inp, marginBottom: 10 }} />
+        placeholder={t.dev_search_placeholder}
+        style={{ ...inp, marginBottom: 10, direction: 'inherit' }} />
 
       {/* Room filter */}
       <div style={{ display: 'flex', gap: 8, overflowX: 'auto', marginBottom: 18, paddingBottom: 4 }}>
-        {[{ value: 'all', label: 'הכל' }, ...rooms.map(r => ({ value: r.id, label: `${r.icon} ${r.name}` }))].map(f => (
+        {[{ value: 'all', label: t.all }, ...rooms.map(r => ({ value: r.id, label: `${r.icon} ${r.name}` }))].map(f => (
           <button key={f.value} onClick={() => setFilter(f.value)} style={{
             padding: '6px 14px', borderRadius: 20, border: 'none', whiteSpace: 'nowrap', cursor: 'pointer',
             background: filter === f.value ? '#38bdf8' : '#1e293b',
@@ -202,19 +213,19 @@ export default function DevicesPage({ devices, onReload }) {
       {sorted.length === 0 && (
         <div style={{ textAlign: 'center', padding: 60, color: '#475569' }}>
           <div style={{ fontSize: 48 }}>💡</div>
-          <p style={{ marginTop: 12 }}>{devices.length === 0 ? 'אין מכשירים — לחץ הוסף' : 'לא נמצאו תוצאות'}</p>
+          <p style={{ marginTop: 12 }}>{devices.length === 0 ? t.no_devices : t.no_results}</p>
         </div>
       )}
 
       {/* Pinned section */}
       {pinned.length > 0 && (
-        <GroupSection title="📌 מוצמדים" items={pinned} roomMap={roomMap}
+        <GroupSection title={t.pinned_section} items={pinned} roomMap={roomMap} tablet={tablet}
           onPin={togglePin} onRename={openRename} onDelete={deleteDevice} onReload={onReload} />
       )}
 
       {/* Rest */}
       {rest.length > 0 && (
-        <GroupSection title={pinned.length > 0 ? 'שאר המכשירים' : null} items={rest} roomMap={roomMap}
+        <GroupSection title={pinned.length > 0 ? t.all_devices_section : null} items={rest} roomMap={roomMap} tablet={tablet}
           onPin={togglePin} onRename={openRename} onDelete={deleteDevice} onReload={onReload} />
       )}
 
@@ -222,15 +233,15 @@ export default function DevicesPage({ devices, onReload }) {
       {addMode === 'menu' && (
         <div style={overlay}>
           <div style={{ ...modal, padding: 20 }}>
-            <h3 style={{ margin: '0 0 16px', color: '#e2e8f0', textAlign: 'center' }}>➕ הוסף מכשיר</h3>
+            <h3 style={{ margin: '0 0 16px', color: '#e2e8f0', textAlign: 'center' }}>{t.dev_add_menu_title}</h3>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
               {[
-                { icon: '❄️', title: 'הוסף מזגן', sub: 'Sensibo / MQTT / Tuya', action: () => setAddMode('ac') },
-                { icon: '📡', title: 'Moes Gateway', sub: 'Zigbee / BLE / Tuya', action: () => setAddMode('moes') },
-                { icon: '📷', title: 'סרוק QR', sub: 'קוד QR של מכשיר', action: () => setAddMode('qr') },
-                { icon: '🔍', title: 'סרוק רשת', sub: 'חיפוש ברשת המקומית', action: () => setAddMode('network') },
-                { icon: '✏️', title: 'ידנית', sub: 'הגדר מכשיר חדש', action: () => { setAddMode('manual'); setShowAdd(true); setAddForm(EMPTY_FORM); setError('') } },
-                { icon: '📥', title: 'יבא JSON', sub: 'טען קובץ גיבוי', action: () => { document.getElementById('dev-import-input').click() } },
+                { icon: '❄️', title: t.add_ac,          sub: t.ac_sub,       action: () => setAddMode('ac') },
+                { icon: '📡', title: t.moes_gateway,    sub: t.moes_sub,     action: () => setAddMode('moes') },
+                { icon: '📷', title: t.scan_qr_btn,    sub: t.qr_sub,       action: () => setAddMode('qr') },
+                { icon: '🔍', title: t.scan_network_btn, sub: t.network_sub, action: () => setAddMode('network') },
+                { icon: '✏️', title: t.manual_btn,     sub: t.manual_sub,   action: () => { setAddMode('manual'); setShowAdd(true); setAddForm(EMPTY_FORM); setError('') } },
+                { icon: '📥', title: t.import_json,    sub: t.import_sub,   action: () => { document.getElementById('dev-import-input').click() } },
               ].map(item => (
                 <button key={item.title} onClick={item.action} style={{
                   background: '#1e3a5f', border: '1px solid #3b82f6', borderRadius: 12,
@@ -243,7 +254,7 @@ export default function DevicesPage({ devices, onReload }) {
                 </button>
               ))}
             </div>
-            <button onClick={() => setAddMode(null)} style={{ ...btn('#334155'), width: '100%', marginTop: 12 }}>ביטול</button>
+            <button onClick={() => setAddMode(null)} style={{ ...btn('#334155'), width: '100%', marginTop: 12 }}>{t.cancel}</button>
             <input id="dev-import-input" type="file" accept=".json" style={{ display: 'none' }} onChange={handleImportFile} />
           </div>
         </div>
@@ -253,8 +264,8 @@ export default function DevicesPage({ devices, onReload }) {
       {addMode === 'qr' && (
         <div style={overlay}>
           <div style={modal}>
-            <h3 style={{ marginTop: 0, marginBottom: 4 }}>📷 סריקת QR</h3>
-            <p style={{ fontSize: 12, color: '#64748b', marginBottom: 12 }}>סרוק קוד QR של מכשיר חכם, כתובת IP, או רשת WiFi</p>
+            <h3 style={{ marginTop: 0, marginBottom: 4 }}>{t.qr_scan_title}</h3>
+            <p style={{ fontSize: 12, color: '#64748b', marginBottom: 12 }}>{t.qr_scan_hint}</p>
             <QrScanner onResult={handleQrResult} onClose={() => setAddMode(null)} />
           </div>
         </div>
@@ -295,46 +306,46 @@ export default function DevicesPage({ devices, onReload }) {
         <div style={overlay}>
           <div style={modal}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              <h3 style={{ margin: 0 }}>מכשיר חדש ✏️</h3>
-              <button onClick={() => { setAddMode('menu'); setShowAdd(false) }} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: 13 }}>← חזור</button>
+              <h3 style={{ margin: 0 }}>{t.new_device}</h3>
+              <button onClick={() => { setAddMode('menu'); setShowAdd(false) }} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: 13 }}>← {t.back}</button>
             </div>
 
-            <label style={lbl}>ID ייחודי</label>
+            <label style={lbl}>{t.device_unique_id}</label>
             <input value={addForm.id}
               onChange={e => setAddForm({ ...addForm, id: e.target.value.toLowerCase().replace(/\s/g, '_') })}
-              placeholder="living_room_light" style={inp} autoFocus />
+              placeholder="living_room_light" style={{ ...inp, direction: 'ltr' }} autoFocus />
 
-            <label style={lbl}>שם</label>
+            <label style={lbl}>{t.device_name}</label>
             <input value={addForm.name}
               onChange={e => setAddForm({ ...addForm, name: e.target.value })}
-              placeholder="נורה סלון" style={inp} />
+              placeholder={t.dev_type_light} style={inp} />
 
-            <label style={lbl}>ספק / תווית (אופציונלי)</label>
+            <label style={lbl}>{t.device_label}</label>
             <input value={addForm.label}
               onChange={e => setAddForm({ ...addForm, label: e.target.value })}
               placeholder="Tasmota, Sonoff..." style={inp} />
 
-            <label style={lbl}>פרוטוקול</label>
+            <label style={lbl}>{t.device_protocol}</label>
             <select value={addForm.protocol} onChange={e => setAddForm({ ...addForm, protocol: e.target.value })} style={inp}>
               {PROTOCOLS.map(p => <option key={p} value={p}>{p}</option>)}
             </select>
 
-            <label style={lbl}>סוג</label>
+            <label style={lbl}>{t.device_type}</label>
             <select value={addForm.type} onChange={e => setAddForm({ ...addForm, type: e.target.value })} style={inp}>
               {TYPES.map(typ => <option key={typ.value} value={typ.value}>{typ.icon} {typ.label}</option>)}
             </select>
 
-            <label style={lbl}>חדר</label>
+            <label style={lbl}>{t.device_room}</label>
             <select value={addForm.room} onChange={e => setAddForm({ ...addForm, room: e.target.value })} style={inp}>
-              <option value="">ללא חדר</option>
+              <option value="">{t.no_room}</option>
               {rooms.map(r => <option key={r.id} value={r.id}>{r.icon} {r.name}</option>)}
             </select>
 
             {error && <div style={errBox}>{error}</div>}
 
             <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-              <button onClick={addDevice} style={{ ...btn('#22c55e'), flex: 1 }}>שמור</button>
-              <button onClick={() => { setShowAdd(false); setAddMode(null); setError('') }} style={btn('#475569')}>ביטול</button>
+              <button onClick={addDevice} style={{ ...btn('#22c55e'), flex: 1 }}>{t.save}</button>
+              <button onClick={() => { setShowAdd(false); setAddMode(null); setError('') }} style={btn('#475569')}>{t.cancel}</button>
             </div>
           </div>
         </div>
@@ -344,12 +355,12 @@ export default function DevicesPage({ devices, onReload }) {
       {renameTarget && (
         <div style={overlay}>
           <div style={modal}>
-            <h3 style={{ marginTop: 0, marginBottom: 6 }}>עריכת מכשיר</h3>
+            <h3 style={{ marginTop: 0, marginBottom: 6 }}>{t.edit_device_title}</h3>
             <div style={{ fontSize: 12, color: '#64748b', marginBottom: 16 }}>
               {renameTarget.id}
             </div>
 
-            <label style={lbl}>שם מכשיר</label>
+            <label style={lbl}>{t.device_name}</label>
             <input
               value={renameName}
               onChange={e => setRenameName(e.target.value)}
@@ -358,7 +369,7 @@ export default function DevicesPage({ devices, onReload }) {
               autoFocus
             />
 
-            <label style={lbl}>ספק / אלמנט</label>
+            <label style={lbl}>{t.device_label}</label>
             <input
               value={renameLabel}
               onChange={e => setRenameLabel(e.target.value)}
@@ -372,10 +383,10 @@ export default function DevicesPage({ devices, onReload }) {
             <div style={{ display: 'flex', gap: 8 }}>
               <button onClick={saveRename} disabled={saving}
                 style={{ ...btn('#22c55e'), flex: 1, opacity: saving ? 0.7 : 1 }}>
-                {saving ? 'שומר...' : '💾 שמור שינויים'}
+                {saving ? t.saving : `💾 ${t.save_changes}`}
               </button>
               <button onClick={() => { setRenameTarget(null); setError('') }}
-                style={btn('#475569')}>ביטול</button>
+                style={btn('#475569')}>{t.cancel}</button>
             </div>
           </div>
         </div>
@@ -386,6 +397,7 @@ export default function DevicesPage({ devices, onReload }) {
 
 /* ── Device item: card + action bar below ─────────────────────────────────── */
 function DeviceItem({ device, roomMap, onPin, onRename, onDelete, onReload }) {
+  const { t } = useLang()
   const room = device.room ? roomMap[device.room] : null
 
   return (
@@ -418,21 +430,21 @@ function DeviceItem({ device, roomMap, onPin, onRename, onDelete, onReload }) {
           onClick={() => onPin(device)}
           bg={device.pinned ? '#1d4ed8' : '#1e293b'}
           border={device.pinned ? '#3b82f6' : '#334155'}
-          title={device.pinned ? 'בטל הצמדה' : 'הצמד'}>
-          {device.pinned ? '📌 מוצמד' : '📌 הצמד'}
+          title={device.pinned ? t.unpin : t.pin}>
+          {device.pinned ? `📌 ${t.pinned}` : `📌 ${t.pin}`}
         </ActionBtn>
         <ActionBtn
           onClick={() => onRename(device)}
           bg="#1e293b" border="#334155"
-          title="שנה שם">
-          ✏️ ערוך
+          title={t.edit}>
+          {t.rename_btn}
         </ActionBtn>
         <ActionBtn
           onClick={() => onDelete(device)}
           bg="#1e293b" border="#334155"
           color="#ef4444"
-          title="מחק מכשיר">
-          🗑️ מחק
+          title={t.delete}>
+          {t.delete_btn}
         </ActionBtn>
       </div>
     </div>
@@ -451,9 +463,10 @@ function ActionBtn({ onClick, bg, border, color = '#94a3b8', title, children }) 
   )
 }
 
-function GroupSection({ title, items, roomMap, onPin, onRename, onDelete, onReload }) {
+function GroupSection({ title, items, roomMap, onPin, onRename, onDelete, onReload, tablet }) {
   const acItems    = items.filter(d => d.type === 'ac')
   const otherItems = items.filter(d => d.type !== 'ac')
+  const cols = tablet ? 'repeat(3, 1fr)' : '1fr 1fr'
   return (
     <div style={{ marginBottom: 24 }}>
       {title && <div style={{ fontSize: 12, color: '#64748b', marginBottom: 10, fontWeight: 600 }}>{title}</div>}
@@ -462,9 +475,9 @@ function GroupSection({ title, items, roomMap, onPin, onRename, onDelete, onRelo
         <DeviceItem key={d.id} device={d} roomMap={roomMap}
           onPin={onPin} onRename={onRename} onDelete={onDelete} onReload={onReload} />
       ))}
-      {/* Regular devices — 2-column grid */}
+      {/* Regular devices — 2 or 3-column grid */}
       {otherItems.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: cols, gap: 10 }}>
           {otherItems.map(d => (
             <DeviceItem key={d.id} device={d} roomMap={roomMap}
               onPin={onPin} onRename={onRename} onDelete={onDelete} onReload={onReload} />
@@ -476,24 +489,25 @@ function GroupSection({ title, items, roomMap, onPin, onRename, onDelete, onRelo
 }
 
 /* ── AC Add Modal ──────────────────────────────────────────────────────────── */
-const AC_BRANDS = [
-  { id: 'tadiran',    name: 'תדיראן (Tadiran)'         },
-  { id: 'electra',   name: 'אלקטרה (Electra)'          },
-  { id: 'general',   name: 'גנרל (General / Fujitsu)'  },
-  { id: 'mitsubishi',name: 'מיצובישי (Mitsubishi)'     },
-  { id: 'daikin',    name: 'דייקין (Daikin)'           },
-  { id: 'lg',        name: 'LG'                        },
-  { id: 'samsung',   name: 'Samsung'                   },
-  { id: 'gree',      name: 'Gree / AUX'               },
-  { id: 'haier',     name: 'Haier'                     },
-  { id: 'carrier',   name: 'Carrier'                   },
-  { id: 'toshiba',   name: 'Toshiba'                   },
-  { id: 'panasonic', name: 'Panasonic'                 },
-  { id: 'sharp',     name: 'Sharp'                     },
-  { id: 'other',     name: 'אחר'                      },
-]
-
 function AcAddModal({ rooms, onClose, onAdded }) {
+  const { t } = useLang()
+
+  const AC_BRANDS = [
+    { id: 'tadiran',    name: 'Tadiran (תדיראן)'         },
+    { id: 'electra',   name: 'Electra (אלקטרה)'          },
+    { id: 'general',   name: 'General / Fujitsu (גנרל)'  },
+    { id: 'mitsubishi',name: 'Mitsubishi (מיצובישי)'     },
+    { id: 'daikin',    name: 'Daikin (דייקין)'           },
+    { id: 'lg',        name: 'LG'                        },
+    { id: 'samsung',   name: 'Samsung'                   },
+    { id: 'gree',      name: 'Gree / AUX'               },
+    { id: 'haier',     name: 'Haier'                     },
+    { id: 'carrier',   name: 'Carrier'                   },
+    { id: 'toshiba',   name: 'Toshiba'                   },
+    { id: 'panasonic', name: 'Panasonic'                 },
+    { id: 'sharp',     name: 'Sharp'                     },
+    { id: 'other',     name: t.other ?? 'Other'          },
+  ]
   const [tab, setTab]               = useState('sensibo')
   const [name, setName]             = useState('')
   const [brand, setBrand]           = useState('tadiran')
@@ -530,14 +544,14 @@ function AcAddModal({ rooms, onClose, onAdded }) {
       r.data.forEach(d => { sel[d.uid] = true; brands[d.uid] = 'other'; rms[d.uid] = '' })
       setSelected(sel); setPodBrands(brands); setPodRooms(rms)
     } catch (e) {
-      setPodsErr(e?.response?.data?.detail || 'שגיאה בטעינת מכשירים מ-Sensibo')
+      setPodsErr(e?.response?.data?.detail || t.error)
     }
     setLoadingPods(false)
   }
 
   const importSelected = async () => {
     const toImport = (pods || []).filter(p => selected[p.uid] && !importedUids[p.uid])
-    if (!toImport.length) { setPodsErr('בחר לפחות מכשיר אחד'); return }
+    if (!toImport.length) { setPodsErr(t.no_results); return }
     setImporting(true); setImportResult(null); setPodsErr('')
     let ok = 0, fail = 0
     for (const pod of toImport) {
@@ -553,13 +567,13 @@ function AcAddModal({ rooms, onClose, onAdded }) {
         ok++
       } catch { fail++ }
     }
-    setImportResult({ ok: ok > 0, text: `✅ יובאו ${ok} מזגנים${fail ? ` | ${fail} נכשלו` : ''}` })
+    setImportResult({ ok: ok > 0, text: `✅ ${ok} ${t.dev_type_ac}${fail ? ` | ${fail} ${t.error}` : ''}` })
     setImporting(false)
     if (ok > 0) setTimeout(onAdded, 1500)
   }
 
   const saveMqtt = async () => {
-    if (!name.trim()) { setErr('הכנס שם למזגן'); return }
+    if (!name.trim()) { setErr(t.ac_name_required); return }
     setSaving(true)
     try {
       await api.post('/ac/add', {
@@ -568,17 +582,17 @@ function AcAddModal({ rooms, onClose, onAdded }) {
         topic_state: topicState || `devices/ac_${brand}/state`,
       })
       onAdded()
-    } catch (e) { setErr(e?.response?.data?.detail || 'שגיאה') }
+    } catch (e) { setErr(e?.response?.data?.detail || t.error) }
     setSaving(false)
   }
 
   const saveManual = async () => {
-    if (!name.trim()) { setErr('הכנס שם למזגן'); return }
+    if (!name.trim()) { setErr(t.ac_name_required); return }
     setSaving(true)
     try {
       await api.post('/ac/add', { name: name.trim(), brand, protocol: 'custom', room })
       onAdded()
-    } catch (e) { setErr(e?.response?.data?.detail || 'שגיאה') }
+    } catch (e) { setErr(e?.response?.data?.detail || t.error) }
     setSaving(false)
   }
 
@@ -588,7 +602,7 @@ function AcAddModal({ rooms, onClose, onAdded }) {
     <div style={overlay}>
       <div style={{ ...modal, maxHeight: '90vh' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-          <h3 style={{ margin: 0 }}>❄️ הוסף מזגן</h3>
+          <h3 style={{ margin: 0 }}>❄️ {t.add_ac}</h3>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: 20 }}>✕</button>
         </div>
 
@@ -597,14 +611,14 @@ function AcAddModal({ rooms, onClose, onAdded }) {
           {[
             { id: 'sensibo', label: '📡 Sensibo' },
             { id: 'mqtt',    label: '🔧 MQTT/IR'  },
-            { id: 'manual',  label: '✏️ ידנית'    },
-          ].map(t => (
-            <button key={t.id} onClick={() => { setTab(t.id); setErr('') }} style={{
+            { id: 'manual',  label: t.ac_tab_manual_label },
+          ].map(tb => (
+            <button key={tb.id} onClick={() => { setTab(tb.id); setErr('') }} style={{
               flex: 1, padding: '7px 4px', borderRadius: 8, border: 'none',
-              background: tab === t.id ? '#1d4ed8' : 'transparent',
-              color: tab === t.id ? '#fff' : '#64748b',
-              fontWeight: tab === t.id ? 700 : 400, fontSize: 12, cursor: 'pointer',
-            }}>{t.label}</button>
+              background: tab === tb.id ? '#1d4ed8' : 'transparent',
+              color: tab === tb.id ? '#fff' : '#64748b',
+              fontWeight: tab === tb.id ? 700 : 400, fontSize: 12, cursor: 'pointer',
+            }}>{tb.label}</button>
           ))}
         </div>
 
@@ -612,21 +626,19 @@ function AcAddModal({ rooms, onClose, onAdded }) {
         {tab === 'sensibo' && (
           <div>
             <div style={{ background: '#0f2d4a', border: '1px solid #1d4ed8', borderRadius: 10, padding: 12, marginBottom: 12, fontSize: 12, color: '#93c5fd' }}>
-              <b>📡 Sensibo</b> מחבר כל מזגן לרשת דרך IR.<br />
-              תואם: <b>תדיראן, אלקטרה, גנרל, LG, Samsung, Daikin, Mitsubishi</b> ועוד.
+              <b>📡 Sensibo</b> — {t.ac_sensibo_info.split('\n').map((l, i) => <span key={i}>{l}{i === 0 && <br />}</span>)}
             </div>
 
             {/* Key status */}
             {sensiboOk === false && (
               <div style={{ background: '#7f1d1d', border: '1px solid #ef4444', borderRadius: 8, padding: '10px 12px', fontSize: 12, color: '#fca5a5', marginBottom: 12 }}>
-                ⚠️ מפתח Sensibo לא מוגדר.<br />
-                עבור ל-<b>⚙️ הגדרות → ❄️ Sensibo</b> כדי להגדיר מפתח API.
+                ⚠️ {t.ac_sensibo_not_set}
               </div>
             )}
             {sensiboOk === true && !pods && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10, fontSize: 12, color: '#22c55e' }}>
                 <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#22c55e', flexShrink: 0, display: 'inline-block' }} />
-                מפתח Sensibo מוגדר ✓
+                {t.ac_sensibo_key_ok}
               </div>
             )}
 
@@ -634,7 +646,7 @@ function AcAddModal({ rooms, onClose, onAdded }) {
             {sensiboOk && !pods && (
               <button onClick={fetchPods} disabled={loadingPods}
                 style={{ ...btn('#1d4ed8'), width: '100%', opacity: loadingPods ? 0.7 : 1 }}>
-                {loadingPods ? '⏳ מחפש מזגנים...' : '🔍 גלה מזגני Sensibo'}
+                {loadingPods ? t.ac_sensibo_fetching : t.ac_sensibo_fetch}
               </button>
             )}
 
@@ -645,17 +657,17 @@ function AcAddModal({ rooms, onClose, onAdded }) {
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                   <span style={{ fontSize: 12, color: '#64748b' }}>
-                    נמצאו <b style={{ color: '#38bdf8' }}>{pods.length}</b> מזגנים בחשבון
+                    {t.ac_found_prefix} <b style={{ color: '#38bdf8' }}>{pods.length}</b> {t.ac_found_suffix}
                   </span>
                   <button onClick={fetchPods} disabled={loadingPods}
                     style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: 11 }}>
-                    🔄 רענן
+                    {t.ac_refresh}
                   </button>
                 </div>
 
                 {pods.length === 0 ? (
                   <div style={{ textAlign: 'center', padding: 20, color: '#475569', fontSize: 13 }}>
-                    לא נמצאו מזגנים בחשבון Sensibo
+                    {t.ac_sensibo_none}
                   </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: '35vh', overflowY: 'auto', marginBottom: 10 }}>
@@ -682,10 +694,10 @@ function AcAddModal({ rooms, onClose, onAdded }) {
                                 {pod.model}
                                 {pod.state?.current_temp     != null && ` · ${pod.state.current_temp}°C`}
                                 {pod.state?.current_humidity != null && ` · 💧${pod.state.current_humidity}%`}
-                                {pod.state?.state && ` · ${pod.state.state === 'ON' ? '🟢 פועל' : '⚫ כבוי'}`}
+                                {pod.state?.state && ` · ${pod.state.state === 'ON' ? t.ac_on : t.ac_off}`}
                               </div>
                             </div>
-                            {isImported && <span style={{ fontSize: 10, color: '#22c55e', flexShrink: 0 }}>✅ יובא</span>}
+                            {isImported && <span style={{ fontSize: 10, color: '#22c55e', flexShrink: 0 }}>{t.ac_imported_tag}</span>}
                           </div>
                           {isSel && !isImported && (
                             <div style={{ display: 'flex', gap: 6 }}>
@@ -699,7 +711,7 @@ function AcAddModal({ rooms, onClose, onAdded }) {
                                 value={podRooms[pod.uid] || ''}
                                 onChange={e => setPodRooms(p => ({ ...p, [pod.uid]: e.target.value }))}
                                 style={{ ...inp, flex: 1, marginBottom: 0, fontSize: 11, padding: '5px 8px' }}>
-                                <option value="">ללא חדר</option>
+                                <option value="">{t.no_room}</option>
                                 {rooms.map(r => <option key={r.id} value={r.id}>{r.icon} {r.name}</option>)}
                               </select>
                             </div>
@@ -715,7 +727,7 @@ function AcAddModal({ rooms, onClose, onAdded }) {
                     onClick={importSelected}
                     disabled={importing || selectedCount <= 0}
                     style={{ ...btn('#1d4ed8'), width: '100%', opacity: (importing || selectedCount <= 0) ? 0.6 : 1 }}>
-                    {importing ? '⏳ מייבא...' : `📥 יבא נבחרים (${Math.max(0, selectedCount)})`}
+                    {importing ? t.ac_importing : `${t.ac_import_selected} (${Math.max(0, selectedCount)})`}
                   </button>
                 )}
 
@@ -736,35 +748,34 @@ function AcAddModal({ rooms, onClose, onAdded }) {
         {tab === 'mqtt' && (
           <div>
             <div style={{ background: '#1a2c1a', border: '1px solid #22c55e', borderRadius: 10, padding: 12, marginBottom: 14, fontSize: 12, color: '#86efac' }}>
-              <b>🔧 MQTT/IR</b> — מתאים ל-ESPHome עם IR transmitter או Tasmota עם irhvac.<br />
-              תואם לכל ברנד עם שלט IR.
+              <b>🔧 MQTT/IR</b> — {t.ac_mqtt_hint_text.split('\n').map((l, i) => <span key={i}>{l}{i === 0 && <br />}</span>)}
             </div>
 
-            <label style={lbl}>שם המזגן</label>
-            <input value={name} onChange={e => setName(e.target.value)} placeholder="מזגן סלון" style={inp} autoFocus />
+            <label style={lbl}>{t.ac_name_label}</label>
+            <input value={name} onChange={e => setName(e.target.value)} placeholder={t.ac_name_label} style={inp} autoFocus />
 
-            <label style={lbl}>ברנד</label>
+            <label style={lbl}>{t.ac_brand_label}</label>
             <select value={brand} onChange={e => setBrand(e.target.value)} style={inp}>
               {AC_BRANDS.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
             </select>
 
-            <label style={lbl}>Topic פקודה (cmd)</label>
+            <label style={lbl}>Topic cmd</label>
             <input value={topicCmd} onChange={e => setTopicCmd(e.target.value)}
               placeholder={`devices/ac_${brand}/cmd`} style={{ ...inp, direction: 'ltr' }} />
 
-            <label style={lbl}>Topic מצב (state)</label>
+            <label style={lbl}>Topic state</label>
             <input value={topicState} onChange={e => setTopicState(e.target.value)}
               placeholder={`devices/ac_${brand}/state`} style={{ ...inp, direction: 'ltr' }} />
 
-            <label style={lbl}>חדר</label>
+            <label style={lbl}>{t.device_room}</label>
             <select value={room} onChange={e => setRoom(e.target.value)} style={inp}>
-              <option value="">ללא חדר</option>
+              <option value="">{t.no_room}</option>
               {rooms.map(r => <option key={r.id} value={r.id}>{r.icon} {r.name}</option>)}
             </select>
 
             {err && <div style={errBox}>{err}</div>}
             <button onClick={saveMqtt} disabled={saving} style={{ ...btn('#22c55e'), width: '100%', opacity: saving ? 0.7 : 1 }}>
-              {saving ? '⏳ שומר...' : '✅ הוסף מזגן'}
+              {saving ? t.saving : t.ac_add_btn}
             </button>
           </div>
         )}
@@ -773,26 +784,26 @@ function AcAddModal({ rooms, onClose, onAdded }) {
         {tab === 'manual' && (
           <div>
             <div style={{ background: '#1a1a2c', border: '1px solid #7c3aed', borderRadius: 10, padding: 12, marginBottom: 14, fontSize: 12, color: '#c4b5fd' }}>
-              <b>✏️ הוספה ידנית</b> — צור רשומת מזגן ידנית ב-Hub (ללא חיבור אוטומטי).
+              <b>{t.ac_tab_manual_label}</b> — {t.ac_manual_hint_text}
             </div>
 
-            <label style={lbl}>שם המזגן</label>
-            <input value={name} onChange={e => setName(e.target.value)} placeholder="מזגן חדר שינה" style={inp} autoFocus />
+            <label style={lbl}>{t.ac_name_label}</label>
+            <input value={name} onChange={e => setName(e.target.value)} placeholder={t.ac_name_label} style={inp} autoFocus />
 
-            <label style={lbl}>ברנד</label>
+            <label style={lbl}>{t.ac_brand_label}</label>
             <select value={brand} onChange={e => setBrand(e.target.value)} style={inp}>
               {AC_BRANDS.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
             </select>
 
-            <label style={lbl}>חדר</label>
+            <label style={lbl}>{t.device_room}</label>
             <select value={room} onChange={e => setRoom(e.target.value)} style={inp}>
-              <option value="">ללא חדר</option>
+              <option value="">{t.no_room}</option>
               {rooms.map(r => <option key={r.id} value={r.id}>{r.icon} {r.name}</option>)}
             </select>
 
             {err && <div style={errBox}>{err}</div>}
             <button onClick={saveManual} disabled={saving} style={{ ...btn('#7c3aed'), width: '100%', opacity: saving ? 0.7 : 1 }}>
-              {saving ? '⏳ שומר...' : '✅ הוסף מזגן'}
+              {saving ? t.saving : t.ac_add_btn}
             </button>
           </div>
         )}
@@ -803,6 +814,7 @@ function AcAddModal({ rooms, onClose, onAdded }) {
 
 /* ── Network Scan Modal ────────────────────────────────────────────────────── */
 function NetworkScanModal({ rooms, onAddDevice, onClose }) {
+  const { t } = useLang()
   const [scanning, setScanning] = useState(false)
   const [results, setResults]   = useState([])
   const [adding, setAdding]     = useState(null)
@@ -814,9 +826,9 @@ function NetworkScanModal({ rooms, onAddDevice, onClose }) {
     try {
       const r = await api.get('/network/scan-devices')
       setResults(r.data || [])
-      if (!r.data?.length) setErr('לא נמצאו מכשירים ברשת. ודא שאתה מחובר לרשת המקומית.')
+      if (!r.data?.length) setErr(t.ns_no_devices)
     } catch (e) {
-      setErr(e?.response?.data?.detail || 'שגיאה בסריקת רשת')
+      setErr(e?.response?.data?.detail || t.error)
     }
     setScanning(false)
   }
@@ -828,7 +840,7 @@ function NetworkScanModal({ rooms, onAddDevice, onClose }) {
                       light: 'light', sensor: 'sensor', router: 'switch', media: 'switch' }
     const record = {
       id,
-      name:        dev.name || dev.ip || 'מכשיר רשת',
+      name:        dev.name || dev.ip || t.ns_device_fallback,
       protocol:    'wifi',
       type:        typeMap[dev.device_type] || 'switch',
       label:       dev.device_type || '',
@@ -849,19 +861,19 @@ function NetworkScanModal({ rooms, onAddDevice, onClose }) {
     <div style={overlay}>
       <div style={{ ...modal, maxHeight: '85vh' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-          <h3 style={{ margin: 0 }}>📡 סריקת רשת</h3>
+          <h3 style={{ margin: 0 }}>{t.ns_title}</h3>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: 20 }}>✕</button>
         </div>
 
         <p style={{ fontSize: 12, color: '#64748b', margin: '0 0 14px' }}>
-          מחפש מכשירים חכמים, ראוטרים ושרתים ברשת המקומית
+          {t.ns_hint}
         </p>
 
         <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
           <button onClick={runScan} disabled={scanning} style={{ ...btn('#1d4ed8'), flex: 1, opacity: scanning ? 0.7 : 1 }}>
-            {scanning ? '⏳ סורק...' : '🔍 התחל סריקה'}
+            {scanning ? t.ns_scanning : t.ns_start_btn}
           </button>
-          <button onClick={onClose} style={btn('#475569')}>סגור</button>
+          <button onClick={onClose} style={btn('#475569')}>{t.cancel}</button>
         </div>
 
         {scanning && (
@@ -881,7 +893,7 @@ function NetworkScanModal({ rooms, onAddDevice, onClose }) {
         {results.length > 0 && (
           <div style={{ marginTop: 4 }}>
             <div style={{ fontSize: 12, color: '#64748b', marginBottom: 8 }}>
-              נמצאו {results.length} מכשירים:
+              {results.length} {t.ns_found_suffix}:
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: '45vh', overflowY: 'auto' }}>
               {results.map((dev, i) => {
@@ -916,7 +928,7 @@ function NetworkScanModal({ rooms, onAddDevice, onClose }) {
                       <div style={{ fontSize: 11, color: '#475569', marginTop: 2 }}>
                         {dev.ip && <span>{dev.ip}</span>}
                         {dev.info?.ssdp_server && <span style={{ marginRight: 8 }}>{dev.info.ssdp_server}</span>}
-                        {dev.already_paired && <span style={{ marginRight: 8, color: '#f59e0b' }}>⚠️ כבר מוגדר</span>}
+                        {dev.already_paired && <span style={{ marginRight: 8, color: '#f59e0b' }}>{t.ns_already_paired}</span>}
                       </div>
                     </div>
                     <button
@@ -927,7 +939,7 @@ function NetworkScanModal({ rooms, onAddDevice, onClose }) {
                         padding: '6px 12px', fontSize: 12, flexShrink: 0,
                         opacity: adding === id ? 0.7 : 1,
                       }}>
-                      {isAdded ? '✅ נוסף' : adding === id ? '...' : '+ הוסף'}
+                      {isAdded ? t.ns_added_tag : adding === id ? '...' : t.ns_add_btn}
                     </button>
                   </div>
                 )
@@ -941,17 +953,9 @@ function NetworkScanModal({ rooms, onAddDevice, onClose }) {
 }
 
 /* ── Moes / Tuya Gateway Modal ────────────────────────────────────────────── */
-const SUB_TYPES = [
-  { value: 'switch', label: '🔌 מתג' },
-  { value: 'light',  label: '💡 נורה' },
-  { value: 'sensor', label: '🌡️ חיישן' },
-  { value: 'motion', label: '👤 תנועה' },
-  { value: 'door',   label: '🚪 דלת' },
-  { value: 'smoke',  label: '🔥 עשן' },
-  { value: 'lock',   label: '🔒 מנעול' },
-]
-
 function MoesGatewayModal({ rooms, onClose, onAdded }) {
+  const { t } = useLang()
+  const SUB_TYPES = getSubTypes(t)
   const [tab, setTab]         = useState('scan')  // scan | pair | subs | help
   const [scanning, setScanning] = useState(false)
   const [found, setFound]     = useState([])      // LAN scan results
@@ -993,16 +997,16 @@ function MoesGatewayModal({ rooms, onClose, onAdded }) {
       const r = await api.get('/tuya/scan?force=true')
       const devs = r.data.devices || []
       setFound(devs)
-      if (!devs.length) setScanErr('לא נמצאו מכשירי Tuya. ודא שאתה על אותה רשת WiFi.')
+      if (!devs.length) setScanErr(t.mg_not_found)
     } catch (e) {
-      setScanErr(e?.response?.data?.detail || 'שגיאה בסריקה')
+      setScanErr(e?.response?.data?.detail || t.error)
     }
     setScanning(false)
   }
 
   /* ── Pair ── */
   const runPair = async () => {
-    if (!pairIp || !pairId || !pairKey) { setPairErr('מלא IP, Device ID ו-Local Key'); return }
+    if (!pairIp || !pairId || !pairKey) { setPairErr(t.mg_fill_required); return }
     setPairing(true); setPairErr(''); setPairOk(false); setPairDps(null)
     try {
       const r = await api.post('/tuya/pair', {
@@ -1012,7 +1016,7 @@ function MoesGatewayModal({ rooms, onClose, onAdded }) {
       setPairOk(true)
       setPairDps(r.data.dps || {})
     } catch (e) {
-      setPairErr(e?.response?.data?.detail || 'חיבור נכשל — בדוק IP ו-Local Key')
+      setPairErr(e?.response?.data?.detail || t.mg_pair_fail)
     }
     setPairing(false)
   }
@@ -1026,27 +1030,27 @@ function MoesGatewayModal({ rooms, onClose, onAdded }) {
       })
       onAdded()
     } catch (e) {
-      setPairErr(e?.response?.data?.detail || 'שגיאה בייבוא')
+      setPairErr(e?.response?.data?.detail || t.mg_import_err)
     }
   }
 
   /* ── Load sub-devices ── */
   const loadSubs = async () => {
-    if (!pairIp || !pairId || !pairKey) { setSubsErr('קודם חבר בטאב "חיבור"'); return }
+    if (!pairIp || !pairId || !pairKey) { setSubsErr(t.mg_connect_first); return }
     setSubsL(true); setSubsErr('')
     try {
       const r = await api.get(`/tuya/subdevices/${pairId}?ip=${pairIp}&local_key=${pairKey}`)
       setSubs(r.data.subdevices || [])
-      if (!r.data.subdevices?.length) setSubsErr('לא נמצאו מכשירי-תת. ודא שמכשירים צמודים ל-Gateway בSmart Life.')
+      if (!r.data.subdevices?.length) setSubsErr(t.mg_no_subs)
     } catch (e) {
-      setSubsErr(e?.response?.data?.detail || 'שגיאה')
+      setSubsErr(e?.response?.data?.detail || t.error)
     }
     setSubsL(false)
   }
 
   /* ── Import sub-device ── */
   const importSub = async (sub) => {
-    const name = (subNames[sub.node_id] || sub.name || `מכשיר ${sub.node_id}`).trim()
+    const name = (subNames[sub.node_id] || sub.name || `${t.ns_device_fallback} ${sub.node_id}`).trim()
     const type = subTypes[sub.node_id] || 'switch'
     setAdding(p => ({ ...p, [sub.node_id]: true }))
     try {
@@ -1059,7 +1063,7 @@ function MoesGatewayModal({ rooms, onClose, onAdded }) {
       })
       setAddedSubs(p => ({ ...p, [sub.node_id]: true }))
     } catch (e) {
-      alert(e?.response?.data?.detail || 'שגיאה')
+      alert(e?.response?.data?.detail || t.error)
     }
     setAdding(p => ({ ...p, [sub.node_id]: false }))
   }
@@ -1091,17 +1095,17 @@ function MoesGatewayModal({ rooms, onClose, onAdded }) {
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 4, background: '#0f172a', borderRadius: 10, padding: 4, marginBottom: 16 }}>
           {[
-            { id: 'scan', label: '🔍 גילוי' },
-            { id: 'pair', label: '🔗 חיבור' },
-            { id: 'subs', label: '📋 מכשירים' },
-            { id: 'help', label: '❓ מדריך' },
-          ].map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)} style={{
+            { id: 'scan', label: t.mg_disc_tab },
+            { id: 'pair', label: t.mg_pair_tab },
+            { id: 'subs', label: t.mg_subs_tab },
+            { id: 'help', label: t.mg_help_tab },
+          ].map(tb => (
+            <button key={tb.id} onClick={() => setTab(tb.id)} style={{
               flex: 1, padding: '7px 2px', borderRadius: 8, border: 'none',
-              background: tab === t.id ? '#1d4ed8' : 'transparent',
-              color: tab === t.id ? '#fff' : '#64748b',
-              fontWeight: tab === t.id ? 700 : 400, fontSize: 11, cursor: 'pointer',
-            }}>{t.label}</button>
+              background: tab === tb.id ? '#1d4ed8' : 'transparent',
+              color: tab === tb.id ? '#fff' : '#64748b',
+              fontWeight: tab === tb.id ? 700 : 400, fontSize: 11, cursor: 'pointer',
+            }}>{tb.label}</button>
           ))}
         </div>
 
@@ -1109,17 +1113,17 @@ function MoesGatewayModal({ rooms, onClose, onAdded }) {
         {tab === 'scan' && (
           <div>
             <div style={{ fontSize: 12, color: '#64748b', marginBottom: 12 }}>
-              מחפש מכשירי Tuya ברשת (UDP 6666/6667 + ARP)
+              {t.mg_scan_hint}
             </div>
             <button onClick={runScan} disabled={scanning} style={{ ...btn('#1d4ed8'), width: '100%', opacity: scanning ? 0.7 : 1, marginBottom: 12 }}>
-              {scanning ? '⏳ סורק רשת...' : '🔍 חפש מכשירי Tuya'}
+              {scanning ? t.mg_scanning : t.mg_scan_btn}
             </button>
 
             {scanErr && <div style={errBox}>{scanErr}</div>}
 
             {found.length > 0 && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <div style={{ fontSize: 12, color: '#64748b' }}>נמצאו {found.length} מכשירים:</div>
+                <div style={{ fontSize: 12, color: '#64748b' }}>{found.length} {t.mg_found_suffix}:</div>
                 {found.map((d, i) => (
                   <div key={i} style={{
                     background: '#0f172a', border: `1px solid ${d.is_gateway ? '#38bdf8' : '#334155'}`,
@@ -1134,11 +1138,11 @@ function MoesGatewayModal({ rooms, onClose, onAdded }) {
                       <div style={{ fontSize: 10, color: '#475569', direction: 'ltr' }}>
                         {d.ip} · v{d.version}
                         {d.is_gateway && <span style={{ color: '#38bdf8' }}> · Gateway</span>}
-                        {d.already_paired && <span style={{ color: '#f59e0b' }}> · מחובר</span>}
+                        {d.already_paired && <span style={{ color: '#f59e0b' }}>{t.mg_paired_tag}</span>}
                       </div>
                     </div>
                     <button onClick={() => pickFromScan(d)} style={{ ...btn('#1d4ed8'), padding: '6px 10px', fontSize: 11 }}>
-                      בחר
+                      {t.mg_select_btn}
                     </button>
                   </div>
                 ))}
@@ -1151,14 +1155,13 @@ function MoesGatewayModal({ rooms, onClose, onAdded }) {
         {tab === 'pair' && (
           <div>
             <div style={{ background: '#0c2340', border: '1px solid #1d4ed8', borderRadius: 10, padding: 10, marginBottom: 14, fontSize: 11, color: '#93c5fd', lineHeight: 1.7 }}>
-              💡 <b>Device ID</b> + <b>Local Key</b> ← ראה לשונית מדריך<br/>
-              או: Smart Life App → Gateway → עריכה → פרטים נוספים
+              {t.mg_pair_hint.split('\n').map((l, i) => <span key={i}>{l}{i === 0 && <br />}</span>)}
             </div>
 
-            <label style={lbl}>שם</label>
+            <label style={lbl}>{t.device_name}</label>
             <input value={pairName} onChange={e => setPairName(e.target.value)} style={inp} placeholder="Moes Gateway" />
 
-            <label style={lbl}>כתובת IP</label>
+            <label style={lbl}>IP</label>
             <input value={pairIp} onChange={e => setPairIp(e.target.value)} style={{ ...inp, direction: 'ltr' }} placeholder="192.168.10.50" />
 
             <label style={lbl}>Device ID</label>
@@ -1169,19 +1172,19 @@ function MoesGatewayModal({ rooms, onClose, onAdded }) {
 
             <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
               <div style={{ flex: 1 }}>
-                <label style={lbl}>גרסת פרוטוקול</label>
+                <label style={lbl}>{t.mg_pair_ver_label}</label>
                 <select value={pairVer} onChange={e => setPairVer(e.target.value)} style={inp}>
-                  <option value="3.3">3.3 (מוצגי Moes, בדרך כלל)</option>
+                  <option value="3.3">3.3</option>
                   <option value="3.4">3.4</option>
-                  <option value="3.5">3.5 (חדש)</option>
-                  <option value="3.1">3.1 (ישן)</option>
+                  <option value="3.5">3.5</option>
+                  <option value="3.1">3.1</option>
                 </select>
               </div>
             </div>
 
-            <label style={lbl}>חדר (אופציונלי)</label>
+            <label style={lbl}>{t.mg_room_optional_label}</label>
             <select value={pairRoom} onChange={e => setPairRoom(e.target.value)} style={inp}>
-              <option value="">ללא חדר</option>
+              <option value="">{t.no_room}</option>
               {rooms.map(r => <option key={r.id} value={r.id}>{r.icon} {r.name}</option>)}
             </select>
 
@@ -1189,7 +1192,7 @@ function MoesGatewayModal({ rooms, onClose, onAdded }) {
 
             {pairOk && pairDps && (
               <div style={{ background: '#14532d', border: '1px solid #22c55e', borderRadius: 10, padding: 12, marginBottom: 12 }}>
-                <div style={{ fontSize: 12, color: '#86efac', fontWeight: 700, marginBottom: 6 }}>✅ Gateway מחובר!</div>
+                <div style={{ fontSize: 12, color: '#86efac', fontWeight: 700, marginBottom: 6 }}>{t.mg_gw_ok}</div>
                 <div style={{ fontSize: 10, color: '#4ade80', direction: 'ltr', fontFamily: 'monospace', maxHeight: 80, overflowY: 'auto' }}>
                   DPS: {JSON.stringify(pairDps)}
                 </div>
@@ -1198,11 +1201,11 @@ function MoesGatewayModal({ rooms, onClose, onAdded }) {
 
             <div style={{ display: 'flex', gap: 8 }}>
               <button onClick={runPair} disabled={pairing} style={{ ...btn('#1d4ed8'), flex: 1, opacity: pairing ? 0.7 : 1 }}>
-                {pairing ? '⏳ מתחבר...' : '🔗 בדוק חיבור'}
+                {pairing ? t.mg_connecting : t.mg_test_btn}
               </button>
               {pairOk && (
                 <button onClick={importGateway} style={{ ...btn('#22c55e'), flex: 1 }}>
-                  📥 יבא Gateway
+                  {t.mg_import_gw}
                 </button>
               )}
             </div>
@@ -1215,18 +1218,18 @@ function MoesGatewayModal({ rooms, onClose, onAdded }) {
             {(!pairIp || !pairId || !pairKey) ? (
               <div style={{ textAlign: 'center', padding: 20, color: '#475569' }}>
                 <div style={{ fontSize: 32, marginBottom: 8 }}>🔗</div>
-                <div style={{ fontSize: 12 }}>קודם חבר את ה-Gateway בלשונית "חיבור"</div>
+                <div style={{ fontSize: 12 }}>{t.mg_connect_first}</div>
                 <button onClick={() => setTab('pair')} style={{ ...btn('#1d4ed8'), marginTop: 12 }}>
-                  עבור לחיבור
+                  {t.mg_goto_pair}
                 </button>
               </div>
             ) : (
               <>
                 <div style={{ fontSize: 12, color: '#64748b', marginBottom: 10, lineHeight: 1.6 }}>
-                  מכשירי Zigbee/BLE הצמודים ל-<b style={{ color: '#38bdf8' }}>{pairName}</b>
+                  {t.mg_subs_title_prefix} <b style={{ color: '#38bdf8' }}>{pairName}</b>
                 </div>
                 <button onClick={loadSubs} disabled={subsLoading} style={{ ...btn('#1d4ed8'), width: '100%', marginBottom: 12, opacity: subsLoading ? 0.7 : 1 }}>
-                  {subsLoading ? '⏳ טוען...' : '📋 טען מכשירים'}
+                  {subsLoading ? t.mg_subs_loading : t.mg_load_subs}
                 </button>
 
                 {subsErr && <div style={errBox}>{subsErr}</div>}
@@ -1243,12 +1246,12 @@ function MoesGatewayModal({ rooms, onClose, onAdded }) {
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                             <span style={{ fontSize: 16 }}>🔌</span>
                             <div style={{ fontSize: 11, color: '#64748b' }}>Node: {sub.node_id}</div>
-                            {isAdded && <span style={{ fontSize: 10, color: '#22c55e', marginRight: 'auto' }}>✅ נוסף</span>}
+                            {isAdded && <span style={{ fontSize: 10, color: '#22c55e', marginRight: 'auto' }}>{t.ns_added_tag}</span>}
                           </div>
                           <input
                             value={subNames[sub.node_id] ?? sub.name}
                             onChange={e => setSubNames(p => ({ ...p, [sub.node_id]: e.target.value }))}
-                            placeholder="שם המכשיר"
+                            placeholder={t.mg_sub_name_ph}
                             style={{ ...inp, marginBottom: 6, fontSize: 12 }}
                           />
                           <div style={{ display: 'flex', gap: 6 }}>
@@ -1257,13 +1260,13 @@ function MoesGatewayModal({ rooms, onClose, onAdded }) {
                               onChange={e => setSubTypes(p => ({ ...p, [sub.node_id]: e.target.value }))}
                               style={{ ...inp, marginBottom: 0, flex: 1 }}
                             >
-                              {SUB_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                              {SUB_TYPES.map(st => <option key={st.value} value={st.value}>{st.label}</option>)}
                             </select>
                             <button
                               onClick={() => importSub(sub)}
                               disabled={adding[sub.node_id] || isAdded}
                               style={{ ...btn(isAdded ? '#14532d' : '#22c55e'), padding: '8px 12px', fontSize: 12, flexShrink: 0, opacity: adding[sub.node_id] ? 0.7 : 1 }}>
-                              {isAdded ? '✅' : adding[sub.node_id] ? '...' : '+ הוסף'}
+                              {isAdded ? '✅' : adding[sub.node_id] ? '...' : t.ns_add_btn}
                             </button>
                           </div>
                         </div>
@@ -1280,7 +1283,7 @@ function MoesGatewayModal({ rooms, onClose, onAdded }) {
         {tab === 'help' && (
           <div>
             <div style={{ fontSize: 12, fontWeight: 700, color: '#38bdf8', marginBottom: 12 }}>
-              📖 איך לקבל Device ID ו-Local Key
+              {t.mg_help_title}
             </div>
             {helpSteps.map((s, i) => (
               <div key={i} style={{
@@ -1298,7 +1301,7 @@ function MoesGatewayModal({ rooms, onClose, onAdded }) {
             ))}
             <a href="https://iot.tuya.com" target="_blank" rel="noreferrer"
               style={{ display: 'block', textAlign: 'center', marginTop: 8, fontSize: 12, color: '#38bdf8' }}>
-              🌐 פתח Tuya IoT Platform
+              {t.mg_open_platform}
             </a>
           </div>
         )}

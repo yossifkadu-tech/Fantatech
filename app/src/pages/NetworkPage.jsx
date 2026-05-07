@@ -1432,7 +1432,6 @@ function WifiManager() {
         }}>
           <b style={{ color: '#f59e0b' }}>{t.wifi_dual_band}</b>
           {' '}{t.wifi_iot_24ghz}
-          {' '}Hub + {t.dev_type_camera?.includes('Camera') ? 'phone' : 'טלפון'} can use either.
         </div>
       )}
 

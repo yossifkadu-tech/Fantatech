@@ -28,6 +28,23 @@ function fmtTime(ts, locale) {
   return d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
 }
 
+function fmtSecAction(h, t) {
+  const a = (h.action || '').toLowerCase()
+  const v = (h.value  || '').toUpperCase()
+  if (a === 'toggle' && v === 'ON')           return t.hist_action_on
+  if (a === 'toggle' && v === 'OFF')          return t.hist_action_off
+  if (a === 'cmd')                             return t.hist_action_cmd
+  if (a.includes('motion'))                    return t.hist_action_motion
+  if (a.includes('smoke'))                     return t.hist_action_smoke
+  if (a.includes('door') && (a.includes('open') || a.includes('פתח')))  return t.hist_action_door_open
+  if (a.includes('door') && (a.includes('close') || a.includes('סגר'))) return t.hist_action_door_close
+  if (a === 'lock'   || a === 'locked')        return t.hist_action_lock
+  if (a === 'unlock' || a === 'unlocked')      return t.hist_action_unlock
+  if (a.includes('arm') && !a.includes('dis')) return t.hist_action_armed
+  if (a.includes('disarm'))                    return t.hist_action_disarmed
+  return h.action
+}
+
 export default function SecurityPage({ devices = [], onReload }) {
   const { t, locale } = useLang()
 
@@ -331,7 +348,7 @@ export default function SecurityPage({ devices = [], onReload }) {
                   <div style={{ fontSize: 12, color: '#f1f5f9', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {h.device_name || h.device_id}
                   </div>
-                  <div style={{ fontSize: 10, color: '#64748b' }}>{h.action}</div>
+                  <div style={{ fontSize: 10, color: '#64748b' }}>{fmtSecAction(h, t)}</div>
                 </div>
                 <div style={{ fontSize: 10, color: '#475569', whiteSpace: 'nowrap', flexShrink: 0 }}>
                   {fmtTime(h.ts, locale)}

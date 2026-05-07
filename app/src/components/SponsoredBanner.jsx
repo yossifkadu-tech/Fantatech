@@ -69,6 +69,7 @@ function AdImage({ src, color, size = 56 }) {
 
 /* ── Single ad card ────────────────────────────────────────────────────── */
 function AdCard({ ad }) {
+  const { t } = useLang()
   const content = (
     <div style={{
       background: '#1e293b',
@@ -85,7 +86,7 @@ function AdCard({ ad }) {
             <span style={{
               fontSize: 9, padding: '1px 5px', borderRadius: 4,
               background: '#334155', color: '#64748b', fontWeight: 600,
-            }}>ממומן</span>
+            }}>{t.sponsored}</span>
           )}
         </div>
         <div style={{ fontSize: 11, color: '#64748b', lineHeight: 1.5, marginBottom: 6 }}>{ad.desc}</div>
@@ -148,7 +149,7 @@ export default function SponsoredBanner() {
         <button onClick={() => { setDismissed(true); localStorage.setItem('ads_dismissed', '1') }} style={{
           background: 'none', border: 'none', color: '#334155',
           fontSize: 16, cursor: 'pointer', padding: '0 2px',
-        }} title="הסתר">✕</button>
+        }} title={t.close}>✕</button>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

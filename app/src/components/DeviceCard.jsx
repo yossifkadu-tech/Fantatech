@@ -157,7 +157,7 @@ export default function DeviceCard({ device, onUpdate, roomName }) {
             <input type="color" defaultValue={state.color?.hex || '#ffffff'}
               onChange={e => sendCmd({ color: { hex: e.target.value } })}
               style={{ width: 26, height: 26, borderRadius: '50%', border: 'none', cursor: 'pointer', background: 'none', padding: 0 }}
-              title="בחר צבע" />
+              title={t.color} />
           </div>
         </div>
       )}

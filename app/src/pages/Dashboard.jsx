@@ -5,8 +5,8 @@ import PromoCarousel from '../components/PromoCarousel'
 import SponsoredBanner from '../components/SponsoredBanner'
 import { useLang } from '../context/LangContext'
 
-export default function Dashboard({ devices, wsConnected, onNavigate, onReload }) {
-  const { t, lang } = useLang()
+export default function Dashboard({ devices, wsConnected, onNavigate, onReload, tablet }) {
+  const { t, locale } = useLang()
   const [history, setHistory]         = useState([])
   const [rulesCount, setRulesCount]   = useState('…')
   const [rooms, setRooms]             = useState([])
@@ -43,7 +43,7 @@ export default function Dashboard({ devices, wsConnected, onNavigate, onReload }
   return (
     <div>
       {/* Stats grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: tablet ? 'repeat(4, 1fr)' : '1fr 1fr', gap: 10, marginBottom: 24 }}>
         {stats.map(s => (
           <div key={s.label} onClick={() => onNavigate(s.tab)}
             style={{ ...card, cursor: 'pointer', transition: 'opacity .15s' }}
@@ -124,7 +124,7 @@ export default function Dashboard({ devices, wsConnected, onNavigate, onReload }
           </button>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 24 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: tablet ? 'repeat(3, 1fr)' : '1fr 1fr', gap: 10, marginBottom: 24 }}>
           {featured.map(d => {
             const room = d.room ? roomMap[d.room] : null
             return (
@@ -170,7 +170,7 @@ export default function Dashboard({ devices, wsConnected, onNavigate, onReload }
                 </div>
               </div>
               <div style={{ fontSize: 11, color: '#475569', flexShrink: 0 }}>
-                {new Date(h.ts * 1000).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
+                {new Date(h.ts * 1000).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
               </div>
             </div>
           ))}

@@ -196,7 +196,7 @@ export function useDevices() {
   return { devices, loading, reload: load, updateDeviceState, setOnline }
 }
 
-export function useWebSocket(onDeviceState, onDeviceOnline, onBridgeStatus) {
+export function useWebSocket(onDeviceState, onDeviceOnline, onBridgeStatus, onNotification) {
   const ws      = useRef(null)
   const [connected, setConnected] = useState(false)
 
@@ -227,6 +227,7 @@ export function useWebSocket(onDeviceState, onDeviceOnline, onBridgeStatus) {
         if (event === 'device_state')  onDeviceState?.(data)
         if (event === 'device_online') onDeviceOnline?.(data)
         if (event === 'bridge_status') onBridgeStatus?.(data)
+        if (event === 'notification')  onNotification?.(data)
       } catch {}
     }
 
@@ -235,7 +236,7 @@ export function useWebSocket(onDeviceState, onDeviceOnline, onBridgeStatus) {
       setTimeout(connect, 3000)
     }
     ws.current.onerror = () => ws.current?.close()
-  }, [onDeviceState, onDeviceOnline, onBridgeStatus])
+  }, [onDeviceState, onDeviceOnline, onBridgeStatus, onNotification])
 
   useEffect(() => {
     connect()

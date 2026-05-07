@@ -33,7 +33,7 @@ export default function GeminiAssistant({ onDeviceAction }) {
       setMessages(prev => [...prev, { role: 'assistant', text: reply }])
       if (action && onDeviceAction) onDeviceAction(action)
     } catch (e) {
-      const err = e?.response?.data?.detail || 'שגיאה בתקשורת עם Gemini'
+      const err = e?.response?.data?.detail || t.error
       setMessages(prev => [...prev, { role: 'assistant', text: `⚠️ ${err}`, error: true }])
     }
     setLoading(false)
@@ -86,14 +86,14 @@ export default function GeminiAssistant({ onDeviceAction }) {
               </span>
               {configured === false && (
                 <span style={{ fontSize: 10, background: '#f59e0b', color: '#000', borderRadius: 4, padding: '1px 6px' }}>
-                  לא מוגדר
+                  ⚠️
                 </span>
               )}
             </div>
             <button onClick={clearChat} style={{
               background: 'none', border: 'none', color: '#93c5fd',
               cursor: 'pointer', fontSize: 11,
-            }}>נקה</button>
+            }}>{t.clear}</button>
           </div>
 
           {/* Messages */}
@@ -123,7 +123,7 @@ export default function GeminiAssistant({ onDeviceAction }) {
             ))}
             {loading && (
               <div style={{ alignSelf: 'flex-start', color: '#64748b', fontSize: 13, fontStyle: 'italic' }}>
-                ✨ חושב...
+                ✨ {t.saving}
               </div>
             )}
             <div ref={bottomRef} />

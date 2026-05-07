@@ -51,9 +51,9 @@ export default function SettingsPage() {
       setHubUrl(url)
       setHubUrlState(url)
       setNewHubIp('')
-      setHubTestMsg({ text: `✅ מחובר ל-${url}`, ok: true })
+      setHubTestMsg({ text: `${t.hub_conn_ok_prefix} ${url}`, ok: true })
     } else {
-      setHubTestMsg({ text: `❌ לא ניתן להתחבר ל-${url}`, ok: false })
+      setHubTestMsg({ text: `${t.hub_conn_fail_prefix} ${url}`, ok: false })
     }
   }
 
@@ -66,7 +66,7 @@ export default function SettingsPage() {
     } catch {
       setDiagResult({
         overall: 'fail',
-        summary: '❌ לא ניתן להתחבר ל-Hub — ודא ש-start-hub.bat פועל',
+        summary: `${t.hub_conn_fail_prefix} Hub`,
         checks: [],
       })
     }
@@ -74,15 +74,15 @@ export default function SettingsPage() {
   }
 
   const runDiscover = async () => {
-    setDiscovering(true); setHubTestMsg(null); setDiscoverProgress('מתחיל...')
+    setDiscovering(true); setHubTestMsg(null); setDiscoverProgress(t.hub_discover_starting)
     const found = await discoverHub(msg => setDiscoverProgress(msg))
     setDiscovering(false); setDiscoverProgress('')
     if (found) {
       setHubUrl(found)
       setHubUrlState(found)
-      setHubTestMsg({ text: `✅ נמצא ונשמר: ${found}`, ok: true })
+      setHubTestMsg({ text: `${t.hub_discover_found_prefix} ${found}`, ok: true })
     } else {
-      setHubTestMsg({ text: '❌ לא נמצא Hub ברשת', ok: false })
+      setHubTestMsg({ text: t.hub_discover_not_found, ok: false })
     }
   }
 
@@ -94,7 +94,7 @@ export default function SettingsPage() {
       setGeminiStatus(true)
       setTimeout(() => setGeminiSaved(false), 3000)
     } catch {
-      setHubTestMsg({ text: 'שגיאה בשמירת מפתח Gemini — ודא שה-Hub פועל', ok: false })
+      setHubTestMsg({ text: t.gemini_key_err, ok: false })
       setTimeout(() => setHubTestMsg(null), 4000)
     }
   }
@@ -107,7 +107,7 @@ export default function SettingsPage() {
       setSensiboStatus(true)
       setTimeout(() => setSensiboSaved(false), 3000)
     } catch {
-      setHubTestMsg({ text: 'שגיאה בשמירת מפתח Sensibo — ודא שה-Hub פועל', ok: false })
+      setHubTestMsg({ text: t.sensibo_key_err, ok: false })
       setTimeout(() => setHubTestMsg(null), 4000)
     }
   }
@@ -132,7 +132,7 @@ export default function SettingsPage() {
     setAdsState(updated)
     saveAds(updated)
   }
-  const BLANK_AD = { id: null, title: '', desc: '', imageUrl: '', url: '', btnLabel: 'לפרטים ›', color: '#1d4ed8', active: true, sponsored: true }
+  const BLANK_AD = { id: null, title: '', desc: '', imageUrl: '', url: '', btnLabel: t.details_btn ?? 'Details ›', color: '#1d4ed8', active: true, sponsored: true }
 
   /* ── Export devices ── */
   const exportDevices = async () => {
@@ -144,7 +144,7 @@ export default function SettingsPage() {
       const a    = document.createElement('a')
       a.href = url; a.download = 'fantatech-devices.json'; a.click()
       URL.revokeObjectURL(url)
-    } catch { alert('שגיאה בייצוא') }
+    } catch { alert(t.export_err) }
   }
 
   /* ── Import devices from JSON file ── */
@@ -155,15 +155,15 @@ export default function SettingsPage() {
     reader.onload = async (ev) => {
       try {
         const devices = JSON.parse(ev.target.result)
-        if (!Array.isArray(devices)) throw new Error('לא תקין')
+        if (!Array.isArray(devices)) throw new Error('invalid')
         setImporting(true); setImportMsg(null)
         let ok = 0, fail = 0
         for (const d of devices) {
           try { await api.post('/devices/', d); ok++ } catch { fail++ }
         }
-        setImportMsg({ text: `יובאו ${ok} מכשירים${fail ? `, ${fail} נכשלו` : ''}`, ok: ok > 0 })
+        setImportMsg({ text: `${ok} ${t.devices} ${t.import_devices.toLowerCase()}${fail ? ` | ${fail} ${t.error.toLowerCase()}` : ''}`, ok: ok > 0 })
       } catch (err) {
-        setImportMsg({ text: `שגיאה: ${err.message}`, ok: false })
+        setImportMsg({ text: `${t.error}: ${err.message}`, ok: false })
       }
       setImporting(false)
     }
@@ -173,15 +173,15 @@ export default function SettingsPage() {
 
   /* ── Import from Home Assistant ── */
   const importFromHA = async () => {
-    if (!haUrl || !haToken) { setImportMsg({ text: 'הכנס כתובת HA וטוקן', ok: false }); return }
+    if (!haUrl || !haToken) { setImportMsg({ text: t.ha_required, ok: false }); return }
     localStorage.setItem('ha_url', haUrl)
     localStorage.setItem('ha_token', haToken)
     setImporting(true); setImportMsg(null)
     try {
       const r = await api.post('/ai/import-ha', { url: haUrl, token: haToken })
-      setImportMsg({ text: r.data.message || 'יובא בהצלחה', ok: true })
+      setImportMsg({ text: r.data.message || t.import_ha_success, ok: true })
     } catch (e) {
-      setImportMsg({ text: e?.response?.data?.detail || 'ייבוא נכשל', ok: false })
+      setImportMsg({ text: e?.response?.data?.detail || t.import_ha_failed, ok: false })
     }
     setImporting(false)
   }
@@ -191,22 +191,22 @@ export default function SettingsPage() {
       <h2 style={{ margin: '0 0 20px', color: '#e2e8f0', fontSize: 18 }}>{t.settings}</h2>
 
       {/* ── Hub Connection ── */}
-      <Section title="🔗 חיבור ל-Hub">
+      <Section title={t.hub_conn_section}>
         <div style={{ fontSize: 12, color: '#64748b', marginBottom: 8 }}>
-          כתובת ה-Hub הנוכחית:
+          {t.hub_current_addr_label}
         </div>
         <div style={{
           background: '#0f172a', borderRadius: 8, padding: '8px 12px',
           fontSize: 12, color: '#38bdf8', marginBottom: 12,
           wordBreak: 'break-all', direction: 'ltr',
         }}>
-          {hubUrl || '(לא מוגדר)'}
+          {hubUrl || t.hub_not_set}
         </div>
 
         {/* Auto-discover */}
         <button onClick={runDiscover} disabled={discovering}
           style={{ ...btn('#22c55e'), width: '100%', marginBottom: 8, opacity: discovering ? 0.7 : 1 }}>
-          {discovering ? `🔍 ${discoverProgress}` : '🔍 אתר Hub אוטומטית'}
+          {discovering ? `🔍 ${discoverProgress}` : t.hub_auto_discover_btn}
         </button>
 
         {/* Manual */}
@@ -220,7 +220,7 @@ export default function SettingsPage() {
           />
           <button onClick={saveNewHub} disabled={hubTesting}
             style={{ ...btn('#1d4ed8'), padding: '10px 14px', opacity: hubTesting ? 0.7 : 1 }}>
-            {hubTesting ? '...' : 'שמור'}
+            {hubTesting ? '...' : t.save}
           </button>
         </div>
 
@@ -238,7 +238,7 @@ export default function SettingsPage() {
           ...btn('#334155'), width: '100%', marginTop: 10,
           opacity: diagRunning ? 0.7 : 1, fontSize: 13,
         }}>
-          {diagRunning ? '⏳ בודק חיבור...' : '🔧 בדיקת חיבור מלאה (AC1200 / Dual-Band)'}
+          {diagRunning ? t.hub_diag_running_label : t.hub_diag_btn_label}
         </button>
 
         {/* ── Diagnose results ── */}
@@ -295,12 +295,12 @@ export default function SettingsPage() {
                 borderRadius: 10, padding: '10px 14px', marginTop: 6, fontSize: 11,
                 color: '#fcd34d', lineHeight: 1.8,
               }}>
-                <b>📡 איך לכבות AP Isolation בראוטר AC1200:</b><br/>
-                1. פתח דפדפן → <b style={{ direction: 'ltr', display: 'inline-block' }}>{diagResult.gateway || '192.168.1.1'}</b><br/>
-                2. היכנס עם סיסמת הניהול (ברירת מחדל: admin/admin)<br/>
-                3. Advanced → Wireless → Wireless Settings<br/>
-                4. חפש <b>"AP Isolation"</b> או <b>"Client Isolation"</b><br/>
-                5. כבה → שמור → הפעל מחדש
+                <b>{t.ap_isolation_title}</b><br/>
+                1. {t.ap_step_open_browser} <b style={{ direction: 'ltr', display: 'inline-block' }}>{diagResult.gateway || '192.168.1.1'}</b><br/>
+                2. {t.ap_step_login}<br/>
+                3. {t.ap_step_wireless}<br/>
+                4. {t.ap_step_find}<br/>
+                5. {t.ap_step_disable}
               </div>
             )}
           </div>
@@ -414,7 +414,7 @@ export default function SettingsPage() {
             style={{ ...inp, direction: 'ltr' }} />
           <button onClick={importFromHA} disabled={importing}
             style={{ ...btn('#7c3aed'), width: '100%', opacity: importing ? 0.7 : 1 }}>
-            {importing ? '⏳ מייבא...' : `🏠 ${t.import_ha}`}
+            {importing ? t.importing_label : `🏠 ${t.import_ha}`}
           </button>
         </div>
 
@@ -429,9 +429,9 @@ export default function SettingsPage() {
       </Section>
 
       {/* ── Ads management ── */}
-      <Section title="📢 ניהול פרסומות">
+      <Section title={t.ads_section_title}>
         <div style={{ fontSize: 12, color: '#64748b', marginBottom: 10 }}>
-          הפרסומות מוצגות בדף הבית. לחץ + כדי להוסיף מודעה חדשה.
+          {t.ads_section_hint}
         </div>
 
         {/* Ad list */}
@@ -443,17 +443,17 @@ export default function SettingsPage() {
           }}>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: ad.active ? '#e2e8f0' : '#475569' }}>
-                {ad.title || '(ללא שם)'}
+                {ad.title || t.ads_no_name}
               </div>
               <div style={{ fontSize: 11, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {ad.url || 'אין קישור'}
+                {ad.url || t.ads_no_link}
               </div>
             </div>
             <button onClick={() => toggleAdActive(ad.id)} style={{
               padding: '4px 8px', borderRadius: 6, border: 'none', fontSize: 11, cursor: 'pointer',
               background: ad.active ? '#14532d' : '#334155',
               color: ad.active ? '#22c55e' : '#64748b',
-            }}>{ad.active ? '✓ פעיל' : 'כבוי'}</button>
+            }}>{ad.active ? t.ads_active_badge : t.ads_inactive_badge}</button>
             <button onClick={() => setAdForm({ ...ad })} style={{
               padding: '4px 8px', borderRadius: 6, border: 'none', fontSize: 11, cursor: 'pointer',
               background: '#1e3a5f', color: '#38bdf8',
@@ -466,7 +466,7 @@ export default function SettingsPage() {
         ))}
 
         <button onClick={() => setAdForm(BLANK_AD)} style={{ ...btn('#1d4ed8'), width: '100%', marginTop: 4 }}>
-          + הוסף מודעה חדשה
+          {t.ads_add_btn}
         </button>
 
         {/* Ad editor modal */}
@@ -480,16 +480,16 @@ export default function SettingsPage() {
               padding: 20, width: '100%', maxWidth: 440, maxHeight: '90vh', overflowY: 'auto',
             }}>
               <div style={{ fontWeight: 700, fontSize: 14, color: '#e2e8f0', marginBottom: 14 }}>
-                {adForm.id ? '✏️ ערוך מודעה' : '➕ מודעה חדשה'}
+                {adForm.id ? t.ads_edit_title : t.ads_new_title}
               </div>
 
               {[
-                { field: 'title',    label: 'כותרת',        placeholder: 'Fantatech — התקנת בית חכם' },
-                { field: 'desc',     label: 'תיאור',        placeholder: 'פירוט קצר על העסק...' },
-                { field: 'imageUrl', label: 'כתובת תמונה (URL)', placeholder: 'https://example.com/logo.png' },
-                { field: 'url',      label: 'קישור לחיצה',  placeholder: 'https://example.com' },
-                { field: 'btnLabel', label: 'טקסט כפתור',   placeholder: 'לפרטים ›' },
-                { field: 'color',    label: 'צבע (HEX)',    placeholder: '#1d4ed8' },
+                { field: 'title',    label: t.ads_f_title,  placeholder: 'Fantatech — Smart Home Setup' },
+                { field: 'desc',     label: t.ads_f_desc,   placeholder: 'Short business description...' },
+                { field: 'imageUrl', label: t.ads_f_image,  placeholder: 'https://example.com/logo.png' },
+                { field: 'url',      label: t.ads_f_url,    placeholder: 'https://example.com' },
+                { field: 'btnLabel', label: t.ads_f_btn,    placeholder: 'Details ›' },
+                { field: 'color',    label: t.ads_f_color,  placeholder: '#1d4ed8' },
               ].map(({ field, label, placeholder }) => (
                 <div key={field} style={{ marginBottom: 10 }}>
                   <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4 }}>{label}</div>
@@ -497,7 +497,7 @@ export default function SettingsPage() {
                     value={adForm[field] || ''}
                     onChange={e => setAdForm(f => ({ ...f, [field]: e.target.value }))}
                     placeholder={placeholder}
-                    style={{ ...inp, marginBottom: 0, direction: field === 'url' || field === 'imageUrl' || field === 'color' ? 'ltr' : 'rtl' }}
+                    style={{ ...inp, marginBottom: 0, direction: field === 'url' || field === 'imageUrl' || field === 'color' ? 'ltr' : 'inherit' }}
                   />
                 </div>
               ))}
@@ -509,8 +509,8 @@ export default function SettingsPage() {
               }} />
 
               <div style={{ display: 'flex', gap: 8 }}>
-                <button onClick={saveAdEdit} style={{ ...btn('#22c55e'), flex: 1 }}>✅ שמור</button>
-                <button onClick={() => setAdForm(null)} style={{ ...btn('#334155'), flex: 1 }}>ביטול</button>
+                <button onClick={saveAdEdit} style={{ ...btn('#22c55e'), flex: 1 }}>{t.ads_save_btn}</button>
+                <button onClick={() => setAdForm(null)} style={{ ...btn('#334155'), flex: 1 }}>{t.cancel}</button>
               </div>
             </div>
           </div>
