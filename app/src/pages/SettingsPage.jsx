@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { api, getHubUrl, setHubUrl, clearHubUrl, testHubUrl, discoverHub } from '../hooks/useHub'
 import { useLang, LANG_META } from '../context/LangContext'
-import { loadAds, saveAds } from '../components/SponsoredBanner'
+import { loadAds, saveAds, loc as locAd } from '../components/SponsoredBanner'
 
 const APP_VERSION = '2.0.0'
 
@@ -133,6 +133,12 @@ export default function SettingsPage() {
     saveAds(updated)
   }
   const BLANK_AD = { id: null, title: '', desc: '', imageUrl: '', url: '', btnLabel: t.details_btn ?? 'Details ›', color: '#1d4ed8', active: true, sponsored: true }
+
+  const resetAdsToDefaults = () => {
+    localStorage.removeItem('fantatech_ads')
+    const fresh = loadAds()
+    setAdsState(fresh)
+  }
 
   /* ── Export devices ── */
   const exportDevices = async () => {
@@ -443,7 +449,7 @@ export default function SettingsPage() {
           }}>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: ad.active ? '#e2e8f0' : '#475569' }}>
-                {ad.title || t.ads_no_name}
+                {locAd(ad.title, lang) || t.ads_no_name}
               </div>
               <div style={{ fontSize: 11, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {ad.url || t.ads_no_link}
@@ -465,9 +471,15 @@ export default function SettingsPage() {
           </div>
         ))}
 
-        <button onClick={() => setAdForm(BLANK_AD)} style={{ ...btn('#1d4ed8'), width: '100%', marginTop: 4 }}>
-          {t.ads_add_btn}
-        </button>
+        <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+          <button onClick={() => setAdForm(BLANK_AD)} style={{ ...btn('#1d4ed8'), flex: 1 }}>
+            {t.ads_add_btn}
+          </button>
+          <button onClick={resetAdsToDefaults} style={{ ...btn('#334155'), fontSize: 11, padding: '9px 12px' }}
+            title={t.ads_reset_hint ?? 'Reset to multilingual defaults'}>
+            🔄 {t.ads_reset ?? 'Reset'}
+          </button>
+        </div>
 
         {/* Ad editor modal */}
         {adForm && (
@@ -490,17 +502,24 @@ export default function SettingsPage() {
                 { field: 'url',      label: t.ads_f_url,    placeholder: 'https://example.com' },
                 { field: 'btnLabel', label: t.ads_f_btn,    placeholder: 'Details ›' },
                 { field: 'color',    label: t.ads_f_color,  placeholder: '#1d4ed8' },
-              ].map(({ field, label, placeholder }) => (
-                <div key={field} style={{ marginBottom: 10 }}>
-                  <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4 }}>{label}</div>
-                  <input
-                    value={adForm[field] || ''}
-                    onChange={e => setAdForm(f => ({ ...f, [field]: e.target.value }))}
-                    placeholder={placeholder}
-                    style={{ ...inp, marginBottom: 0, direction: field === 'url' || field === 'imageUrl' || field === 'color' ? 'ltr' : 'inherit' }}
-                  />
-                </div>
-              ))}
+              ].map(({ field, label, placeholder }) => {
+                // Resolve the current value — could be a multilingual object or plain string
+                const rawVal = adForm[field]
+                const displayVal = typeof rawVal === 'object' && rawVal !== null
+                  ? (locAd(rawVal, lang) || '')
+                  : (rawVal || '')
+                return (
+                  <div key={field} style={{ marginBottom: 10 }}>
+                    <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4 }}>{label}</div>
+                    <input
+                      value={displayVal}
+                      onChange={e => setAdForm(f => ({ ...f, [field]: e.target.value }))}
+                      placeholder={placeholder}
+                      style={{ ...inp, marginBottom: 0, direction: field === 'url' || field === 'imageUrl' || field === 'color' ? 'ltr' : 'inherit' }}
+                    />
+                  </div>
+                )
+              })}
 
               {/* Preview of the color */}
               <div style={{

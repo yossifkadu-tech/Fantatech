@@ -404,6 +404,8 @@ const T = {
     ads_f_btn: 'Button Text',
     ads_f_color: 'Color (HEX)',
     ads_save_btn: '✅ Save',
+    ads_reset: 'Reset',
+    ads_reset_hint: 'Reset ads to multilingual defaults',
 
     /* ── Settings Messages ── */
     gemini_key_err: 'Error saving Gemini key — make sure Hub is running',
@@ -1010,6 +1012,8 @@ const T = {
     ads_f_btn: 'טקסט כפתור',
     ads_f_color: 'צבע (HEX)',
     ads_save_btn: '✅ שמור',
+    ads_reset: 'איפוס',
+    ads_reset_hint: 'אפס פרסומות לברירת מחדל רב-לשונית',
 
     /* ── הודעות הגדרות ── */
     gemini_key_err: 'שגיאה בשמירת מפתח Gemini — ודא שה-Hub פועל',

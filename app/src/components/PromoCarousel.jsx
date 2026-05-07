@@ -256,8 +256,11 @@ function buildUrl(promo) {
 
 /* ── Get localised string from multilingual field ─────────────────────────── */
 function loc(field, lang) {
+  if (!field) return ''
   if (typeof field === 'string') return field
-  return field?.[lang] || field?.he || field?.en || ''
+  // Priority: current lang → English → Hebrew → first available
+  return field[lang] || field.en || field.he
+    || Object.values(field).find(v => v) || ''
 }
 
 /* ── Product image with emoji fallback ───────────────────────────────────── */
