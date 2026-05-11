@@ -45,7 +45,7 @@ function fmtSecAction(h, t) {
   return h.action
 }
 
-export default function SecurityPage({ devices = [], onReload }) {
+export default function SecurityPage({ devices = [], onReload, onNavigate }) {
   const { t, locale } = useLang()
 
   const ALARM_MODES = ALARM_MODE_IDS.map(id => ({
@@ -141,6 +141,29 @@ export default function SecurityPage({ devices = [], onReload }) {
 
   return (
     <div style={{ paddingBottom: 20 }}>
+
+      {/* ── Scenes shortcut (moved here from nav) ── */}
+      {onNavigate && (
+        <button
+          onClick={() => onNavigate('scenes')}
+          style={{
+            width: '100%', marginBottom: 14,
+            background: '#1e293b', border: '1px solid #334155',
+            borderRadius: 12, padding: '11px 16px',
+            display: 'flex', alignItems: 'center', gap: 10,
+            cursor: 'pointer', color: '#f1f5f9',
+          }}
+        >
+          <span style={{ fontSize: 20 }}>🎬</span>
+          <div style={{ textAlign: 'left', flex: 1 }}>
+            <div style={{ fontWeight: 700, fontSize: 14 }}>{t.scenes_title ?? 'Scenes'}</div>
+            <div style={{ fontSize: 11, color: '#64748b', marginTop: 1 }}>
+              {t.scenes_subtitle ?? 'Manage automation scenes'}
+            </div>
+          </div>
+          <span style={{ color: '#475569', fontSize: 18 }}>›</span>
+        </button>
+      )}
 
       {/* ── Alarm Panel ── */}
       <div style={{

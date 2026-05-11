@@ -339,19 +339,19 @@ function DiscoverModal({ onSelect, onClose, t }) {
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.75)', zIndex: 300, display: 'flex', alignItems: 'flex-end' }}>
       <div onClick={e => e.stopPropagation()} style={{ background: '#1e293b', borderRadius: '16px 16px 0 0', padding: 20, width: '100%', maxHeight: '70vh', overflowY: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-          <h3 style={{ margin: 0, color: '#f1f5f9', fontSize: 16 }}>🔍 Discover Cameras</h3>
+          <h3 style={{ margin: 0, color: '#f1f5f9', fontSize: 16 }}>🔍 {t.cam_discover_title ?? 'Discover Cameras'}</h3>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#64748b', fontSize: 22, cursor: 'pointer' }}>✕</button>
         </div>
 
         {running && (
           <div style={{ textAlign: 'center', padding: 24, color: '#38bdf8', fontSize: 13 }}>
-            🔄 Scanning network...
+            🔄 {t.cam_scanning ?? 'Scanning network...'}
           </div>
         )}
 
         {done && found.length === 0 && (
           <div style={{ textAlign: 'center', padding: 24, color: '#475569' }}>
-            No cameras found. Make sure cameras are on the same network.
+            {t.cam_no_found ?? 'No cameras found. Make sure cameras are on the same network.'}
           </div>
         )}
 
@@ -365,7 +365,7 @@ function DiscoverModal({ onSelect, onClose, t }) {
                 {cam.ip}:{cam.port}
               </div>
               <div style={{ fontSize: 12, color: '#38bdf8', marginTop: 2 }}>
-                {cam.driver?.toUpperCase()} detected
+                {cam.driver?.toUpperCase()} {t.cam_detected ?? 'detected'}
               </div>
             </div>
             <span style={{ fontSize: 20 }}>+</span>
@@ -374,7 +374,7 @@ function DiscoverModal({ onSelect, onClose, t }) {
 
         {done && (
           <button onClick={run} style={{ ...btnStyle('#334155'), width: '100%', marginTop: 8 }}>
-            🔄 Scan Again
+            🔄 {t.cam_scan_again ?? 'Scan Again'}
           </button>
         )}
       </div>
@@ -469,7 +469,7 @@ export default function CamerasPage({ devices = [] }) {
           <p style={{ margin: '12px 0 4px', fontSize: 15, color: '#94a3b8' }}>{t.no_cameras}</p>
           <p style={{ fontSize: 12 }}>{t.no_cameras_hint}</p>
           <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 16 }}>
-            <button onClick={() => setDiscovering(true)} style={btnStyle('#334155')}>🔍 Discover</button>
+            <button onClick={() => setDiscovering(true)} style={btnStyle('#334155')}>🔍 {t.cam_discover_btn ?? 'Discover'}</button>
             <button onClick={() => setEditing({ ...BLANK })} style={btnStyle('#1d4ed8')}>{t.add_camera}</button>
           </div>
         </div>

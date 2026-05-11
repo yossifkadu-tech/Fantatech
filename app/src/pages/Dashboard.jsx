@@ -135,11 +135,11 @@ export default function Dashboard({ devices, wsConnected, onNavigate, onReload, 
         </div>
       )}
 
-      {/* Promo carousel */}
-      <PromoCarousel />
-
-      {/* Sponsored / paid ads corner */}
+      {/* Sponsored / paid ads corner — shown first */}
       <SponsoredBanner />
+
+      {/* Promo carousel below ads */}
+      <PromoCarousel />
 
       {/* Recent history */}
       {history.length > 0 && (

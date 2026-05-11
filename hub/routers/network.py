@@ -1229,3 +1229,79 @@ async def set_auto_connect(ssid: str, body: AutoConnectIn):
 def get_hub_ip():
     """Returns this machine's LAN IP — lets the app know the exact Hub address."""
     return {"ip": _get_local_ip(), "port": 8080}
+
+
+@router.get("/drivers-status")
+async def drivers_status():
+    """
+    Returns a dict of driver/protocol active states.
+    Checks: WiFi reachability, MQTT broker, Zigbee serial port,
+    Tasmota/Shelly devices, Tuya key, Home Assistant key.
+    """
+    import re as _re
+
+    result: dict = {}
+
+    # WiFi — always active if the hub is running
+    result["wifi"] = True
+
+    # MQTT — check if broker port 1883 is open on localhost
+    try:
+        _, w = await asyncio.wait_for(asyncio.open_connection("127.0.0.1", 1883), timeout=0.5)
+        w.close()
+        result["mqtt"] = True
+    except Exception:
+        result["mqtt"] = False
+
+    # Zigbee — check for common serial adapters
+    zigbee_ports = []
+    try:
+        if IS_WIN:
+            import serial.tools.list_ports
+            zigbee_ports = [p.device for p in serial.tools.list_ports.comports()
+                            if any(k in (p.description or '').lower() for k in ('zigbee', 'cc25', 'sonoff', 'conbee', 'ti usb'))]
+        else:
+            import glob
+            zigbee_ports = glob.glob('/dev/ttyUSB*') + glob.glob('/dev/ttyACM*')
+    except Exception:
+        pass
+    result["zigbee"] = len(zigbee_ports) > 0
+
+    # Tasmota / Shelly — check if any devices of those types exist in DB
+    try:
+        from database import get_all_devices
+        devs = await get_all_devices()
+        result["tasmota"] = any(
+            (d.get("protocol") or "").lower() in ("tasmota", "mqtt") or
+            "tasmota" in (d.get("config") or {}).get("source", "").lower()
+            for d in devs
+        )
+        result["shelly"] = any(
+            (d.get("protocol") or "").lower() == "shelly" or
+            "shelly" in (d.get("name") or "").lower()
+            for d in devs
+        )
+        result["ha"] = any(
+            (d.get("config") or {}).get("source") == "homeassistant"
+            for d in devs
+        )
+    except Exception:
+        result.setdefault("tasmota", False)
+        result.setdefault("shelly", False)
+        result.setdefault("ha", False)
+
+    # Tuya — check env key
+    result["tuya"] = bool(os.getenv("TUYA_ACCESS_ID", "").strip())
+
+    # BLE — check if bluetooth is available (platform specific)
+    try:
+        if IS_WIN:
+            import winreg
+            winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SYSTEM\CurrentControlSet\Services\bthserv")
+            result["ble"] = True
+        else:
+            result["ble"] = os.path.exists("/sys/class/bluetooth")
+    except Exception:
+        result["ble"] = False
+
+    return result

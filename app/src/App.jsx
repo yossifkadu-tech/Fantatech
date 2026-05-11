@@ -15,6 +15,7 @@ import SecurityPage from './pages/SecurityPage'
 import ScenesPage from './pages/ScenesPage'
 import CamerasPage from './pages/CamerasPage'
 import CyberPage from './pages/CyberPage'
+import GpsPage from './pages/GpsPage'
 import RegistrationPage from './pages/RegistrationPage'
 import GeminiAssistant from './components/GeminiAssistant'
 
@@ -110,12 +111,12 @@ function AppInner() {
     { id: 'dashboard',     label: t.home,                          icon: '🏠' },
     { id: 'devices',       label: t.devices,                       icon: '💡' },
     { id: 'ac',            label: t.ac_page_title ?? 'מזגנים',     icon: '❄️' },
-    { id: 'scenes',        label: t.scenes_title,                  icon: '🎬' },
+    { id: 'gemini',        label: t.gemini_nav ?? 'Gemini',        icon: '✨' },
     { id: 'cameras',       label: t.cameras_title,                 icon: '📷' },
     { id: 'automations',   label: t.automations,                   icon: '⚡' },
     { id: 'security',      label: t.security,                      icon: '🔒' },
     { id: 'rooms',         label: t.rooms,                         icon: '🛋️' },
-    { id: 'gemini',        label: t.gemini_nav ?? 'Gemini',        icon: '✨' },
+    { id: 'gps',           label: t.gps_nav ?? 'GPS',              icon: '📍' },
     { id: 'notifications', label: t.notifications_tab,             icon: '🔔', badge: unreadNotifs },
     { id: 'settings',      label: t.settings,                      icon: '⚙️' },
   ]
@@ -280,10 +281,12 @@ function AppInner() {
             {tab === 'scenes'      && <ScenesPage     devices={devices} tablet={tablet} />}
             {tab === 'cameras'     && <CamerasPage    devices={devices} />}
             {tab === 'automations' && <AutomationsPage devices={devices} />}
-            {tab === 'security'    && <SecurityPage   devices={devices} onReload={reload} />}
+            {tab === 'security'    && <SecurityPage   devices={devices} onReload={reload} onNavigate={setTab} />}
+            {tab === 'scenes'      && <ScenesPage     devices={devices} tablet={tablet} />}
             {tab === 'cyber'       && <CyberPage />}
             {tab === 'rooms'       && <RoomsPage />}
             {tab === 'network'     && <NetworkPage />}
+            {tab === 'gps'         && <GpsPage />}
             {tab === 'gemini'      && <GeminiAssistant onDeviceAction={handleDeviceAction} inline />}
             {tab === 'notifications'  && <NotificationsPage />}
             {tab === 'settings'       && <SettingsPage />}

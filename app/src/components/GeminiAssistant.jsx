@@ -10,6 +10,13 @@ import { useLang } from '../context/LangContext'
  *   inline         — when true, renders as a full tab-content card (no floating button)
  *                    when false/undefined, renders as the classic floating button + panel
  */
+/* ── Voice-to-text locale map ── */
+const VOICE_LOCALES = {
+  he: 'he-IL', en: 'en-US', ar: 'ar-SA',
+  ru: 'ru-RU', es: 'es-ES', fr: 'fr-FR',
+  de: 'de-DE', pt: 'pt-BR', am: 'am-ET',
+}
+
 export default function GeminiAssistant({ onDeviceAction, inline = false }) {
   const { t, lang, rtl } = useLang()
   // In inline mode the chat is always open; in floating mode it starts closed
@@ -18,7 +25,29 @@ export default function GeminiAssistant({ onDeviceAction, inline = false }) {
   const [input, setInput]       = useState('')
   const [loading, setLoading]   = useState(false)
   const [configured, setConfigured] = useState(null)
+  const [listening, setListening]   = useState(false)
   const bottomRef = useRef(null)
+  const recognizerRef = useRef(null)
+
+  /* ── Voice input ── */
+  const startVoice = () => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition
+    if (!SR) { alert(t.gemini_voice_unsupported ?? 'Voice not supported'); return }
+    if (listening) { recognizerRef.current?.stop(); return }
+    const rec = new SR()
+    rec.lang = VOICE_LOCALES[lang] || 'en-US'
+    rec.interimResults = false
+    rec.maxAlternatives = 1
+    rec.onstart  = () => setListening(true)
+    rec.onend    = () => setListening(false)
+    rec.onerror  = () => setListening(false)
+    rec.onresult = (e) => {
+      const transcript = e.results[0][0].transcript
+      setInput(transcript)
+    }
+    recognizerRef.current = rec
+    rec.start()
+  }
 
   useEffect(() => {
     api.get('/ai/status').then(r => setConfigured(r.data.configured)).catch(() => setConfigured(false))
@@ -130,22 +159,33 @@ export default function GeminiAssistant({ onDeviceAction, inline = false }) {
           display: 'flex', gap: 8, flexShrink: 0,
           background: '#1e293b',
         }}>
+          {/* Mic button */}
+          <button onClick={startVoice} title={listening ? (t.gemini_voice_listening ?? 'Listening...') : (t.gemini_voice ?? 'Voice')} style={{
+            width: 44, height: 44, borderRadius: 12, border: 'none', flexShrink: 0,
+            background: listening ? '#dc2626' : '#334155',
+            color: '#fff', fontSize: 18, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'background 0.2s',
+            animation: listening ? 'pulse 1s infinite' : 'none',
+          }}>🎤</button>
           <input
-            value={input}
-            onChange={e => setInput(e.target.value)}
+            value={listening ? (t.gemini_voice_listening ?? 'Listening…') : input}
+            onChange={e => !listening && setInput(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()}
             placeholder={t.type_message ?? 'Type a message…'}
-            disabled={loading}
+            disabled={loading || listening}
             style={{
               flex: 1, padding: '11px 14px', borderRadius: 12,
-              border: '1px solid #334155', background: '#0f172a',
-              color: '#f1f5f9', fontSize: 14, outline: 'none',
+              border: `1px solid ${listening ? '#dc2626' : '#334155'}`,
+              background: '#0f172a',
+              color: listening ? '#94a3b8' : '#f1f5f9',
+              fontSize: 14, outline: 'none',
               direction: rtl ? 'rtl' : 'ltr',
             }}
           />
-          <button onClick={send} disabled={loading || !input.trim()} style={{
+          <button onClick={send} disabled={loading || !input.trim() || listening} style={{
             padding: '11px 18px', borderRadius: 12, border: 'none',
-            background: input.trim() && !loading ? '#1d4ed8' : '#334155',
+            background: input.trim() && !loading && !listening ? '#1d4ed8' : '#334155',
             color: '#fff', cursor: input.trim() && !loading ? 'pointer' : 'default',
             fontSize: 16, fontWeight: 700, transition: 'background 0.15s',
           }}>↑</button>
