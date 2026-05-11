@@ -21,9 +21,10 @@ const DENSITIES = [
   { dir: 'mipmap-xxxhdpi', size: 192 },
 ];
 
-const BG    = '#0f172a';
-const BLUE  = '#38bdf8';
-const WHITE = '#f1f5f9';
+const BG     = '#0f172a';
+const ORANGE = '#f97316';   // roof — warm orange like a real house
+const BLUE   = '#38bdf8';   // body / text — sky blue matching the app header
+const WHITE  = '#f1f5f9';
 
 /**
  * SVG that replicates the in-app header look:
@@ -67,14 +68,14 @@ function makeSvg(sz, fullBg = true) {
   return `<svg width="${sz}" height="${sz}" viewBox="0 0 ${sz} ${sz}" xmlns="http://www.w3.org/2000/svg">
   ${fullBg ? `<rect width="${sz}" height="${sz}" fill="${BG}" rx="${r(24)}"/>` : ''}
 
-  <!-- Roof triangle — matches simple emoji shape -->
+  <!-- Roof triangle — orange like a real house -->
   <polygon
     points="${r(roofApexX)},${r(roofApexY)} ${r(roofRightX)},${r(roofBaseY)} ${r(roofLeftX)},${r(roofBaseY)}"
-    fill="${BLUE}"
+    fill="${ORANGE}"
   />
 
   <!-- Roof overhang cap -->
-  <rect x="${r(roofLeftX)}" y="${r(roofBaseY - 4)}" width="${r(roofRightX - roofLeftX)}" height="${r(8)}" fill="${BLUE}" rx="${r(2)}"/>
+  <rect x="${r(roofLeftX)}" y="${r(roofBaseY - 4)}" width="${r(roofRightX - roofLeftX)}" height="${r(8)}" fill="${ORANGE}" rx="${r(2)}"/>
 
   <!-- House body -->
   <rect x="${r(bodyL)}" y="${r(bodyTop)}" width="${r(bodyR - bodyL)}" height="${r(bodyBt - bodyTop)}" fill="${BLUE}" rx="${r(4)}"/>
