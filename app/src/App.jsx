@@ -114,8 +114,8 @@ function AppInner() {
     { id: 'cameras',       label: t.cameras_title,                 icon: '📷' },
     { id: 'automations',   label: t.automations,                   icon: '⚡' },
     { id: 'security',      label: t.security,                      icon: '🔒' },
-    { id: 'cyber',         label: t.cyber_nav ?? 'סייבר',          icon: '🛡️' },
     { id: 'rooms',         label: t.rooms,                         icon: '🛋️' },
+    { id: 'gemini',        label: t.gemini_nav ?? 'Gemini',        icon: '✨' },
     { id: 'notifications', label: t.notifications_tab,             icon: '🔔', badge: unreadNotifs },
     { id: 'settings',      label: t.settings,                      icon: '⚙️' },
   ]
@@ -177,7 +177,7 @@ function AppInner() {
       <div style={{ background: '#1e293b', borderBottom: '1px solid #334155', padding: '10px 16px', position: 'sticky', top: 0, zIndex: 50 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
 
-          {/* Left: logo + name */}
+          {/* Left: logo + name + cyber button */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: 22 }}>🏠</span>
             <div>
@@ -188,6 +188,19 @@ function AppInner() {
                 Smart Home & Security
               </div>
             </div>
+            {/* Cyber security shortcut — lives next to the brand name */}
+            <button
+              onClick={() => setTab('cyber')}
+              title={t.cyber_nav ?? 'Cyber'}
+              style={{
+                background: tab === 'cyber' ? 'rgba(99,102,241,0.18)' : 'transparent',
+                border: `1px solid ${tab === 'cyber' ? '#6366f1' : '#334155'}`,
+                borderRadius: 8, padding: '5px 8px', cursor: 'pointer',
+                fontSize: 16, lineHeight: 1,
+                WebkitTapHighlightColor: 'transparent',
+                transition: 'all 0.15s',
+              }}
+            >🛡️</button>
           </div>
 
           {/* Right: lang + network icon + server status + version */}
@@ -271,14 +284,12 @@ function AppInner() {
             {tab === 'cyber'       && <CyberPage />}
             {tab === 'rooms'       && <RoomsPage />}
             {tab === 'network'     && <NetworkPage />}
+            {tab === 'gemini'      && <GeminiAssistant onDeviceAction={handleDeviceAction} inline />}
             {tab === 'notifications'  && <NotificationsPage />}
             {tab === 'settings'       && <SettingsPage />}
           </>
         )}
       </div>
-
-      {/* Gemini AI floating assistant */}
-      <GeminiAssistant onDeviceAction={handleDeviceAction} />
 
       {/* Bottom Nav */}
       <nav style={{

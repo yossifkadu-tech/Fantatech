@@ -657,6 +657,7 @@ const T = {
     cyber_no_issues: 'No issues found',
     cyber_idle_title: 'Security Scanner Ready',
     cyber_idle_hint: 'Scans for open ports, unprotected devices, and network vulnerabilities',
+    gemini_nav: 'Gemini',
 
     /* ── Registration / Onboarding ── */
     reg_welcome: 'Welcome to FantaTech',
@@ -1290,6 +1291,7 @@ const T = {
     cyber_no_issues: 'לא נמצאו בעיות',
     cyber_idle_title: 'סורק האבטחה מוכן',
     cyber_idle_hint: 'סורק פורטים פתוחים, מכשירים ללא הגנה ופגיעויות ברשת',
+    gemini_nav: 'ג\'מיני',
 
     /* ── הרשמה / קבלת פנים ── */
     reg_welcome: 'ברוך הבא ל-FantaTech',

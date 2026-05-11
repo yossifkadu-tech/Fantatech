@@ -2,18 +2,30 @@ import { useState, useRef, useEffect } from 'react'
 import { api } from '../hooks/useHub'
 import { useLang } from '../context/LangContext'
 
-export default function GeminiAssistant({ onDeviceAction }) {
+/**
+ * GeminiAssistant
+ *
+ * Props:
+ *   onDeviceAction — callback when AI returns a device action
+ *   inline         — when true, renders as a full tab-content card (no floating button)
+ *                    when false/undefined, renders as the classic floating button + panel
+ */
+export default function GeminiAssistant({ onDeviceAction, inline = false }) {
   const { t, lang, rtl } = useLang()
-  const [open, setOpen]       = useState(false)
+  // In inline mode the chat is always open; in floating mode it starts closed
+  const [open, setOpen]         = useState(inline)
   const [messages, setMessages] = useState([])
-  const [input, setInput]     = useState('')
-  const [loading, setLoading] = useState(false)
+  const [input, setInput]       = useState('')
+  const [loading, setLoading]   = useState(false)
   const [configured, setConfigured] = useState(null)
   const bottomRef = useRef(null)
 
   useEffect(() => {
     api.get('/ai/status').then(r => setConfigured(r.data.configured)).catch(() => setConfigured(false))
   }, [])
+
+  // Keep open=true when switching into inline mode
+  useEffect(() => { if (inline) setOpen(true) }, [inline])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -41,6 +53,108 @@ export default function GeminiAssistant({ onDeviceAction }) {
 
   const clearChat = () => setMessages([])
 
+  /* ── Inline (tab) mode ─────────────────────────────────────────────── */
+  if (inline) {
+    return (
+      <div style={{
+        background: '#1e293b', border: '1px solid #334155',
+        borderRadius: 16, overflow: 'hidden',
+        display: 'flex', flexDirection: 'column',
+        height: 'calc(100vh - 160px)',   // fills tab content area
+        direction: rtl ? 'rtl' : 'ltr',
+      }}>
+        {/* Header */}
+        <div style={{
+          background: '#1d4ed8', padding: '12px 16px',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          flexShrink: 0,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 22 }}>✨</span>
+            <div>
+              <div style={{ fontWeight: 700, color: '#fff', fontSize: 15 }}>
+                {t.ai_assistant ?? 'AI Assistant'} — Gemini
+              </div>
+              <div style={{ fontSize: 10, color: '#93c5fd', marginTop: 1 }}>
+                {t.gemini_hint ?? 'Powered by Google Gemini'}
+              </div>
+            </div>
+            {configured === false && (
+              <span style={{ fontSize: 10, background: '#f59e0b', color: '#000', borderRadius: 4, padding: '1px 6px' }}>
+                ⚠️ {t.ai_not_configured ?? 'Not configured'}
+              </span>
+            )}
+          </div>
+          <button onClick={clearChat} style={{
+            background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
+            borderRadius: 8, color: '#e0f2fe', cursor: 'pointer', fontSize: 12,
+            padding: '4px 10px', fontWeight: 600,
+          }}>{t.clear ?? 'Clear'}</button>
+        </div>
+
+        {/* Messages */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {messages.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '40px 20px', color: '#475569', fontSize: 13, lineHeight: 1.7 }}>
+              <div style={{ fontSize: 40, marginBottom: 12 }}>✨</div>
+              {configured === false ? t.ai_not_configured : (t.gemini_hint_smart ?? 'Ask me anything about your smart home…')}
+            </div>
+          )}
+          {messages.map((m, i) => (
+            <div key={i} style={{
+              alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start',
+              maxWidth: '85%',
+            }}>
+              <div style={{
+                background: m.role === 'user' ? '#1d4ed8' : m.error ? '#7f1d1d' : '#334155',
+                color: m.error ? '#fca5a5' : '#f1f5f9',
+                borderRadius: m.role === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+                padding: '10px 14px', fontSize: 13, lineHeight: 1.6,
+                whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+              }}>
+                {m.text}
+              </div>
+            </div>
+          ))}
+          {loading && (
+            <div style={{ alignSelf: 'flex-start', color: '#64748b', fontSize: 13, fontStyle: 'italic', display: 'flex', gap: 6, alignItems: 'center' }}>
+              <span style={{ animation: 'pulse 1s infinite' }}>✨</span> {t.saving ?? 'Thinking...'}
+            </div>
+          )}
+          <div ref={bottomRef} />
+        </div>
+
+        {/* Input */}
+        <div style={{
+          padding: '10px 12px', borderTop: '1px solid #334155',
+          display: 'flex', gap: 8, flexShrink: 0,
+          background: '#1e293b',
+        }}>
+          <input
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()}
+            placeholder={t.type_message ?? 'Type a message…'}
+            disabled={loading}
+            style={{
+              flex: 1, padding: '11px 14px', borderRadius: 12,
+              border: '1px solid #334155', background: '#0f172a',
+              color: '#f1f5f9', fontSize: 14, outline: 'none',
+              direction: rtl ? 'rtl' : 'ltr',
+            }}
+          />
+          <button onClick={send} disabled={loading || !input.trim()} style={{
+            padding: '11px 18px', borderRadius: 12, border: 'none',
+            background: input.trim() && !loading ? '#1d4ed8' : '#334155',
+            color: '#fff', cursor: input.trim() && !loading ? 'pointer' : 'default',
+            fontSize: 16, fontWeight: 700, transition: 'background 0.15s',
+          }}>↑</button>
+        </div>
+      </div>
+    )
+  }
+
+  /* ── Floating (legacy) mode ────────────────────────────────────────── */
   return (
     <>
       {/* Floating button */}
@@ -100,9 +214,7 @@ export default function GeminiAssistant({ onDeviceAction }) {
           <div style={{ flex: 1, overflowY: 'auto', padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
             {messages.length === 0 && (
               <div style={{ textAlign: 'center', padding: '20px 0', color: '#475569', fontSize: 13 }}>
-                {configured === false
-                  ? t.ai_not_configured
-                  : t.gemini_hint_smart}
+                {configured === false ? t.ai_not_configured : t.gemini_hint_smart}
               </div>
             )}
             {messages.map((m, i) => (
