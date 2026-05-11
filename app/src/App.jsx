@@ -16,6 +16,7 @@ import ScenesPage from './pages/ScenesPage'
 import CamerasPage from './pages/CamerasPage'
 import CyberPage from './pages/CyberPage'
 import GpsPage from './pages/GpsPage'
+import MusicPage from './pages/MusicPage'
 import RegistrationPage from './pages/RegistrationPage'
 import GeminiAssistant from './components/GeminiAssistant'
 
@@ -112,6 +113,7 @@ function AppInner() {
     { id: 'devices',       label: t.devices,                       icon: '💡' },
     { id: 'ac',            label: t.ac_page_title ?? 'מזגנים',     icon: '❄️' },
     { id: 'gemini',        label: t.gemini_nav ?? 'Gemini',        icon: '✨' },
+    { id: 'music',         label: t.music_nav ?? 'Music',          icon: '🎵' },
     { id: 'cameras',       label: t.cameras_title,                 icon: '📷' },
     { id: 'automations',   label: t.automations,                   icon: '⚡' },
     { id: 'security',      label: t.security,                      icon: '🔒' },
@@ -286,6 +288,7 @@ function AppInner() {
             {tab === 'cyber'       && <CyberPage />}
             {tab === 'rooms'       && <RoomsPage />}
             {tab === 'network'     && <NetworkPage />}
+            {tab === 'music'       && <MusicPage />}
             {tab === 'gps'         && <GpsPage />}
             {tab === 'gemini'      && <GeminiAssistant onDeviceAction={handleDeviceAction} inline />}
             {tab === 'notifications'  && <NotificationsPage />}

@@ -124,9 +124,25 @@ export default function GeminiAssistant({ onDeviceAction, inline = false }) {
         {/* Messages */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
           {messages.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '40px 20px', color: '#475569', fontSize: 13, lineHeight: 1.7 }}>
-              <div style={{ fontSize: 40, marginBottom: 12 }}>✨</div>
-              {configured === false ? t.ai_not_configured : (t.gemini_hint_smart ?? 'Ask me anything about your smart home…')}
+            <div style={{ textAlign: 'center', padding: '30px 20px', fontSize: 13, lineHeight: 1.7 }}>
+              <div style={{ fontSize: 44, marginBottom: 12 }}>✨</div>
+              {configured === false ? (
+                <div style={{ color: '#94a3b8' }}>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: '#f1f5f9', marginBottom: 8 }}>
+                    {t.gemini_not_configured_title ?? 'Gemini AI not configured'}
+                  </div>
+                  <div style={{ background: '#0f172a', borderRadius: 12, padding: '12px 14px', textAlign: rtl ? 'right' : 'left', color: '#64748b', fontSize: 12, lineHeight: 2 }}>
+                    1. {t.gemini_step1 ?? 'Go to'} <span style={{ color: '#38bdf8' }}>aistudio.google.com</span><br/>
+                    2. {t.gemini_step2 ?? 'Sign in with Google'}<br/>
+                    3. {t.gemini_step3 ?? 'Click "Get API key"'}<br/>
+                    4. {t.gemini_step4 ?? 'Paste key in ⚙️ Settings → Gemini'}
+                  </div>
+                </div>
+              ) : (
+                <div style={{ color: '#475569' }}>
+                  {t.gemini_hint_smart ?? 'Ask me anything about your smart home…'}
+                </div>
+              )}
             </div>
           )}
           {messages.map((m, i) => (

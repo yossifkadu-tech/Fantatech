@@ -23,6 +23,8 @@ export default function SettingsPage() {
   const [geminiKey, setGeminiKey]       = useState('')
   const [geminiSaved, setGeminiSaved]   = useState(false)
   const [geminiStatus, setGeminiStatus] = useState(null)
+  const [geminiTesting, setGeminiTesting] = useState(false)
+  const [geminiTestMsg, setGeminiTestMsg] = useState(null)
   const [ads, setAdsState]              = useState(() => loadAds())
   const [adForm, setAdForm]             = useState(null) // null or ad object being edited
   const [haUrl, setHaUrl]               = useState('')
@@ -87,6 +89,19 @@ export default function SettingsPage() {
   }
 
   /* ── Gemini key ── */
+  const testGeminiConnection = async () => {
+    setGeminiTesting(true); setGeminiTestMsg(null)
+    try {
+      const r = await api.post('/ai/chat', { message: 'Hello, reply with just "OK"', lang: 'en', history: [] })
+      setGeminiTestMsg({ ok: true, text: `✅ Gemini connected — "${r.data.reply?.slice(0, 60)}"` })
+      setGeminiStatus(true)
+    } catch (e) {
+      const msg = e?.response?.data?.detail || e?.message || 'Connection failed'
+      setGeminiTestMsg({ ok: false, text: `❌ ${msg}` })
+    }
+    setGeminiTesting(false)
+  }
+
   const saveGeminiKey = async () => {
     try {
       await api.post('/ai/set-key', { key: geminiKey.trim() })
@@ -364,17 +379,55 @@ export default function SettingsPage() {
 
       {/* ── Gemini AI ── */}
       <Section title={`✨ ${t.gemini_section_title}`}>
+        {/* Status row */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{
+              width: 10, height: 10, borderRadius: '50%', flexShrink: 0,
+              background: geminiStatus ? '#22c55e' : '#ef4444',
+              boxShadow: geminiStatus ? '0 0 6px #22c55e' : 'none',
+            }} />
+            <span style={{ fontSize: 12, fontWeight: 600, color: geminiStatus ? '#22c55e' : '#ef4444' }}>
+              {geminiStatus ? `Gemini AI ${t.connected ?? 'Connected'} ✓` : `Gemini AI ${t.disconnected ?? 'Disconnected'}`}
+            </span>
+          </div>
+          {/* Test button */}
+          <button onClick={testGeminiConnection} disabled={geminiTesting} style={{
+            padding: '5px 12px', borderRadius: 8, border: '1px solid #334155',
+            background: 'transparent', color: '#38bdf8', fontSize: 11,
+            fontWeight: 600, cursor: 'pointer',
+          }}>
+            {geminiTesting ? '⏳ Testing…' : '🔌 Test'}
+          </button>
+        </div>
+
+        {/* Test result */}
+        {geminiTestMsg && (
+          <div style={{
+            background: geminiTestMsg.ok ? '#14532d' : '#450a0a',
+            border: `1px solid ${geminiTestMsg.ok ? '#22c55e' : '#ef4444'}`,
+            borderRadius: 8, padding: '8px 12px', fontSize: 12,
+            color: geminiTestMsg.ok ? '#86efac' : '#fca5a5', marginBottom: 10,
+          }}>
+            {geminiTestMsg.text}
+          </div>
+        )}
+
+        {/* How to get key */}
+        {!geminiStatus && (
+          <div style={{ background: '#0f172a', borderRadius: 10, padding: '10px 12px', marginBottom: 10, fontSize: 11, color: '#64748b', lineHeight: 1.8 }}>
+            <div style={{ fontWeight: 700, color: '#94a3b8', marginBottom: 4 }}>
+              {t.gemini_how_to ?? 'How to get a free Gemini API key:'}
+            </div>
+            1. {t.gemini_step1 ?? 'Go to'} <span style={{ color: '#38bdf8', direction: 'ltr', display: 'inline-block' }}>aistudio.google.com</span><br/>
+            2. {t.gemini_step2 ?? 'Sign in with Google'}<br/>
+            3. {t.gemini_step3 ?? 'Click "Get API key" → Create API key'}<br/>
+            4. {t.gemini_step4 ?? 'Paste the key below and save'}
+          </div>
+        )}
+
         <div style={{ fontSize: 12, color: '#64748b', marginBottom: 8 }}>
           {t.gemini_hint}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-          <div style={{
-            width: 8, height: 8, borderRadius: '50%',
-            background: geminiStatus ? '#22c55e' : '#ef4444', flexShrink: 0,
-          }} />
-          <span style={{ fontSize: 11, color: geminiStatus ? '#22c55e' : '#ef4444' }}>
-            {geminiStatus ? `Gemini ${t.connected} ✓` : t.disconnected}
-          </span>
         </div>
         <input
           type="password"
@@ -384,7 +437,7 @@ export default function SettingsPage() {
           style={inp}
         />
         <button onClick={saveGeminiKey} style={{ ...btn('#7c3aed'), width: '100%' }}>
-          {geminiSaved ? `✅ ${t.save}!` : `💾 ${t.save} Gemini`}
+          {geminiSaved ? `✅ ${t.save}!` : `💾 ${t.save} Gemini Key`}
         </button>
         <div style={{ fontSize: 11, color: '#475569', marginTop: 8 }}>
           {t.gemini_api_hint}
