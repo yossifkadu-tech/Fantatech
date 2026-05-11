@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { api } from '../hooks/useHub'
 import { useLang } from '../context/LangContext'
+import ScenesPage from './ScenesPage'
 
 const ALARM_MODE_IDS = ['disarmed', 'home', 'armed', 'night']
 const ALARM_ICONS    = { disarmed: '🔓', home: '🏠', armed: '🔒', night: '🌙' }
@@ -47,6 +48,7 @@ function fmtSecAction(h, t) {
 
 export default function SecurityPage({ devices = [], onReload, onNavigate }) {
   const { t, locale } = useLang()
+  const [secTab, setSecTab] = useState('security')  // 'security' | 'scenes'
 
   const ALARM_MODES = ALARM_MODE_IDS.map(id => ({
     id,
@@ -142,28 +144,41 @@ export default function SecurityPage({ devices = [], onReload, onNavigate }) {
   return (
     <div style={{ paddingBottom: 20 }}>
 
-      {/* ── Scenes shortcut (moved here from nav) ── */}
-      {onNavigate && (
-        <button
-          onClick={() => onNavigate('scenes')}
-          style={{
-            width: '100%', marginBottom: 14,
-            background: '#1e293b', border: '1px solid #334155',
-            borderRadius: 12, padding: '11px 16px',
-            display: 'flex', alignItems: 'center', gap: 10,
-            cursor: 'pointer', color: '#f1f5f9',
-          }}
-        >
-          <span style={{ fontSize: 20 }}>🎬</span>
-          <div style={{ textAlign: 'left', flex: 1 }}>
-            <div style={{ fontWeight: 700, fontSize: 14 }}>{t.scenes_title ?? 'Scenes'}</div>
-            <div style={{ fontSize: 11, color: '#64748b', marginTop: 1 }}>
-              {t.scenes_subtitle ?? 'Manage automation scenes'}
-            </div>
-          </div>
-          <span style={{ color: '#475569', fontSize: 18 }}>›</span>
-        </button>
+      {/* ── Sub-tab switcher: Security / Scenes ── */}
+      <div style={{
+        display: 'flex', gap: 6, marginBottom: 16,
+        background: '#1e293b', borderRadius: 12,
+        padding: 4, border: '1px solid #334155',
+      }}>
+        {[
+          { id: 'security', icon: '🔒', label: t.security ?? 'Security' },
+          { id: 'scenes',   icon: '🎬', label: t.scenes_title ?? 'Scenes' },
+        ].map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setSecTab(tab.id)}
+            style={{
+              flex: 1, padding: '9px 8px', borderRadius: 9, border: 'none',
+              background: secTab === tab.id ? (tab.id === 'scenes' ? '#7c3aed' : '#1d4ed8') : 'transparent',
+              color: secTab === tab.id ? '#fff' : '#64748b',
+              fontSize: 13, fontWeight: 700, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              transition: 'all 0.15s',
+            }}
+          >
+            <span>{tab.icon}</span>
+            <span>{tab.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* ── Scenes panel (inline) ── */}
+      {secTab === 'scenes' && (
+        <ScenesPage devices={devices} />
       )}
+
+      {/* ── Security content ── */}
+      {secTab === 'security' && (<>
 
       {/* ── Alarm Panel ── */}
       <div style={{
@@ -390,6 +405,7 @@ export default function SecurityPage({ devices = [], onReload, onNavigate }) {
           <div style={{ fontSize: 12 }}>{t.no_security_hint}</div>
         </div>
       )}
+    </>)}
     </div>
   )
 }
