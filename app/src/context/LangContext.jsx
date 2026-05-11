@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useState, useEffect } from 'react'
 
 /* ── Language metadata ────────────────────────────────────────────────────── */
 export const LANG_META = {
@@ -741,6 +741,10 @@ const T = {
     reg_most_popular: 'Most Popular',
     reg_already: 'Already registered?',
     reg_skip: 'Skip for now',
+
+    /* ── Language detection ── */
+    lang_device_detected: 'Device language',
+    lang_reset: 'Reset to device',
   },
 
   /* ═══════════════════════════════ HEBREW ════════════════════════════════ */
@@ -1414,6 +1418,10 @@ const T = {
     reg_most_popular: 'הכי פופולרי',
     reg_already: 'כבר רשום?',
     reg_skip: 'דלג לעת עתה',
+
+    /* ── זיהוי שפה ── */
+    lang_device_detected: 'שפת המכשיר',
+    lang_reset: 'איפוס לשפת המכשיר',
   },
 
   /* ═══════════════════════════════ ARABIC ════════════════════════════════ */
@@ -1900,35 +1908,72 @@ const T = {
 }
 
 /* ── Context ──────────────────────────────────────────────────────────────── */
-const LangContext = createContext({ lang: 'he', t: T.en, setLang: () => {}, rtl: false, locale: 'he-IL' })
+const LangContext = createContext({ lang: 'en', t: T.en, setLang: () => {}, rtl: false, locale: 'en-US' })
 
-/* ── Detect device language on first install ─────────────────────────── */
-function detectDeviceLang() {
+/**
+ * Locale-code aliases: some platforms/browsers use non-standard codes.
+ * Maps any known alias → our internal code.
+ */
+const LOCALE_ALIASES = {
+  iw: 'he',   // Android WebView uses 'iw' for Hebrew (old ISO 639 code)
+  ji: 'yi',   // Yiddish alias (just in case)
+  in: 'id',   // Indonesian old code
+  tl: 'fil',  // Tagalog → Filipino
+  zh: 'zh',   // keep for potential future Chinese support
+}
+
+/**
+ * detectDeviceLang()
+ * 1. If user already chose a language → return that
+ * 2. Otherwise iterate navigator.languages and match to our supported codes
+ * 3. Fallback to 'en'
+ */
+export function detectDeviceLang() {
   const saved = localStorage.getItem('fantatech_lang')
-  if (saved) return saved                         // user already chose
-  const supported = Object.keys(LANG_META)        // ['he','en','ar','ru','es','fr','de','pt','am']
-  const nav = navigator.languages || [navigator.language || 'he']
+  if (saved && LANG_META[saved]) return saved          // user already chose
+
+  const supported = Object.keys(LANG_META)             // ['he','en','ar','ru','es','fr','de','pt','am']
+  const nav = Array.from(navigator.languages || [navigator.language].filter(Boolean))
+  if (!nav.length) nav.push('en')
+
   for (const locale of nav) {
-    const code = locale.slice(0, 2).toLowerCase()
+    let raw = locale.split('-')[0].toLowerCase()
+    const code = LOCALE_ALIASES[raw] ?? raw             // normalise alias
     if (supported.includes(code)) return code
   }
-  return 'he'                                     // default fallback
+  return 'en'                                          // safe international fallback
 }
 
 export function LangProvider({ children }) {
   const [lang, setLangState] = useState(detectDeviceLang)
+
   const changeLang = (l) => {
     setLangState(l)
     localStorage.setItem('fantatech_lang', l)
   }
+
+  const resetToDevice = () => {
+    localStorage.removeItem('fantatech_lang')
+    const detected = detectDeviceLang()
+    setLangState(detected)
+    // re-save so the next detectDeviceLang call won't re-detect
+    localStorage.setItem('fantatech_lang', detected)
+  }
+
   /* merge: English base + chosen language overrides */
   const t      = { ...T.en, ...(T[lang] || {}) }
   const meta   = LANG_META[lang] ?? LANG_META.en
   const rtl    = meta.rtl
   const locale = meta.locale
 
+  /* Apply dir + lang attributes on <html> so the entire WebView is RTL-aware */
+  useEffect(() => {
+    document.documentElement.setAttribute('lang', locale)
+    document.documentElement.setAttribute('dir', rtl ? 'rtl' : 'ltr')
+  }, [lang, rtl, locale])
+
   return (
-    <LangContext.Provider value={{ lang, t, setLang: changeLang, rtl, locale }}>
+    <LangContext.Provider value={{ lang, t, setLang: changeLang, resetToDevice, rtl, locale }}>
       {children}
     </LangContext.Provider>
   )

@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import { api, getHubUrl, setHubUrl, clearHubUrl, testHubUrl, discoverHub } from '../hooks/useHub'
-import { useLang, LANG_META } from '../context/LangContext'
+import { useLang, LANG_META, detectDeviceLang } from '../context/LangContext'
 import { loadAds, saveAds, loc as locAd } from '../components/SponsoredBanner'
 
 const APP_VERSION = '2.0.0'
 
 export default function SettingsPage() {
-  const { lang, t, setLang, rtl } = useLang()
+  const { lang, t, setLang, resetToDevice, rtl } = useLang()
+  const deviceLang = detectDeviceLang()            // what device would pick right now
   // Hub connection
   const [hubUrl, setHubUrlState]        = useState(getHubUrl)
   const [newHubIp, setNewHubIp]         = useState('')
@@ -330,9 +331,37 @@ export default function SettingsPage() {
 
       {/* ── Language ── */}
       <Section title={`🌍 ${t.language}`}>
+        {/* Device-detected language indicator */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          background: '#0f172a', borderRadius: 10, padding: '8px 12px', marginBottom: 12,
+          border: '1px solid #1e3a5f',
+        }}>
+          <div style={{ fontSize: 12, color: '#94a3b8' }}>
+            📱 {t.lang_device_detected ?? 'Device language'}:{' '}
+            <span style={{ color: '#38bdf8', fontWeight: 700 }}>
+              {LANG_META[deviceLang]?.name ?? deviceLang}
+            </span>
+          </div>
+          {lang !== deviceLang && (
+            <button
+              onClick={resetToDevice}
+              style={{
+                background: '#1e3a5f', border: '1px solid #38bdf8',
+                borderRadius: 8, padding: '4px 10px',
+                color: '#38bdf8', fontSize: 11, fontWeight: 700,
+                cursor: 'pointer', WebkitTapHighlightColor: 'transparent',
+              }}
+            >
+              {t.lang_reset ?? 'Reset'}
+            </button>
+          )}
+        </div>
+
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
           {Object.entries(LANG_META).map(([code, meta]) => {
             const active = lang === code
+            const isDevice = code === deviceLang
             const LANG_COLORS = {
               he: '#1d4ed8', en: '#dc2626', ar: '#15803d',
               ru: '#7c3aed', es: '#d97706', fr: '#0284c7',
@@ -343,11 +372,20 @@ export default function SettingsPage() {
               <button key={code} onClick={() => setLang(code)} style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center',
                 gap: 6, padding: '12px 4px', borderRadius: 12,
-                border: `2px solid ${active ? color : '#334155'}`,
+                border: `2px solid ${active ? color : isDevice ? '#334155' : '#1e293b'}`,
                 background: active ? color + '22' : '#0f172a',
                 cursor: 'pointer', transition: 'all .15s',
                 WebkitTapHighlightColor: 'transparent',
+                position: 'relative',
               }}>
+                {/* Device language subtle badge */}
+                {isDevice && !active && (
+                  <div style={{
+                    position: 'absolute', top: 4, insetInlineEnd: 4,
+                    width: 7, height: 7, borderRadius: '50%',
+                    background: '#38bdf8', opacity: 0.7,
+                  }} />
+                )}
                 {/* Colored circle with 2-letter code — works on all Android */}
                 <div style={{
                   width: 36, height: 36, borderRadius: '50%',
@@ -367,9 +405,7 @@ export default function SettingsPage() {
                   {meta.name}
                 </span>
                 {active && (
-                  <div style={{
-                    width: 6, height: 6, borderRadius: '50%', background: color,
-                  }} />
+                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: color }} />
                 )}
               </button>
             )

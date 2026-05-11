@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useDevices, useWebSocket, api, getHubUrl } from './hooks/useHub'
-import { LangProvider, useLang } from './context/LangContext'
+import { LangProvider, useLang, LANG_META } from './context/LangContext'
 import Dashboard from './pages/Dashboard'
 import DevicesPage from './pages/DevicesPage'
 import AutomationsPage from './pages/AutomationsPage'
@@ -22,7 +22,11 @@ import GeminiAssistant from './components/GeminiAssistant'
 const APP_VERSION = '2.0.0'
 
 function AppInner() {
-  const { t, lang, rtl } = useLang()
+  const { t, lang, rtl, setLang } = useLang()
+  const [langPickerOpen, setLangPickerOpen] = useState(false)
+
+  // Cycle through languages on long-press or use mini-picker on tap
+  const LANG_CODES = Object.keys(LANG_META)
   const [tab, setTab]           = useState('dashboard')
   const [hubVersion, setHubVersion] = useState(null)
   const [hubReady, setHubReady] = useState(null)   // null=checking, true, false
@@ -92,9 +96,8 @@ function AppInner() {
 
   // When tab switches TO notifications, clear badge
   useEffect(() => {
-    if (tab === 'notifications') {
-      setUnreadNotifs(0)
-    }
+    if (tab === 'notifications') setUnreadNotifs(0)
+    setLangPickerOpen(false)          // close lang picker on any tab change
   }, [tab])
 
   const versionMismatch = hubVersion && hubVersion !== APP_VERSION
@@ -207,20 +210,57 @@ function AppInner() {
           {/* Right: lang + network icon + server status + version */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             {/* Quick language switcher */}
-            <button
-              onClick={() => setTab('settings')}
-              title={t.language ?? 'Language'}
-              style={{
-                background: 'transparent',
-                border: '1px solid #334155',
-                borderRadius: 8, padding: '4px 8px', cursor: 'pointer',
-                fontSize: 12, fontWeight: 700, color: '#94a3b8', lineHeight: 1,
-                letterSpacing: 0.5,
-                WebkitTapHighlightColor: 'transparent',
-              }}
-            >
-              {lang.toUpperCase()}
-            </button>
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => setLangPickerOpen(v => !v)}
+                title={t.language ?? 'Language'}
+                style={{
+                  background: langPickerOpen ? 'rgba(56,189,248,0.12)' : 'transparent',
+                  border: `1px solid ${langPickerOpen ? '#38bdf8' : '#334155'}`,
+                  borderRadius: 8, padding: '4px 8px', cursor: 'pointer',
+                  fontSize: 12, fontWeight: 700,
+                  color: langPickerOpen ? '#38bdf8' : '#94a3b8',
+                  lineHeight: 1, letterSpacing: 0.5,
+                  WebkitTapHighlightColor: 'transparent',
+                  transition: 'all 0.15s',
+                }}
+              >
+                🌍 {lang.toUpperCase()}
+              </button>
+
+              {/* Mini language picker dropdown */}
+              {langPickerOpen && (
+                <div style={{
+                  position: 'absolute', top: '110%', insetInlineEnd: 0,
+                  background: '#1e293b', border: '1px solid #334155',
+                  borderRadius: 12, padding: 8, zIndex: 200,
+                  display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4,
+                  minWidth: 180, boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+                }}>
+                  {LANG_CODES.map(code => {
+                    const meta = LANG_META[code]
+                    const active = lang === code
+                    return (
+                      <button key={code} onClick={() => { setLang(code); setLangPickerOpen(false) }} style={{
+                        display: 'flex', flexDirection: 'column', alignItems: 'center',
+                        gap: 3, padding: '8px 4px', borderRadius: 8,
+                        border: `1px solid ${active ? '#38bdf8' : '#334155'}`,
+                        background: active ? 'rgba(56,189,248,0.15)' : 'transparent',
+                        cursor: 'pointer',
+                        WebkitTapHighlightColor: 'transparent',
+                      }}>
+                        <span style={{ fontSize: 10, fontWeight: 800, color: active ? '#38bdf8' : '#64748b' }}>
+                          {code.toUpperCase()}
+                        </span>
+                        <span style={{ fontSize: 9, color: active ? '#e2e8f0' : '#475569', lineHeight: 1.2, textAlign: 'center' }}>
+                          {meta.name}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
 
             {/* Network scan icon button */}
             <button
