@@ -1,0 +1,5 @@
+zigpy==0.60.1
+zigpy-znp==0.12.1
+zigpy-deconz==0.22.1
+paho-mqtt==2.1.0
+python-dotenv==1.0.1

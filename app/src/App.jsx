@@ -18,8 +18,9 @@ import CyberPage from './pages/CyberPage'
 import GpsPage from './pages/GpsPage'
 import RegistrationPage from './pages/RegistrationPage'
 import GeminiAssistant from './components/GeminiAssistant'
+import UsersPage from './pages/UsersPage'
 
-const APP_VERSION = '2.10.0'
+const APP_VERSION = '2.12.0'
 
 /* ── Screen info: class + orientation ──────────────────────────────── */
 const getScreenInfo = () => {
@@ -199,6 +200,7 @@ function AppInner() {
     { id: 'security',      label: t.security,                      icon: '🔒' },
     { id: 'rooms',         label: t.rooms,                         icon: '🛋️' },
     { id: 'gps',           label: t.gps_nav ?? 'GPS',              icon: '📍' },
+    { id: 'users',         label: t.users_nav ?? 'Users',           icon: '👥' },
     { id: 'notifications', label: t.notifications_tab,             icon: '🔔', badge: unreadNotifs },
     { id: 'settings',      label: t.settings,                      icon: '⚙️' },
   ]
@@ -472,6 +474,7 @@ function AppInner() {
               {tab === 'network'     && <NetworkPage />}
               {tab === 'gps'         && <GpsPage />}
               {tab === 'gemini'      && <GeminiAssistant onDeviceAction={handleDeviceAction} inline />}
+              {tab === 'users'          && <UsersPage />}
               {tab === 'notifications'  && <NotificationsPage />}
               {tab === 'settings'       && <SettingsPage />}
             </>

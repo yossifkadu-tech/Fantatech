@@ -1,0 +1,8 @@
+type,label_he,label_en,icon,color,permissions,description_he,description_en
+admin,מנהל מערכת,Administrator,👑,#ef4444,all,גישה מלאה לכל המערכת כולל ניהול משתמשים והגדרות,Full access to all system including user management and settings
+owner,בעל הבית,Home Owner,🏠,#f97316,all_except_users,גישה מלאה לכל הבית למעט ניהול משתמשים,Full home access except user management
+family,משפחה,Family Member,👨‍👩‍👧,#22c55e,devices+scenes+history,שליטה במכשירים סצנות והיסטוריה,Control devices scenes and history
+child,ילד,Child,🧒,#38bdf8,devices_basic,מכשירים בסיסיים בלבד - ללא אבטחה מצלמות ואוטומציה,Basic devices only - no security cameras or automations
+guest,אורח,Guest,🙋,#94a3b8,view_only,צפייה בלבד - שליטה מינימלית בתאורה,View only - minimal light control
+caregiver,מטפל,Caregiver,🩺,#a78bfa,sensors+alerts+devices,חיישנים התראות ושליטה במכשירים - ללא הגדרות,Sensors alerts and device control - no settings
+technician,טכנאי,Technician,🔧,#f59e0b,setup_only,הגדרות והתקנת מכשירים - ללא נתונים אישיים,Device setup and configuration - no personal data

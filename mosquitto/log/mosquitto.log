@@ -1,0 +1,183 @@
+1777576964: mosquitto version 2.1.2 starting
+1777576964: Config loaded from C:/Users/My laptop/Desktop/smarthome-hub/mosquitto/mosquitto.conf.
+1777576964: Bridge support available.
+1777576964: Persistence support available.
+1777576964: TLS support available.
+1777576964: TLS-PSK support available.
+1777576964: Websockets support available.
+1777576964: Opening ipv6 listen socket on port 1883.
+1777576964: Error: Only one usage of each socket address (protocol/network address/port) is normally permitted.
+
+1777576964: mosquitto version 2.1.2 terminating
+1777576964: Saving in-memory database to C:/Users/My laptop/Desktop/smarthome-hub/mosquitto/data/\mosquitto.db.
+1777821742: mosquitto version 2.1.2 starting
+1777821742: Config loaded from C:\Users\My laptop\Desktop\smarthome-hub\mosquitto\mosquitto.conf.
+1777821742: Bridge support available.
+1777821742: Persistence support available.
+1777821742: TLS support available.
+1777821742: TLS-PSK support available.
+1777821742: Websockets support available.
+1777821742: Opening ipv6 listen socket on port 1883.
+1777821742: Opening ipv4 listen socket on port 1883.
+1777821742: Opening ipv6 listen socket on port 9001.
+1777821742: Opening ipv4 listen socket on port 9001.
+1777821742: mosquitto version 2.1.2 running
+1777823543: Saving in-memory database to C:/Users/My laptop/Desktop/smarthome-hub/mosquitto/data/\mosquitto.db.
+1777825714: mosquitto version 2.1.2 starting
+1777825714: Config loaded from C:\Users\My laptop\Desktop\smarthome-hub\mosquitto\mosquitto.conf.
+1777825714: Bridge support available.
+1777825714: Persistence support available.
+1777825714: TLS support available.
+1777825714: TLS-PSK support available.
+1777825714: Websockets support available.
+1777825714: Opening ipv6 listen socket on port 1883.
+1777825714: Opening ipv4 listen socket on port 1883.
+1777825714: Opening ipv6 listen socket on port 9001.
+1777825714: Opening ipv4 listen socket on port 9001.
+1777825714: mosquitto version 2.1.2 running
+1777827484: mosquitto version 2.1.2 starting
+1777827484: Config loaded from C:\Users\My laptop\Desktop\smarthome-hub\mosquitto\mosquitto.conf.
+1777827484: Bridge support available.
+1777827484: Persistence support available.
+1777827484: TLS support available.
+1777827484: TLS-PSK support available.
+1777827484: Websockets support available.
+1777827484: Opening ipv6 listen socket on port 1883.
+1777827484: Opening ipv4 listen socket on port 1883.
+1777827484: Opening ipv6 listen socket on port 9001.
+1777827484: Opening ipv4 listen socket on port 9001.
+1777827484: mosquitto version 2.1.2 running
+1777830474: mosquitto version 2.1.2 starting
+1777830474: Config loaded from C:\Users\My laptop\Desktop\smarthome-hub\mosquitto\mosquitto.conf.
+1777830474: Bridge support available.
+1777830474: Persistence support available.
+1777830474: TLS support available.
+1777830474: TLS-PSK support available.
+1777830474: Websockets support available.
+1777830474: Opening ipv6 listen socket on port 1883.
+1777830474: Opening ipv4 listen socket on port 1883.
+1777830474: Opening ipv6 listen socket on port 9001.
+1777830474: Opening ipv4 listen socket on port 9001.
+1777830474: mosquitto version 2.1.2 running
+1777830503: mosquitto version 2.1.2 starting
+1777830503: Config loaded from C:\Users\My laptop\Desktop\smarthome-hub\mosquitto\mosquitto.conf.
+1777830503: Bridge support available.
+1777830503: Persistence support available.
+1777830503: TLS support available.
+1777830503: TLS-PSK support available.
+1777830503: Websockets support available.
+1777830503: Opening ipv6 listen socket on port 1883.
+1777830503: Opening ipv4 listen socket on port 1883.
+1777830503: Opening ipv6 listen socket on port 9001.
+1777830503: Opening ipv4 listen socket on port 9001.
+1777830503: mosquitto version 2.1.2 running
+1777830778: mosquitto version 2.1.2 starting
+1777830778: Config loaded from C:\Users\My laptop\Desktop\smarthome-hub\mosquitto\mosquitto.conf.
+1777830778: Bridge support available.
+1777830778: Persistence support available.
+1777830778: TLS support available.
+1777830778: TLS-PSK support available.
+1777830778: Websockets support available.
+1777830778: Opening ipv6 listen socket on port 1883.
+1777830778: Opening ipv4 listen socket on port 1883.
+1777830778: Opening ipv6 listen socket on port 9001.
+1777830778: Opening ipv4 listen socket on port 9001.
+1777830778: mosquitto version 2.1.2 running
+1777831445: mosquitto version 2.1.2 starting
+1777831445: Config loaded from C:\Users\My laptop\Desktop\smarthome-hub\mosquitto\mosquitto.conf.
+1777831445: Bridge support available.
+1777831445: Persistence support available.
+1777831445: TLS support available.
+1777831445: TLS-PSK support available.
+1777831445: Websockets support available.
+1777831445: Opening ipv6 listen socket on port 1883.
+1777831445: Opening ipv4 listen socket on port 1883.
+1777831445: Opening ipv6 listen socket on port 9001.
+1777831445: Opening ipv4 listen socket on port 9001.
+1777831445: mosquitto version 2.1.2 running
+1777831742: mosquitto version 2.1.2 starting
+1777831742: Config loaded from C:\Users\My laptop\Desktop\smarthome-hub\mosquitto\mosquitto.conf.
+1777831742: Bridge support available.
+1777831742: Persistence support available.
+1777831742: TLS support available.
+1777831742: TLS-PSK support available.
+1777831742: Websockets support available.
+1777831742: Opening ipv6 listen socket on port 1883.
+1777831742: Opening ipv4 listen socket on port 1883.
+1777831742: Opening ipv6 listen socket on port 9001.
+1777831742: Opening ipv4 listen socket on port 9001.
+1777831742: mosquitto version 2.1.2 running
+1777836468: mosquitto version 2.1.2 starting
+1777836468: Config loaded from C:\Users\My laptop\Desktop\smarthome-hub\mosquitto\mosquitto.conf.
+1777836468: Bridge support available.
+1777836468: Persistence support available.
+1777836468: TLS support available.
+1777836468: TLS-PSK support available.
+1777836468: Websockets support available.
+1777836468: Opening ipv6 listen socket on port 1883.
+1777836468: Opening ipv4 listen socket on port 1883.
+1777836468: Opening ipv6 listen socket on port 9001.
+1777836468: Opening ipv4 listen socket on port 9001.
+1777836468: mosquitto version 2.1.2 running
+1777836537: mosquitto version 2.1.2 starting
+1777836537: Config loaded from C:\Users\My laptop\Desktop\smarthome-hub\mosquitto\mosquitto.conf.
+1777836537: Bridge support available.
+1777836537: Persistence support available.
+1777836537: TLS support available.
+1777836537: TLS-PSK support available.
+1777836537: Websockets support available.
+1777836537: Opening ipv6 listen socket on port 1883.
+1777836537: Opening ipv4 listen socket on port 1883.
+1777836537: Opening ipv6 listen socket on port 9001.
+1777836537: Opening ipv4 listen socket on port 9001.
+1777836537: mosquitto version 2.1.2 running
+1777836578: mosquitto version 2.1.2 starting
+1777836578: Config loaded from C:\Users\My laptop\Desktop\smarthome-hub\mosquitto\mosquitto.conf.
+1777836578: Bridge support available.
+1777836578: Persistence support available.
+1777836578: TLS support available.
+1777836578: TLS-PSK support available.
+1777836578: Websockets support available.
+1777836578: Opening ipv6 listen socket on port 1883.
+1777836578: Opening ipv4 listen socket on port 1883.
+1777836578: Opening ipv6 listen socket on port 9001.
+1777836578: Opening ipv4 listen socket on port 9001.
+1777836578: mosquitto version 2.1.2 running
+1777843012: mosquitto version 2.1.2 starting
+1777843012: Config loaded from C:\Users\My laptop\Desktop\smarthome-hub\mosquitto\mosquitto.conf.
+1777843012: Bridge support available.
+1777843012: Persistence support available.
+1777843012: TLS support available.
+1777843012: TLS-PSK support available.
+1777843012: Websockets support available.
+1777843012: Opening ipv6 listen socket on port 1883.
+1777843012: Opening ipv4 listen socket on port 1883.
+1777843012: Opening ipv6 listen socket on port 9001.
+1777843012: Opening ipv4 listen socket on port 9001.
+1777843012: mosquitto version 2.1.2 running
+1777844812: Saving in-memory database to C:/Users/My laptop/Desktop/smarthome-hub/mosquitto/data/\mosquitto.db.
+1777846613: Saving in-memory database to C:/Users/My laptop/Desktop/smarthome-hub/mosquitto/data/\mosquitto.db.
+1777848414: Saving in-memory database to C:/Users/My laptop/Desktop/smarthome-hub/mosquitto/data/\mosquitto.db.
+1777850215: Saving in-memory database to C:/Users/My laptop/Desktop/smarthome-hub/mosquitto/data/\mosquitto.db.
+1777852016: Saving in-memory database to C:/Users/My laptop/Desktop/smarthome-hub/mosquitto/data/\mosquitto.db.
+1777853817: Saving in-memory database to C:/Users/My laptop/Desktop/smarthome-hub/mosquitto/data/\mosquitto.db.
+1777855618: Saving in-memory database to C:/Users/My laptop/Desktop/smarthome-hub/mosquitto/data/\mosquitto.db.
+1777857419: Saving in-memory database to C:/Users/My laptop/Desktop/smarthome-hub/mosquitto/data/\mosquitto.db.
+1777859220: Saving in-memory database to C:/Users/My laptop/Desktop/smarthome-hub/mosquitto/data/\mosquitto.db.
+1777861021: Saving in-memory database to C:/Users/My laptop/Desktop/smarthome-hub/mosquitto/data/\mosquitto.db.
+1777862822: Saving in-memory database to C:/Users/My laptop/Desktop/smarthome-hub/mosquitto/data/\mosquitto.db.
+1778130029: mosquitto version 2.1.2 starting
+1778130029: Config loaded from C:\Users\My laptop\Desktop\smarthome-hub\mosquitto\mosquitto.conf.
+1778130029: Bridge support available.
+1778130029: Persistence support available.
+1778130029: TLS support available.
+1778130029: TLS-PSK support available.
+1778130029: Websockets support available.
+1778130029: Opening ipv6 listen socket on port 1883.
+1778130029: Opening ipv4 listen socket on port 1883.
+1778130029: Opening ipv6 listen socket on port 9001.
+1778130029: Opening ipv4 listen socket on port 9001.
+1778130029: mosquitto version 2.1.2 running
+1778131829: Saving in-memory database to C:/Users/My laptop/Desktop/smarthome-hub/mosquitto/data/\mosquitto.db.
+1778133630: Saving in-memory database to C:/Users/My laptop/Desktop/smarthome-hub/mosquitto/data/\mosquitto.db.
+1778135431: Saving in-memory database to C:/Users/My laptop/Desktop/smarthome-hub/mosquitto/data/\mosquitto.db.

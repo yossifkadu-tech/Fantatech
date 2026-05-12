@@ -1,0 +1,8 @@
+id,type,name,username,email,address,plan,pin,status,created_at,notes
+1,admin,מנהל מערכת,admin,admin@fantatech.local,,unlimited,1234,active,2025-01-01,מנהל ראשי - גישה מלאה לכל המערכת
+2,owner,בעל הבית,owner,,,,5678,active,2025-01-01,גישה מלאה לכל הבית
+3,family,בן משפחה,family,,,,0000,active,2025-01-01,גישה רגילה לכל המכשירים
+4,child,ילד,child,,,,1111,active,2025-01-01,גישה מוגבלת - ללא אבטחה ומצלמות
+5,guest,אורח,guest,,,,9999,active,2025-01-01,צפייה בלבד - שליטה מינימלית
+6,caregiver,מטפל,caregiver,,,,2222,active,2025-01-01,גישה לחיישנים והתראות
+7,technician,טכנאי,tech,,,,3333,active,2025-01-01,הגדרות והתקנה - ללא נתונים אישיים

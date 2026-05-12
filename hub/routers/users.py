@@ -1,29 +1,61 @@
 """
-users.py — User registration router
-Saves each registration to users.xlsx in the hub folder.
-GET /api/users/export  → download the Excel file
-POST /api/users/register → add a row
+users.py — User management router
+Primary database: users.csv (simple, always works)
+Secondary export:  users.xlsx  (for Excel reporting)
+
+Endpoints:
+  GET  /api/users/types            → list all user types with permissions
+  GET  /api/users/list             → list all users (no PIN)
+  POST /api/users/add              → add a new user to CSV
+  PUT  /api/users/{id}             → update a user
+  DELETE /api/users/{id}           → delete a user (soft-delete: status=deleted)
+  POST /api/users/register         → legacy: register + append to CSV
+  POST /api/users/login            → look up username, return record (no PIN)
+  GET  /api/users/export           → download users.xlsx
+  GET  /api/users/count            → number of active users
 """
 import os
+import csv
 import json
 from datetime import datetime
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 
 router = APIRouter()
 
-XLSX_PATH = os.path.join(os.path.dirname(__file__), "..", "users.xlsx")
+# ── File paths ───────────────────────────────────────────────────────────────
+BASE      = os.path.dirname(os.path.dirname(__file__))
+CSV_PATH  = os.path.join(BASE, "users.csv")
+TYPES_PATH= os.path.join(BASE, "user_types.csv")
+XLSX_PATH = os.path.join(BASE, "users.xlsx")
 
-# ── Column order in the Excel file ──────────────────────────────────────────
-COLUMNS = [
-    "תאריך הרשמה", "תוכנית", "שם מלא", "שם משתמש",
-    "אימייל", "כתובת",
-    "מחזיק כרטיס", "4 ספרות אחרונות", "תוקף", "CVV",
-]
+# ── CSV columns ──────────────────────────────────────────────────────────────
+COLUMNS = ["id", "type", "name", "username", "email",
+           "address", "plan", "pin", "status", "created_at", "notes"]
 
-# ── Pydantic model ───────────────────────────────────────────────────────────
+# ── Pydantic models ───────────────────────────────────────────────────────────
+class UserAdd(BaseModel):
+    type:     str
+    name:     str
+    username: str
+    email:    Optional[str] = ""
+    address:  Optional[str] = ""
+    plan:     Optional[str] = "free"
+    pin:      Optional[str] = ""
+    notes:    Optional[str] = ""
+
+class UserUpdate(BaseModel):
+    type:     Optional[str] = None
+    name:     Optional[str] = None
+    email:    Optional[str] = None
+    address:  Optional[str] = None
+    plan:     Optional[str] = None
+    pin:      Optional[str] = None
+    status:   Optional[str] = None
+    notes:    Optional[str] = None
+
 class UserRegister(BaseModel):
     plan:        str
     name:        str
@@ -31,7 +63,7 @@ class UserRegister(BaseModel):
     email:       str
     address:     Optional[str] = ""
     card_holder: Optional[str] = ""
-    card_number: Optional[str] = ""   # we store only last 4 digits
+    card_number: Optional[str] = ""
     card_expiry: Optional[str] = ""
     card_cvv:    Optional[str] = ""
 
@@ -39,106 +71,181 @@ class UserLogin(BaseModel):
     username: str
 
 
-def _ensure_workbook():
-    """Create users.xlsx with headers if it doesn't exist."""
-    try:
-        import openpyxl
-    except ImportError:
-        return False
+# ── CSV helpers ───────────────────────────────────────────────────────────────
 
-    if os.path.exists(XLSX_PATH):
-        return True
+def _ensure_csv():
+    """Create users.csv with header if it doesn't exist."""
+    if not os.path.exists(CSV_PATH):
+        with open(CSV_PATH, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=COLUMNS)
+            w.writeheader()
 
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "משתמשים"
+def _read_users() -> List[dict]:
+    _ensure_csv()
+    with open(CSV_PATH, "r", newline="", encoding="utf-8") as f:
+        return list(csv.DictReader(f))
 
-    # Header row — styled
-    from openpyxl.styles import Font, PatternFill, Alignment
-    header_fill = PatternFill("solid", fgColor="0F172A")
-    header_font = Font(bold=True, color="38BDF8", size=11)
+def _write_users(rows: List[dict]):
+    with open(CSV_PATH, "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=COLUMNS)
+        w.writeheader()
+        w.writerows(rows)
 
-    for col_idx, col_name in enumerate(COLUMNS, start=1):
-        cell = ws.cell(row=1, column=col_idx, value=col_name)
-        cell.fill  = header_fill
-        cell.font  = header_font
-        cell.alignment = Alignment(horizontal="center")
+def _next_id(rows: List[dict]) -> int:
+    if not rows:
+        return 1
+    return max((int(r.get("id", 0) or 0) for r in rows), default=0) + 1
 
-    # Column widths
-    widths = [20, 12, 20, 18, 28, 30, 20, 16, 10, 8]
-    for i, w in enumerate(widths, start=1):
-        ws.column_dimensions[openpyxl.utils.get_column_letter(i)].width = w
+def _safe(row: dict) -> dict:
+    """Return user dict without PIN."""
+    return {k: v for k, v in row.items() if k != "pin"}
 
-    wb.save(XLSX_PATH)
-    return True
-
-
-def _append_user(data: UserRegister):
-    try:
-        import openpyxl
-        from openpyxl.styles import Alignment
-
-        _ensure_workbook()
-        wb = openpyxl.load_workbook(XLSX_PATH)
-        ws = wb.active
-
-        # Mask card number — keep only last 4 digits
-        raw_card = (data.card_number or "").replace(" ", "").replace("-", "")
-        last4 = raw_card[-4:] if len(raw_card) >= 4 else (raw_card or "—")
-
-        # Mask CVV
-        cvv_masked = "***" if data.card_cvv else "—"
-
-        row = [
-            datetime.now().strftime("%d/%m/%Y %H:%M"),
-            data.plan,
-            data.name,
-            data.username,
-            data.email,
-            data.address or "—",
-            data.card_holder or "—",
-            last4 if raw_card else "—",
-            data.card_expiry or "—",
-            cvv_masked,
-        ]
-
-        ws.append(row)
-
-        # Alternate row colour
-        row_idx = ws.max_row
-        fill_color = "1E293B" if row_idx % 2 == 0 else "0F172A"
-        from openpyxl.styles import PatternFill
-        fill = PatternFill("solid", fgColor=fill_color)
-        from openpyxl.styles import Font
-        font = Font(color="F1F5F9", size=10)
-        for col in range(1, len(COLUMNS) + 1):
-            cell = ws.cell(row=row_idx, column=col)
-            cell.fill      = fill
-            cell.font      = font
-            cell.alignment = Alignment(horizontal="right" if col > 1 else "left")
-
-        wb.save(XLSX_PATH)
-        return True
-    except Exception as e:
-        print(f"[users] Excel write error: {e}")
-        return False
+def _read_types() -> List[dict]:
+    if not os.path.exists(TYPES_PATH):
+        return []
+    with open(TYPES_PATH, "r", newline="", encoding="utf-8") as f:
+        return list(csv.DictReader(f))
 
 
-# ── Routes ───────────────────────────────────────────────────────────────────
+# ── Routes ────────────────────────────────────────────────────────────────────
+
+@router.get("/types")
+async def get_user_types():
+    """Return all defined user types with their permissions."""
+    return {"types": _read_types()}
+
+
+@router.get("/list")
+async def list_users():
+    """List all active users (PIN excluded)."""
+    rows = _read_users()
+    active = [_safe(r) for r in rows if r.get("status", "active") != "deleted"]
+    return {"users": active, "total": len(active)}
+
+
+@router.post("/add")
+async def add_user(data: UserAdd):
+    """Add a new user to users.csv."""
+    rows = _read_users()
+    # Username must be unique
+    if any(r.get("username","").strip().lower() == data.username.strip().lower()
+           for r in rows if r.get("status") != "deleted"):
+        raise HTTPException(status_code=409, detail="Username already exists")
+
+    new_row = {
+        "id":         _next_id(rows),
+        "type":       data.type,
+        "name":       data.name,
+        "username":   data.username.strip(),
+        "email":      data.email or "",
+        "address":    data.address or "",
+        "plan":       data.plan or "free",
+        "pin":        data.pin or "",
+        "status":     "active",
+        "created_at": datetime.now().strftime("%d/%m/%Y %H:%M"),
+        "notes":      data.notes or "",
+    }
+    rows.append(new_row)
+    _write_users(rows)
+    _rebuild_xlsx(rows)
+    return {"ok": True, "user": _safe(new_row)}
+
+
+@router.put("/{user_id}")
+async def update_user(user_id: int, data: UserUpdate):
+    """Update fields on an existing user."""
+    rows = _read_users()
+    for row in rows:
+        if str(row.get("id")) == str(user_id):
+            if data.type    is not None: row["type"]    = data.type
+            if data.name    is not None: row["name"]    = data.name
+            if data.email   is not None: row["email"]   = data.email
+            if data.address is not None: row["address"] = data.address
+            if data.plan    is not None: row["plan"]    = data.plan
+            if data.pin     is not None: row["pin"]     = data.pin
+            if data.status  is not None: row["status"]  = data.status
+            if data.notes   is not None: row["notes"]   = data.notes
+            _write_users(rows)
+            _rebuild_xlsx(rows)
+            return {"ok": True, "user": _safe(row)}
+    raise HTTPException(status_code=404, detail="User not found")
+
+
+@router.delete("/{user_id}")
+async def delete_user(user_id: int):
+    """Soft-delete a user (status = deleted)."""
+    rows = _read_users()
+    for row in rows:
+        if str(row.get("id")) == str(user_id):
+            row["status"] = "deleted"
+            _write_users(rows)
+            return {"ok": True}
+    raise HTTPException(status_code=404, detail="User not found")
+
+
+@router.post("/login")
+async def login_user(data: UserLogin):
+    """
+    Look up a username in users.csv and return their record (no PIN).
+    Used by the app after reinstall to restore a session.
+    """
+    rows = _read_users()
+    for row in rows:
+        if (row.get("status", "active") != "deleted" and
+                str(row.get("username", "")).strip().lower()
+                == data.username.strip().lower()):
+            return {"ok": True, "user": _safe(row)}
+    raise HTTPException(status_code=404, detail="Username not found")
+
 
 @router.post("/register")
 async def register_user(data: UserRegister):
-    ok = _append_user(data)
-    return {
-        "ok": ok,
-        "message": "Registered successfully" if ok else "Saved locally (Excel unavailable)",
+    """
+    Legacy registration endpoint (called from app sign-up form).
+    Adds user to CSV and rebuilds xlsx.
+    """
+    rows = _read_users()
+    # Don't duplicate if username already exists
+    existing = next(
+        (r for r in rows
+         if r.get("username","").strip().lower() == data.username.strip().lower()
+         and r.get("status","active") != "deleted"),
+        None
+    )
+    if existing:
+        return {"ok": True, "message": "User already registered", "user": _safe(existing)}
+
+    raw_card = (data.card_number or "").replace(" ", "").replace("-", "")
+    last4    = raw_card[-4:] if len(raw_card) >= 4 else ""
+    notes    = f"plan={data.plan}"
+    if last4:
+        notes += f" | card_last4={last4} | expiry={data.card_expiry}"
+
+    new_row = {
+        "id":         _next_id(rows),
+        "type":       "owner",          # default type for app registrations
+        "name":       data.name,
+        "username":   data.username.strip(),
+        "email":      data.email,
+        "address":    data.address or "",
+        "plan":       data.plan,
+        "pin":        "",
+        "status":     "active",
+        "created_at": datetime.now().strftime("%d/%m/%Y %H:%M"),
+        "notes":      notes,
     }
+    rows.append(new_row)
+    _write_users(rows)
+    _rebuild_xlsx(rows)
+    return {"ok": True, "message": "Registered successfully"}
 
 
 @router.get("/export")
 async def export_users():
+    """Download users.xlsx."""
+    _rebuild_xlsx(_read_users())
     if not os.path.exists(XLSX_PATH):
-        _ensure_workbook()
+        raise HTTPException(status_code=500, detail="Could not generate xlsx")
     return FileResponse(
         path=XLSX_PATH,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -146,53 +253,59 @@ async def export_users():
     )
 
 
-@router.post("/login")
-async def login_user(data: UserLogin):
-    """
-    Look up a username in users.xlsx and return their record.
-    Used by the app after reinstall so the user can restore their session
-    without re-registering.
-    """
-    from fastapi import HTTPException
-    try:
-        import openpyxl
-        if not os.path.exists(XLSX_PATH):
-            raise HTTPException(status_code=404, detail="No users registered yet")
-
-        wb = openpyxl.load_workbook(XLSX_PATH, read_only=True)
-        ws = wb.active
-
-        # Column indices (1-based): date=1, plan=2, name=3, username=4, email=5, address=6
-        for row in ws.iter_rows(min_row=2, values_only=True):
-            if not row or not row[3]:
-                continue
-            if str(row[3]).strip().lower() == data.username.strip().lower():
-                return {
-                    "ok": True,
-                    "user": {
-                        "plan":     str(row[1] or "free"),
-                        "name":     str(row[2] or ""),
-                        "username": str(row[3] or ""),
-                        "email":    str(row[4] or ""),
-                        "address":  str(row[5] or ""),
-                    },
-                }
-        raise HTTPException(status_code=404, detail="Username not found")
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+@router.get("/export-csv")
+async def export_csv():
+    """Download users.csv directly."""
+    _ensure_csv()
+    return FileResponse(
+        path=CSV_PATH,
+        media_type="text/csv",
+        filename="fantatech-users.csv",
+    )
 
 
 @router.get("/count")
 async def users_count():
+    rows = _read_users()
+    return {"count": sum(1 for r in rows if r.get("status", "active") != "deleted")}
+
+
+# ── xlsx rebuild (optional, requires openpyxl) ───────────────────────────────
+
+def _rebuild_xlsx(rows: List[dict]):
     try:
         import openpyxl
-        if not os.path.exists(XLSX_PATH):
-            return {"count": 0}
-        wb = openpyxl.load_workbook(XLSX_PATH, read_only=True)
+        from openpyxl.styles import Font, PatternFill, Alignment
+
+        wb = openpyxl.Workbook()
         ws = wb.active
-        count = max(ws.max_row - 1, 0)   # subtract header row
-        return {"count": count}
-    except Exception:
-        return {"count": 0}
+        ws.title = "משתמשים"
+
+        # Header
+        display_cols = [c for c in COLUMNS if c != "pin"]
+        header_fill = PatternFill("solid", fgColor="0F172A")
+        header_font = Font(bold=True, color="38BDF8", size=11)
+        for ci, col in enumerate(display_cols, start=1):
+            cell = ws.cell(row=1, column=ci, value=col)
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = Alignment(horizontal="center")
+
+        # Data rows
+        for ri, row in enumerate(rows, start=2):
+            fill = PatternFill("solid", fgColor="1E293B" if ri % 2 == 0 else "0F172A")
+            font = Font(color="F1F5F9", size=10)
+            for ci, col in enumerate(display_cols, start=1):
+                cell = ws.cell(row=ri, column=ci, value=row.get(col, ""))
+                cell.fill = fill
+                cell.font = font
+                cell.alignment = Alignment(horizontal="right")
+
+        # Column widths
+        widths = [6, 14, 20, 18, 28, 24, 10, 10, 12, 18, 30]
+        for i, w in enumerate(widths[:len(display_cols)], start=1):
+            ws.column_dimensions[openpyxl.utils.get_column_letter(i)].width = w
+
+        wb.save(XLSX_PATH)
+    except Exception as e:
+        print(f"[users] xlsx rebuild error: {e}")
