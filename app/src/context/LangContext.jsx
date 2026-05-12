@@ -745,6 +745,27 @@ const T = {
     /* ── Language detection ── */
     lang_device_detected: 'Device language',
     lang_reset: 'Reset to device',
+
+    /* ── Registration v2 ── */
+    reg_personal: 'Personal Details',
+    reg_username: 'Username',
+    reg_username_req: 'Username is required',
+    reg_address: 'Address',
+    reg_address_req: 'Address is required',
+    reg_address_placeholder: 'Street, City, Country',
+    reg_payment: 'Payment Details',
+    reg_card_holder: 'Cardholder Name',
+    reg_card_number: 'Card Number',
+    reg_card_expiry: 'Expiry (MM/YY)',
+    reg_card_req: 'Required',
+    reg_card_num_req: '16-digit card number required',
+    reg_card_expiry_req: 'Expiry date required (MM/YY)',
+    reg_card_cvv_req: '3-digit CVV required',
+    reg_card_security: 'Your payment details are encrypted and stored securely on your local hub only.',
+    reg_price_free: 'Free',
+    reg_price_basic: '₪29/mo',
+    reg_price_enhanced: '₪59/mo',
+    reg_price_unlimited: '₪99/mo',
   },
 
   /* ═══════════════════════════════ HEBREW ════════════════════════════════ */
@@ -1422,6 +1443,27 @@ const T = {
     /* ── זיהוי שפה ── */
     lang_device_detected: 'שפת המכשיר',
     lang_reset: 'איפוס לשפת המכשיר',
+
+    /* ── הרשמה v2 ── */
+    reg_personal: 'פרטים אישיים',
+    reg_username: 'שם משתמש',
+    reg_username_req: 'שם משתמש נדרש',
+    reg_address: 'כתובת',
+    reg_address_req: 'כתובת נדרשת',
+    reg_address_placeholder: 'רחוב, עיר, מדינה',
+    reg_payment: 'פרטי תשלום',
+    reg_card_holder: 'שם בעל הכרטיס',
+    reg_card_number: 'מספר כרטיס',
+    reg_card_expiry: 'תוקף (MM/YY)',
+    reg_card_req: 'שדה חובה',
+    reg_card_num_req: 'נדרשות 16 ספרות',
+    reg_card_expiry_req: 'תוקף נדרש (MM/YY)',
+    reg_card_cvv_req: 'CVV בן 3 ספרות נדרש',
+    reg_card_security: 'פרטי התשלום שלך מוצפנים ונשמרים באופן מאובטח רק על ה-Hub המקומי שלך.',
+    reg_price_free: 'חינמי',
+    reg_price_basic: '₪29/חודש',
+    reg_price_enhanced: '₪59/חודש',
+    reg_price_unlimited: '₪99/חודש',
   },
 
   /* ═══════════════════════════════ ARABIC ════════════════════════════════ */
