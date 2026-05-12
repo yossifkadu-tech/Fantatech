@@ -4,6 +4,7 @@ import DeviceCard from '../components/DeviceCard'
 import AcCard from '../components/AcCard'
 import QrScanner from '../components/QrScanner'
 import { useLang } from '../context/LangContext'
+import ImportWizard from './ImportWizard'
 
 const PROTOCOLS = ['wifi', 'zigbee', 'zwave', 'matter', 'custom']
 
@@ -37,7 +38,7 @@ export default function DevicesPage({ devices, onReload, tablet }) {
   const [rooms, setRooms]           = useState([])
   const [filter, setFilter]         = useState('all')
   const [search, setSearch]         = useState('')
-  const [addMode, setAddMode]       = useState(null) // null | 'menu' | 'manual' | 'qr' | 'network' | 'ac' | 'moes' | 'switches'
+  const [addMode, setAddMode]       = useState(null) // null | 'menu' | 'manual' | 'qr' | 'network' | 'ac' | 'moes' | 'switches' | 'import'
   const [showAdd, setShowAdd]       = useState(false)
   const [addForm, setAddForm]       = useState(EMPTY_FORM)
   const [renameTarget, setRenameTarget] = useState(null)   // full device object
@@ -236,6 +237,7 @@ export default function DevicesPage({ devices, onReload, tablet }) {
             <h3 style={{ margin: '0 0 16px', color: '#e2e8f0', textAlign: 'center' }}>{t.dev_add_menu_title}</h3>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
               {[
+                { icon: '🌐', title: t.import_smartlife ?? 'SmartLife / Tuya', sub: t.import_smartlife_sub ?? 'Import all cloud devices', action: () => setAddMode('import'), highlight: true },
                 { icon: '❄️', title: t.add_ac,            sub: t.ac_sub,         action: () => setAddMode('ac') },
                 { icon: '🔌', title: t.add_switches ?? 'מפסקים חכמים', sub: t.switches_sub ?? 'Sonoff · Shelly · Tasmota', action: () => setAddMode('switches') },
                 { icon: '📡', title: t.moes_gateway,      sub: t.moes_sub,       action: () => setAddMode('moes') },
@@ -245,12 +247,13 @@ export default function DevicesPage({ devices, onReload, tablet }) {
                 { icon: '📥', title: t.import_json,      sub: t.import_sub,     action: () => { document.getElementById('dev-import-input').click() } },
               ].map(item => (
                 <button key={item.title} onClick={item.action} style={{
-                  background: '#1e3a5f', border: '1px solid #3b82f6', borderRadius: 12,
-                  padding: '16px 8px', cursor: 'pointer', textAlign: 'center',
+                  background: item.highlight ? 'rgba(249,115,22,0.12)' : '#1e3a5f',
+                  border: `1px solid ${item.highlight ? '#f97316' : '#3b82f6'}`,
+                  borderRadius: 12, padding: '16px 8px', cursor: 'pointer', textAlign: 'center',
                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
                 }}>
                   <span style={{ fontSize: 28 }}>{item.icon}</span>
-                  <span style={{ color: '#e2e8f0', fontWeight: 700, fontSize: 13 }}>{item.title}</span>
+                  <span style={{ color: item.highlight ? '#fb923c' : '#e2e8f0', fontWeight: 700, fontSize: 13 }}>{item.title}</span>
                   <span style={{ color: '#64748b', fontSize: 11 }}>{item.sub}</span>
                 </button>
               ))}
@@ -308,6 +311,14 @@ export default function DevicesPage({ devices, onReload, tablet }) {
           rooms={rooms}
           onClose={() => setAddMode(null)}
           onAdded={() => { setAddMode(null); onReload() }}
+        />
+      )}
+
+      {/* ── SmartLife / cloud import wizard ─────────────────────────────────── */}
+      {addMode === 'import' && (
+        <ImportWizard
+          onClose={() => setAddMode(null)}
+          onImported={() => { setAddMode(null); onReload() }}
         />
       )}
 

@@ -16,7 +16,7 @@ import socket
 import platform
 import subprocess
 import threading
-from typing import Optional
+from typing import Optional, List
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
@@ -192,6 +192,34 @@ class ImportGatewayIn(BaseModel):
     room:      str = ""
     version:   float = 3.3
 
+# ── Cloud import models ───────────────────────────────────────────────────────
+
+class CloudCredsIn(BaseModel):
+    """
+    Credentials for the Tuya IoT Platform (iot.tuya.com).
+    Access ID   = your project's Access ID
+    Access Secret = your project's Access Secret
+    region      = "eu" | "us" | "cn" | "in" | "us-e" | "eu-w"
+    """
+    region:        str
+    access_id:     str
+    access_secret: str
+
+class CloudDeviceIn(BaseModel):
+    id:        str
+    name:      str
+    local_key: str = ""
+    ip:        str = ""
+    type:      str = "switch"
+    category:  str = ""
+    online:    bool = False
+
+class CloudImportIn(BaseModel):
+    region:        str
+    access_id:     str
+    access_secret: str
+    devices:       List[CloudDeviceIn]
+
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
@@ -359,6 +387,152 @@ async def import_subdevice(data: ImportSubIn):
         "created_at": int(time.time()),
     })
     return {"ok": True, "device_id": dev_id}
+
+
+# ── Cloud helpers ─────────────────────────────────────────────────────────────
+
+def _cloud_fetch_blocking(region: str, access_id: str, access_secret: str) -> list:
+    """
+    Call Tuya Open API via tinytuya.Cloud and return all devices
+    linked to the SmartLife / Tuya Smart account.
+    Returns a normalised list including local_key and ip where available.
+    """
+    try:
+        import tinytuya
+    except ImportError:
+        raise HTTPException(500, "tinytuya not installed — run: pip install tinytuya")
+
+    try:
+        cloud = tinytuya.Cloud(
+            apiRegion=region,
+            apiKey=access_id,
+            apiSecret=access_secret,
+            # apiDeviceID not required in tinytuya >= 1.9
+        )
+        raw = cloud.getdevices()
+
+        # getdevices() may return list or dict depending on version
+        if isinstance(raw, dict):
+            raw = raw.get("result", raw.get("devices", []))
+        if not raw:
+            return []
+
+        out = []
+        for d in raw:
+            if not isinstance(d, dict):
+                continue
+            name = (d.get("name") or d.get("local_name") or d.get("id", "")).strip()
+            out.append({
+                "id":         d.get("id", ""),
+                "name":       name or d.get("id", ""),
+                "local_key":  d.get("local_key", ""),
+                "ip":         d.get("ip", ""),
+                "online":     bool(d.get("online", False)),
+                "category":   d.get("category", ""),
+                "model":      d.get("model", ""),
+                "product_id": d.get("product_id", ""),
+                "sub":        bool(d.get("sub", False)),
+                "type":       _guess_type(name, d.get("category", "")),
+            })
+        return out
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        msg = str(e)
+        if "sign" in msg.lower() or "auth" in msg.lower() or "invalid" in msg.lower():
+            raise HTTPException(401, f"Invalid credentials — check Access ID / Secret: {msg}")
+        raise HTTPException(400, f"Cloud error: {msg}")
+
+
+# ── Cloud endpoints ───────────────────────────────────────────────────────────
+
+@router.post("/cloud-fetch")
+async def cloud_fetch(creds: CloudCredsIn):
+    """
+    Fetch all SmartLife / Tuya Smart devices from the cloud.
+    Returns device list with names, local_keys and IPs (if available).
+
+    Requires a Tuya IoT Platform account at https://iot.tuya.com
+    with your SmartLife app linked to the project.
+    """
+    loop = asyncio.get_running_loop()
+    try:
+        devices = await loop.run_in_executor(
+            None, _cloud_fetch_blocking,
+            creds.region, creds.access_id, creds.access_secret,
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(400, str(e))
+
+    return {"devices": devices, "count": len(devices)}
+
+
+@router.post("/cloud-import")
+async def cloud_import(data: CloudImportIn):
+    """
+    Import a selection of Tuya cloud devices into the hub database.
+    Runs a LAN scan first to fill in missing IPs (devices must be
+    on the same network as the hub PC).
+    """
+    loop = asyncio.get_running_loop()
+
+    # Quick LAN scan to enrich IPs for devices that didn't have one
+    try:
+        lan_list = await loop.run_in_executor(None, _do_scan, 5)
+    except Exception:
+        lan_list = []
+    lan_ip_by_id = {
+        (d.get("gwId") or d.get("id") or ""): d.get("ip", "")
+        for d in lan_list if d.get("ip")
+    }
+
+    imported = []
+    skipped  = []
+
+    for dev in data.devices:
+        dev_id = (dev.id or "").strip()
+        if not dev_id:
+            continue
+
+        ip        = dev.ip or lan_ip_by_id.get(dev_id, "")
+        local_key = dev.local_key or ""
+        name      = dev.name or dev_id
+        hub_type  = dev.type or _guess_type(name, dev.category)
+        safe_id   = f"tuya_{re.sub(r'[^a-zA-Z0-9]', '_', dev_id)}"
+
+        await upsert_device({
+            "id":          safe_id,
+            "name":        name,
+            "protocol":    "tuya",
+            "type":        hub_type,
+            "topic_state": f"devices/{safe_id}/state",
+            "topic_cmd":   f"devices/{safe_id}/cmd",
+            "room":        "",
+            "label":       "SmartLife",
+            "config": {
+                "tuya_device_id": dev_id,
+                "tuya_ip":        ip,
+                "tuya_local_key": local_key,
+                "tuya_version":   "3.3",
+                "category":       dev.category,
+                "source":         "smartlife_cloud",
+            },
+            "state":      {"state": "ON" if dev.online else "OFF"},
+            "online":     bool(ip),
+            "pinned":     False,
+            "created_at": int(time.time()),
+        })
+        imported.append({"hub_id": safe_id, "name": name, "ip": ip, "has_key": bool(local_key)})
+
+    return {
+        "ok":       True,
+        "imported": len(imported),
+        "skipped":  len(skipped),
+        "devices":  imported,
+    }
 
 
 @router.get("/help")
