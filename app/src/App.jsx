@@ -21,23 +21,33 @@ import GeminiAssistant from './components/GeminiAssistant'
 
 const APP_VERSION = '2.10.0'
 
-/* ── Breakpoints ────────────────────────────────────────────────────── */
-const getScreenClass = () => {
+/* ── Screen info: class + orientation ──────────────────────────────── */
+const getScreenInfo = () => {
   const w = window.innerWidth
-  if (w >= 1024) return 'desktop'
-  if (w >= 600)  return 'tablet'
-  return 'phone'
+  const h = window.innerHeight
+  return {
+    sc:        w >= 1024 ? 'desktop' : w >= 600 ? 'tablet' : 'phone',
+    landscape: w > h,
+    w,
+    h,
+  }
 }
 
-/* ── Reactive screen-size hook ──────────────────────────────────────── */
+/* ── Reactive hook — updates on resize AND rotation ────────────────── */
 function useScreenSize() {
-  const [sc, setSc] = useState(getScreenClass)
+  const [info, setInfo] = useState(getScreenInfo)
   useEffect(() => {
-    const handler = () => setSc(getScreenClass())
-    window.addEventListener('resize', handler)
-    return () => window.removeEventListener('resize', handler)
+    const update = () => setInfo(getScreenInfo())
+    window.addEventListener('resize', update)
+    window.addEventListener('orientationchange', update)      // Android legacy
+    screen.orientation?.addEventListener('change', update)    // modern browsers
+    return () => {
+      window.removeEventListener('resize', update)
+      window.removeEventListener('orientationchange', update)
+      screen.orientation?.removeEventListener('change', update)
+    }
   }, [])
-  return sc
+  return info
 }
 
 /* ── Wake-lock hook (keeps screen on while mounted) ─────────────────── */
@@ -94,10 +104,13 @@ function AppInner() {
   const [unreadNotifs, setUnreadNotifs] = useState(0)
   const { devices, loading, reload, updateDeviceState, setOnline } = useDevices()
 
-  // Reactive screen size — updates on window resize / device rotation
-  const screenClass = useScreenSize()
-  const tablet  = screenClass !== 'phone'          // tablet OR desktop
-  const desktop = screenClass === 'desktop'
+  // Reactive screen size + orientation — updates on resize / rotation
+  const { sc: screenClass, landscape } = useScreenSize()
+  const tablet      = screenClass !== 'phone'           // tablet OR desktop
+  const desktop     = screenClass === 'desktop'
+  // Sidebar visible: always on desktop; on tablet only when landscape
+  const showSidebar = desktop || (screenClass === 'tablet' && landscape)
+  const sidebarW    = desktop ? 200 : 160               // slightly narrower on tablet
 
   // Keep screen on when running on a tablet/desktop
   useWakeLock(tablet)
@@ -237,21 +250,28 @@ function AppInner() {
     )
   }
 
-  // Responsive max-width: phone 480 | tablet 900 | desktop full-width 1280
-  const maxW = desktop ? 1280 : tablet ? 900 : 480
-  // Responsive font scale
-  const fontScale = desktop ? 1.1 : tablet ? 1.05 : 1
+  // Responsive layout values
+  // Phone: capped at 480px centered; tablet: full viewport width; desktop: max 1280px
+  const maxW      = desktop ? 1280 : screenClass === 'phone' ? 480 : '100%'
+  const fontScale = desktop ? 1.1  : tablet ? (landscape ? 1.07 : 1.04) : 1
 
   return (
     <div style={{
       minHeight: '100vh', background: '#0f172a', color: '#f1f5f9',
       direction: rtl ? 'rtl' : 'ltr',
-      maxWidth: maxW, margin: '0 auto', position: 'relative',
+      maxWidth: maxW, width: '100%', margin: '0 auto', position: 'relative',
       fontSize: `${fontScale}rem`,
     }}>
 
       {/* Header */}
-      <div style={{ background: '#1e293b', borderBottom: '1px solid #334155', padding: tablet ? '12px 24px' : '10px 16px', position: 'sticky', top: 0, zIndex: 50 }}>
+      <div style={{
+        background: '#1e293b', borderBottom: '1px solid #334155',
+        padding: desktop ? '12px 28px' : tablet ? (landscape ? '8px 24px' : '12px 20px') : '10px 16px',
+        position: 'sticky', top: 0, zIndex: 50,
+        // iOS safe-area insets (notch on landscape left/right)
+        paddingLeft:  `max(${desktop ? 28 : tablet ? 20 : 16}px, env(safe-area-inset-left))`,
+        paddingRight: `max(${desktop ? 28 : tablet ? 20 : 16}px, env(safe-area-inset-right))`,
+      }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
 
           {/* Left: logo + name + cyber button */}
@@ -379,18 +399,21 @@ function AppInner() {
         )}
       </div>
 
-      {/* ── Layout: desktop = sidebar + content, tablet/phone = bottom nav ── */}
+      {/* ── Layout: sidebar (desktop + tablet-landscape) or bottom nav ── */}
       <div style={{ display: 'flex', minHeight: 'calc(100vh - 56px)' }}>
 
-        {/* Sidebar nav — desktop only */}
-        {desktop && (
+        {/* Sidebar nav — desktop always; tablet only in landscape */}
+        {showSidebar && (
           <nav style={{
-            width: 200, flexShrink: 0,
+            width: sidebarW, flexShrink: 0,
             background: '#1e293b', borderInlineEnd: '1px solid #334155',
             position: 'sticky', top: 56, height: 'calc(100vh - 56px)',
             overflowY: 'auto', padding: '12px 0',
             display: 'flex', flexDirection: 'column', gap: 2,
             direction: rtl ? 'rtl' : 'ltr',
+            // iOS safe-area for sidebar on landscape left edge
+            paddingLeft:  rtl ? 0 : 'env(safe-area-inset-left)',
+            paddingRight: rtl ? 'env(safe-area-inset-right)' : 0,
           }}>
             {TABS.map(tabItem => (
               <button key={tabItem.id} onClick={() => setTab(tabItem.id)} style={{
@@ -420,8 +443,15 @@ function AppInner() {
 
         {/* Main content */}
         <div style={{
-          flex: 1, padding: desktop ? '24px 28px 32px' : tablet ? '20px 20px 90px' : '16px 16px 80px',
+          flex: 1,
+          // showSidebar → no bottom nav, small bottom pad; otherwise leave room for bottom nav
+          padding: showSidebar
+            ? `${desktop ? 24 : 16}px ${desktop ? 28 : 18}px 32px`
+            : tablet
+              ? `20px 20px ${landscape ? 72 : 90}px`
+              : `14px 14px 74px`,
           minWidth: 0,
+          overflowX: 'hidden',
         }}>
           {loading ? (
             <div style={{ textAlign: 'center', padding: 60, color: '#475569' }}>
@@ -430,10 +460,10 @@ function AppInner() {
             </div>
           ) : (
             <>
-              {tab === 'dashboard'   && <Dashboard     devices={devices} wsConnected={wsConnected} onNavigate={setTab} onReload={reload} tablet={tablet} />}
-              {tab === 'devices'     && <DevicesPage    devices={devices} onReload={reload} tablet={tablet} />}
-              {tab === 'ac'          && <AcPage         devices={devices} onReload={reload} />}
-              {tab === 'scenes'      && <ScenesPage     devices={devices} tablet={tablet} />}
+              {tab === 'dashboard'   && <Dashboard     devices={devices} wsConnected={wsConnected} onNavigate={setTab} onReload={reload} tablet={tablet} landscape={landscape} />}
+              {tab === 'devices'     && <DevicesPage    devices={devices} onReload={reload} tablet={tablet} landscape={landscape} />}
+              {tab === 'ac'          && <AcPage         devices={devices} onReload={reload} tablet={tablet} landscape={landscape} />}
+              {tab === 'scenes'      && <ScenesPage     devices={devices} tablet={tablet} landscape={landscape} />}
               {tab === 'cameras'     && <CamerasPage    devices={devices} />}
               {tab === 'automations' && <AutomationsPage devices={devices} />}
               {tab === 'security'    && <SecurityPage   devices={devices} onReload={reload} onNavigate={setTab} />}
@@ -449,27 +479,31 @@ function AppInner() {
         </div>
       </div>
 
-      {/* Bottom Nav — tablet & phone only */}
-      {!desktop && (
+      {/* Bottom Nav — only when sidebar is NOT shown (phone + tablet-portrait) */}
+      {!showSidebar && (
         <nav style={{
           position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
-          width: '100%', maxWidth: maxW,
+          width: '100%', maxWidth: screenClass === 'phone' ? 480 : '100%',
           background: '#1e293b', borderTop: '1px solid #334155',
           display: 'flex', zIndex: 80,
           direction: rtl ? 'rtl' : 'ltr',
-          paddingBottom: 'env(safe-area-inset-bottom)', // iOS home bar
+          // iOS home bar + landscape notch safe areas
+          paddingBottom: 'env(safe-area-inset-bottom)',
+          paddingLeft:   'env(safe-area-inset-left)',
+          paddingRight:  'env(safe-area-inset-right)',
         }}>
           {TABS.map(tabItem => (
             <button key={tabItem.id} onClick={() => setTab(tabItem.id)} style={{
               flex: 1,
-              padding: tablet ? '9px 2px 12px' : '7px 2px 10px',
+              // Tablet portrait: slightly taller tabs; phone: compact
+              padding: tablet ? '7px 2px 10px' : '6px 1px 8px',
               border: 'none', background: 'none',
               color: tab === tabItem.id ? '#38bdf8' : '#64748b', cursor: 'pointer',
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
               position: 'relative',
               WebkitTapHighlightColor: 'transparent',
             }}>
-              <span style={{ fontSize: tablet ? 22 : 18, position: 'relative' }}>
+              <span style={{ fontSize: tablet ? 21 : 18, position: 'relative' }}>
                 {tabItem.icon}
                 {tabItem.badge > 0 && (
                   <span style={{
