@@ -1,0 +1,39 @@
+{
+  "appId": "com.fantatech.smarthomehub",
+  "appName": "Fantatech Home & Security",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "http",
+    "iosScheme": "https",
+    "cleartext": true,
+    "allowNavigation": [
+      "192.168.0.*", "192.168.1.*", "192.168.2.*", "192.168.3.*",
+      "192.168.4.*", "192.168.8.*", "192.168.10.*", "192.168.50.*",
+      "192.168.100.*", "192.168.178.*",
+      "10.0.0.*", "10.0.1.*", "10.1.1.*", "172.16.0.*",
+      "fantatech-hub.local"
+    ]
+  },
+  "android": {
+    "allowMixedContent": true,
+    "backgroundColor": "#0f172a",
+    "overrideUserAgent": "FantaTech Android"
+  },
+  "ios": {
+    "backgroundColor": "#0f172a",
+    "contentInset": "automatic",
+    "allowsLinkPreview": false,
+    "overrideUserAgent": "FantaTech iOS",
+    "limitsNavigationsToAppBoundDomains": false
+  },
+  "plugins": {
+    "KeepAwake": {
+      "screenOffAuthorized": true
+    },
+    "SplashScreen": {
+      "launchShowDuration": 1500,
+      "backgroundColor": "#0f172a",
+      "showSpinner": false
+    }
+  }
+}

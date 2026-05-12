@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useDevices, useWebSocket, api, getHubUrl } from './hooks/useHub'
 import { LangProvider, useLang, LANG_META } from './context/LangContext'
 import Dashboard from './pages/Dashboard'
@@ -19,21 +19,88 @@ import GpsPage from './pages/GpsPage'
 import RegistrationPage from './pages/RegistrationPage'
 import GeminiAssistant from './components/GeminiAssistant'
 
-const APP_VERSION = '2.0.0'
+const APP_VERSION = '2.10.0'
+
+/* ── Breakpoints ────────────────────────────────────────────────────── */
+const getScreenClass = () => {
+  const w = window.innerWidth
+  if (w >= 1024) return 'desktop'
+  if (w >= 600)  return 'tablet'
+  return 'phone'
+}
+
+/* ── Reactive screen-size hook ──────────────────────────────────────── */
+function useScreenSize() {
+  const [sc, setSc] = useState(getScreenClass)
+  useEffect(() => {
+    const handler = () => setSc(getScreenClass())
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [])
+  return sc
+}
+
+/* ── Wake-lock hook (keeps screen on while mounted) ─────────────────── */
+function useWakeLock(enabled) {
+  const lockRef = useRef(null)
+  useEffect(() => {
+    if (!enabled) return
+    let released = false
+
+    const acquire = async () => {
+      // 1. Try Capacitor native plugin (Android + iOS)
+      try {
+        const { KeepAwake } = await import('@capacitor-community/keep-awake')
+        await KeepAwake.keepAwake()
+        console.log('[WakeLock] KeepAwake (native) active')
+        return
+      } catch {}
+
+      // 2. Fallback: Web Wake Lock API (Chrome/Edge)
+      try {
+        if ('wakeLock' in navigator) {
+          lockRef.current = await navigator.wakeLock.request('screen')
+          console.log('[WakeLock] Web WakeLock API active')
+        }
+      } catch {}
+    }
+
+    acquire()
+
+    // Re-acquire after page visibility change (browser may release it)
+    const onVisible = () => { if (document.visibilityState === 'visible') acquire() }
+    document.addEventListener('visibilitychange', onVisible)
+
+    return () => {
+      released = true
+      document.removeEventListener('visibilitychange', onVisible)
+      import('@capacitor-community/keep-awake')
+        .then(({ KeepAwake }) => KeepAwake.allowSleep())
+        .catch(() => {})
+      if (lockRef.current) { lockRef.current.release(); lockRef.current = null }
+    }
+  }, [enabled])
+}
 
 function AppInner() {
   const { t, lang, rtl, setLang } = useLang()
   const [langPickerOpen, setLangPickerOpen] = useState(false)
 
-  // Cycle through languages on long-press or use mini-picker on tap
   const LANG_CODES = Object.keys(LANG_META)
   const [tab, setTab]           = useState('dashboard')
   const [hubVersion, setHubVersion] = useState(null)
   const [hubReady, setHubReady] = useState(null)   // null=checking, true, false
-  const [tablet]                = useState(() => window.innerWidth >= 600)
   const [registered, setRegistered] = useState(() => !!localStorage.getItem('fantatech_user'))
   const [unreadNotifs, setUnreadNotifs] = useState(0)
   const { devices, loading, reload, updateDeviceState, setOnline } = useDevices()
+
+  // Reactive screen size — updates on window resize / device rotation
+  const screenClass = useScreenSize()
+  const tablet  = screenClass !== 'phone'          // tablet OR desktop
+  const desktop = screenClass === 'desktop'
+
+  // Keep screen on when running on a tablet/desktop
+  useWakeLock(tablet)
 
   const onDeviceState  = useCallback(d => updateDeviceState(d.id, d.state), [updateDeviceState])
   const onDeviceOnline = useCallback(d => setOnline(d.id, d.online), [setOnline])
@@ -170,15 +237,21 @@ function AppInner() {
     )
   }
 
+  // Responsive max-width: phone 480 | tablet 900 | desktop full-width 1280
+  const maxW = desktop ? 1280 : tablet ? 900 : 480
+  // Responsive font scale
+  const fontScale = desktop ? 1.1 : tablet ? 1.05 : 1
+
   return (
     <div style={{
       minHeight: '100vh', background: '#0f172a', color: '#f1f5f9',
       direction: rtl ? 'rtl' : 'ltr',
-      maxWidth: tablet ? 900 : 480, margin: '0 auto', position: 'relative',
+      maxWidth: maxW, margin: '0 auto', position: 'relative',
+      fontSize: `${fontScale}rem`,
     }}>
 
       {/* Header */}
-      <div style={{ background: '#1e293b', borderBottom: '1px solid #334155', padding: '10px 16px', position: 'sticky', top: 0, zIndex: 50 }}>
+      <div style={{ background: '#1e293b', borderBottom: '1px solid #334155', padding: tablet ? '12px 24px' : '10px 16px', position: 'sticky', top: 0, zIndex: 50 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
 
           {/* Left: logo + name + cyber button */}
@@ -306,70 +379,120 @@ function AppInner() {
         )}
       </div>
 
-      {/* Content */}
-      <div style={{ padding: '20px 16px 80px' }}>
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: 60, color: '#475569' }}>
-            <div style={{ fontSize: 36 }}>⏳</div>
-            <p style={{ marginTop: 12 }}>{t.loading}</p>
-          </div>
-        ) : (
-          <>
-            {tab === 'dashboard'   && <Dashboard     devices={devices} wsConnected={wsConnected} onNavigate={setTab} onReload={reload} tablet={tablet} />}
-            {tab === 'devices'     && <DevicesPage    devices={devices} onReload={reload} tablet={tablet} />}
-            {tab === 'ac'          && <AcPage         devices={devices} onReload={reload} />}
-            {tab === 'scenes'      && <ScenesPage     devices={devices} tablet={tablet} />}
-            {tab === 'cameras'     && <CamerasPage    devices={devices} />}
-            {tab === 'automations' && <AutomationsPage devices={devices} />}
-            {tab === 'security'    && <SecurityPage   devices={devices} onReload={reload} onNavigate={setTab} />}
-            {tab === 'scenes'      && <ScenesPage     devices={devices} tablet={tablet} />}
-            {tab === 'cyber'       && <CyberPage />}
-            {tab === 'rooms'       && <RoomsPage />}
-            {tab === 'network'     && <NetworkPage />}
-            {tab === 'gps'         && <GpsPage />}
-            {tab === 'gemini'      && <GeminiAssistant onDeviceAction={handleDeviceAction} inline />}
-            {tab === 'notifications'  && <NotificationsPage />}
-            {tab === 'settings'       && <SettingsPage />}
-          </>
+      {/* ── Layout: desktop = sidebar + content, tablet/phone = bottom nav ── */}
+      <div style={{ display: 'flex', minHeight: 'calc(100vh - 56px)' }}>
+
+        {/* Sidebar nav — desktop only */}
+        {desktop && (
+          <nav style={{
+            width: 200, flexShrink: 0,
+            background: '#1e293b', borderInlineEnd: '1px solid #334155',
+            position: 'sticky', top: 56, height: 'calc(100vh - 56px)',
+            overflowY: 'auto', padding: '12px 0',
+            display: 'flex', flexDirection: 'column', gap: 2,
+            direction: rtl ? 'rtl' : 'ltr',
+          }}>
+            {TABS.map(tabItem => (
+              <button key={tabItem.id} onClick={() => setTab(tabItem.id)} style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '10px 16px', border: 'none',
+                background: tab === tabItem.id ? 'rgba(56,189,248,0.12)' : 'transparent',
+                color: tab === tabItem.id ? '#38bdf8' : '#64748b',
+                cursor: 'pointer', borderRadius: 8, margin: '0 6px',
+                fontSize: 13, fontWeight: tab === tabItem.id ? 700 : 400,
+                transition: 'all 0.15s', position: 'relative',
+                textAlign: rtl ? 'right' : 'left',
+                borderInlineStart: tab === tabItem.id ? '3px solid #38bdf8' : '3px solid transparent',
+              }}>
+                <span style={{ fontSize: 18 }}>{tabItem.icon}</span>
+                <span style={{ flex: 1 }}>{tabItem.label}</span>
+                {tabItem.badge > 0 && (
+                  <span style={{
+                    background: '#ef4444', color: '#fff',
+                    borderRadius: 10, fontSize: 9, fontWeight: 700,
+                    padding: '1px 5px', lineHeight: 1.4, minWidth: 16, textAlign: 'center',
+                  }}>{tabItem.badge > 99 ? '99+' : tabItem.badge}</span>
+                )}
+              </button>
+            ))}
+          </nav>
         )}
+
+        {/* Main content */}
+        <div style={{
+          flex: 1, padding: desktop ? '24px 28px 32px' : tablet ? '20px 20px 90px' : '16px 16px 80px',
+          minWidth: 0,
+        }}>
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: 60, color: '#475569' }}>
+              <div style={{ fontSize: 36 }}>⏳</div>
+              <p style={{ marginTop: 12 }}>{t.loading}</p>
+            </div>
+          ) : (
+            <>
+              {tab === 'dashboard'   && <Dashboard     devices={devices} wsConnected={wsConnected} onNavigate={setTab} onReload={reload} tablet={tablet} />}
+              {tab === 'devices'     && <DevicesPage    devices={devices} onReload={reload} tablet={tablet} />}
+              {tab === 'ac'          && <AcPage         devices={devices} onReload={reload} />}
+              {tab === 'scenes'      && <ScenesPage     devices={devices} tablet={tablet} />}
+              {tab === 'cameras'     && <CamerasPage    devices={devices} />}
+              {tab === 'automations' && <AutomationsPage devices={devices} />}
+              {tab === 'security'    && <SecurityPage   devices={devices} onReload={reload} onNavigate={setTab} />}
+              {tab === 'cyber'       && <CyberPage />}
+              {tab === 'rooms'       && <RoomsPage />}
+              {tab === 'network'     && <NetworkPage />}
+              {tab === 'gps'         && <GpsPage />}
+              {tab === 'gemini'      && <GeminiAssistant onDeviceAction={handleDeviceAction} inline />}
+              {tab === 'notifications'  && <NotificationsPage />}
+              {tab === 'settings'       && <SettingsPage />}
+            </>
+          )}
+        </div>
       </div>
 
-      {/* Bottom Nav */}
-      <nav style={{
-        position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
-        width: '100%', maxWidth: tablet ? 900 : 480,
-        background: '#1e293b', borderTop: '1px solid #334155',
-        display: 'flex', zIndex: 80,
-        direction: rtl ? 'rtl' : 'ltr',
-      }}>
-        {TABS.map(tabItem => (
-          <button key={tabItem.id} onClick={() => setTab(tabItem.id)} style={{
-            flex: 1, padding: '7px 2px 10px', border: 'none', background: 'none',
-            color: tab === tabItem.id ? '#38bdf8' : '#64748b', cursor: 'pointer',
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
-            position: 'relative',
-          }}>
-            <span style={{ fontSize: 18, position: 'relative' }}>
-              {tabItem.icon}
-              {tabItem.badge > 0 && (
-                <span style={{
-                  position: 'absolute', top: -4, insetInlineEnd: -6,
-                  background: '#ef4444', color: '#fff',
-                  borderRadius: 10, fontSize: 9, fontWeight: 700,
-                  padding: '1px 4px', lineHeight: 1.3,
-                  minWidth: 14, textAlign: 'center',
-                }}>
-                  {tabItem.badge > 99 ? '99+' : tabItem.badge}
-                </span>
+      {/* Bottom Nav — tablet & phone only */}
+      {!desktop && (
+        <nav style={{
+          position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
+          width: '100%', maxWidth: maxW,
+          background: '#1e293b', borderTop: '1px solid #334155',
+          display: 'flex', zIndex: 80,
+          direction: rtl ? 'rtl' : 'ltr',
+          paddingBottom: 'env(safe-area-inset-bottom)', // iOS home bar
+        }}>
+          {TABS.map(tabItem => (
+            <button key={tabItem.id} onClick={() => setTab(tabItem.id)} style={{
+              flex: 1,
+              padding: tablet ? '9px 2px 12px' : '7px 2px 10px',
+              border: 'none', background: 'none',
+              color: tab === tabItem.id ? '#38bdf8' : '#64748b', cursor: 'pointer',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+              position: 'relative',
+              WebkitTapHighlightColor: 'transparent',
+            }}>
+              <span style={{ fontSize: tablet ? 22 : 18, position: 'relative' }}>
+                {tabItem.icon}
+                {tabItem.badge > 0 && (
+                  <span style={{
+                    position: 'absolute', top: -4, insetInlineEnd: -6,
+                    background: '#ef4444', color: '#fff',
+                    borderRadius: 10, fontSize: 9, fontWeight: 700,
+                    padding: '1px 4px', lineHeight: 1.3,
+                    minWidth: 14, textAlign: 'center',
+                  }}>
+                    {tabItem.badge > 99 ? '99+' : tabItem.badge}
+                  </span>
+                )}
+              </span>
+              <span style={{ fontSize: tablet ? 10 : 8.5, fontWeight: tab === tabItem.id ? 700 : 400, whiteSpace: 'nowrap' }}>
+                {tabItem.label}
+              </span>
+              {tab === tabItem.id && (
+                <div style={{ width: 3, height: 3, borderRadius: '50%', background: '#38bdf8' }} />
               )}
-            </span>
-            <span style={{ fontSize: 8.5, fontWeight: tab === tabItem.id ? 700 : 400, whiteSpace: 'nowrap' }}>{tabItem.label}</span>
-            {tab === tabItem.id && (
-              <div style={{ width: 3, height: 3, borderRadius: '50%', background: '#38bdf8' }} />
-            )}
-          </button>
-        ))}
-      </nav>
+            </button>
+          ))}
+        </nav>
+      )}
     </div>
   )
 }

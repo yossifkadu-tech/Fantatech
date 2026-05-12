@@ -142,16 +142,47 @@ async function writePng(svgStr, outPath) {
   console.log('✅', path.relative(process.cwd(), outPath));
 }
 
-(async () => {
-  console.log('🎨 Generating FantaTech icons (in-app style)...\n');
+// iOS icon sizes required by App Store + Xcode
+const IOS_SIZES = [
+  20, 29, 40, 58, 60, 76, 80, 87, 120, 152, 167, 180, 1024
+];
+const IOS_DIR = 'app/ios/App/App/Assets.xcassets/AppIcon.appiconset';
 
+(async () => {
+  console.log('🎨 Generating FantaTech icons...\n');
+
+  // ── Android ──
+  console.log('📱 Android icons:');
   for (const { dir, size } of DENSITIES) {
     const outDir = path.join(RES, dir);
     if (!fs.existsSync(outDir)) { console.warn('⚠️  Missing dir:', outDir); continue; }
-
     await writePng(makeSvg(size, true),  path.join(outDir, 'ic_launcher.png'));
     await writePng(makeSvg(size, true),  path.join(outDir, 'ic_launcher_round.png'));
     await writePng(makeSvg(size, false), path.join(outDir, 'ic_launcher_foreground.png'));
+  }
+
+  // ── iOS ──
+  if (fs.existsSync(IOS_DIR)) {
+    console.log('\n🍎 iOS icons:');
+    for (const size of IOS_SIZES) {
+      await writePng(makeSvg(size, true), path.join(IOS_DIR, `AppIcon-${size}.png`));
+    }
+
+    // Write Contents.json for Xcode
+    const contents = {
+      images: IOS_SIZES.map(sz => ({
+        filename: `AppIcon-${sz}.png`,
+        idiom:    sz >= 167 ? 'ipad' : sz === 1024 ? 'ios-marketing' : 'iphone',
+        scale:    sz === 1024 ? '1x' : '2x',
+        size:     `${Math.round(sz / 2)}x${Math.round(sz / 2)}`,
+      })),
+      info: { author: 'xcode', version: 1 },
+    };
+    fs.writeFileSync(path.join(IOS_DIR, 'Contents.json'), JSON.stringify(contents, null, 2));
+    console.log('✅  iOS Contents.json written');
+  } else {
+    console.log('\n⚠️  iOS dir not found — skipping iOS icons');
+    console.log('   Run: npx cap add ios  (then re-run this script)');
   }
 
   console.log('\n✅  All icons generated!\n');
