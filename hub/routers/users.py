@@ -35,6 +35,9 @@ class UserRegister(BaseModel):
     card_expiry: Optional[str] = ""
     card_cvv:    Optional[str] = ""
 
+class UserLogin(BaseModel):
+    username: str
+
 
 def _ensure_workbook():
     """Create users.xlsx with headers if it doesn't exist."""
@@ -141,6 +144,44 @@ async def export_users():
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         filename="fantatech-users.xlsx",
     )
+
+
+@router.post("/login")
+async def login_user(data: UserLogin):
+    """
+    Look up a username in users.xlsx and return their record.
+    Used by the app after reinstall so the user can restore their session
+    without re-registering.
+    """
+    from fastapi import HTTPException
+    try:
+        import openpyxl
+        if not os.path.exists(XLSX_PATH):
+            raise HTTPException(status_code=404, detail="No users registered yet")
+
+        wb = openpyxl.load_workbook(XLSX_PATH, read_only=True)
+        ws = wb.active
+
+        # Column indices (1-based): date=1, plan=2, name=3, username=4, email=5, address=6
+        for row in ws.iter_rows(min_row=2, values_only=True):
+            if not row or not row[3]:
+                continue
+            if str(row[3]).strip().lower() == data.username.strip().lower():
+                return {
+                    "ok": True,
+                    "user": {
+                        "plan":     str(row[1] or "free"),
+                        "name":     str(row[2] or ""),
+                        "username": str(row[3] or ""),
+                        "email":    str(row[4] or ""),
+                        "address":  str(row[5] or ""),
+                    },
+                }
+        raise HTTPException(status_code=404, detail="Username not found")
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/count")

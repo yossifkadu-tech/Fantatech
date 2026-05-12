@@ -767,6 +767,20 @@ const T = {
     reg_price_enhanced: '₪59/mo',
     reg_price_unlimited: '₪99/mo',
 
+    /* ── Login / returning user ── */
+    login_tab:        'Sign In',
+    register_tab:     'New Account',
+    login_title:      'Welcome Back',
+    login_subtitle:   'Enter your username to restore your account',
+    login_username:   'Username',
+    login_submit:     'Sign In',
+    login_not_found:  'Username not found. Check the username or register a new account.',
+    login_hub_offline:'Hub is offline. Connect to the hub to sign in, or skip for now.',
+    login_success:    'Welcome back!',
+    signout_btn:      'Sign Out',
+    signout_confirm:  'Sign out and clear local data? You will need to sign in again.',
+    update_hint:      'To update the app without losing your data, install the new APK directly over the existing one — Android keeps all your data.',
+
     /* ── Alexa ── */
     alexa_desc: 'The hub runs an emulated Philips Hue bridge. Alexa discovers all your devices automatically on the local network.',
     alexa_setup: 'Setup steps:',
@@ -1476,6 +1490,20 @@ const T = {
     reg_price_basic: '₪29/חודש',
     reg_price_enhanced: '₪59/חודש',
     reg_price_unlimited: '₪99/חודש',
+
+    /* ── כניסה / משתמש חוזר ── */
+    login_tab:        'כניסה',
+    register_tab:     'חשבון חדש',
+    login_title:      'ברוך שובך',
+    login_subtitle:   'הזן את שם המשתמש שלך כדי לשחזר את החשבון',
+    login_username:   'שם משתמש',
+    login_submit:     'כניסה',
+    login_not_found:  'שם המשתמש לא נמצא. בדוק שוב או צור חשבון חדש.',
+    login_hub_offline:'ה-Hub לא מחובר. התחבר אליו כדי להיכנס, או דלג לעת עתה.',
+    login_success:    'ברוך שובך!',
+    signout_btn:      'התנתקות',
+    signout_confirm:  'להתנתק ולמחוק נתונים מקומיים? תצטרך להיכנס מחדש.',
+    update_hint:      'לעדכון האפליקציה ללא אובדן נתונים, התקן את ה-APK החדש ישירות מעל הקיים — אנדרואיד שומר את כל הנתונים שלך.',
 
     /* ── אלקסה ── */
     alexa_desc: 'האב מריץ Philips Hue Bridge מדומה. אלקסה מגלה את כל המכשירים שלך אוטומטית ברשת המקומית.',

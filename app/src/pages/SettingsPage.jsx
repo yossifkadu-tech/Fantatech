@@ -685,8 +685,64 @@ export default function SettingsPage() {
         <div style={{ fontSize: 13, color: '#64748b', lineHeight: 1.8 }}>
           <div>App {t.version}: <b style={{ color: '#38bdf8' }}>v{APP_VERSION}</b></div>
           <div>Hub {t.version}: <b style={{ color: '#38bdf8' }}>v{hubVersion}</b></div>
-          <div style={{ marginTop: 4, fontSize: 11 }}>Fantatech Home & Security</div>
+          <div style={{ marginTop: 4, fontSize: 11 }}>FantaTech</div>
         </div>
+      </Section>
+
+      {/* ── Account / Sign out ── */}
+      <Section title={`👤 ${t.account_section ?? 'Account'}`}>
+        {/* Current user info */}
+        {(() => {
+          try {
+            const u = JSON.parse(localStorage.getItem('fantatech_user') || '{}')
+            if (u.username) return (
+              <div style={{
+                background: '#0f172a', border: '1px solid #334155',
+                borderRadius: 10, padding: '12px 14px', marginBottom: 14,
+                fontSize: 13, color: '#94a3b8',
+              }}>
+                <div style={{ fontWeight: 700, color: '#f1f5f9', marginBottom: 2 }}>
+                  👤 {u.name || u.username}
+                </div>
+                {u.email && <div style={{ fontSize: 11 }}>✉️ {u.email}</div>}
+                {u.plan  && <div style={{ fontSize: 11 }}>⭐ {t[`reg_plan_${u.plan}`] ?? u.plan}</div>}
+                {u.restoredAt && (
+                  <div style={{ fontSize: 10, color: '#334155', marginTop: 4 }}>
+                    🔑 {t.login_success ?? 'Restored'} {new Date(u.restoredAt).toLocaleDateString()}
+                  </div>
+                )}
+              </div>
+            )
+          } catch {}
+          return null
+        })()}
+
+        {/* Update hint */}
+        <div style={{
+          background: 'rgba(56,189,248,0.07)', border: '1px solid #38bdf822',
+          borderRadius: 10, padding: '10px 12px', marginBottom: 14,
+          fontSize: 11, color: '#475569', lineHeight: 1.6,
+        }}>
+          📦 {t.update_hint ?? 'To update without losing data, install the new APK directly over the existing one — Android keeps all your data.'}
+        </div>
+
+        {/* Sign out button */}
+        <button
+          onClick={() => {
+            if (window.confirm(t.signout_confirm ?? 'Sign out and clear local data?')) {
+              localStorage.removeItem('fantatech_user')
+              window.location.reload()
+            }
+          }}
+          style={{
+            width: '100%', padding: '11px 0', borderRadius: 10,
+            background: '#1e293b', border: '1px solid #ef444444',
+            color: '#ef4444', fontSize: 14, fontWeight: 700,
+            cursor: 'pointer',
+          }}
+        >
+          🚪 {t.signout_btn ?? 'Sign Out'}
+        </button>
       </Section>
     </div>
   )
