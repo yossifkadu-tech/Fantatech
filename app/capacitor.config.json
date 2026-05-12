@@ -1,6 +1,6 @@
 {
   "appId": "com.fantatech.smarthomehub",
-  "appName": "Fantatech Home & Security",
+  "appName": "FantaTech",
   "webDir": "dist",
   "server": {
     "androidScheme": "http",
