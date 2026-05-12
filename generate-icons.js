@@ -21,12 +21,13 @@ const DENSITIES = [
   { dir: 'mipmap-xxxhdpi', size: 192 },
 ];
 
-const BG      = '#0a1020';   // deep navy background
-const GREEN1  = '#4ade80';   // roof top — bright green (eco)
-const GREEN2  = '#16a34a';   // roof bottom / overhang
-const BLUE    = '#38bdf8';   // body — sky blue (smart home)
-const INDIGO  = '#6366f1';   // shield / door — security
-const WHITE   = '#f1f5f9';
+const BG      = '#0f172a';   // deep navy background
+const ORANGE  = '#f97316';   // roof, chimney, door, window frames
+const ORANGE2 = '#ea580c';   // roof shadow / chimney shade
+const WALL    = '#ffffff';   // white walls
+const WIN_BG  = '#bae6fd';   // window glass — light sky blue
+const WIN_FR  = '#f97316';   // window frame — orange
+const BLUE    = '#38bdf8';   // "FantaTech" text colour
 
 /**
  * SVG that replicates the in-app header look:
@@ -39,95 +40,96 @@ const WHITE   = '#f1f5f9';
  * fullBg=false → transparent background (adaptive foreground layer)
  */
 /**
- * Classic Trio icon — green roof (eco) + sky-blue body (smart) + indigo shield door (security)
- * Designed at 192×192; scaled via s = sz/192
+ * FantaTech icon
+ *  - Dark navy background
+ *  - Orange roof + chimney (like the in-app 🏠 emoji)
+ *  - White walls
+ *  - Orange-framed windows with sky-blue glass
+ *  - Orange door (arch top)
+ *  - "FantaTech" in sky-blue bold text
+ * Designed at 192×192 base; everything scales via s = sz/192.
  */
 function makeSvg(sz, fullBg = true) {
   const s = sz / 192;
   const r = v => +(v * s).toFixed(2);
 
-  /* ── Geometry (base 192px) ── */
-  // Roof
-  const apex = { x: 96, y: 24 };
-  const roofL = 14, roofR = 178, roofBase = 94;
-
-  // Body
-  const bodyL = 22, bodyR = 170, bodyTop = 90, bodyBt = 156;
-
-  // Windows
-  const wW = 26, wH = 22, wY = 103;
-  const wLX = 34, wRX = 130;
-
-  // Shield door (centered)
-  const shieldCX = 96, shieldTY = 108;
-  const shieldW  = 32, shieldH  = 42;
-  const shieldX  = shieldCX - shieldW / 2;
-
-  // Text
-  const showText = sz >= 72;
-  const ftSize   = r(18);
-  const ftY      = r(178);
-
   return `<svg width="${sz}" height="${sz}" viewBox="0 0 ${sz} ${sz}" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="roofGrad${sz}" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="${GREEN1}"/>
-      <stop offset="100%" stop-color="${GREEN2}"/>
+    <linearGradient id="roofG${sz}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fb923c"/>
+      <stop offset="100%" stop-color="${ORANGE2}"/>
     </linearGradient>
   </defs>
 
-  ${fullBg ? `<rect width="${sz}" height="${sz}" fill="${BG}" rx="${r(30)}"/>` : ''}
+  ${fullBg ? `<rect width="${sz}" height="${sz}" fill="${BG}" rx="${r(28)}"/>` : ''}
 
-  <!-- ── Roof (green = eco) ── -->
+  <!-- ═══ CHIMNEY (behind roof so roof overlaps base) ═══ -->
+  <rect x="${r(126)}" y="${r(22)}" width="${r(18)}" height="${r(46)}"
+        fill="${ORANGE2}" rx="${r(3)}"/>
+  <!-- chimney top cap -->
+  <rect x="${r(122)}" y="${r(20)}" width="${r(26)}" height="${r(7)}"
+        fill="${ORANGE}" rx="${r(3)}"/>
+  <!-- chimney smoke holes -->
+  <circle cx="${r(131)}" cy="${r(15)}" r="${r(3)}" fill="${BG}" opacity="0.4"/>
+  <circle cx="${r(140)}" cy="${r(11)}" r="${r(2.5)}" fill="${BG}" opacity="0.3"/>
+
+  <!-- ═══ ROOF (orange triangle + overhang) ═══ -->
   <polygon
-    points="${r(apex.x)},${r(apex.y)} ${r(roofR)},${r(roofBase)} ${r(roofL)},${r(roofBase)}"
-    fill="url(#roofGrad${sz})"
+    points="${r(96)},${r(26)} ${r(176)},${r(90)} ${r(16)},${r(90)}"
+    fill="url(#roofG${sz})"
   />
-  <rect x="${r(roofL)}" y="${r(roofBase - 4)}" width="${r(roofR - roofL)}" height="${r(8)}"
-        fill="${GREEN2}" rx="${r(2)}"/>
+  <!-- roof overhang ledge -->
+  <rect x="${r(14)}" y="${r(86)}" width="${r(164)}" height="${r(10)}"
+        fill="${ORANGE2}" rx="${r(2)}"/>
 
-  <!-- ── Body (sky-blue = smart home) ── -->
-  <rect x="${r(bodyL)}" y="${r(bodyTop)}" width="${r(bodyR - bodyL)}" height="${r(bodyBt - bodyTop)}"
-        fill="${BLUE}" rx="${r(5)}"/>
+  <!-- ═══ WALLS (white body) ═══ -->
+  <rect x="${r(22)}" y="${r(90)}" width="${r(148)}" height="${r(66)}"
+        fill="${WALL}" rx="${r(4)}"/>
 
-  <!-- ── Left window ── -->
-  <rect x="${r(wLX)}" y="${r(wY)}" width="${r(wW)}" height="${r(wH)}" fill="${BG}" rx="${r(3)}"/>
-  <rect x="${r(wLX + 2)}" y="${r(wY + 2)}" width="${r(wW / 2 - 3)}" height="${r(wH / 2 - 3)}"
-        fill="${BLUE}" opacity="0.3" rx="1"/>
+  <!-- ═══ LEFT WINDOW ═══ -->
+  <!-- frame -->
+  <rect x="${r(32)}" y="${r(100)}" width="${r(34)}" height="${r(28)}"
+        fill="${WIN_FR}" rx="${r(4)}"/>
+  <!-- glass -->
+  <rect x="${r(35)}" y="${r(103)}" width="${r(28)}" height="${r(22)}"
+        fill="${WIN_BG}" rx="${r(2)}"/>
+  <!-- cross divider -->
+  <line x1="${r(49)}" y1="${r(103)}" x2="${r(49)}" y2="${r(125)}"
+        stroke="${WIN_FR}" stroke-width="${r(2)}"/>
+  <line x1="${r(35)}" y1="${r(114)}" x2="${r(63)}" y2="${r(114)}"
+        stroke="${WIN_FR}" stroke-width="${r(2)}"/>
 
-  <!-- ── Right window ── -->
-  <rect x="${r(wRX)}" y="${r(wY)}" width="${r(wW)}" height="${r(wH)}" fill="${BG}" rx="${r(3)}"/>
-  <rect x="${r(wRX + 2)}" y="${r(wY + 2)}" width="${r(wW / 2 - 3)}" height="${r(wH / 2 - 3)}"
-        fill="${BLUE}" opacity="0.3" rx="1"/>
+  <!-- ═══ RIGHT WINDOW ═══ -->
+  <rect x="${r(126)}" y="${r(100)}" width="${r(34)}" height="${r(28)}"
+        fill="${WIN_FR}" rx="${r(4)}"/>
+  <rect x="${r(129)}" y="${r(103)}" width="${r(28)}" height="${r(22)}"
+        fill="${WIN_BG}" rx="${r(2)}"/>
+  <line x1="${r(143)}" y1="${r(103)}" x2="${r(143)}" y2="${r(125)}"
+        stroke="${WIN_FR}" stroke-width="${r(2)}"/>
+  <line x1="${r(129)}" y1="${r(114)}" x2="${r(157)}" y2="${r(114)}"
+        stroke="${WIN_FR}" stroke-width="${r(2)}"/>
 
-  <!-- ── Shield door (indigo = security) ── -->
-  <!-- Shield outer dark recess -->
-  <rect x="${r(shieldX - 2)}" y="${r(shieldTY - 2)}" width="${r(shieldW + 4)}" height="${r(shieldH + 4)}"
-        fill="${BG}" rx="${r(4)}"/>
-  <!-- Shield shape -->
-  <path d="
-    M ${r(shieldCX)},${r(shieldTY + 2)}
-    L ${r(shieldX)},${r(shieldTY + 7)}
-    L ${r(shieldX)},${r(shieldTY + 22)}
-    Q ${r(shieldX)},${r(shieldTY + shieldH)} ${r(shieldCX)},${r(shieldTY + shieldH + 4)}
-    Q ${r(shieldX + shieldW)},${r(shieldTY + shieldH)} ${r(shieldX + shieldW)},${r(shieldTY + 22)}
-    L ${r(shieldX + shieldW)},${r(shieldTY + 7)}
-    Z
-  " fill="${INDIGO}" opacity="0.95"/>
-  <!-- Check mark inside shield -->
-  <path
-    d="M ${r(shieldCX - 7)},${r(shieldTY + 22)} L ${r(shieldCX - 2)},${r(shieldTY + 27)} L ${r(shieldCX + 9)},${r(shieldTY + 16)}"
-    stroke="${WHITE}" stroke-width="${r(3)}" fill="none"
-    stroke-linecap="round" stroke-linejoin="round"
-  />
+  <!-- ═══ DOOR (orange, arch top, centered) ═══ -->
+  <!-- door frame -->
+  <rect x="${r(78)}" y="${r(112)}" width="${r(36)}" height="${r(44)}"
+        fill="${ORANGE}" rx="${r(3)}"/>
+  <ellipse cx="${r(96)}" cy="${r(112)}" rx="${r(18)}" ry="${r(14)}"
+           fill="${ORANGE}"/>
+  <!-- door panel (slightly darker) -->
+  <rect x="${r(81)}" y="${r(116)}" width="${r(30)}" height="${r(40)}"
+        fill="${ORANGE2}" rx="${r(2)}"/>
+  <ellipse cx="${r(96)}" cy="${r(116)}" rx="${r(15)}" ry="${r(11)}"
+           fill="${ORANGE2}"/>
+  <!-- door knob -->
+  <circle cx="${r(88)}" cy="${r(136)}" r="${r(3)}" fill="${ORANGE}" opacity="0.9"/>
 
-  ${showText ? `
-  <!-- "FantaTech" -->
+  ${sz >= 72 ? `
+  <!-- ═══ "FantaTech" text ═══ -->
   <text
-    x="${r(96)}" y="${ftY}"
+    x="${r(96)}" y="${r(174)}"
     font-family="Arial Black, Arial, Helvetica, sans-serif"
-    font-size="${ftSize}" font-weight="900"
-    fill="${WHITE}" text-anchor="middle" opacity="0.92"
+    font-size="${r(19)}" font-weight="900"
+    fill="${BLUE}" text-anchor="middle" letter-spacing="${r(-0.5)}"
   >FantaTech</text>` : ''}
 </svg>`;
 }
