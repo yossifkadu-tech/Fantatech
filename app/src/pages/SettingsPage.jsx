@@ -413,6 +413,36 @@ export default function SettingsPage() {
         </div>
       </Section>
 
+      {/* ── Alexa / Emulated Hue ── */}
+      <Section title="🔵 Amazon Alexa">
+        <div style={{ fontSize: 12, color: '#94a3b8', lineHeight: 1.8, marginBottom: 12 }}>
+          {t.alexa_desc ?? 'The hub runs an emulated Philips Hue bridge. Alexa discovers all your devices automatically on the local network.'}
+        </div>
+
+        {/* Setup steps */}
+        <div style={{ background: '#0f172a', borderRadius: 10, padding: '12px 14px', fontSize: 12, color: '#64748b', lineHeight: 2.2, marginBottom: 12 }}>
+          <div style={{ fontWeight: 700, color: '#e2e8f0', marginBottom: 4 }}>🔧 {t.alexa_setup ?? 'Setup steps:'}</div>
+          <div>1. {t.alexa_step1 ?? 'Make sure the hub (start-hub.bat) is running'}</div>
+          <div>2. {t.alexa_step2 ?? 'Open the Alexa app on your phone'}</div>
+          <div>3. {t.alexa_step3 ?? 'Devices → Add Device → Philips Hue'}</div>
+          <div>4. {t.alexa_step4 ?? 'Tap "Search" — Alexa will find all your devices'}</div>
+          <div style={{ color: '#38bdf8' }}>5. 🗣️ {t.alexa_step5 ?? '"Alexa, turn on the living room light"'}</div>
+        </div>
+
+        {/* Manual discovery tip */}
+        <div style={{ background: 'rgba(56,189,248,0.07)', border: '1px solid #1e3a5f', borderRadius: 10, padding: '10px 14px', fontSize: 11, color: '#64748b', lineHeight: 1.7 }}>
+          <span style={{ color: '#38bdf8', fontWeight: 700 }}>💡 {t.alexa_tip_title ?? 'Voice shortcut:'}</span>
+          <br/>
+          <span style={{ fontStyle: 'italic', color: '#94a3b8' }}>"Alexa, discover devices"</span>
+          {' — '}{t.alexa_tip_desc ?? 'rescans the network for new devices'}
+        </div>
+
+        {/* Note about admin */}
+        <div style={{ marginTop: 10, background: 'rgba(245,158,11,0.07)', border: '1px solid #78350f', borderRadius: 10, padding: '10px 14px', fontSize: 11, color: '#92400e' }}>
+          ⚠️ {t.alexa_admin_note ?? 'For automatic discovery, run start-hub.bat as Administrator (right-click → Run as administrator). This allows SSDP port 1900.'}
+        </div>
+      </Section>
+
       {/* ── Gemini AI ── */}
       <Section title={`✨ ${t.gemini_section_title}`}>
         {/* Status row */}

@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv()
 
-from routers import devices, rules, history, rooms, ws, network, ai, ac, matter, zigbee, tuya, scenes, timers, camera, notifications as notif_router, cyber, users as users_router
+from routers import devices, rules, history, rooms, ws, network, ai, ac, matter, zigbee, tuya, scenes, timers, camera, notifications as notif_router, cyber, users as users_router, alexa as alexa_router
 from database import init_db, update_device_state, get_device, get_all_devices, add_history, get_wifi_profiles, add_notification
 from mqtt_client import start as mqtt_start, register_handler, publish
 from rule_engine import start as rules_start
@@ -45,6 +45,8 @@ app.include_router(camera.router,       prefix="/api/camera",        tags=["came
 app.include_router(notif_router.router, prefix="/api/notifications", tags=["notifications"])
 app.include_router(cyber.router,        prefix="/api/cyber",         tags=["cyber"])
 app.include_router(users_router.router, prefix="/api/users",         tags=["users"])
+# Emulated Hue — served at ROOT (no /api prefix) so Alexa finds it
+app.include_router(alexa_router.router,                              tags=["alexa"])
 
 
 # ג”€ג”€ MQTT broker auto-start ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€
@@ -284,8 +286,12 @@ async def startup():
     print(f"  API:       http://{ip}:{port}/api")
     print(f"  Docs:      http://{ip}:{port}/docs")
     print(f"  WebSocket: ws://{ip}:{port}/ws")
+    print(f"  Alexa Hue: http://{ip}:{port}/api/{{username}}/lights")
     print(f"  Enter in app settings: {ip}")
     print(f"{'='*55}\n")
+
+    # Start Alexa SSDP discovery listener
+    alexa_router.start_ssdp(int(port))
 
     # Register mDNS so app can find Hub by name (fantatech-hub.local)
     threading.Thread(target=_register_mdns, args=(ip,), daemon=True).start()

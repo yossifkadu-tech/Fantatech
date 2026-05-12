@@ -766,6 +766,18 @@ const T = {
     reg_price_basic: '₪29/mo',
     reg_price_enhanced: '₪59/mo',
     reg_price_unlimited: '₪99/mo',
+
+    /* ── Alexa ── */
+    alexa_desc: 'The hub runs an emulated Philips Hue bridge. Alexa discovers all your devices automatically on the local network.',
+    alexa_setup: 'Setup steps:',
+    alexa_step1: 'Make sure the hub (start-hub.bat) is running',
+    alexa_step2: 'Open the Alexa app on your phone',
+    alexa_step3: 'Devices → Add Device → Philips Hue',
+    alexa_step4: 'Tap "Search" — Alexa will find all your devices',
+    alexa_step5: '"Alexa, turn on the living room light"',
+    alexa_tip_title: 'Voice shortcut:',
+    alexa_tip_desc: 'rescans the network for new devices',
+    alexa_admin_note: 'For automatic discovery, run start-hub.bat as Administrator (right-click → Run as administrator). This allows SSDP port 1900.',
   },
 
   /* ═══════════════════════════════ HEBREW ════════════════════════════════ */
@@ -1464,6 +1476,18 @@ const T = {
     reg_price_basic: '₪29/חודש',
     reg_price_enhanced: '₪59/חודש',
     reg_price_unlimited: '₪99/חודש',
+
+    /* ── אלקסה ── */
+    alexa_desc: 'האב מריץ Philips Hue Bridge מדומה. אלקסה מגלה את כל המכשירים שלך אוטומטית ברשת המקומית.',
+    alexa_setup: 'שלבי הגדרה:',
+    alexa_step1: 'ודא שה-Hub פועל (start-hub.bat)',
+    alexa_step2: 'פתח את אפליקציית Alexa בטלפון',
+    alexa_step3: 'מכשירים ← הוסף מכשיר ← Philips Hue',
+    alexa_step4: 'לחץ "חיפוש" — אלקסה תמצא את כל המכשירים שלך',
+    alexa_step5: '"Alexa, turn on the living room light"',
+    alexa_tip_title: 'קיצור דרך קולי:',
+    alexa_tip_desc: 'סורק מחדש את הרשת למכשירים חדשים',
+    alexa_admin_note: 'לגילוי אוטומטי, הפעל את start-hub.bat כמנהל מערכת (לחץ ימני ← הפעל כמנהל). זה מאפשר פורט SSDP 1900.',
   },
 
   /* ═══════════════════════════════ ARABIC ════════════════════════════════ */
