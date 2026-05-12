@@ -474,7 +474,7 @@ export default function CamerasPage({ devices = [] }) {
           </div>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))', gap: 14 }}>
           {allCams.map(cam => (
             <CameraCard key={cam.id} cam={cam} hasMjpeg={hasMjpeg}
               onEdit={c => setEditing(c)}

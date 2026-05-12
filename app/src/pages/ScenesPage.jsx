@@ -96,7 +96,7 @@ export default function ScenesPage({ devices }) {
           <button onClick={openNew} style={{ ...btn('#1d4ed8'), marginTop: 16 }}>+ {t.create_first_scene}</button>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))', gap: 10 }}>
           {scenes.map(scene => (
             <SceneCard
               key={scene.id}

@@ -473,10 +473,9 @@ function ActionBtn({ onClick, bg, border, color = '#94a3b8', title, children }) 
   )
 }
 
-function GroupSection({ title, items, roomMap, onPin, onRename, onDelete, onReload, tablet }) {
+function GroupSection({ title, items, roomMap, onPin, onRename, onDelete, onReload }) {
   const acItems    = items.filter(d => d.type === 'ac')
   const otherItems = items.filter(d => d.type !== 'ac')
-  const cols = tablet ? 'repeat(3, 1fr)' : '1fr 1fr'
   return (
     <div style={{ marginBottom: 24 }}>
       {title && <div style={{ fontSize: 12, color: '#64748b', marginBottom: 10, fontWeight: 600 }}>{title}</div>}
@@ -485,9 +484,9 @@ function GroupSection({ title, items, roomMap, onPin, onRename, onDelete, onRelo
         <DeviceItem key={d.id} device={d} roomMap={roomMap}
           onPin={onPin} onRename={onRename} onDelete={onDelete} onReload={onReload} />
       ))}
-      {/* Regular devices — 2 or 3-column grid */}
+      {/* Regular devices — auto-fill grid: 2 cols on phone, 3-5 on tablet/desktop */}
       {otherItems.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: cols, gap: 10 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: 10 }}>
           {otherItems.map(d => (
             <DeviceItem key={d.id} device={d} roomMap={roomMap}
               onPin={onPin} onRename={onRename} onDelete={onDelete} onReload={onReload} />

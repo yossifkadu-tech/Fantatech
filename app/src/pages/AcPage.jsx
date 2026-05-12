@@ -111,8 +111,8 @@ export default function AcPage({ devices, onReload }) {
         </button>
       </div>
 
-      {/* ── AC cards ── */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {/* ── AC cards — auto-fill: 1 col on phone, 2 on tablet, 3 on desktop ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))', gap: 12 }}>
         {acDevices.map(d => (
           <AcCard
             key={d.id}

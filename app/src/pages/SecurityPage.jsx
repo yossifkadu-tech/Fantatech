@@ -242,7 +242,7 @@ export default function SecurityPage({ devices = [], onReload, onNavigate }) {
       )}
 
       {/* ── Summary stats ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 8, marginBottom: 16 }}>
         <StatCard icon="💡" label={t.security_devices} value={sec.length} color="#38bdf8" />
         <StatCard icon="📡" label={t.connected_devices} value={sec.filter(d => d.online).length} color="#22c55e" />
         <StatCard icon="⚠️" label={t.alerts_count}      value={alerts.length} color={alerts.length ? '#ef4444' : '#475569'} />
@@ -252,7 +252,7 @@ export default function SecurityPage({ devices = [], onReload, onNavigate }) {
       {locks.length > 0 && (
         <div style={{ marginBottom: 16 }}>
           <SectionTitle icon="🔒" title={t.locks_section} count={locks.length} />
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 8 }}>
             {locks.map(d => {
               const locked = d.state?.state !== 'UNLOCKED'
               return (
@@ -335,7 +335,7 @@ export default function SecurityPage({ devices = [], onReload, onNavigate }) {
       {cameras.length > 0 && (
         <div style={{ marginBottom: 16 }}>
           <SectionTitle icon="📷" title={t.cameras_section} count={cameras.length} />
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 8 }}>
             {cameras.map(d => (
               <div key={d.id} style={{
                 background: '#1e293b', border: `1px solid ${d.online ? '#334155' : '#ef444444'}`,
@@ -443,7 +443,7 @@ function StatCard({ icon, label, value, color }) {
 
 function SensorGrid({ sensors, renderBadge }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 6 }}>
       {sensors.map(d => (
         <div key={d.id} style={{
           background: '#1e293b', border: '1px solid #334155', borderRadius: 10,
