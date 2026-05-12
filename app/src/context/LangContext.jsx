@@ -631,7 +631,7 @@ const T = {
     // QR Scanner
     qr_open_cam: 'Open Camera — Scan QR',
     qr_native_scan: 'Native Camera Scan',
-    qr_scanning: 'Scanning...',
+    qr_scanning_short: 'Scanning...',
     qr_aim: 'Aim at QR code',
     qr_loading_cam: 'Starting camera...',
     qr_or_manual: 'or paste QR content manually',
@@ -811,6 +811,32 @@ const T = {
     import_done:           'Go to Devices ›',
     import_smartlife:      'SmartLife / Tuya',
     import_smartlife_sub:  'Import all cloud devices at once',
+
+    /* ── Hue wizard ── */
+    import_hue_title:      'Philips Hue',
+    import_hue_sub:        'Import lights & sensors from your Hue Bridge',
+    import_hue_ip:         'Bridge IP Address',
+    import_hue_ip_hint:    'e.g. 192.168.1.20  — or leave blank to auto-detect',
+    import_hue_discover:   '🔍 Auto-detect Bridge',
+    import_hue_detecting:  'Detecting…',
+    import_hue_found:      'Bridge found:',
+    import_hue_no_bridge:  'No bridge found on network',
+    import_hue_press_title:'Press the button on the bridge',
+    import_hue_press_hint: 'Press the big round button on the top of your Hue Bridge now, then click Connect within 30 seconds.',
+    import_hue_connect:    '🔗 Connect',
+    import_hue_connecting: 'Connecting…',
+    import_hue_guide:      'Where is my bridge IP? ▾',
+    import_hue_guide_text: 'Open the Philips Hue app → Settings → My Hue System → tap the bridge → note the IP address shown.',
+
+    /* ── HA wizard ── */
+    import_ha_title:       'Home Assistant',
+    import_ha_sub:         'Import devices from a running Home Assistant instance',
+    import_ha_url:         'Home Assistant URL',
+    import_ha_url_hint:    'e.g. http://homeassistant.local:8123',
+    import_ha_token:       'Long-Lived Access Token',
+    import_ha_token_hint:  'Profile → Security → Long-Lived Access Tokens → Create Token',
+    import_ha_guide:       'How to create a token ▾',
+    import_ha_guide_text:  'In Home Assistant: click your username (bottom-left) → Security tab → scroll to Long-Lived Access Tokens → Create Token → copy it here.',
 
     /* ── Users page ── */
     users_nav:             'Users',
@@ -1426,7 +1452,7 @@ const T = {
     // QR Scanner
     qr_open_cam: 'פתח מצלמה — סרוק QR',
     qr_native_scan: 'סריקה מובנית',
-    qr_scanning: 'סורק...',
+    qr_scanning_short: 'סורק...',
     qr_aim: 'כוון אל קוד QR',
     qr_loading_cam: 'מפעיל מצלמה...',
     qr_or_manual: 'או הדבק תוכן QR ידנית',
@@ -1587,6 +1613,32 @@ const T = {
     import_done:           'עבור למכשירים ›',
     import_smartlife:      'SmartLife / Tuya',
     import_smartlife_sub:  'ייבא את כל המכשירים מהענן בלחיצה אחת',
+
+    /* ── אשף Hue ── */
+    import_hue_title:      'Philips Hue',
+    import_hue_sub:        'ייבא נורות וחיישנים מ-Hue Bridge שלך',
+    import_hue_ip:         'כתובת IP של ה-Bridge',
+    import_hue_ip_hint:    'לדוגמה 192.168.1.20 — או השאר ריק לזיהוי אוטומטי',
+    import_hue_discover:   '🔍 זהה Bridge אוטומטית',
+    import_hue_detecting:  'מזהה…',
+    import_hue_found:      'Bridge נמצא:',
+    import_hue_no_bridge:  'לא נמצא Bridge ברשת',
+    import_hue_press_title:'לחץ על הכפתור ב-Bridge',
+    import_hue_press_hint: 'לחץ על הכפתור הגדול בחלק העליון של ה-Hue Bridge עכשיו, ואז לחץ התחבר תוך 30 שניות.',
+    import_hue_connect:    '🔗 התחבר',
+    import_hue_connecting: 'מתחבר…',
+    import_hue_guide:      'איפה כתובת ה-IP של ה-Bridge? ▾',
+    import_hue_guide_text: 'פתח את אפליקציית Philips Hue ← הגדרות ← המערכת שלי ← הקש על ה-Bridge ← ראה את כתובת ה-IP.',
+
+    /* ── אשף HA ── */
+    import_ha_title:       'Home Assistant',
+    import_ha_sub:         'ייבא מכשירים ממופע Home Assistant פעיל',
+    import_ha_url:         'כתובת Home Assistant',
+    import_ha_url_hint:    'לדוגמה http://homeassistant.local:8123',
+    import_ha_token:       'טוקן גישה ארוך-טווח',
+    import_ha_token_hint:  'פרופיל ← אבטחה ← Long-Lived Access Tokens ← צור טוקן',
+    import_ha_guide:       'איך יוצרים טוקן? ▾',
+    import_ha_guide_text:  'ב-Home Assistant: לחץ על שמך (שמאל-תחתון) ← לשונית Security ← גלול ל-Long-Lived Access Tokens ← Create Token ← העתק לכאן.',
 
     /* ── דף משתמשים ── */
     users_nav:             'משתמשים',

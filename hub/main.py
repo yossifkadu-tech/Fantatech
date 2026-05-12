@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv()
 
-from routers import devices, rules, history, rooms, ws, network, ai, ac, matter, zigbee, tuya, scenes, timers, camera, notifications as notif_router, cyber, users as users_router, alexa as alexa_router
+from routers import devices, rules, history, rooms, ws, network, ai, ac, matter, zigbee, tuya, scenes, timers, camera, notifications as notif_router, cyber, users as users_router, alexa as alexa_router, hue as hue_router, ha as ha_router
 from database import init_db, update_device_state, get_device, get_all_devices, add_history, get_wifi_profiles, add_notification
 from mqtt_client import start as mqtt_start, register_handler, publish
 from rule_engine import start as rules_start
@@ -45,6 +45,8 @@ app.include_router(camera.router,       prefix="/api/camera",        tags=["came
 app.include_router(notif_router.router, prefix="/api/notifications", tags=["notifications"])
 app.include_router(cyber.router,        prefix="/api/cyber",         tags=["cyber"])
 app.include_router(users_router.router, prefix="/api/users",         tags=["users"])
+app.include_router(hue_router.router,   prefix="/api/hue",           tags=["hue"])
+app.include_router(ha_router.router,    prefix="/api/ha",            tags=["ha"])
 # Emulated Hue — served at ROOT (no /api prefix) so Alexa finds it
 app.include_router(alexa_router.router,                              tags=["alexa"])
 

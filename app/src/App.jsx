@@ -21,7 +21,7 @@ import RegistrationPage from './pages/RegistrationPage'
 import GeminiAssistant from './components/GeminiAssistant'
 import UsersPage from './pages/UsersPage'
 
-const APP_VERSION = '2.13.0'
+const APP_VERSION = '2.13.1'
 
 /* ── Wake-lock hook (keeps screen on while mounted) ─────────────────── */
 function useWakeLock(enabled) {
