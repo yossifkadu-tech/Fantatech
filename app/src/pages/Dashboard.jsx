@@ -42,8 +42,8 @@ export default function Dashboard({ devices, wsConnected, onNavigate, onReload, 
 
   return (
     <div>
-      {/* Stats grid — auto-fill: 4 tiles at ≥520 px, 2 on phone */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 10, marginBottom: 24 }}>
+      {/* Stats grid — always 4 tiles side by side */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 24 }}>
         {stats.map(s => (
           <div key={s.label} onClick={() => onNavigate(s.tab)}
             style={{ ...card, cursor: 'pointer', transition: 'opacity .15s' }}
@@ -124,7 +124,7 @@ export default function Dashboard({ devices, wsConnected, onNavigate, onReload, 
           </button>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: 10, marginBottom: 24 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: 10, marginBottom: 24 }}>
           {featured.map(d => {
             const room = d.room ? roomMap[d.room] : null
             return (

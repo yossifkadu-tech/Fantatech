@@ -484,9 +484,9 @@ function GroupSection({ title, items, roomMap, onPin, onRename, onDelete, onRelo
         <DeviceItem key={d.id} device={d} roomMap={roomMap}
           onPin={onPin} onRename={onRename} onDelete={onDelete} onReload={onReload} />
       ))}
-      {/* Regular devices — auto-fill grid: 2 cols on phone, 3-5 on tablet/desktop */}
+      {/* Regular devices — auto-fill grid: 2 cols on phone, 3-4 on tablet, 5+ on desktop */}
       {otherItems.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: 10 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: 10 }}>
           {otherItems.map(d => (
             <DeviceItem key={d.id} device={d} roomMap={roomMap}
               onPin={onPin} onRename={onRename} onDelete={onDelete} onReload={onReload} />
