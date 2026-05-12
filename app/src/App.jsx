@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useDevices, useWebSocket, api, getHubUrl } from './hooks/useHub'
 import { LangProvider, useLang, LANG_META } from './context/LangContext'
+import { ScaleProvider, useScale } from './context/ScaleContext'
 import Dashboard from './pages/Dashboard'
 import DevicesPage from './pages/DevicesPage'
 import AutomationsPage from './pages/AutomationsPage'
@@ -20,36 +21,7 @@ import RegistrationPage from './pages/RegistrationPage'
 import GeminiAssistant from './components/GeminiAssistant'
 import UsersPage from './pages/UsersPage'
 
-const APP_VERSION = '2.12.0'
-
-/* ── Screen info: class + orientation ──────────────────────────────── */
-const getScreenInfo = () => {
-  const w = window.innerWidth
-  const h = window.innerHeight
-  return {
-    sc:        w >= 1024 ? 'desktop' : w >= 600 ? 'tablet' : 'phone',
-    landscape: w > h,
-    w,
-    h,
-  }
-}
-
-/* ── Reactive hook — updates on resize AND rotation ────────────────── */
-function useScreenSize() {
-  const [info, setInfo] = useState(getScreenInfo)
-  useEffect(() => {
-    const update = () => setInfo(getScreenInfo())
-    window.addEventListener('resize', update)
-    window.addEventListener('orientationchange', update)      // Android legacy
-    screen.orientation?.addEventListener('change', update)    // modern browsers
-    return () => {
-      window.removeEventListener('resize', update)
-      window.removeEventListener('orientationchange', update)
-      screen.orientation?.removeEventListener('change', update)
-    }
-  }, [])
-  return info
-}
+const APP_VERSION = '2.12.1'
 
 /* ── Wake-lock hook (keeps screen on while mounted) ─────────────────── */
 function useWakeLock(enabled) {
@@ -105,10 +77,8 @@ function AppInner() {
   const [unreadNotifs, setUnreadNotifs] = useState(0)
   const { devices, loading, reload, updateDeviceState, setOnline } = useDevices()
 
-  // Reactive screen size + orientation — updates on resize / rotation
-  const { sc: screenClass, landscape } = useScreenSize()
-  const tablet      = screenClass !== 'phone'   // tablet OR desktop
-  const desktop     = screenClass === 'desktop'
+  // Reactive screen size + orientation — from ScaleContext (wraps AppInner)
+  const { sp, spx, phone, tablet, desktop, landscape, scale } = useScale()
   // Sidebar ONLY on desktop — phone and tablet always use bottom nav
   const showSidebar = desktop
 
@@ -253,10 +223,10 @@ function AppInner() {
 
   // Responsive layout values
   const maxW      = desktop ? 1280 : tablet ? 900 : 480
-  // No font scaling on phone/tablet — let the layout handle proportions naturally
+  // Font scaling: only desktop gets a slight bump; phone uses scale from ScaleContext
   const fontScale = desktop ? 1.05 : 1
-  // Bottom nav height changes with orientation (landscape → icons only, shorter)
-  const navH      = !desktop ? (landscape ? 44 : 58) : 0
+  // Bottom nav height — scaled on phone so it shrinks on small screens
+  const navH      = !desktop ? (landscape ? sp(44) : sp(56)) : 0
 
   return (
     <div style={{
@@ -271,21 +241,24 @@ function AppInner() {
       {/* Header — compact in landscape to maximise content area */}
       <div style={{
         background: '#1e293b', borderBottom: '1px solid #334155',
-        padding: landscape ? '6px 16px' : desktop ? '12px 28px' : tablet ? '10px 20px' : '10px 14px',
+        padding: landscape ? `${sp(6)}px ${sp(14)}px`
+               : desktop  ? '12px 28px'
+               : tablet   ? '10px 20px'
+               :             `${sp(10)}px ${sp(14)}px`,
         position: 'sticky', top: 0, zIndex: 50,
-        paddingLeft:  `max(${landscape ? 16 : desktop ? 28 : tablet ? 20 : 14}px, env(safe-area-inset-left))`,
-        paddingRight: `max(${landscape ? 16 : desktop ? 28 : tablet ? 20 : 14}px, env(safe-area-inset-right))`,
+        paddingLeft:  `max(${sp(landscape ? 14 : desktop ? 28 : tablet ? 20 : 14)}px, env(safe-area-inset-left))`,
+        paddingRight: `max(${sp(landscape ? 14 : desktop ? 28 : tablet ? 20 : 14)}px, env(safe-area-inset-right))`,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
 
           {/* Left: logo + name + cyber button */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 22 }}>🏠</span>
+            <span style={{ fontSize: spx(22) }}>🏠</span>
             <div>
-              <div style={{ fontWeight: 900, fontSize: 17, color: '#38bdf8', lineHeight: 1, letterSpacing: '-0.3px' }}>
+              <div style={{ fontWeight: 900, fontSize: spx(17), color: '#38bdf8', lineHeight: 1, letterSpacing: '-0.3px' }}>
                 FantaTech
               </div>
-              <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 1, lineHeight: 1 }}>
+              <div style={{ fontSize: spx(10), color: '#94a3b8', marginTop: 1, lineHeight: 1 }}>
                 Smart Home & Security
               </div>
             </div>
@@ -448,10 +421,10 @@ function AppInner() {
           padding: showSidebar
             ? '20px 28px 32px'
             : landscape
-              ? '10px 14px 12px'   // landscape: minimal padding, nav is thin
+              ? `${sp(8)}px ${sp(12)}px ${sp(10)}px`
               : tablet
-                ? '16px 18px 12px' // tablet portrait
-                : '12px 14px 10px',// phone
+                ? '16px 18px 12px'
+                : `${sp(12)}px ${sp(14)}px ${sp(10)}px`,
           minWidth: 0,
           overflowX: 'hidden',
         }}>
@@ -482,79 +455,127 @@ function AppInner() {
         </div>
       </div>
 
-      {/* ── Bottom Nav — always visible on phone + tablet, hidden only on desktop ── */}
-      {!desktop && (
-        <nav style={{
-          position: 'fixed', bottom: 0,
-          // Centre under the maxW container (matches the app wrapper)
-          left: '50%', transform: 'translateX(-50%)',
-          width: '100%', maxWidth: maxW,
-          background: '#1e293b', borderTop: '1px solid #334155',
-          display: 'flex', zIndex: 100,
-          direction: rtl ? 'rtl' : 'ltr',
-          paddingBottom: 'env(safe-area-inset-bottom)',
-          paddingLeft:   'env(safe-area-inset-left)',
-          paddingRight:  'env(safe-area-inset-right)',
-          // Landscape: icon-only nav is shorter so more content is visible
-          height: navH,
-          boxSizing: 'border-box',
-          alignItems: 'center',
-        }}>
-          {TABS.map(tabItem => {
-            const active = tab === tabItem.id
-            return (
-              <button key={tabItem.id} onClick={() => setTab(tabItem.id)} style={{
-                flex: 1, height: '100%',
-                padding: landscape ? '4px 1px' : tablet ? '5px 1px 7px' : '4px 1px 6px',
-                border: 'none', background: 'none',
-                color: active ? '#38bdf8' : '#64748b',
-                cursor: 'pointer',
-                display: 'flex', flexDirection: 'column', alignItems: 'center',
-                justifyContent: 'center', gap: 1,
-                position: 'relative',
-                WebkitTapHighlightColor: 'transparent',
-                // Highlight active tab with a top indicator bar
-                borderTop: active ? '2px solid #38bdf8' : '2px solid transparent',
-              }}>
-                {/* Icon with notification badge */}
-                <span style={{ fontSize: landscape ? 17 : tablet ? 20 : 18, position: 'relative', lineHeight: 1 }}>
-                  {tabItem.icon}
-                  {tabItem.badge > 0 && (
-                    <span style={{
-                      position: 'absolute', top: -4, insetInlineEnd: -6,
-                      background: '#ef4444', color: '#fff',
-                      borderRadius: 10, fontSize: 8, fontWeight: 700,
-                      padding: '1px 4px', lineHeight: 1.3, minWidth: 14, textAlign: 'center',
-                    }}>
-                      {tabItem.badge > 99 ? '99+' : tabItem.badge}
-                    </span>
-                  )}
-                </span>
-                {/* Labels: hidden in landscape to keep nav thin */}
-                {!landscape && (
-                  <span style={{
-                    fontSize: tablet ? 9.5 : 8,
-                    fontWeight: active ? 700 : 400,
-                    whiteSpace: 'nowrap', overflow: 'hidden',
-                    maxWidth: '100%', textOverflow: 'ellipsis',
-                    lineHeight: 1,
-                  }}>
-                    {tabItem.label}
-                  </span>
-                )}
-              </button>
-            )
-          })}
-        </nav>
-      )}
+      {/* ── Bottom Nav — phone + tablet; hidden on desktop ──────────────────── */}
+      {!desktop && <BottomNav
+        tabs={TABS} activeTab={tab} onSelect={setTab}
+        navH={navH} maxW={maxW} rtl={rtl}
+        landscape={landscape} tablet={tablet}
+        sp={sp} spx={spx}
+      />}
     </div>
+  )
+}
+
+/**
+ * BottomNav — horizontally scrollable bottom navigation.
+ *
+ * On phones with many tabs the buttons have a minimum touch width (minWidth).
+ * If all tabs together exceed the screen width the nav scrolls horizontally
+ * with no visible scrollbar. The active tab is always scrolled into view.
+ */
+function BottomNav({ tabs, activeTab, onSelect, navH, maxW, rtl, landscape, tablet, sp, spx }) {
+  const navRef = useRef(null)
+
+  // Auto-scroll active tab into view when tab changes
+  useEffect(() => {
+    if (!navRef.current) return
+    const btn = navRef.current.querySelector('[data-active="true"]')
+    btn?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' })
+  }, [activeTab])
+
+  // Per-button minimum width — touch-friendly but allows scrolling
+  const btnMin = tablet ? 64 : sp(52)  // px number
+
+  return (
+    <nav
+      ref={navRef}
+      className="ft-bottom-nav"
+      style={{
+        position: 'fixed', bottom: 0,
+        left: '50%', transform: 'translateX(-50%)',
+        width: '100%', maxWidth: maxW,
+        background: '#1e293b', borderTop: '1px solid #334155',
+        display: 'flex', zIndex: 100,
+        direction: rtl ? 'rtl' : 'ltr',
+        height: navH,
+        boxSizing: 'border-box',
+        alignItems: 'center',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+        paddingLeft:   'env(safe-area-inset-left)',
+        paddingRight:  'env(safe-area-inset-right)',
+        // Horizontal scroll when tabs don't fit
+        overflowX: 'auto',
+        overflowY: 'hidden',
+        scrollbarWidth: 'none',             // Firefox
+        WebkitOverflowScrolling: 'touch',   // iOS momentum
+      }}
+    >
+      {tabs.map(tabItem => {
+        const active = activeTab === tabItem.id
+        return (
+          <button
+            key={tabItem.id}
+            data-active={active}
+            onClick={() => onSelect(tabItem.id)}
+            style={{
+              // flex: none + minWidth → buttons have guaranteed width, nav scrolls
+              flex: 'none',
+              minWidth: btnMin,
+              height: '100%',
+              padding: landscape
+                ? `${sp(4)}px ${sp(2)}px`
+                : tablet
+                  ? `${sp(5)}px ${sp(3)}px ${sp(7)}px`
+                  : `${sp(4)}px ${sp(2)}px ${sp(6)}px`,
+              border: 'none', background: 'none',
+              color: active ? '#38bdf8' : '#64748b',
+              cursor: 'pointer',
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
+              justifyContent: 'center', gap: sp(1),
+              position: 'relative',
+              WebkitTapHighlightColor: 'transparent',
+              borderTop: active ? '2px solid #38bdf8' : '2px solid transparent',
+              transition: 'color 0.15s',
+            }}
+          >
+            {/* Icon + optional badge */}
+            <span style={{ fontSize: spx(landscape ? 17 : tablet ? 20 : 18), position: 'relative', lineHeight: 1 }}>
+              {tabItem.icon}
+              {tabItem.badge > 0 && (
+                <span style={{
+                  position: 'absolute', top: -4, insetInlineEnd: -6,
+                  background: '#ef4444', color: '#fff',
+                  borderRadius: 10, fontSize: spx(8), fontWeight: 700,
+                  padding: '1px 4px', lineHeight: 1.3, minWidth: 14, textAlign: 'center',
+                }}>
+                  {tabItem.badge > 99 ? '99+' : tabItem.badge}
+                </span>
+              )}
+            </span>
+            {/* Label — hidden in landscape */}
+            {!landscape && (
+              <span style={{
+                fontSize: spx(tablet ? 9.5 : 8),
+                fontWeight: active ? 700 : 400,
+                whiteSpace: 'nowrap',
+                lineHeight: 1,
+              }}>
+                {tabItem.label}
+              </span>
+            )}
+          </button>
+        )
+      })}
+    </nav>
   )
 }
 
 export default function App() {
   return (
-    <LangProvider>
-      <AppInner />
-    </LangProvider>
+    <ScaleProvider>
+      <LangProvider>
+        <AppInner />
+      </LangProvider>
+    </ScaleProvider>
   )
 }

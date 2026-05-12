@@ -4,9 +4,11 @@ import DeviceCard from '../components/DeviceCard'
 import PromoCarousel from '../components/PromoCarousel'
 import SponsoredBanner from '../components/SponsoredBanner'
 import { useLang } from '../context/LangContext'
+import { useScale } from '../context/ScaleContext'
 
 export default function Dashboard({ devices, wsConnected, onNavigate, onReload, tablet, landscape }) {
   const { t, locale } = useLang()
+  const { sp, spx, phone } = useScale()
   const [history, setHistory]         = useState([])
   const [rulesCount, setRulesCount]   = useState('…')
   const [rooms, setRooms]             = useState([])
@@ -40,20 +42,40 @@ export default function Dashboard({ devices, wsConnected, onNavigate, onReload, 
   const active   = devices.filter(d => d.online && d.state?.state === 'ON')
   const featured = pinned.length ? pinned : active.slice(0, 6)
 
+  // sp-aware style helpers (recomputed each render — reactive to screen size)
+  const card = {
+    display: 'flex', alignItems: 'center', gap: sp(10),
+    background: '#1e293b', border: '1px solid #334155',
+    borderRadius: sp(12), padding: `${spx(12)} ${spx(14)}`,
+  }
+  const btn = (bg, color = '#fff') => ({
+    padding: `${spx(6)} ${spx(12)}`, borderRadius: sp(8), border: 'none',
+    background: bg, color, cursor: 'pointer', fontWeight: 600, fontSize: spx(13),
+    WebkitTapHighlightColor: 'transparent',
+  })
+
   return (
     <div>
-      {/* Stats grid — always 4 tiles side by side */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 24 }}>
+      {/*
+        Stats grid:
+          Phone  → 2 × 2  (cards are wider, content fits comfortably)
+          Tablet → 4 × 1  (wide screen, all four in one row)
+      */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: phone ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
+        gap: sp(10), marginBottom: sp(20),
+      }}>
         {stats.map(s => (
           <div key={s.label} onClick={() => onNavigate(s.tab)}
             style={{ ...card, cursor: 'pointer', transition: 'opacity .15s' }}
             onMouseDown={e => e.currentTarget.style.opacity = '.7'}
             onMouseUp={e => e.currentTarget.style.opacity = '1'}
             onTouchEnd={e => e.currentTarget.style.opacity = '1'}>
-            <span style={{ fontSize: 22 }}>{s.icon}</span>
+            <span style={{ fontSize: spx(phone ? 20 : 22) }}>{s.icon}</span>
             <div>
-              <div style={{ fontSize: 22, fontWeight: 800, color: s.color, lineHeight: 1 }}>{s.value}</div>
-              <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>{s.label}</div>
+              <div style={{ fontSize: spx(phone ? 20 : 22), fontWeight: 800, color: s.color, lineHeight: 1 }}>{s.value}</div>
+              <div style={{ fontSize: spx(11), color: '#64748b', marginTop: 2 }}>{s.label}</div>
             </div>
           </div>
         ))}
@@ -62,35 +84,35 @@ export default function Dashboard({ devices, wsConnected, onNavigate, onReload, 
       {/* Hub connection status — shown only after 5 s to avoid startup flash */}
       {showBanner && !wsConnected && (
         <div style={{
-          background: '#1c0f00', border: '1px solid #f59e0b', borderRadius: 12,
-          padding: '12px 14px', marginBottom: 16, fontSize: 13, color: '#fcd34d',
+          background: '#1c0f00', border: '1px solid #f59e0b', borderRadius: sp(12),
+          padding: `${spx(12)} ${spx(14)}`, marginBottom: sp(16), fontSize: spx(13), color: '#fcd34d',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-            <span style={{ fontSize: 18 }}>⚠️</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: sp(8), marginBottom: sp(8) }}>
+            <span style={{ fontSize: spx(18) }}>⚠️</span>
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 700 }}>{t.hub_not_connected}</div>
               {getHubUrl() && (
-                <div style={{ fontSize: 11, color: '#92400e', marginTop: 2, direction: 'ltr' }}>
+                <div style={{ fontSize: spx(11), color: '#92400e', marginTop: 2, direction: 'ltr' }}>
                   {getHubUrl()}
                 </div>
               )}
             </div>
           </div>
-          <div style={{ fontSize: 11, color: '#a16207', marginBottom: 10, lineHeight: 1.7 }}>
+          <div style={{ fontSize: spx(11), color: '#a16207', marginBottom: sp(10), lineHeight: 1.7 }}>
             {t.hub_banner_hint}
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: sp(8) }}>
             <button onClick={() => onNavigate('settings')} style={{
-              flex: 1, padding: '8px 0', borderRadius: 8, border: 'none',
+              flex: 1, padding: `${spx(8)} 0`, borderRadius: sp(8), border: 'none',
               background: '#78350f', color: '#fcd34d', cursor: 'pointer',
-              fontWeight: 700, fontSize: 12,
+              fontWeight: 700, fontSize: spx(12),
             }}>
               {t.hub_settings}
             </button>
             <button onClick={() => onNavigate('network')} style={{
-              flex: 1, padding: '8px 0', borderRadius: 8, border: 'none',
+              flex: 1, padding: `${spx(8)} 0`, borderRadius: sp(8), border: 'none',
               background: '#1e3a5f', color: '#38bdf8', cursor: 'pointer',
-              fontWeight: 700, fontSize: 12,
+              fontWeight: 700, fontSize: spx(12),
             }}>
               {t.network_diag}
             </button>
@@ -99,8 +121,8 @@ export default function Dashboard({ devices, wsConnected, onNavigate, onReload, 
       )}
 
       {/* Featured devices */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <h3 style={{ margin: 0, color: '#e2e8f0', fontSize: 15 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: sp(12) }}>
+        <h3 style={{ margin: 0, color: '#e2e8f0', fontSize: spx(15) }}>
           {pinned.length ? t.pinned_devices : t.active_now}
         </h3>
         {featured.length > 0 && (
@@ -116,15 +138,19 @@ export default function Dashboard({ devices, wsConnected, onNavigate, onReload, 
       </div>
 
       {featured.length === 0 ? (
-        <div style={{ ...card, justifyContent: 'center', flexDirection: 'column', gap: 10, padding: 36, textAlign: 'center' }}>
-          <span style={{ fontSize: 40 }}>🌙</span>
-          <span style={{ color: '#475569', fontSize: 14 }}>{t.no_active_devices}</span>
+        <div style={{ ...card, justifyContent: 'center', flexDirection: 'column', gap: sp(10), padding: sp(36), textAlign: 'center' }}>
+          <span style={{ fontSize: spx(36) }}>🌙</span>
+          <span style={{ color: '#475569', fontSize: spx(14) }}>{t.no_active_devices}</span>
           <button onClick={() => onNavigate('devices')} style={btn('#38bdf8', '#0f172a')}>
             {t.go_to_devices}
           </button>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: 10, marginBottom: 24 }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: `repeat(auto-fill, minmax(${sp(190)}px, 1fr))`,
+          gap: sp(10), marginBottom: sp(20),
+        }}>
           {featured.map(d => {
             const room = d.room ? roomMap[d.room] : null
             return (
@@ -144,32 +170,32 @@ export default function Dashboard({ devices, wsConnected, onNavigate, onReload, 
       {/* Recent history */}
       {history.length > 0 && (
         <>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-            <h3 style={{ margin: 0, color: '#e2e8f0', fontSize: 15 }}>{t.recent_activity}</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: sp(10) }}>
+            <h3 style={{ margin: 0, color: '#e2e8f0', fontSize: spx(15) }}>{t.recent_activity}</h3>
             <button onClick={() => onNavigate('history')}
-              style={{ ...btn('#1e293b', '#94a3b8'), fontSize: 11, padding: '4px 10px' }}>
+              style={{ ...btn('#1e293b', '#94a3b8'), fontSize: spx(11), padding: `${spx(4)} ${spx(10)}` }}>
               {t.see_all}
             </button>
           </div>
           {history.map((h, i) => (
-            <div key={i} style={{ ...card, marginBottom: 6, padding: '10px 14px' }}>
-              <span style={{ fontSize: 16 }}>
+            <div key={i} style={{ ...card, marginBottom: sp(6), padding: `${spx(10)} ${spx(14)}` }}>
+              <span style={{ fontSize: spx(16) }}>
                 {h.action === 'toggle' && h.value === 'ON'  ? '💡'
                 : h.action === 'toggle' && h.value === 'OFF' ? '🌙'
                 : h.action === 'cmd' ? '🎛️' : '⚡'}
               </span>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <div style={{ fontSize: spx(13), fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {h.device_name}
                 </div>
-                <div style={{ fontSize: 11, color: '#64748b' }}>
+                <div style={{ fontSize: spx(11), color: '#64748b' }}>
                   {h.action === 'toggle' && h.value === 'ON'  ? t.turned_on
                   : h.action === 'toggle' && h.value === 'OFF' ? t.turned_off
                   : h.action === 'cmd' ? `${t.command_sent}: ${h.value || ''}`
                   : h.action}
                 </div>
               </div>
-              <div style={{ fontSize: 11, color: '#475569', flexShrink: 0 }}>
+              <div style={{ fontSize: spx(11), color: '#475569', flexShrink: 0 }}>
                 {new Date(h.ts * 1000).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
               </div>
             </div>
@@ -179,13 +205,3 @@ export default function Dashboard({ devices, wsConnected, onNavigate, onReload, 
     </div>
   )
 }
-
-const card = {
-  display: 'flex', alignItems: 'center', gap: 12,
-  background: '#1e293b', border: '1px solid #334155',
-  borderRadius: 12, padding: '14px 16px',
-}
-const btn = (bg, color = '#fff') => ({
-  padding: '6px 14px', borderRadius: 8, border: 'none',
-  background: bg, color, cursor: 'pointer', fontWeight: 600, fontSize: 13,
-})
