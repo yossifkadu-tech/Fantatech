@@ -31,8 +31,8 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 
 const DESIGN_W = 390   // px — every value in the app is designed for this width
-const MIN_S    = 0.80  // never shrink below 80%
-const MAX_S    = 1.08  // allow a small upscale on wide phones (e.g. 414px)
+const MIN_S    = 0.78  // never shrink below 78% (very small phones)
+const MAX_S    = 1.00  // phones cap at 1.0 — never upscale (prevents "looks like tablet")
 
 function calcInfo() {
   const w  = window.innerWidth

@@ -21,7 +21,7 @@ import RegistrationPage from './pages/RegistrationPage'
 import GeminiAssistant from './components/GeminiAssistant'
 import UsersPage from './pages/UsersPage'
 
-const APP_VERSION = '2.13.1'
+const APP_VERSION = '2.13.2'
 
 /* ── Wake-lock hook (keeps screen on while mounted) ─────────────────── */
 function useWakeLock(enabled) {
@@ -222,18 +222,19 @@ function AppInner() {
   }
 
   // Responsive layout values
-  const maxW      = desktop ? 1280 : tablet ? 900 : 480
-  // Font scaling: only desktop gets a slight bump; phone uses scale from ScaleContext
-  const fontScale = desktop ? 1.05 : 1
-  // Bottom nav height — scaled on phone so it shrinks on small screens
-  const navH      = !desktop ? (landscape ? sp(44) : sp(56)) : 0
+  const maxW      = desktop ? 1280 : tablet ? 900 : 430
+  // Base font: phones scale with screen width (smaller phone → smaller text throughout)
+  // tablet/desktop: fixed rem sizes
+  const rootFont  = phone ? spx(15) : desktop ? '17px' : '16px'
+  // Bottom nav height — compact on phone so more content is visible
+  const navH      = !desktop ? (landscape ? sp(38) : sp(50)) : 0
 
   return (
     <div style={{
       minHeight: '100vh', background: '#0f172a', color: '#f1f5f9',
       direction: rtl ? 'rtl' : 'ltr',
       maxWidth: maxW, width: '100%', margin: '0 auto',
-      position: 'relative', fontSize: `${fontScale}rem`,
+      position: 'relative', fontSize: rootFont,
       // Ensure content never hides under fixed bottom nav
       paddingBottom: navH > 0 ? `calc(${navH}px + env(safe-area-inset-bottom))` : 0,
     }}>
@@ -241,13 +242,13 @@ function AppInner() {
       {/* Header — compact in landscape to maximise content area */}
       <div style={{
         background: '#1e293b', borderBottom: '1px solid #334155',
-        padding: landscape ? `${sp(6)}px ${sp(14)}px`
+        padding: landscape ? `${sp(4)}px ${sp(12)}px`
                : desktop  ? '12px 28px'
                : tablet   ? '10px 20px'
-               :             `${sp(10)}px ${sp(14)}px`,
+               :             `${sp(7)}px ${sp(12)}px`,
         position: 'sticky', top: 0, zIndex: 50,
-        paddingLeft:  `max(${sp(landscape ? 14 : desktop ? 28 : tablet ? 20 : 14)}px, env(safe-area-inset-left))`,
-        paddingRight: `max(${sp(landscape ? 14 : desktop ? 28 : tablet ? 20 : 14)}px, env(safe-area-inset-right))`,
+        paddingLeft:  `max(${sp(landscape ? 12 : desktop ? 28 : tablet ? 18 : 12)}px, env(safe-area-inset-left))`,
+        paddingRight: `max(${sp(landscape ? 12 : desktop ? 28 : tablet ? 18 : 12)}px, env(safe-area-inset-right))`,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
 
@@ -255,10 +256,10 @@ function AppInner() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: spx(22) }}>🏠</span>
             <div>
-              <div style={{ fontWeight: 900, fontSize: spx(17), color: '#38bdf8', lineHeight: 1, letterSpacing: '-0.3px' }}>
+              <div style={{ fontWeight: 900, fontSize: spx(15), color: '#38bdf8', lineHeight: 1, letterSpacing: '-0.3px' }}>
                 FantaTech
               </div>
-              <div style={{ fontSize: spx(10), color: '#94a3b8', marginTop: 1, lineHeight: 1 }}>
+              <div style={{ fontSize: spx(9), color: '#94a3b8', marginTop: 1, lineHeight: 1 }}>
                 Smart Home & Security
               </div>
             </div>
@@ -421,10 +422,10 @@ function AppInner() {
           padding: showSidebar
             ? '20px 28px 32px'
             : landscape
-              ? `${sp(8)}px ${sp(12)}px ${sp(10)}px`
+              ? `${sp(6)}px ${sp(10)}px ${sp(8)}px`
               : tablet
-                ? '16px 18px 12px'
-                : `${sp(12)}px ${sp(14)}px ${sp(10)}px`,
+                ? '14px 16px 10px'
+                : `${sp(8)}px ${sp(10)}px ${sp(8)}px`,
           minWidth: 0,
           overflowX: 'hidden',
         }}>
@@ -483,8 +484,8 @@ function BottomNav({ tabs, activeTab, onSelect, navH, maxW, rtl, landscape, tabl
     btn?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' })
   }, [activeTab])
 
-  // Per-button minimum width — touch-friendly but allows scrolling
-  const btnMin = tablet ? 64 : sp(52)  // px number
+  // Per-button minimum width — compact on phone, wider on tablet
+  const btnMin = tablet ? 64 : sp(46)  // px number
 
   return (
     <nav
@@ -539,7 +540,7 @@ function BottomNav({ tabs, activeTab, onSelect, navH, maxW, rtl, landscape, tabl
             }}
           >
             {/* Icon + optional badge */}
-            <span style={{ fontSize: spx(landscape ? 17 : tablet ? 20 : 18), position: 'relative', lineHeight: 1 }}>
+            <span style={{ fontSize: spx(landscape ? 15 : tablet ? 20 : 17), position: 'relative', lineHeight: 1 }}>
               {tabItem.icon}
               {tabItem.badge > 0 && (
                 <span style={{
@@ -555,7 +556,7 @@ function BottomNav({ tabs, activeTab, onSelect, navH, maxW, rtl, landscape, tabl
             {/* Label — hidden in landscape */}
             {!landscape && (
               <span style={{
-                fontSize: spx(tablet ? 9.5 : 8),
+                fontSize: spx(tablet ? 9 : 7.5),
                 fontWeight: active ? 700 : 400,
                 whiteSpace: 'nowrap',
                 lineHeight: 1,
