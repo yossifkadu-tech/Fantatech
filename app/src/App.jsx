@@ -21,7 +21,7 @@ import RegistrationPage from './pages/RegistrationPage'
 import GeminiAssistant from './components/GeminiAssistant'
 import UsersPage from './pages/UsersPage'
 
-const APP_VERSION = '2.13.3'
+const APP_VERSION = '2.13.4'
 
 /* ── Wake-lock hook (keeps screen on while mounted) ─────────────────── */
 function useWakeLock(enabled) {
@@ -78,7 +78,7 @@ function AppInner() {
   const { devices, loading, reload, updateDeviceState, setOnline } = useDevices()
 
   // Reactive screen size + orientation — from ScaleContext (wraps AppInner)
-  const { sp, spx, phone, tablet, desktop, landscape, scale } = useScale()
+  const { sp, spx, phone, tablet, desktop, landscape, scale, displayIdx, setDisplayIdx } = useScale()
   // Sidebar ONLY on desktop — phone and tablet always use bottom nav
   const showSidebar = desktop
 
@@ -222,17 +222,20 @@ function AppInner() {
   }
 
   // Responsive layout values
-  const maxW      = desktop ? 1280 : tablet ? 900 : 430
-  // Bottom nav height (unscaled — CSS zoom on root handles proportional sizing)
-  const navH      = !desktop ? (landscape ? 38 : 50) : 0
-  // CSS zoom: scales the ENTIRE app uniformly to fit the device screen.
-  // scale ≤ 1.0, so on phones narrower than 390 px the whole UI shrinks
-  // proportionally and nothing overflows.  On 390+ px phones zoom = 1 (no change).
-  // We compensate the container width so it fills the physical screen: DOM width
-  // = designW / scale, zoom brings it back to physicalWidth visually.
-  const appZoom   = phone ? scale : 1
-  // Container width must be widened to compensate for zoom shrinking it
-  const appW      = phone ? `${Math.round((DESIGN_W / scale) * 100) / 100}px` : '100%'
+  const maxW   = desktop ? 1280 : tablet ? 900 : 430
+  const navH   = !desktop ? (landscape ? 38 : 50) : 0
+
+  // CSS zoom: scales the ENTIRE app uniformly.
+  // • Phone:   auto-scale (fit screen) × user preference
+  // • Tablet:  user preference only   (no auto-scale — user sizes manually)
+  // • Desktop: user preference only
+  // scale already combines both factors (see ScaleContext).
+  const appZoom = scale
+  // Compensate width so the visual size fills the physical screen after zoom.
+  // Only needed when zoom < 1 (i.e. scale < 1).
+  const appW = (scale < 1 && phone)
+    ? `${Math.round((DESIGN_W / scale) * 100) / 100}px`
+    : '100%'
 
   return (
     <div style={{

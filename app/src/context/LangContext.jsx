@@ -838,6 +838,13 @@ const T = {
     import_ha_guide:       'How to create a token ▾',
     import_ha_guide_text:  'In Home Assistant: click your username (bottom-left) → Security tab → scroll to Long-Lived Access Tokens → Create Token → copy it here.',
 
+    /* ── Display size ── */
+    display_size:          'Display Size',
+    display_size_hint:     'Adjust text and element size to fit your screen. Works on all devices.',
+    display_device_phone:  'Phone — auto-fit + size preference',
+    display_device_tablet: 'Tablet — size preference only',
+    display_device_desktop:'Desktop — size preference only',
+
     /* ── Users page ── */
     users_nav:             'Users',
     users_title:           'Users',
@@ -1639,6 +1646,13 @@ const T = {
     import_ha_token_hint:  'פרופיל ← אבטחה ← Long-Lived Access Tokens ← צור טוקן',
     import_ha_guide:       'איך יוצרים טוקן? ▾',
     import_ha_guide_text:  'ב-Home Assistant: לחץ על שמך (שמאל-תחתון) ← לשונית Security ← גלול ל-Long-Lived Access Tokens ← Create Token ← העתק לכאן.',
+
+    /* ── גודל תצוגה ── */
+    display_size:          'גודל תצוגה',
+    display_size_hint:     'כוונן את גודל הטקסט והאלמנטים להתאמה למסך שלך. עובד בכל המכשירים.',
+    display_device_phone:  'טלפון — התאמה אוטומטית + העדפה',
+    display_device_tablet: 'טאבלט — העדפת גודל בלבד',
+    display_device_desktop:'מחשב — העדפת גודל בלבד',
 
     /* ── דף משתמשים ── */
     users_nav:             'משתמשים',

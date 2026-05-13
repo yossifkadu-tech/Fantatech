@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react'
 import { api, getHubUrl, setHubUrl, clearHubUrl, testHubUrl, discoverHub } from '../hooks/useHub'
 import { useLang, LANG_META, detectDeviceLang } from '../context/LangContext'
+import { useScale, DISPLAY_STEPS, DISPLAY_LABELS } from '../context/ScaleContext'
 import { loadAds, saveAds, loc as locAd } from '../components/SponsoredBanner'
 
 const APP_VERSION = '2.0.0'
 
 export default function SettingsPage() {
   const { lang, t, setLang, resetToDevice, rtl } = useLang()
+  const { displayIdx, setDisplayIdx, phone, tablet, desktop } = useScale()
   const deviceLang = detectDeviceLang()            // what device would pick right now
   // Hub connection
   const [hubUrl, setHubUrlState]        = useState(getHubUrl)
@@ -211,6 +213,57 @@ export default function SettingsPage() {
   return (
     <div style={{ direction: rtl ? 'rtl' : 'ltr' }}>
       <h2 style={{ margin: '0 0 20px', color: '#e2e8f0', fontSize: 18 }}>{t.settings}</h2>
+
+      {/* ── Display Size ── */}
+      <Section title={`🔡 ${t.display_size ?? 'Display Size'}`}>
+        <div style={{ fontSize: 12, color: '#64748b', marginBottom: 12, lineHeight: 1.6 }}>
+          {t.display_size_hint ?? 'Adjust text and element size to fit your screen. Works on all devices.'}
+        </div>
+        {/* 5-step size buttons */}
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          {DISPLAY_LABELS.map((label, idx) => {
+            const active = idx === displayIdx
+            const pct    = Math.round(DISPLAY_STEPS[idx] * 100)
+            return (
+              <button
+                key={idx}
+                onClick={() => setDisplayIdx(idx)}
+                style={{
+                  flex: 1,
+                  padding: '10px 4px',
+                  border: `2px solid ${active ? '#38bdf8' : '#334155'}`,
+                  borderRadius: 10,
+                  background: active ? 'rgba(56,189,248,0.12)' : '#0f172a',
+                  color: active ? '#38bdf8' : '#64748b',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: 4,
+                  WebkitTapHighlightColor: 'transparent',
+                  transition: 'all 0.15s',
+                }}
+              >
+                {/* Preview letter scales with button size */}
+                <span style={{
+                  fontSize: 10 + idx * 3,
+                  fontWeight: 800,
+                  lineHeight: 1,
+                  color: active ? '#38bdf8' : '#64748b',
+                }}>A</span>
+                <span style={{ fontSize: 9, fontWeight: 700 }}>{label}</span>
+                <span style={{ fontSize: 8, color: active ? '#7dd3fc' : '#475569' }}>{pct}%</span>
+              </button>
+            )
+          })}
+        </div>
+        {/* current device type badge */}
+        <div style={{ marginTop: 10, fontSize: 11, color: '#475569', textAlign: 'center' }}>
+          {phone   ? `📱 ${t.display_device_phone   ?? 'Phone — auto-fit + size preference'}`  : ''}
+          {tablet  ? `📲 ${t.display_device_tablet  ?? 'Tablet — size preference only'}`       : ''}
+          {desktop ? `🖥️ ${t.display_device_desktop ?? 'Desktop — size preference only'}`      : ''}
+        </div>
+      </Section>
 
       {/* ── Hub Connection ── */}
       <Section title={t.hub_conn_section}>
