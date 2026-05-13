@@ -31,8 +31,8 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 
 const DESIGN_W = 390   // px — every value in the app is designed for this width
-const MIN_S    = 0.78  // never shrink below 78% (very small phones)
-const MAX_S    = 1.00  // phones cap at 1.0 — never upscale (prevents "looks like tablet")
+const MIN_S    = 0.70  // never shrink below 70% (very small / rugged phones)
+const MAX_S    = 1.00  // phones cap at 1.0 — never upscale
 
 function calcInfo() {
   const w  = window.innerWidth
@@ -60,6 +60,13 @@ export function ScaleProvider({ children }) {
   const [info, setInfo] = useState(calcInfo)
 
   useEffect(() => {
+    // Re-calculate once the WebView is fully laid out (Capacitor may report
+    // wrong innerWidth on the very first frame)
+    const timer = setTimeout(() => setInfo(calcInfo()), 50)
+    return () => clearTimeout(timer)
+  }, [])
+
+  useEffect(() => {
     const upd = () => setInfo(calcInfo())
     window.addEventListener('resize',            upd)
     window.addEventListener('orientationchange', upd)
@@ -70,6 +77,11 @@ export function ScaleProvider({ children }) {
       screen.orientation?.removeEventListener('change', upd)
     }
   }, [])
+
+  // Inject CSS custom property so non-React CSS can use the scale
+  useEffect(() => {
+    document.documentElement.style.setProperty('--app-scale', String(info.scale))
+  }, [info.scale])
 
   const { scale } = info
 
@@ -101,5 +113,6 @@ export function ScaleProvider({ children }) {
   )
 }
 
-export const useScale = () => useContext(ScaleContext)
+export const useScale  = () => useContext(ScaleContext)
+export { DESIGN_W }
 export default ScaleContext

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useDevices, useWebSocket, api, getHubUrl } from './hooks/useHub'
 import { LangProvider, useLang, LANG_META } from './context/LangContext'
-import { ScaleProvider, useScale } from './context/ScaleContext'
+import { ScaleProvider, useScale, DESIGN_W } from './context/ScaleContext'
 import Dashboard from './pages/Dashboard'
 import DevicesPage from './pages/DevicesPage'
 import AutomationsPage from './pages/AutomationsPage'
@@ -21,7 +21,7 @@ import RegistrationPage from './pages/RegistrationPage'
 import GeminiAssistant from './components/GeminiAssistant'
 import UsersPage from './pages/UsersPage'
 
-const APP_VERSION = '2.13.2'
+const APP_VERSION = '2.13.3'
 
 /* ── Wake-lock hook (keeps screen on while mounted) ─────────────────── */
 function useWakeLock(enabled) {
@@ -223,32 +223,44 @@ function AppInner() {
 
   // Responsive layout values
   const maxW      = desktop ? 1280 : tablet ? 900 : 430
-  // Base font: phones scale with screen width (smaller phone → smaller text throughout)
-  // tablet/desktop: fixed rem sizes
-  const rootFont  = phone ? spx(15) : desktop ? '17px' : '16px'
-  // Bottom nav height — compact on phone so more content is visible
-  const navH      = !desktop ? (landscape ? sp(38) : sp(50)) : 0
+  // Bottom nav height (unscaled — CSS zoom on root handles proportional sizing)
+  const navH      = !desktop ? (landscape ? 38 : 50) : 0
+  // CSS zoom: scales the ENTIRE app uniformly to fit the device screen.
+  // scale ≤ 1.0, so on phones narrower than 390 px the whole UI shrinks
+  // proportionally and nothing overflows.  On 390+ px phones zoom = 1 (no change).
+  // We compensate the container width so it fills the physical screen: DOM width
+  // = designW / scale, zoom brings it back to physicalWidth visually.
+  const appZoom   = phone ? scale : 1
+  // Container width must be widened to compensate for zoom shrinking it
+  const appW      = phone ? `${Math.round((DESIGN_W / scale) * 100) / 100}px` : '100%'
 
   return (
     <div style={{
       minHeight: '100vh', background: '#0f172a', color: '#f1f5f9',
       direction: rtl ? 'rtl' : 'ltr',
-      maxWidth: maxW, width: '100%', margin: '0 auto',
-      position: 'relative', fontSize: rootFont,
+      // On phones: zoom scales the whole app down so it fits the physical screen.
+      // appW compensates so the visual width = physical screen width (no overflow).
+      // On tablet/desktop: no zoom, normal 100% width with maxWidth cap.
+      zoom: appZoom,
+      width: phone ? appW : '100%',
+      maxWidth: phone ? 'none' : maxW,
+      margin: '0 auto',
+      position: 'relative',
+      overflowX: 'hidden',
       // Ensure content never hides under fixed bottom nav
       paddingBottom: navH > 0 ? `calc(${navH}px + env(safe-area-inset-bottom))` : 0,
     }}>
 
-      {/* Header — compact in landscape to maximise content area */}
+      {/* Header — sticky, spans the zoomed container width */}
       <div style={{
         background: '#1e293b', borderBottom: '1px solid #334155',
-        padding: landscape ? `${sp(4)}px ${sp(12)}px`
+        padding: landscape ? '4px 12px'
                : desktop  ? '12px 28px'
                : tablet   ? '10px 20px'
-               :             `${sp(7)}px ${sp(12)}px`,
+               :             '7px 12px',
         position: 'sticky', top: 0, zIndex: 50,
-        paddingLeft:  `max(${sp(landscape ? 12 : desktop ? 28 : tablet ? 18 : 12)}px, env(safe-area-inset-left))`,
-        paddingRight: `max(${sp(landscape ? 12 : desktop ? 28 : tablet ? 18 : 12)}px, env(safe-area-inset-right))`,
+        paddingLeft:  `max(12px, env(safe-area-inset-left))`,
+        paddingRight: `max(12px, env(safe-area-inset-right))`,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
 
@@ -421,11 +433,9 @@ function AppInner() {
           flex: 1,
           padding: showSidebar
             ? '20px 28px 32px'
-            : landscape
-              ? `${sp(6)}px ${sp(10)}px ${sp(8)}px`
-              : tablet
-                ? '14px 16px 10px'
-                : `${sp(8)}px ${sp(10)}px ${sp(8)}px`,
+            : landscape ? '6px 10px 8px'
+            : tablet    ? '14px 16px 10px'
+            :              '10px 12px 10px',
           minWidth: 0,
           overflowX: 'hidden',
         }}>
@@ -462,6 +472,7 @@ function AppInner() {
         navH={navH} maxW={maxW} rtl={rtl}
         landscape={landscape} tablet={tablet}
         sp={sp} spx={spx}
+        appZoom={appZoom}
       />}
     </div>
   )
@@ -474,7 +485,7 @@ function AppInner() {
  * If all tabs together exceed the screen width the nav scrolls horizontally
  * with no visible scrollbar. The active tab is always scrolled into view.
  */
-function BottomNav({ tabs, activeTab, onSelect, navH, maxW, rtl, landscape, tablet, sp, spx }) {
+function BottomNav({ tabs, activeTab, onSelect, navH, maxW, rtl, landscape, tablet, sp, spx, appZoom = 1 }) {
   const navRef = useRef(null)
 
   // Auto-scroll active tab into view when tab changes
@@ -484,14 +495,17 @@ function BottomNav({ tabs, activeTab, onSelect, navH, maxW, rtl, landscape, tabl
     btn?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' })
   }, [activeTab])
 
-  // Per-button minimum width — compact on phone, wider on tablet
-  const btnMin = tablet ? 64 : sp(46)  // px number
+  // Per-button minimum width — plain px (CSS zoom handles proportional scaling)
+  const btnMin = tablet ? 64 : 48  // px number
 
   return (
     <nav
       ref={navRef}
       className="ft-bottom-nav"
       style={{
+        // CSS zoom on the app root shrinks the fixed nav too — counter-zoom it
+        // so it always spans the full physical screen width.
+        zoom: appZoom !== 1 ? (1 / appZoom) : undefined,
         position: 'fixed', bottom: 0,
         left: '50%', transform: 'translateX(-50%)',
         width: '100%', maxWidth: maxW,
@@ -523,16 +537,12 @@ function BottomNav({ tabs, activeTab, onSelect, navH, maxW, rtl, landscape, tabl
               flex: 'none',
               minWidth: btnMin,
               height: '100%',
-              padding: landscape
-                ? `${sp(4)}px ${sp(2)}px`
-                : tablet
-                  ? `${sp(5)}px ${sp(3)}px ${sp(7)}px`
-                  : `${sp(4)}px ${sp(2)}px ${sp(6)}px`,
+              padding: landscape ? '3px 2px' : tablet ? '5px 3px 7px' : '4px 2px 6px',
               border: 'none', background: 'none',
               color: active ? '#38bdf8' : '#64748b',
               cursor: 'pointer',
               display: 'flex', flexDirection: 'column', alignItems: 'center',
-              justifyContent: 'center', gap: sp(1),
+              justifyContent: 'center', gap: 1,
               position: 'relative',
               WebkitTapHighlightColor: 'transparent',
               borderTop: active ? '2px solid #38bdf8' : '2px solid transparent',
@@ -540,7 +550,7 @@ function BottomNav({ tabs, activeTab, onSelect, navH, maxW, rtl, landscape, tabl
             }}
           >
             {/* Icon + optional badge */}
-            <span style={{ fontSize: spx(landscape ? 15 : tablet ? 20 : 17), position: 'relative', lineHeight: 1 }}>
+            <span style={{ fontSize: landscape ? 15 : tablet ? 20 : 18, position: 'relative', lineHeight: 1 }}>
               {tabItem.icon}
               {tabItem.badge > 0 && (
                 <span style={{
@@ -556,7 +566,7 @@ function BottomNav({ tabs, activeTab, onSelect, navH, maxW, rtl, landscape, tabl
             {/* Label — hidden in landscape */}
             {!landscape && (
               <span style={{
-                fontSize: spx(tablet ? 9 : 7.5),
+                fontSize: tablet ? 9 : 8,
                 fontWeight: active ? 700 : 400,
                 whiteSpace: 'nowrap',
                 lineHeight: 1,

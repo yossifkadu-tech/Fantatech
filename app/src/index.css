@@ -6,16 +6,27 @@
   box-sizing: border-box;
 }
 
-html, body, #root {
+/* ── Root layout — MUST prevent horizontal overflow on any phone ─────────── */
+html {
+  margin: 0;
+  padding: 0;
+  /* Clip any content that accidentally overflows the viewport horizontally */
+  overflow-x: hidden;
+  /* Reliable reference for 100vw without scrollbar width artifacts */
+  width: 100%;
+}
+
+body {
   margin: 0;
   padding: 0;
   height: 100%;
   background: #0f172a;
-  /* Prevent iOS rubber-band on the body — content scrolls inside, not the page */
+  overflow-x: hidden;
+  width: 100%;
+  min-height: 100%;
+  /* Prevent iOS rubber-band on body — content scrolls inside, not the page */
   overscroll-behavior: none;
-}
-
-body {
+  /* Prevent text inflation on Android WebView */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   /* Prevent text size change on phone orientation change */
@@ -23,7 +34,26 @@ body {
   text-size-adjust: 100%;
 }
 
-/* ── Scrollbar — hide thin chrome on mobile nav ────────────────────────────── */
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100%;
+  overflow-x: hidden;
+}
+
+/* ── App scaling wrapper — Capacitor / WebView fit-to-screen ─────────────── */
+/*
+ * The JS ScaleContext computes `scale = min(1, innerWidth / 390)` and injects
+ * it as a CSS custom property.  Every element that wants proportional sizing
+ * uses  calc(var(--app-scale) * <design-value>px).
+ * The property is also used for the whole-app zoom below.
+ */
+:root {
+  --app-scale: 1;
+}
+
+/* ── Scrollbar — hide on bottom nav and scrollable lists ──────────────────── */
 .ft-bottom-nav::-webkit-scrollbar { display: none; }
 .ft-scroll::-webkit-scrollbar     { display: none; }
 
@@ -32,8 +62,20 @@ button, a {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* ── Images / media — never overflow their container ─────────────────────── */
+img, video, svg, canvas {
+  max-width: 100%;
+  height: auto;
+}
+
 /* ── Loading pulse animation (used in App.jsx) ─────────────────────────────── */
 @keyframes slide {
   0%   { margin-right: 100% }
   100% { margin-right: -40% }
+}
+
+/* ── Prevent long words / URLs from breaking layout ──────────────────────── */
+p, span, div, label {
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
