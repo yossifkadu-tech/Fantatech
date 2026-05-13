@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useDevices, useWebSocket, api, getHubUrl } from './hooks/useHub'
 import { LangProvider, useLang, LANG_META } from './context/LangContext'
-import { ScaleProvider, useScale, DESIGN_W } from './context/ScaleContext'
+import { ScaleProvider, useScale } from './context/ScaleContext'
 import Dashboard from './pages/Dashboard'
 import DevicesPage from './pages/DevicesPage'
 import AutomationsPage from './pages/AutomationsPage'
@@ -21,7 +21,7 @@ import RegistrationPage from './pages/RegistrationPage'
 import GeminiAssistant from './components/GeminiAssistant'
 import UsersPage from './pages/UsersPage'
 
-const APP_VERSION = '2.13.4'
+const APP_VERSION = '2.13.5'
 
 /* ── Wake-lock hook (keeps screen on while mounted) ─────────────────── */
 function useWakeLock(enabled) {
@@ -78,7 +78,7 @@ function AppInner() {
   const { devices, loading, reload, updateDeviceState, setOnline } = useDevices()
 
   // Reactive screen size + orientation — from ScaleContext (wraps AppInner)
-  const { sp, spx, phone, tablet, desktop, landscape, scale, displayIdx, setDisplayIdx } = useScale()
+  const { sp, spx, phone, tablet, desktop, landscape, scale, displayScale } = useScale()
   // Sidebar ONLY on desktop — phone and tablet always use bottom nav
   const showSidebar = desktop
 
@@ -222,48 +222,42 @@ function AppInner() {
   }
 
   // Responsive layout values
-  const maxW   = desktop ? 1280 : tablet ? 900 : 430
-  const navH   = !desktop ? (landscape ? 38 : 50) : 0
+  const maxW = desktop ? 1280 : tablet ? 900 : 430
+  const navH = !desktop ? (landscape ? 38 : 50) : 0
 
-  // CSS zoom: scales the ENTIRE app uniformly.
-  // • Phone:   auto-scale (fit screen) × user preference
-  // • Tablet:  user preference only   (no auto-scale — user sizes manually)
-  // • Desktop: user preference only
-  // scale already combines both factors (see ScaleContext).
-  const appZoom = scale
-  // Compensate width so the visual size fills the physical screen after zoom.
-  // Only needed when zoom < 1 (i.e. scale < 1).
-  const appW = (scale < 1 && phone)
-    ? `${Math.round((DESIGN_W / scale) * 100) / 100}px`
-    : '100%'
+  // Root font-size drives scale on ALL devices:
+  // • phone:   sp()/spx() scale values + font-size shrinks the whole rem baseline
+  // • tablet:  displayScale × 16px base → user can shrink with Display Size setting
+  // • desktop: slight bump to 17 px
+  // This approach never touches position:fixed so BottomNav stays at viewport bottom.
+  const rootFontPx = phone
+    ? Math.round(16 * scale)          // e.g. 360px phone → 16*0.923 ≈ 15px
+    : desktop ? 17
+    : Math.round(16 * displayScale)   // tablet: 16 × user preference
 
   return (
     <div style={{
       minHeight: '100vh', background: '#0f172a', color: '#f1f5f9',
       direction: rtl ? 'rtl' : 'ltr',
-      // On phones: zoom scales the whole app down so it fits the physical screen.
-      // appW compensates so the visual width = physical screen width (no overflow).
-      // On tablet/desktop: no zoom, normal 100% width with maxWidth cap.
-      zoom: appZoom,
-      width: phone ? appW : '100%',
-      maxWidth: phone ? 'none' : maxW,
-      margin: '0 auto',
+      width: '100%', maxWidth: maxW, margin: '0 auto',
       position: 'relative',
       overflowX: 'hidden',
+      // Font-size scales the rem baseline — affects all em/rem text in every page
+      fontSize: `${rootFontPx}px`,
       // Ensure content never hides under fixed bottom nav
       paddingBottom: navH > 0 ? `calc(${navH}px + env(safe-area-inset-bottom))` : 0,
     }}>
 
-      {/* Header — sticky, spans the zoomed container width */}
+      {/* Header */}
       <div style={{
         background: '#1e293b', borderBottom: '1px solid #334155',
-        padding: landscape ? '4px 12px'
-               : desktop  ? '12px 28px'
-               : tablet   ? '10px 20px'
-               :             '7px 12px',
+        padding: landscape ? `${sp(4)}px 0`
+               : desktop  ? '12px 0'
+               : tablet   ? '10px 0'
+               :             `${sp(7)}px 0`,
+        paddingLeft:  `max(${sp(12)}px, env(safe-area-inset-left))`,
+        paddingRight: `max(${sp(12)}px, env(safe-area-inset-right))`,
         position: 'sticky', top: 0, zIndex: 50,
-        paddingLeft:  `max(12px, env(safe-area-inset-left))`,
-        paddingRight: `max(12px, env(safe-area-inset-right))`,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
 
@@ -271,10 +265,10 @@ function AppInner() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: spx(22) }}>🏠</span>
             <div>
-              <div style={{ fontWeight: 900, fontSize: spx(15), color: '#38bdf8', lineHeight: 1, letterSpacing: '-0.3px' }}>
+              <div style={{ fontWeight: 900, fontSize: spx(16), color: '#38bdf8', lineHeight: 1, letterSpacing: '-0.3px' }}>
                 FantaTech
               </div>
-              <div style={{ fontSize: spx(9), color: '#94a3b8', marginTop: 1, lineHeight: 1 }}>
+              <div style={{ fontSize: spx(10), color: '#94a3b8', marginTop: 1, lineHeight: 1 }}>
                 Smart Home & Security
               </div>
             </div>
@@ -475,7 +469,6 @@ function AppInner() {
         navH={navH} maxW={maxW} rtl={rtl}
         landscape={landscape} tablet={tablet}
         sp={sp} spx={spx}
-        appZoom={appZoom}
       />}
     </div>
   )
@@ -488,7 +481,7 @@ function AppInner() {
  * If all tabs together exceed the screen width the nav scrolls horizontally
  * with no visible scrollbar. The active tab is always scrolled into view.
  */
-function BottomNav({ tabs, activeTab, onSelect, navH, maxW, rtl, landscape, tablet, sp, spx, appZoom = 1 }) {
+function BottomNav({ tabs, activeTab, onSelect, navH, maxW, rtl, landscape, tablet, sp, spx }) {
   const navRef = useRef(null)
 
   // Auto-scroll active tab into view when tab changes
@@ -506,10 +499,7 @@ function BottomNav({ tabs, activeTab, onSelect, navH, maxW, rtl, landscape, tabl
       ref={navRef}
       className="ft-bottom-nav"
       style={{
-        // CSS zoom on the app root shrinks the fixed nav too — counter-zoom it
-        // so it always spans the full physical screen width.
-        zoom: appZoom !== 1 ? (1 / appZoom) : undefined,
-        position: 'fixed', bottom: 0,
+          position: 'fixed', bottom: 0,
         left: '50%', transform: 'translateX(-50%)',
         width: '100%', maxWidth: maxW,
         background: '#1e293b', borderTop: '1px solid #334155',
