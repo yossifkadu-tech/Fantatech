@@ -21,8 +21,9 @@ import RegistrationPage from './pages/RegistrationPage'
 import GeminiAssistant from './components/GeminiAssistant'
 import UsersPage from './pages/UsersPage'
 import CalibrationScreen, { isCalibrated } from './pages/CalibrationScreen'
+import SchedulerPage from './pages/SchedulerPage'
 
-const APP_VERSION = '2.14.7'
+const APP_VERSION = '2.14.9'
 
 /* ── Wake-lock hook (keeps screen on while mounted) ─────────────────── */
 function useWakeLock(enabled) {
@@ -170,6 +171,7 @@ function AppInner() {
     { id: 'gemini',        label: t.gemini_nav ?? 'Gemini',        icon: '✨' },
     { id: 'cameras',       label: t.cameras_title,                 icon: '📷' },
     { id: 'automations',   label: t.automations,                   icon: '⚡' },
+    { id: 'scheduler',     label: t.scheduler_nav ?? 'Scheduler',  icon: '🗓️' },
     { id: 'security',      label: t.security,                      icon: '🔒' },
     { id: 'rooms',         label: t.rooms,                         icon: '🛋️' },
     { id: 'gps',           label: t.gps_nav ?? 'GPS',              icon: '📍' },
@@ -435,6 +437,7 @@ function AppInner() {
               {tab === 'scenes'      && <ScenesPage     devices={devices} tablet={tablet} landscape={landscape} />}
               {tab === 'cameras'     && <CamerasPage    devices={devices} />}
               {tab === 'automations' && <AutomationsPage devices={devices} />}
+              {tab === 'scheduler'   && <SchedulerPage   devices={devices} />}
               {tab === 'security'    && <SecurityPage   devices={devices} onReload={reload} onNavigate={setTab} />}
               {tab === 'cyber'       && <CyberPage />}
               {tab === 'rooms'       && <RoomsPage />}
