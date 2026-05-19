@@ -43,6 +43,69 @@ async function analyseHistory(devices) {
 
 const DAY_LABELS_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const DAY_LABELS_HE = ['א׳',  'ב׳',  'ג׳',  'ד׳',  'ה׳',  'ו׳',  'ש׳']
+const DAY_FULL_HE   = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת']
+
+/* ── Hebrew date helpers ────────────────────────────────────────────── */
+const hebrewFmt = new Intl.DateTimeFormat('he-IL-u-ca-hebrew', { day: 'numeric' })
+const hebrewMonthFmt = new Intl.DateTimeFormat('he-IL-u-ca-hebrew', { month: 'long', year: 'numeric' })
+
+function hebrewDay(date) {
+  try { return hebrewFmt.format(date) } catch { return '' }
+}
+function hebrewMonthYear(date) {
+  try { return hebrewMonthFmt.format(date) } catch { return '' }
+}
+
+/* ── Israeli Jewish holidays (fixed Gregorian dates for 5785-5786) ─── */
+const JEWISH_HOLIDAYS = {
+  // 5785 (2025)
+  '2025-09-22': 'ר"ה',        // ראש השנה
+  '2025-09-23': 'ר"ה',
+  '2025-10-01': 'כיפור',      // יום כיפור
+  '2025-10-06': 'סוכות',      // סוכות
+  '2025-10-13': 'שמח"ת',      // שמחת תורה
+  '2025-12-14': 'חנוכה',
+  '2025-12-15': 'חנוכה',
+  '2025-12-16': 'חנוכה',
+  '2025-12-17': 'חנוכה',
+  '2025-12-18': 'חנוכה',
+  '2025-12-19': 'חנוכה',
+  '2025-12-20': 'חנוכה',
+  '2025-12-21': 'חנוכה',
+  // 5786 (2026)
+  '2026-02-13': 'ט"ו בשבט',
+  '2026-03-05': 'פורים',
+  '2026-03-06': 'פורים',
+  '2026-04-01': 'פסח',
+  '2026-04-02': 'פסח',
+  '2026-04-07': 'פסח',
+  '2026-04-08': 'פסח',
+  '2026-04-09': 'פסח',
+  '2026-04-29': 'יום הז׳',    // יום הזיכרון
+  '2026-04-30': 'יום העצמאות',
+  '2026-05-14': 'ל"ג בעומר',
+  '2026-05-20': 'שבועות',
+  '2026-05-21': 'שבועות',
+}
+
+function isoDate(date) {
+  return date.toISOString().slice(0, 10)
+}
+function holidayFor(date) {
+  return JEWISH_HOLIDAYS[isoDate(date)] || null
+}
+
+/* ── Get 7 dates of current week (Sun→Sat) ──────────────────────────── */
+function getWeekDates() {
+  const today = new Date()
+  const sun   = new Date(today)
+  sun.setDate(today.getDate() - today.getDay())
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(sun)
+    d.setDate(sun.getDate() + i)
+    return d
+  })
+}
 
 const TYPE_ICONS = {
   light: '💡', switch: '🔌', dimmer: '🔆', color: '🎨',
@@ -84,43 +147,78 @@ const EMPTY = {
 }
 
 /* ── Weekly timeline strip ───────────────────────────────────────────── */
-function WeekStrip({ schedules, rtl }) {
+function WeekStrip({ schedules, rtl, isHe, weekDates }) {
   const today = new Date().getDay()
+  const labels = isHe ? DAY_LABELS_HE : DAY_LABELS_EN
+
   return (
-    <div style={{
-      display: 'flex', gap: 6, marginBottom: 20,
-      direction: rtl ? 'rtl' : 'ltr',
-    }}>
-      {DAY_LABELS_EN.map((_, dayIdx) => {
-        const isToday  = dayIdx === today
-        const dayScheds = schedules.filter(s => s._days?.includes(dayIdx))
-        return (
-          <div key={dayIdx} style={{
-            flex: 1, borderRadius: 12,
-            background: isToday ? 'rgba(56,189,248,0.12)' : '#1e293b',
-            border: `1px solid ${isToday ? '#38bdf8' : '#334155'}`,
-            padding: '8px 4px', textAlign: 'center', minWidth: 0,
-          }}>
-            <div style={{ fontSize: 9, fontWeight: 700, color: isToday ? '#38bdf8' : '#64748b', marginBottom: 4 }}>
-              {DAY_LABELS_EN[dayIdx]}
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'center' }}>
-              {dayScheds.slice(0, 3).map((s, i) => (
-                <div key={i} style={{
-                  width: 6, height: 6, borderRadius: '50%',
-                  background: s.enabled ? s._color : '#334155',
-                }} />
-              ))}
-              {dayScheds.length === 0 && (
-                <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#1e3a5f' }} />
+    <div style={{ marginBottom: 20 }}>
+      {/* Hebrew month header */}
+      {isHe && weekDates && (
+        <div style={{
+          textAlign: 'center', fontSize: 12, fontWeight: 700,
+          color: '#94a3b8', marginBottom: 8, direction: 'rtl',
+        }}>
+          {hebrewMonthYear(weekDates[0])}
+        </div>
+      )}
+
+      <div style={{ display: 'flex', gap: 6, direction: rtl ? 'rtl' : 'ltr' }}>
+        {labels.map((_, dayIdx) => {
+          const isToday   = dayIdx === today
+          const date      = weekDates?.[dayIdx]
+          const dayScheds = schedules.filter(s => s._days?.includes(dayIdx))
+          const holiday   = isHe && date ? holidayFor(date) : null
+
+          return (
+            <div key={dayIdx} style={{
+              flex: 1, borderRadius: 12,
+              background: isToday ? 'rgba(56,189,248,0.12)' : '#1e293b',
+              border: `1px solid ${isToday ? '#38bdf8' : (holiday ? '#fbbf24' : '#334155')}`,
+              padding: '6px 4px', textAlign: 'center', minWidth: 0,
+            }}>
+              {/* Day name */}
+              <div style={{ fontSize: 9, fontWeight: 700, color: isToday ? '#38bdf8' : '#64748b', marginBottom: 2 }}>
+                {labels[dayIdx]}
+              </div>
+
+              {/* Hebrew date number */}
+              {isHe && date && (
+                <div style={{ fontSize: 8, color: '#94a3b8', marginBottom: 2, lineHeight: 1 }}>
+                  {hebrewDay(date)}
+                </div>
               )}
-              {dayScheds.length > 3 && (
-                <div style={{ fontSize: 8, color: '#475569' }}>+{dayScheds.length - 3}</div>
+
+              {/* Holiday badge */}
+              {holiday && (
+                <div style={{
+                  fontSize: 7, fontWeight: 800,
+                  color: '#fbbf24', marginBottom: 2,
+                  lineHeight: 1, direction: 'rtl',
+                }}>
+                  {holiday}
+                </div>
               )}
+
+              {/* Schedule dots */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'center' }}>
+                {dayScheds.slice(0, 3).map((s, i) => (
+                  <div key={i} style={{
+                    width: 6, height: 6, borderRadius: '50%',
+                    background: s.enabled ? s._color : '#334155',
+                  }} />
+                ))}
+                {dayScheds.length === 0 && (
+                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#1e3a5f' }} />
+                )}
+                {dayScheds.length > 3 && (
+                  <div style={{ fontSize: 8, color: '#475569' }}>+{dayScheds.length - 3}</div>
+                )}
+              </div>
             </div>
-          </div>
-        )
-      })}
+          )
+        })}
+      </div>
     </div>
   )
 }
@@ -329,7 +427,7 @@ export default function SchedulerPage({ devices }) {
       </div>
 
       {/* Weekly strip */}
-      <WeekStrip schedules={schedules} rtl={rtl} />
+      <WeekStrip schedules={schedules} rtl={rtl} isHe={isHe} weekDates={getWeekDates()} />
 
       {/* Empty state */}
       {schedules.length === 0 && (
