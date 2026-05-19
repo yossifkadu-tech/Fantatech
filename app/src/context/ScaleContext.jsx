@@ -69,10 +69,23 @@ export function ScaleProvider({ children }) {
   const [info, setInfo] = useState(calcInfo)
 
   // User-controlled display size preference
+  // On tablets: if no stored preference yet, auto-pick a sensible default:
+  //   768–899 px  → S  (idx 1, 85 %) — small/medium tablet
+  //   900–1023 px → XS (idx 0, 75 %) — large tablet / landscape
+  // Phones and desktops still default to M (idx 2, 100 %).
   const [displayIdx, setDisplayIdxState] = useState(() => {
     const s = localStorage.getItem(USER_SCALE_KEY)
-    const n = s !== null ? parseInt(s, 10) : 2   // 2 = 'M' = 1.0 (default)
-    return Math.max(0, Math.min(DISPLAY_STEPS.length - 1, n))
+    if (s !== null) {
+      const n = parseInt(s, 10)
+      return Math.max(0, Math.min(DISPLAY_STEPS.length - 1, n))
+    }
+    // First-run auto-default based on device type
+    const w  = window.innerWidth
+    const sc = w >= 1024 ? 'desktop' : w >= 768 ? 'tablet' : 'phone'
+    if (sc === 'tablet') {
+      return w >= 900 ? 0 : 1   // XS for large tablets, S for small tablets
+    }
+    return 2   // M = 1.0 for phone + desktop
   })
   const setDisplayIdx = (idx) => {
     const clamped = Math.max(0, Math.min(DISPLAY_STEPS.length - 1, idx))
@@ -100,11 +113,9 @@ export function ScaleProvider({ children }) {
     }
   }, [])
 
-  // Combined scale: device auto-scale × user preference
-  const { phone } = info
-  const combinedScale = phone
-    ? Math.min(MAX_S * displayScale, Math.max(MIN_S, (info.w / DESIGN_W) * displayScale))
-    : displayScale   // tablet/desktop: only user preference applies
+  // All scaling is now handled by CSS zoom in App.jsx.
+  // sp() / spx() always return 1:1 values so nothing is double-scaled.
+  const combinedScale = 1.0
 
   // Inject CSS custom property so non-React CSS can use the scale
   useEffect(() => {

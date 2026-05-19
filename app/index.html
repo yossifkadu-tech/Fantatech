@@ -10,7 +10,17 @@
     <title>Smart Home Hub</title>
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
-      body { background: #0f172a; color: #f1f5f9; font-family: system-ui, sans-serif; }
+      html, body { height: 100%; overflow: hidden; }
+      body {
+        background: #0f172a; color: #f1f5f9;
+        font-family: system-ui, sans-serif;
+        overflow-x: hidden; overflow-y: auto;
+      }
+      #root {
+        padding-top: env(safe-area-inset-top);
+        min-height: 100vh;
+        background: #0f172a;
+      }
       ::-webkit-scrollbar { width: 4px; }
       ::-webkit-scrollbar-track { background: #1e293b; }
       ::-webkit-scrollbar-thumb { background: #475569; border-radius: 2px; }

@@ -845,6 +845,22 @@ const T = {
     display_device_tablet: 'Tablet — size preference only',
     display_device_desktop:'Desktop — size preference only',
 
+    /* ── Screen settings (in Settings page) ── */
+    screen_settings:      'Screen Settings',
+    screen_settings_hint: 'Reset calibration to re-detect your device and choose the optimal display size.',
+    screen_recalibrate:   'Re-calibrate Screen',
+
+    /* ── Calibration screen ── */
+    calib_detected:     '🔍 DETECTED SCREEN',
+    calib_ok:           'Optimized',
+    calib_desktop:      'Desktop',
+    calib_tablet:       'Tablet',
+    calib_phone:        'Phone',
+    calib_phone_ready:  'Display auto-fitted to your phone. Launching…',
+    calib_pick:         'Choose the display size that looks best on your screen:',
+    calib_preview:      'Text preview at',
+    calib_confirm:      '✓  Looks good — Open App',
+
     /* ── Users page ── */
     users_nav:             'Users',
     users_title:           'Users',
@@ -1653,6 +1669,22 @@ const T = {
     display_device_phone:  'טלפון — התאמה אוטומטית + העדפה',
     display_device_tablet: 'טאבלט — העדפת גודל בלבד',
     display_device_desktop:'מחשב — העדפת גודל בלבד',
+
+    /* ── הגדרות מסך (בדף הגדרות) ── */
+    screen_settings:      'הגדרות מסך',
+    screen_settings_hint: 'אפס את הכיול כדי לזהות מחדש את המכשיר שלך ולבחור את גודל התצוגה האופטימלי.',
+    screen_recalibrate:   'כיול מסך מחדש',
+
+    /* ── מסך כיול ── */
+    calib_detected:     '🔍 מסך שזוהה',
+    calib_ok:           'מותאם',
+    calib_desktop:      'מחשב',
+    calib_tablet:       'טאבלט',
+    calib_phone:        'טלפון',
+    calib_phone_ready:  'התצוגה הותאמה אוטומטית לטלפון שלך. מתחיל…',
+    calib_pick:         'בחר את גודל התצוגה שנראה הכי טוב על המסך שלך:',
+    calib_preview:      'תצוגה מקדימה בגודל',
+    calib_confirm:      '✓  נראה מצוין — פתח אפליקציה',
 
     /* ── דף משתמשים ── */
     users_nav:             'משתמשים',

@@ -214,56 +214,83 @@ export default function SettingsPage() {
     <div style={{ direction: rtl ? 'rtl' : 'ltr' }}>
       <h2 style={{ margin: '0 0 20px', color: '#e2e8f0', fontSize: 18 }}>{t.settings}</h2>
 
-      {/* ── Display Size ── */}
-      <Section title={`🔡 ${t.display_size ?? 'Display Size'}`}>
-        <div style={{ fontSize: 12, color: '#64748b', marginBottom: 12, lineHeight: 1.6 }}>
-          {t.display_size_hint ?? 'Adjust text and element size to fit your screen. Works on all devices.'}
+      {/* ── Screen Settings — calibration reset (all devices) ── */}
+      <Section title={`🖥️ ${t.screen_settings ?? 'Screen Settings'}`}>
+        <div style={{ fontSize: 12, color: '#64748b', marginBottom: 14, lineHeight: 1.7 }}>
+          {t.screen_settings_hint ?? 'Reset the screen calibration to re-detect your device and set the optimal display size.'}
         </div>
-        {/* 5-step size buttons */}
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          {DISPLAY_LABELS.map((label, idx) => {
-            const active = idx === displayIdx
-            const pct    = Math.round(DISPLAY_STEPS[idx] * 100)
-            return (
-              <button
-                key={idx}
-                onClick={() => setDisplayIdx(idx)}
-                style={{
-                  flex: 1,
-                  padding: '10px 4px',
-                  border: `2px solid ${active ? '#38bdf8' : '#334155'}`,
-                  borderRadius: 10,
-                  background: active ? 'rgba(56,189,248,0.12)' : '#0f172a',
-                  color: active ? '#38bdf8' : '#64748b',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: 4,
-                  WebkitTapHighlightColor: 'transparent',
-                  transition: 'all 0.15s',
-                }}
-              >
-                {/* Preview letter scales with button size */}
-                <span style={{
-                  fontSize: 10 + idx * 3,
-                  fontWeight: 800,
-                  lineHeight: 1,
-                  color: active ? '#38bdf8' : '#64748b',
-                }}>A</span>
-                <span style={{ fontSize: 9, fontWeight: 700 }}>{label}</span>
-                <span style={{ fontSize: 8, color: active ? '#7dd3fc' : '#475569' }}>{pct}%</span>
-              </button>
-            )
-          })}
+
+        {/* Current device info */}
+        <div style={{
+          background: '#0f172a', borderRadius: 8, padding: '8px 12px',
+          fontSize: 12, color: '#94a3b8', marginBottom: 14,
+          display: 'flex', gap: 16, flexWrap: 'wrap',
+        }}>
+          <span>📐 {window.innerWidth} × {window.innerHeight} px</span>
+          <span>⚡ ×{(window.devicePixelRatio || 1).toFixed(1)} DPR</span>
+          <span>{phone ? '📱 Phone' : tablet ? '📲 Tablet' : '🖥️ Desktop'}</span>
         </div>
-        {/* current device type badge */}
-        <div style={{ marginTop: 10, fontSize: 11, color: '#475569', textAlign: 'center' }}>
-          {phone   ? `📱 ${t.display_device_phone   ?? 'Phone — auto-fit + size preference'}`  : ''}
-          {tablet  ? `📲 ${t.display_device_tablet  ?? 'Tablet — size preference only'}`       : ''}
-          {desktop ? `🖥️ ${t.display_device_desktop ?? 'Desktop — size preference only'}`      : ''}
-        </div>
+
+        {/* Reset calibration button */}
+        <button
+          onClick={() => {
+            localStorage.removeItem('fantatech_calibrated')
+            localStorage.removeItem('fantatech_display_scale')
+            window.location.reload()
+          }}
+          style={{
+            width: '100%', padding: '12px',
+            background: 'linear-gradient(90deg,#0ea5e9,#6366f1)',
+            border: 'none', borderRadius: 10,
+            color: '#fff', fontSize: 14, fontWeight: 700,
+            cursor: 'pointer',
+            WebkitTapHighlightColor: 'transparent',
+          }}
+        >
+          🔄 {t.screen_recalibrate ?? 'Re-calibrate Screen'}
+        </button>
       </Section>
+
+      {/* ── Display Size — tablet & desktop only (phone is always 1:1) ── */}
+      {!phone && (
+        <Section title={`🔡 ${t.display_size ?? 'Display Size'}`}>
+          <div style={{ fontSize: 12, color: '#64748b', marginBottom: 12, lineHeight: 1.6 }}>
+            {t.display_size_hint ?? 'Adjust text and element size to fit your screen.'}
+          </div>
+          {/* 5-step size buttons */}
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {DISPLAY_LABELS.map((label, idx) => {
+              const active = idx === displayIdx
+              const pct    = Math.round(DISPLAY_STEPS[idx] * 100)
+              return (
+                <button
+                  key={idx}
+                  onClick={() => setDisplayIdx(idx)}
+                  style={{
+                    flex: 1, padding: '10px 4px',
+                    border: `2px solid ${active ? '#38bdf8' : '#334155'}`,
+                    borderRadius: 10,
+                    background: active ? 'rgba(56,189,248,0.12)' : '#0f172a',
+                    color: active ? '#38bdf8' : '#64748b',
+                    cursor: 'pointer',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                    WebkitTapHighlightColor: 'transparent',
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  <span style={{ fontSize: 10 + idx * 3, fontWeight: 800, lineHeight: 1, color: active ? '#38bdf8' : '#64748b' }}>A</span>
+                  <span style={{ fontSize: 9, fontWeight: 700 }}>{label}</span>
+                  <span style={{ fontSize: 8, color: active ? '#7dd3fc' : '#475569' }}>{pct}%</span>
+                </button>
+              )
+            })}
+          </div>
+          <div style={{ marginTop: 10, fontSize: 11, color: '#475569', textAlign: 'center' }}>
+            {tablet  ? `📲 ${t.display_device_tablet  ?? 'Tablet — adjust to fit your screen size'}` : ''}
+            {desktop ? `🖥️ ${t.display_device_desktop ?? 'Desktop — size preference only'}`          : ''}
+          </div>
+        </Section>
+      )}
 
       {/* ── Hub Connection ── */}
       <Section title={t.hub_conn_section}>

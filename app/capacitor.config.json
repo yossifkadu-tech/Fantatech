@@ -17,7 +17,8 @@
   "android": {
     "allowMixedContent": true,
     "backgroundColor": "#0f172a",
-    "overrideUserAgent": "FantaTech Android"
+    "overrideUserAgent": "FantaTech Android",
+    "edgeToEdge": true
   },
   "ios": {
     "backgroundColor": "#0f172a",
