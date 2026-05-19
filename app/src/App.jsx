@@ -23,6 +23,7 @@ import UsersPage from './pages/UsersPage'
 import CalibrationScreen, { isCalibrated } from './pages/CalibrationScreen'
 import SchedulerPage from './pages/SchedulerPage'
 import StorePage, { STORE_URL } from './pages/StorePage'
+import PremiumPage from './pages/PremiumPage'
 import VoiceControl from './components/VoiceControl'
 import { useNotifications } from './hooks/useNotifications'
 
@@ -294,6 +295,7 @@ function AppInner() {
     { id: 'users',         label: t.users_nav ?? 'Users',           icon: '👥' },
     { id: 'notifications', label: t.notifications_tab,             icon: '🔔', badge: unreadNotifs },
     { id: 'store',         label: t.store_nav ?? 'חנות',           icon: '🛍️' },
+    { id: 'premium',       label: t.premium_nav ?? 'פרמיום',       icon: '💎' },
     { id: 'settings',      label: t.settings,                      icon: '⚙️' },
   ]
 
@@ -595,6 +597,7 @@ function AppInner() {
               {tab === 'gps'         && <GpsPage />}
               {tab === 'gemini'      && <GeminiAssistant onDeviceAction={handleDeviceAction} inline />}
               {tab === 'store'          && <StorePage />}
+              {tab === 'premium'        && <PremiumPage />}
               {tab === 'users'          && <UsersPage />}
               {tab === 'notifications'  && <NotificationsPage />}
               {tab === 'settings'       && <SettingsPage />}
