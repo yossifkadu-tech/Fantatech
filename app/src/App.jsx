@@ -22,10 +22,110 @@ import GeminiAssistant from './components/GeminiAssistant'
 import UsersPage from './pages/UsersPage'
 import CalibrationScreen, { isCalibrated } from './pages/CalibrationScreen'
 import SchedulerPage from './pages/SchedulerPage'
+import StorePage, { STORE_URL } from './pages/StorePage'
 import VoiceControl from './components/VoiceControl'
 import { useNotifications } from './hooks/useNotifications'
 
-const APP_VERSION = '2.15.0'
+const APP_VERSION = '2.16.0'
+
+/* ── Promo popup — shows once every 10 min ────────────────────────────── */
+const PROMO_DEALS = [
+  { emoji: '💡', titleHe: 'נורה חכמה פרו', title: 'Smart Bulb Pro', priceHe: 'רק ₪79 — מבצע!', price: 'Only ₪79 — Sale!', slug: '/products/smart-bulb-pro' },
+  { emoji: '🎁', titleHe: 'ערכת פתיחה', title: 'Starter Kit', priceHe: '₪499 במקום ₪699', price: '₪499 instead of ₪699', slug: '/products/starter-kit' },
+  { emoji: '❄️', titleHe: 'שלט מזגן חכם', title: 'AC Smart Controller', priceHe: '₪149 — חסוך ₪50', price: '₪149 — Save ₪50', slug: '/products/ac-smart-controller' },
+]
+
+function PromoPopup({ lang, rtl, onClose, onShop }) {
+  const isHe = lang === 'he'
+  const deal = PROMO_DEALS[Math.floor(Math.random() * PROMO_DEALS.length)]
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 400,
+      background: 'rgba(0,0,0,0.7)', display: 'flex',
+      alignItems: 'center', justifyContent: 'center', padding: 24,
+    }} onClick={onClose}>
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          background: '#1e293b', borderRadius: 20,
+          border: '1px solid #1d4ed8', padding: '24px 20px',
+          maxWidth: 300, width: '100%', textAlign: 'center',
+          direction: rtl ? 'rtl' : 'ltr',
+          boxShadow: '0 0 60px rgba(29,78,216,0.3)',
+          position: 'relative',
+        }}
+      >
+        <button onClick={onClose} style={{
+          position: 'absolute', top: 10, insetInlineEnd: 12,
+          background: 'none', border: 'none', color: '#475569',
+          fontSize: 18, cursor: 'pointer',
+        }}>✕</button>
+
+        <div style={{ fontSize: 48, marginBottom: 10 }}>{deal.emoji}</div>
+        <div style={{ fontSize: 11, color: '#38bdf8', fontWeight: 800, marginBottom: 6, letterSpacing: 1 }}>
+          {isHe ? '🔥 מבצע מיוחד לאפליקציה' : '🔥 EXCLUSIVE APP DEAL'}
+        </div>
+        <div style={{ fontSize: 17, fontWeight: 900, color: '#f1f5f9', marginBottom: 4 }}>
+          {isHe ? deal.titleHe : deal.title}
+        </div>
+        <div style={{ fontSize: 14, fontWeight: 700, color: '#fbbf24', marginBottom: 18 }}>
+          {isHe ? deal.priceHe : deal.price}
+        </div>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button onClick={onClose} style={{
+            flex: 1, padding: '9px 0', borderRadius: 10, border: '1px solid #334155',
+            background: 'transparent', color: '#64748b', fontSize: 12, cursor: 'pointer',
+          }}>
+            {isHe ? 'אחר כך' : 'Later'}
+          </button>
+          <button onClick={() => { onShop(); onClose() }} style={{
+            flex: 2, padding: '9px 0', borderRadius: 10, border: 'none',
+            background: 'linear-gradient(135deg,#1d4ed8,#3b82f6)',
+            color: '#fff', fontWeight: 800, fontSize: 13, cursor: 'pointer',
+          }}>
+            {isHe ? '🛒 לרכישה' : '🛒 Shop Now'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ── Bottom promo banner ──────────────────────────────────────────────── */
+function PromoBanner({ lang, rtl, onShop, onDismiss }) {
+  const isHe = lang === 'he'
+  return (
+    <div style={{
+      background: 'linear-gradient(90deg,#1d1b6e,#1d4ed8)',
+      borderTop: '1px solid #3b82f6',
+      padding: '8px 14px',
+      display: 'flex', alignItems: 'center', gap: 10,
+      direction: rtl ? 'rtl' : 'ltr',
+      position: 'relative', zIndex: 85,
+    }}>
+      <span style={{ fontSize: 18, flexShrink: 0 }}>🎁</span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 11, fontWeight: 800, color: '#fff', lineHeight: 1.3 }}>
+          {isHe ? 'FantaTech Store — מוצרי בית חכם' : 'FantaTech Store — Smart Home Products'}
+        </div>
+        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.65)', lineHeight: 1.3 }}>
+          {isHe ? 'ערכת פתיחה ₪499 במקום ₪699 — מבצע לזמן מוגבל' : 'Starter Kit ₪499 instead of ₪699 — Limited offer'}
+        </div>
+      </div>
+      <button onClick={onShop} style={{
+        padding: '5px 12px', borderRadius: 8, border: 'none', flexShrink: 0,
+        background: '#fff', color: '#1d4ed8',
+        fontWeight: 800, fontSize: 11, cursor: 'pointer',
+      }}>
+        {isHe ? 'לחנות' : 'Shop'}
+      </button>
+      <button onClick={onDismiss} style={{
+        background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)',
+        fontSize: 16, cursor: 'pointer', flexShrink: 0, lineHeight: 1,
+      }}>✕</button>
+    </div>
+  )
+}
 
 /* ── Wake-lock hook (keeps screen on while mounted) ─────────────────── */
 function useWakeLock(enabled) {
@@ -81,6 +181,8 @@ function AppInner() {
   const [calibrated,  setCalibrated]  = useState(isCalibrated)
   const [unreadNotifs, setUnreadNotifs] = useState(0)
   const [showNotifBanner, setShowNotifBanner] = useState(false)
+  const [showPromoPopup, setShowPromoPopup]   = useState(false)
+  const [showPromoBanner, setShowPromoBanner] = useState(() => !localStorage.getItem('ft_banner_dismissed'))
   const { devices, loading, reload, updateDeviceState, setOnline } = useDevices()
   const { permission, requestPermission, notify } = useNotifications()
 
@@ -103,6 +205,12 @@ function AppInner() {
       return () => clearTimeout(id)
     }
   }, [permission])
+
+  // Show promo popup every 10 minutes
+  useEffect(() => {
+    const id = setInterval(() => setShowPromoPopup(true), 10 * 60 * 1000)
+    return () => clearInterval(id)
+  }, [])
 
   // Handle incoming notification pushed over WS
   const onWsNotification = useCallback((n) => {
@@ -185,6 +293,7 @@ function AppInner() {
     { id: 'gps',           label: t.gps_nav ?? 'GPS',              icon: '📍' },
     { id: 'users',         label: t.users_nav ?? 'Users',           icon: '👥' },
     { id: 'notifications', label: t.notifications_tab,             icon: '🔔', badge: unreadNotifs },
+    { id: 'store',         label: t.store_nav ?? 'חנות',           icon: '🛍️' },
     { id: 'settings',      label: t.settings,                      icon: '⚙️' },
   ]
 
@@ -461,7 +570,7 @@ function AppInner() {
         {/* Main content — v2.0 padding; 80px bottom clears the fixed nav */}
         <div style={{
           flex: 1,
-          padding: showSidebar ? '20px 24px 32px' : '16px 14px calc(80px + env(safe-area-inset-bottom))',
+          padding: showSidebar ? '20px 24px 32px' : `16px 14px calc(${showPromoBanner ? 112 : 80}px + env(safe-area-inset-bottom))`,
           minWidth: 0,
           overflowX: 'hidden',
         }}>
@@ -485,6 +594,7 @@ function AppInner() {
               {tab === 'network'     && <NetworkPage />}
               {tab === 'gps'         && <GpsPage />}
               {tab === 'gemini'      && <GeminiAssistant onDeviceAction={handleDeviceAction} inline />}
+              {tab === 'store'          && <StorePage />}
               {tab === 'users'          && <UsersPage />}
               {tab === 'notifications'  && <NotificationsPage />}
               {tab === 'settings'       && <SettingsPage />}
@@ -492,6 +602,33 @@ function AppInner() {
           )}
         </div>
       </div>
+
+      {/* ── Promo popup ───────────────────────────────────────────────────── */}
+      {showPromoPopup && (
+        <PromoPopup
+          lang={lang} rtl={rtl}
+          onClose={() => setShowPromoPopup(false)}
+          onShop={() => { setTab('store'); setShowPromoPopup(false) }}
+        />
+      )}
+
+      {/* ── Bottom promo banner (above nav) ───────────────────────────────── */}
+      {showPromoBanner && !showSidebar && (
+        <div style={{
+          position: 'fixed', bottom: 'calc(56px + env(safe-area-inset-bottom))',
+          left: '50%', transform: 'translateX(-50%)',
+          width: '100%', maxWidth: maxW, zIndex: 79,
+        }}>
+          <PromoBanner
+            lang={lang} rtl={rtl}
+            onShop={() => setTab('store')}
+            onDismiss={() => {
+              setShowPromoBanner(false)
+              localStorage.setItem('ft_banner_dismissed', '1')
+            }}
+          />
+        </div>
+      )}
 
       {/* ── Bottom Nav (v2.0 style) — flex:1 equal buttons, position:fixed ── */}
       {!showSidebar && (
