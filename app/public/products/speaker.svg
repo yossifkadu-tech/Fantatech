@@ -1,0 +1,24 @@
+<svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="spkGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3a3a3e"/>
+      <stop offset="100%" stop-color="#1d1d1f"/>
+    </linearGradient>
+    <pattern id="mesh" x="0" y="0" width="6" height="6" patternUnits="userSpaceOnUse">
+      <circle cx="3" cy="3" r="1" fill="#86868b" opacity="0.55"/>
+    </pattern>
+  </defs>
+  <ellipse cx="100" cy="132" rx="48" ry="3.5" fill="#000" opacity="0.12"/>
+  <!-- speaker body -->
+  <ellipse cx="100" cy="118" rx="50" ry="10" fill="#1d1d1f"/>
+  <rect x="50" y="40" width="100" height="80" rx="50" fill="url(#spkGrad)"/>
+  <!-- mesh -->
+  <rect x="55" y="44" width="90" height="72" rx="46" fill="url(#mesh)" opacity="0.85"/>
+  <!-- top cap -->
+  <ellipse cx="100" cy="42" rx="48" ry="6" fill="#2a2a2e"/>
+  <!-- touch ring -->
+  <circle cx="100" cy="42" r="14" fill="none" stroke="#0071e3" stroke-width="1.4" opacity="0.85"/>
+  <circle cx="100" cy="42" r="8" fill="none" stroke="#5e9eff" stroke-width="1" opacity="0.7"/>
+  <!-- LED -->
+  <circle cx="100" cy="105" r="2" fill="#0071e3"/>
+</svg>

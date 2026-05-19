@@ -1,0 +1,35 @@
+<svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="smkBody" cx="50%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#e5e5ea"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="100" cy="138" rx="58" ry="3" fill="#000" opacity="0.1"/>
+  <!-- alarm housing -->
+  <circle cx="100" cy="75" r="58" fill="url(#smkBody)" stroke="#d2d2d7" stroke-width="1"/>
+  <!-- inner ring -->
+  <circle cx="100" cy="75" r="26" fill="#fafafa" stroke="#e5e5ea"/>
+  <!-- center button -->
+  <circle cx="100" cy="75" r="11" fill="#0071e3"/>
+  <text x="100" y="78" font-family="Inter, -apple-system, sans-serif" font-size="6" font-weight="700" fill="#ffffff" text-anchor="middle">TEST</text>
+  <!-- vent dots around -->
+  <g fill="#86868b">
+    <circle cx="56" cy="52" r="1.6"/>
+    <circle cx="68" cy="42" r="1.6"/>
+    <circle cx="82" cy="36" r="1.6"/>
+    <circle cx="100" cy="34" r="1.6"/>
+    <circle cx="118" cy="36" r="1.6"/>
+    <circle cx="132" cy="42" r="1.6"/>
+    <circle cx="144" cy="52" r="1.6"/>
+    <circle cx="56" cy="98" r="1.6"/>
+    <circle cx="68" cy="108" r="1.6"/>
+    <circle cx="82" cy="114" r="1.6"/>
+    <circle cx="100" cy="116" r="1.6"/>
+    <circle cx="118" cy="114" r="1.6"/>
+    <circle cx="132" cy="108" r="1.6"/>
+    <circle cx="144" cy="98" r="1.6"/>
+  </g>
+  <!-- status LED -->
+  <circle cx="130" cy="75" r="2.4" fill="#34c759"/>
+</svg>

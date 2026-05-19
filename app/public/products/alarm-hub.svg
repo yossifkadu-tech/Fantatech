@@ -1,0 +1,21 @@
+<svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="shieldGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0071e3"/>
+      <stop offset="100%" stop-color="#0058b8"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="100" cy="132" rx="45" ry="3.5" fill="#000" opacity="0.12"/>
+  <!-- shield -->
+  <path d="M100 22 L150 38 L150 76 Q150 110 100 128 Q50 110 50 76 L50 38 Z" fill="url(#shieldGrad)"/>
+  <!-- inner shield -->
+  <path d="M100 32 L142 45 L142 76 Q142 102 100 117 Q58 102 58 76 L58 45 Z" fill="none" stroke="#fff" stroke-width="1.2" opacity="0.5"/>
+  <!-- check / pulse -->
+  <circle cx="100" cy="72" r="14" fill="#fff"/>
+  <path d="M93 73 L98 78 L107 67" stroke="#0071e3" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <!-- signal arcs -->
+  <g stroke="#fff" stroke-width="1.5" fill="none" opacity="0.55">
+    <path d="M80 96 Q100 88 120 96"/>
+    <path d="M74 102 Q100 90 126 102"/>
+  </g>
+</svg>

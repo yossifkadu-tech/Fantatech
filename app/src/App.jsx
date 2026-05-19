@@ -30,9 +30,9 @@ const APP_VERSION = '2.16.0'
 
 /* ── Promo popup — shows once every 10 min ────────────────────────────── */
 const PROMO_DEALS = [
-  { emoji: '💡', titleHe: 'נורה חכמה פרו', title: 'Smart Bulb Pro', priceHe: 'רק ₪79 — מבצע!', price: 'Only ₪79 — Sale!', slug: '/products/smart-bulb-pro' },
-  { emoji: '🎁', titleHe: 'ערכת פתיחה', title: 'Starter Kit', priceHe: '₪499 במקום ₪699', price: '₪499 instead of ₪699', slug: '/products/starter-kit' },
-  { emoji: '❄️', titleHe: 'שלט מזגן חכם', title: 'AC Smart Controller', priceHe: '₪149 — חסוך ₪50', price: '₪149 — Save ₪50', slug: '/products/ac-smart-controller' },
+  { img: '/products/led-strip.svg', titleHe: 'FantaGlow Strip 5m', title: 'FantaGlow Strip 5m', priceHe: '₪129 במקום ₪179 — 28% הנחה!', price: '₪129 instead of ₪179 — 28% off!' },
+  { img: '/products/starter-kit.svg', titleHe: 'חבילת התחלה', title: 'Starter Bundle', priceHe: '₪899 במקום ₪1,189 — חסוך ₪290', price: '₪899 instead of ₪1,189 — Save ₪290' },
+  { img: '/products/camera.svg', titleHe: 'FantaCam Indoor — מבצע סוף עונה', title: 'FantaCam Indoor — Clearance', priceHe: '₪169 במקום ₪289 — 43% הנחה!', price: '₪169 instead of ₪289 — 43% off!' },
 ]
 
 function PromoPopup({ lang, rtl, onClose, onShop }) {
@@ -61,7 +61,7 @@ function PromoPopup({ lang, rtl, onClose, onShop }) {
           fontSize: 18, cursor: 'pointer',
         }}>✕</button>
 
-        <div style={{ fontSize: 48, marginBottom: 10 }}>{deal.emoji}</div>
+        <img src={deal.img} alt={deal.title} style={{ width: 80, height: 80, objectFit: 'contain', marginBottom: 10 }} />
         <div style={{ fontSize: 11, color: '#38bdf8', fontWeight: 800, marginBottom: 6, letterSpacing: 1 }}>
           {isHe ? '🔥 מבצע מיוחד לאפליקציה' : '🔥 EXCLUSIVE APP DEAL'}
         </div>

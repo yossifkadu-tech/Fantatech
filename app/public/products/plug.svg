@@ -1,0 +1,25 @@
+<svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="plugBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fff"/>
+      <stop offset="100%" stop-color="#e5e5ea"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="100" cy="135" rx="40" ry="3" fill="#000" opacity="0.1"/>
+  <!-- wall plate hint -->
+  <rect x="36" y="18" width="128" height="116" rx="8" fill="#fafafa" stroke="#e5e5ea"/>
+  <!-- plug body -->
+  <rect x="62" y="38" width="76" height="88" rx="16" fill="url(#plugBody)" stroke="#d2d2d7" stroke-width="1"/>
+  <!-- power button (round) -->
+  <circle cx="100" cy="62" r="14" fill="#fff" stroke="#d2d2d7" stroke-width="1"/>
+  <circle cx="100" cy="62" r="9" fill="#0071e3"/>
+  <path d="M100 56 L100 62 M96 60 Q96 67 104 67 Q108 67 108 62" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+  <!-- socket holes -->
+  <g fill="#1d1d1f">
+    <rect x="82" y="90" width="4" height="14" rx="1"/>
+    <rect x="114" y="90" width="4" height="14" rx="1"/>
+    <circle cx="100" cy="112" r="2.5"/>
+  </g>
+  <!-- LED -->
+  <circle cx="124" cy="48" r="2" fill="#34c759"/>
+</svg>

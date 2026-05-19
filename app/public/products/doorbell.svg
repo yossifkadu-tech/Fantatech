@@ -1,0 +1,22 @@
+<svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bellBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3a3a3e"/>
+      <stop offset="100%" stop-color="#1d1d1f"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="100" cy="135" rx="40" ry="3" fill="#000" opacity="0.12"/>
+  <!-- wall hint -->
+  <rect x="30" y="20" width="140" height="110" rx="6" fill="#fafafa" stroke="#e5e5ea" stroke-width="1"/>
+  <!-- doorbell body -->
+  <rect x="78" y="32" width="44" height="92" rx="14" fill="url(#bellBody)"/>
+  <!-- camera lens at top -->
+  <circle cx="100" cy="52" r="11" fill="#0a0a0c"/>
+  <circle cx="100" cy="52" r="7" fill="#0071e3" opacity="0.45"/>
+  <circle cx="96" cy="48" r="2" fill="#fff" opacity="0.6"/>
+  <!-- bell button -->
+  <circle cx="100" cy="92" r="13" fill="#fff"/>
+  <circle cx="100" cy="92" r="10" fill="#0071e3"/>
+  <!-- bell icon -->
+  <path d="M100 87 Q95 87 95 92 L95 95 L93 97 L107 97 L105 95 L105 92 Q105 87 100 87 Z M99 99 Q100 101 101 99" fill="#fff"/>
+</svg>

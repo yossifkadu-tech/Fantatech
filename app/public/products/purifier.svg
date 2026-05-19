@@ -1,0 +1,30 @@
+<svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="purifBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fff"/>
+      <stop offset="100%" stop-color="#e5e5ea"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="100" cy="135" rx="42" ry="3" fill="#000" opacity="0.12"/>
+  <!-- airflow lines -->
+  <g stroke="#5e9eff" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.5">
+    <path d="M80 22 Q82 14 88 14"/>
+    <path d="M100 18 Q102 8 110 10"/>
+    <path d="M120 22 Q122 14 128 18"/>
+  </g>
+  <!-- body -->
+  <rect x="70" y="30" width="60" height="98" rx="14" fill="url(#purifBody)" stroke="#d2d2d7" stroke-width="1"/>
+  <!-- vents -->
+  <g stroke="#c7c7cc" stroke-width="2" stroke-linecap="round">
+    <line x1="80" y1="46" x2="120" y2="46"/>
+    <line x1="80" y1="54" x2="120" y2="54"/>
+    <line x1="80" y1="62" x2="120" y2="62"/>
+    <line x1="80" y1="70" x2="120" y2="70"/>
+    <line x1="80" y1="78" x2="120" y2="78"/>
+  </g>
+  <!-- display -->
+  <rect x="86" y="92" width="28" height="20" rx="4" fill="#1d1d1f"/>
+  <text x="100" y="106" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#34c759">12</text>
+  <!-- button -->
+  <circle cx="100" cy="120" r="3" fill="#0071e3"/>
+</svg>

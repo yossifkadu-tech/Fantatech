@@ -1,0 +1,16 @@
+<svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg">
+  <ellipse cx="100" cy="135" rx="42" ry="3" fill="#000" opacity="0.12"/>
+  <!-- door slab -->
+  <rect x="30" y="14" width="140" height="120" rx="4" fill="#fafafa" stroke="#e5e5ea"/>
+  <rect x="36" y="20" width="128" height="108" rx="2" fill="none" stroke="#e5e5ea"/>
+  <!-- existing deadbolt knob -->
+  <circle cx="100" cy="74" r="32" fill="#1d1d1f"/>
+  <circle cx="100" cy="74" r="28" fill="#2a2a2e"/>
+  <!-- twist tab -->
+  <rect x="78" y="72" width="44" height="6" rx="1.5" fill="#fff" opacity="0.95"/>
+  <!-- "smart" attachment band -->
+  <rect x="68" y="106" width="64" height="14" rx="6" fill="#0071e3"/>
+  <text x="100" y="116" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" font-weight="700" fill="#fff" letter-spacing="1.5">SMART</text>
+  <!-- handle -->
+  <rect x="148" y="64" width="14" height="36" rx="3" fill="#86868b"/>
+</svg>

@@ -11,110 +11,193 @@ import { useScale } from '../context/ScaleContext'
 /* ── Your website URL ─────────────────────────────────────────────────── */
 export const STORE_URL = 'https://fantatech.co.il'
 
-/* ── Product catalogue (replace or extend as needed) ─────────────────── */
+/* ── Real product catalogue from fantatech.co.il ─────────────────────── */
 const PRODUCTS = [
   {
-    id: 1, category: 'תאורה',
-    emoji: '💡', name: 'Smart Bulb Pro', nameHe: 'נורה חכמה פרו',
-    price: '₪79', oldPrice: '₪99',
-    desc: 'נורה חכמה 16M צבעים, 1000 lumen, WiFi, תואמת Alexa & Google',
-    badge: 'bestseller', stars: 5,
-    slug: '/products/smart-bulb-pro',
+    id: 1, category: 'אבטחה',
+    img: '/products/camera.svg', name: 'FantaCam Pro 2K', nameHe: 'FantaCam Pro 2K',
+    price: '₪479', oldPrice: '₪589', off: '−19%',
+    desc: 'מצלמה חיצונית עם ראיית לילה צבעונית וזיהוי AI של אנשים וחבילות.',
+    badge: 'new', stars: 4.7, reviews: 612,
+    slug: '/products',
   },
   {
-    id: 2, category: 'שליטה',
-    emoji: '🔌', name: 'Smart Plug 16A', nameHe: 'שקע חכם 16A',
-    price: '₪49',
-    desc: 'שקע חכם עם מד צריכת חשמל, לוח זמנים, שליטה מרחוק',
-    badge: null, stars: 4,
-    slug: '/products/smart-plug-16a',
+    id: 2, category: 'אבטחה',
+    img: '/products/doorbell.svg', name: 'FantaBell Video Doorbell', nameHe: 'FantaBell Video Doorbell',
+    price: '₪549',
+    desc: 'שיחה דו־כיוונית, ראייה מהראש לרגליים, שמירה על חבילות.',
+    badge: null, stars: 4.5, reviews: 389,
+    slug: '/products',
   },
   {
-    id: 3, category: 'אקלים',
-    emoji: '❄️', name: 'AC Smart Controller', nameHe: 'שלט מזגן חכם',
-    price: '₪149', oldPrice: '₪199',
-    desc: 'הפוך כל מזגן לחכם — שליטה מהאפליקציה, תזמון אוטומטי',
-    badge: 'sale', stars: 5,
-    slug: '/products/ac-smart-controller',
+    id: 3, category: 'אבטחה',
+    img: '/products/alarm-hub.svg', name: 'FantaGuard Alarm Hub', nameHe: 'FantaGuard Alarm Hub',
+    price: '₪699',
+    desc: 'המוח של הבית — סירנות, חיישנים ומעקב מקצועי לבחירה.',
+    badge: null, stars: 4.6, reviews: 214,
+    slug: '/products',
   },
   {
-    id: 4, category: 'אבטחה',
-    emoji: '📷', name: 'Fanta Cam 2K', nameHe: 'מצלמה Fanta Cam 2K',
-    price: '₪249',
-    desc: 'מצלמת אבטחה 2K, ראיית לילה, זיהוי תנועה, אחסון ענן',
-    badge: 'new', stars: 4,
-    slug: '/products/fanta-cam-2k',
+    id: 4, category: 'מנעולים',
+    img: '/products/lock.svg', name: 'FantaLock Touch', nameHe: 'FantaLock Touch',
+    price: '₪729',
+    desc: 'טביעת אצבע, קוד, אפליקציה ומפתח — ארבע דרכי כניסה. תומך ב־Matter.',
+    badge: null, stars: 4.8, reviews: 429,
+    slug: '/products',
   },
   {
-    id: 5, category: 'אבטחה',
-    emoji: '🔒', name: 'Smart Lock Pro', nameHe: 'מנעול חכם פרו',
-    price: '₪399',
-    desc: 'מנעול חכם טביעת אצבע + קוד + אפליקציה, ספריה Z-Wave',
-    badge: null, stars: 5,
-    slug: '/products/smart-lock-pro',
+    id: 5, category: 'מנעולים',
+    img: '/products/lock-retrofit.svg', name: 'FantaLock Retrofit', nameHe: 'FantaLock Retrofit',
+    price: '₪479', oldPrice: '₪549', off: '−13%',
+    desc: 'הופך את המנעול הקיים לחכם תוך 10 דקות — בלי החלפת מפתח.',
+    badge: null, stars: 4.6, reviews: 278,
+    slug: '/products',
   },
   {
-    id: 6, category: 'חיישנים',
-    emoji: '🌡️', name: 'Temp & Humidity Sensor', nameHe: 'חיישן טמפ׳ ולחות',
-    price: '₪39',
-    desc: 'חיישן טמפרטורה ולחות Zigbee, דיוק ±0.3°C, סוללה 2 שנה',
-    badge: null, stars: 4,
-    slug: '/products/temp-humidity-sensor',
+    id: 6, category: 'תאורה',
+    img: '/products/led-strip.svg', name: 'FantaGlow Strip 5m', nameHe: 'FantaGlow Strip 5m',
+    price: '₪129', oldPrice: '₪179', off: '−28%',
+    desc: 'רצועת LED עם 16 מיליון צבעים, סנכרון מוזיקה ומצב חוץ.',
+    badge: 'hot', stars: 4.6, reviews: 1284,
+    slug: '/products',
   },
   {
-    id: 7, category: '허브',
-    emoji: '🏠', name: 'FantaHub Pro', nameHe: 'FantaHub פרו',
-    price: '₪349', oldPrice: '₪449',
-    desc: 'הרכזת הביתית של FantaTech — WiFi, Zigbee, Z-Wave, BT, LAN',
-    badge: 'bestseller', stars: 5,
-    slug: '/products/fantahub-pro',
+    id: 7, category: 'תאורה',
+    img: '/products/bulb.svg', name: 'FantaBulb E27 (4-pack)', nameHe: 'FantaBulb E27 (4-pack)',
+    price: '₪169',
+    desc: 'נורות לבנות מתכווננות — ארוחות חמות, בקרים פוקוסים.',
+    badge: null, stars: 4.5, reviews: 968,
+    slug: '/products',
   },
   {
-    id: 8, category: 'תאורה',
-    emoji: '🔆', name: 'Smart Dimmer Switch', nameHe: 'מפסק עמעום חכם',
+    id: 8, category: 'אקלים',
+    img: '/products/thermostat.svg', name: 'FantaClime Thermostat', nameHe: 'FantaClime Thermostat',
+    price: '₪439',
+    desc: 'לומד את השגרה וחוסך עד 23% מחשבונות החימום.',
+    badge: null, stars: 4.7, reviews: 356,
+    slug: '/products',
+  },
+  {
+    id: 9, category: 'אקלים',
+    img: '/products/purifier.svg', name: 'FantaAir Mini Purifier', nameHe: 'FantaAir Mini Purifier',
+    price: '₪289',
+    desc: 'פילטר HEPA-13, שקט כמעט מוחלט בלילה, מצב אלרגיות.',
+    badge: null, stars: 4.4, reviews: 512,
+    slug: '/products',
+  },
+  {
+    id: 10, category: 'חיישנים',
+    img: '/products/motion.svg', name: 'FantaSense Motion 3-pack', nameHe: 'FantaSense Motion 3-pack',
+    price: '₪179',
+    desc: 'חיישן ידידותי לחיות מחמד, שנתיים על סוללת מטבע, Matter על Thread.',
+    badge: 'new', stars: 4.7, reviews: 187,
+    slug: '/products',
+  },
+  {
+    id: 11, category: 'חיישנים',
+    img: '/products/leak.svg', name: 'FantaSense Leak Detector', nameHe: 'FantaSense Leak Detector',
     price: '₪89',
-    desc: 'מפסק עמעום חכם 3 כנופיות, תמיכת LED, WiFi + מגע',
-    badge: null, stars: 4,
-    slug: '/products/smart-dimmer',
+    desc: 'מזהה דליפה איטית לפני שהרצפה נהרסת.',
+    badge: null, stars: 4.8, reviews: 801,
+    slug: '/products',
   },
   {
-    id: 9, category: 'חיישנים',
-    emoji: '👤', name: 'Motion Sensor PIR', nameHe: 'חיישן תנועה PIR',
-    price: '₪29',
-    desc: 'חיישן תנועה PIR Zigbee, זווית 120°, טווח 8 מטר, סוללה 18 חודש',
-    badge: 'sale', stars: 4,
-    slug: '/products/motion-sensor',
+    id: 12, category: 'חיישנים',
+    img: '/products/smoke.svg', name: 'FantaSense Smoke', nameHe: 'FantaSense Smoke',
+    price: '₪239',
+    desc: 'גלאי עשן פוטו-אלקטרי עם חיבור חכם — כל הגלאים מתריעים יחד.',
+    badge: null, stars: 4.5, reviews: 143,
+    slug: '/products',
   },
   {
-    id: 10, category: 'חבילות',
-    emoji: '🎁', name: 'Starter Kit', nameHe: 'ערכת פתיחה',
-    price: '₪499', oldPrice: '₪699',
-    desc: 'הכל בחבילה אחת: FantaHub + 3 נורות + 2 שקעים + חיישן תנועה',
-    badge: 'hot', stars: 5,
-    slug: '/products/starter-kit',
+    id: 13, category: 'חיישנים',
+    img: '/products/climate-sensor.svg', name: 'FantaSense Climate', nameHe: 'FantaSense Climate',
+    price: '₪89',
+    desc: 'חיישן זעיר לטמפרטורה ולחות עם תצוגת דיו אלקטרוני. סוללה לשנתיים.',
+    badge: null, stars: 4.6, reviews: 220,
+    slug: '/products',
+  },
+  {
+    id: 14, category: 'אודיו',
+    img: '/products/speaker.svg', name: 'FantaSound Mini', nameHe: 'FantaSound Mini',
+    price: '₪329',
+    desc: 'צליל שממלא חדר, שליטה בקול, סנכרון רב־חדרי.',
+    badge: null, stars: 4.5, reviews: 643,
+    slug: '/products',
+  },
+  {
+    id: 15, category: 'מפסקים',
+    img: '/products/switch.svg', name: 'FantaSwitch Solo', nameHe: 'FantaSwitch Solo',
+    price: '₪129',
+    desc: 'להחליף כל מפסק קיר — מגע, קול או אפליקציה. עובד גם בלי חוט אפס.',
+    badge: 'new', stars: 4.5, reviews: 98,
+    slug: '/products',
+  },
+  {
+    id: 16, category: 'שקעים',
+    img: '/products/socket-wall.svg', name: 'FantaPlug Wall', nameHe: 'FantaPlug Wall',
+    price: '₪89',
+    desc: 'שקע קיר חכם עם USB-A ו-USB-C. תזמונים, מעקב צריכה, נעילת ילדים.',
+    badge: 'new', stars: 4.4, reviews: 75,
+    slug: '/products',
+  },
+  {
+    id: 17, category: 'לוח בקרה',
+    img: '/products/panel.svg', name: 'FantaPanel 7"', nameHe: 'FantaPanel 7"',
+    price: '₪729',
+    desc: 'מסך מגע זכוכית 7 אינץ׳ שמפעיל את כל הבית. הזנת PoE או USB-C, התקנה על הקיר.',
+    badge: 'new', stars: 4.7, reviews: 52,
+    slug: '/products',
+  },
+  {
+    id: 18, category: 'מבצע',
+    img: '/products/camera.svg', name: 'FantaCam Indoor 1080p', nameHe: 'FantaCam Indoor 1080p',
+    price: '₪169', oldPrice: '₪289', off: '−43%',
+    desc: 'מצלמת פנים קומפקטית עם תריס פרטיות והתראות לחיות מחמד.',
+    badge: 'sale', stars: 4.4, reviews: 892,
+    slug: '/clearance',
+  },
+  {
+    id: 19, category: 'מבצע',
+    img: '/products/plug.svg', name: 'FantaPlug Mini (3-pack)', nameHe: 'FantaPlug Mini (3-pack)',
+    price: '₪119', oldPrice: '₪189', off: '−36%',
+    desc: 'שקעים חכמים עם מעקב צריכה — חבילה של שלושה.',
+    badge: 'sale', stars: 4.6, reviews: 1532,
+    slug: '/clearance',
+  },
+  {
+    id: 20, category: 'מבצע',
+    img: '/products/starter-kit.svg', name: 'Starter Bundle', nameHe: 'חבילת התחלה',
+    price: '₪899', oldPrice: '₪1,189', off: '−24%',
+    desc: 'מצלמה + מנעול + מרכזת — חיסכון של 15% על הכל יחד.',
+    badge: 'hot', stars: 4.9, reviews: 341,
+    slug: '/clearance',
   },
 ]
 
-const CATEGORIES = ['הכל', ...Array.from(new Set(PRODUCTS.map(p => p.category)))]
+const CATEGORIES = ['הכל', 'מבצע', ...Array.from(new Set(PRODUCTS.filter(p => p.category !== 'מבצע').map(p => p.category)))]
 
 const BADGE_STYLE = {
-  bestseller: { bg: '#1d4ed8', label: '⭐ נמכר ביותר' },
-  sale:       { bg: '#dc2626', label: '🔥 מבצע' },
-  new:        { bg: '#059669', label: '✨ חדש' },
-  hot:        { bg: '#d97706', label: '🔥 חם' },
+  sale: { bg: '#dc2626', label: '🔥 מבצע' },
+  new:  { bg: '#059669', label: '✨ חדש'  },
+  hot:  { bg: '#d97706', label: '⭐ פופולרי' },
 }
 
-function Stars({ count }) {
+function Stars({ rating, reviews }) {
+  const full = Math.round(rating)
   return (
-    <div style={{ display: 'flex', gap: 1 }}>
-      {[1,2,3,4,5].map(i => (
-        <span key={i} style={{ fontSize: 10, color: i <= count ? '#fbbf24' : '#334155' }}>★</span>
-      ))}
+    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+      <div style={{ display: 'flex', gap: 1 }}>
+        {[1,2,3,4,5].map(i => (
+          <span key={i} style={{ fontSize: 10, color: i <= full ? '#fbbf24' : '#334155' }}>★</span>
+        ))}
+      </div>
+      <span style={{ fontSize: 10, color: '#475569' }}>({reviews?.toLocaleString()})</span>
     </div>
   )
 }
 
-function ProductCard({ product, lang, phone, onBuy }) {
+function ProductCard({ product, lang, onBuy }) {
   const isHe = lang === 'he'
   const name = isHe ? product.nameHe : product.name
   const badge = product.badge ? BADGE_STYLE[product.badge] : null
@@ -124,16 +207,20 @@ function ProductCard({ product, lang, phone, onBuy }) {
       background: '#1e293b', borderRadius: 16,
       border: '1px solid #334155', overflow: 'hidden',
       display: 'flex', flexDirection: 'column',
-      transition: 'border-color 0.2s',
     }}>
-      {/* Image area */}
+      {/* Product image */}
       <div style={{
-        background: 'linear-gradient(135deg,#0f172a,#1e3a5f)',
-        padding: '20px 16px',
+        background: 'linear-gradient(135deg,#0f172a,#0f2a4a)',
+        padding: '16px 20px',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        position: 'relative', minHeight: 90,
+        position: 'relative', minHeight: 100,
       }}>
-        <span style={{ fontSize: 44 }}>{product.emoji}</span>
+        <img
+          src={product.img}
+          alt={name}
+          style={{ width: 72, height: 72, objectFit: 'contain' }}
+          onError={e => { e.target.style.display = 'none' }}
+        />
         {badge && (
           <div style={{
             position: 'absolute', top: 8, insetInlineStart: 8,
@@ -143,21 +230,32 @@ function ProductCard({ product, lang, phone, onBuy }) {
             {badge.label}
           </div>
         )}
+        {product.off && (
+          <div style={{
+            position: 'absolute', top: 8, insetInlineEnd: 8,
+            background: '#dc2626', borderRadius: 8,
+            padding: '2px 7px', fontSize: 9, fontWeight: 800, color: '#fff',
+          }}>
+            {product.off}
+          </div>
+        )}
       </div>
 
       {/* Info */}
-      <div style={{ padding: '12px 12px 14px', flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <div style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>{product.category}</div>
-        <div style={{ fontSize: 14, fontWeight: 800, color: '#f1f5f9', lineHeight: 1.3 }}>{name}</div>
+      <div style={{ padding: '12px 12px 14px', flex: 1, display: 'flex', flexDirection: 'column', gap: 5 }}>
+        <div style={{ fontSize: 10, color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+          {product.category}
+        </div>
+        <div style={{ fontSize: 13, fontWeight: 800, color: '#f1f5f9', lineHeight: 1.3 }}>{name}</div>
         <div style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1.5, flex: 1 }}>{product.desc}</div>
 
-        <Stars count={product.stars} />
+        <Stars rating={product.stars} reviews={product.reviews} />
 
-        {/* Price */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 18, fontWeight: 900, color: '#38bdf8' }}>{product.price}</span>
+        {/* Price row */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 17, fontWeight: 900, color: '#38bdf8' }}>{product.price}</span>
           {product.oldPrice && (
-            <span style={{ fontSize: 12, color: '#475569', textDecoration: 'line-through' }}>{product.oldPrice}</span>
+            <span style={{ fontSize: 11, color: '#475569', textDecoration: 'line-through' }}>{product.oldPrice}</span>
           )}
         </div>
 
@@ -178,7 +276,7 @@ function ProductCard({ product, lang, phone, onBuy }) {
 }
 
 export default function StorePage() {
-  const { t, lang, rtl } = useLang()
+  const { lang, rtl } = useLang()
   const { phone, tablet } = useScale()
   const isHe = lang === 'he'
   const [category, setCategory] = useState('הכל')
@@ -291,7 +389,6 @@ export default function StorePage() {
               key={product.id}
               product={product}
               lang={lang}
-              phone={phone}
               onBuy={openProduct}
             />
           ))}

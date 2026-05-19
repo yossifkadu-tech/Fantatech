@@ -1,0 +1,28 @@
+<svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="camBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3a3a3e"/>
+      <stop offset="100%" stop-color="#1d1d1f"/>
+    </linearGradient>
+    <radialGradient id="camLens" cx="0.4" cy="0.4" r="0.6">
+      <stop offset="0%" stop-color="#5e9eff"/>
+      <stop offset="60%" stop-color="#0a2240"/>
+      <stop offset="100%" stop-color="#000"/>
+    </radialGradient>
+  </defs>
+  <!-- shadow -->
+  <ellipse cx="100" cy="128" rx="55" ry="4" fill="#000" opacity="0.12"/>
+  <!-- mount arm -->
+  <rect x="95" y="100" width="10" height="22" fill="#86868b"/>
+  <rect x="80" y="118" width="40" height="6" rx="2" fill="#1d1d1f"/>
+  <!-- body -->
+  <rect x="50" y="45" width="100" height="60" rx="14" fill="url(#camBody)"/>
+  <!-- lens housing -->
+  <circle cx="100" cy="75" r="22" fill="#0a0a0c"/>
+  <circle cx="100" cy="75" r="17" fill="url(#camLens)"/>
+  <circle cx="93" cy="68" r="4" fill="#fff" opacity="0.35"/>
+  <!-- indicator LED -->
+  <circle cx="135" cy="58" r="2.5" fill="#34c759"/>
+  <!-- brand bar -->
+  <rect x="60" y="93" width="14" height="3" rx="1.5" fill="#86868b" opacity="0.6"/>
+</svg>
