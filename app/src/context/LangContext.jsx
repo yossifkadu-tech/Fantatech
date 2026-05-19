@@ -2237,7 +2237,7 @@ export function detectDeviceLang() {
     const code = LOCALE_ALIASES[raw] ?? raw             // normalise alias
     if (supported.includes(code)) return code
   }
-  return 'en'                                          // safe international fallback
+  return 'he'                                          // default for Israeli app
 }
 
 export function LangProvider({ children }) {
