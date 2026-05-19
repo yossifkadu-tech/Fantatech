@@ -3,6 +3,7 @@ import { api, getHubUrl } from '../hooks/useHub'
 import DeviceCard from '../components/DeviceCard'
 import { useLang } from '../context/LangContext'
 import { useScale } from '../context/ScaleContext'
+import RotatingAdBanner from '../components/RotatingAdBanner'
 
 /* ── Greeting by time of day ─────────────────────────────────────────── */
 function greeting(t) {
@@ -389,6 +390,11 @@ export default function Dashboard({ devices, wsConnected, onNavigate, onReload }
             <span style={{ fontSize: 9, fontWeight: 600, whiteSpace: 'nowrap' }}>{q.label}</span>
           </button>
         ))}
+      </div>
+
+      {/* ── Rotating ad card ─────────────────────────────────────────────── */}
+      <div style={{ marginBottom: 18 }}>
+        <RotatingAdBanner variant="card" />
       </div>
 
       {/* ── Featured devices ──────────────────────────────────────────────── */}

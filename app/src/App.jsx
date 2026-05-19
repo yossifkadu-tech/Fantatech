@@ -24,6 +24,7 @@ import CalibrationScreen, { isCalibrated } from './pages/CalibrationScreen'
 import SchedulerPage from './pages/SchedulerPage'
 import StorePage, { STORE_URL } from './pages/StorePage'
 import PremiumPage from './pages/PremiumPage'
+import RotatingAdBanner from './components/RotatingAdBanner'
 import VoiceControl from './components/VoiceControl'
 import { useNotifications } from './hooks/useNotifications'
 
@@ -572,7 +573,7 @@ function AppInner() {
         {/* Main content — v2.0 padding; 80px bottom clears the fixed nav */}
         <div style={{
           flex: 1,
-          padding: showSidebar ? '20px 24px 32px' : `16px 14px calc(${showPromoBanner ? 112 : 80}px + env(safe-area-inset-bottom))`,
+          padding: showSidebar ? '20px 24px 32px' : '16px 14px calc(112px + env(safe-area-inset-bottom))',
           minWidth: 0,
           overflowX: 'hidden',
         }}>
@@ -615,21 +616,14 @@ function AppInner() {
         />
       )}
 
-      {/* ── Bottom promo banner (above nav) ───────────────────────────────── */}
-      {showPromoBanner && !showSidebar && (
+      {/* ── Rotating ad banner (above nav) ────────────────────────────────── */}
+      {!showSidebar && (
         <div style={{
           position: 'fixed', bottom: 'calc(56px + env(safe-area-inset-bottom))',
           left: '50%', transform: 'translateX(-50%)',
           width: '100%', maxWidth: maxW, zIndex: 79,
         }}>
-          <PromoBanner
-            lang={lang} rtl={rtl}
-            onShop={() => setTab('store')}
-            onDismiss={() => {
-              setShowPromoBanner(false)
-              localStorage.setItem('ft_banner_dismissed', '1')
-            }}
-          />
+          <RotatingAdBanner variant="strip" onShop={() => setTab('store')} />
         </div>
       )}
 
