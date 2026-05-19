@@ -1722,6 +1722,28 @@ const T = {
     alexa_tip_title: 'קיצור דרך קולי:',
     alexa_tip_desc: 'סורק מחדש את הרשת למכשירים חדשים',
     alexa_admin_note: 'לגילוי אוטומטי, הפעל את start-hub.bat כמנהל מערכת (לחץ ימני ← הפעל כמנהל). זה מאפשר פורט SSDP 1900.',
+
+    /* ── לוח זמנים (Scheduler) ── */
+    scheduler_nav:          'לוח זמנים',
+    scheduler_title:        'לוח זמנים',
+    scheduler_scheduled:    'תזמונים',
+    scheduler_add:          'הוסף תזמון',
+    scheduler_empty:        'אין תזמונים עדיין',
+    scheduler_empty_hint:   'לחץ על + הוסף תזמון כדי ליצור את הראשון',
+    scheduler_edit:         'עריכת תזמון',
+    scheduler_new:          'תזמון חדש',
+    scheduler_time:         'שעה',
+    scheduler_days:         'ימים',
+    scheduler_save:         'שמור תזמון',
+    scheduler_save_edit:    'עדכן תזמון',
+    scheduler_name_placeholder: 'למשל: נורות ערב',
+    sched_suggest_title:    '💡 הצעות חכמות',
+    sched_analyse:          'נתח הרגלים',
+    sched_no_patterns:      'לא נמצאו דפוסים — נסה להשתמש במכשירים עוד קצת',
+    sched_times:            'פעמים',
+    sched_add:              'הוסף',
+    auto_select_device:     'בחר מכשיר...',
+    delete_rule:            'מחק',
   },
 
   /* ═══════════════════════════════ ARABIC ════════════════════════════════ */
