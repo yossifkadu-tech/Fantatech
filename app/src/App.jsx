@@ -22,8 +22,10 @@ import GeminiAssistant from './components/GeminiAssistant'
 import UsersPage from './pages/UsersPage'
 import CalibrationScreen, { isCalibrated } from './pages/CalibrationScreen'
 import SchedulerPage from './pages/SchedulerPage'
+import VoiceControl from './components/VoiceControl'
+import { useNotifications } from './hooks/useNotifications'
 
-const APP_VERSION = '2.14.9'
+const APP_VERSION = '2.15.0'
 
 /* ── Wake-lock hook (keeps screen on while mounted) ─────────────────── */
 function useWakeLock(enabled) {
@@ -78,7 +80,9 @@ function AppInner() {
   const [registered,  setRegistered]  = useState(() => !!localStorage.getItem('fantatech_user'))
   const [calibrated,  setCalibrated]  = useState(isCalibrated)
   const [unreadNotifs, setUnreadNotifs] = useState(0)
+  const [showNotifBanner, setShowNotifBanner] = useState(false)
   const { devices, loading, reload, updateDeviceState, setOnline } = useDevices()
+  const { permission, requestPermission, notify } = useNotifications()
 
   // Reactive screen size + orientation — from ScaleContext (wraps AppInner)
   const { sp, spx, phone, tablet, desktop, landscape, scale, displayScale, w } = useScale()
@@ -92,21 +96,25 @@ function AppInner() {
   const onDeviceState  = useCallback(d => updateDeviceState(d.id, d.state), [updateDeviceState])
   const onDeviceOnline = useCallback(d => setOnline(d.id, d.online), [setOnline])
 
+  // Show notification permission banner once (after 3 s, only if not yet decided)
+  useEffect(() => {
+    if (permission === 'default') {
+      const id = setTimeout(() => setShowNotifBanner(true), 3000)
+      return () => clearTimeout(id)
+    }
+  }, [permission])
+
   // Handle incoming notification pushed over WS
   const onWsNotification = useCallback((n) => {
     setUnreadNotifs(c => c + 1)
-    // Dispatch custom event so NotificationsPage can reload
     window.dispatchEvent(new Event('fantatech_notification'))
-    // Browser push for critical alerts
-    if (n?.type === 'critical' && Notification?.permission === 'granted') {
-      try {
-        new Notification(`🔴 ${n.title || 'Critical Alert'}`, {
-          body: n.message || '',
-          icon: '/icons/icon-192x192.png',
-        })
-      } catch {}
-    }
-  }, [])
+    // Use unified notify service for all alert types
+    notify(
+      n?.title || 'FantaTech Alert',
+      n?.message || '',
+      { type: n?.type || 'info' }
+    )
+  }, [notify])
 
   const wsConnected = useWebSocket(onDeviceState, onDeviceOnline, null, onWsNotification)
 
@@ -255,12 +263,14 @@ function AppInner() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: 22 }}>🏠</span>
             <div>
-              <div style={{ fontWeight: 900, fontSize: 17, color: '#38bdf8', lineHeight: 1, letterSpacing: '-0.3px' }}>
+              <div style={{ fontWeight: 900, fontSize: phone ? 15 : 17, color: '#38bdf8', lineHeight: 1, letterSpacing: '-0.3px', whiteSpace: 'nowrap' }}>
                 FantaTech
               </div>
-              <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 1, lineHeight: 1 }}>
-                Smart Home & Security
-              </div>
+              {!phone && (
+                <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 1, lineHeight: 1, whiteSpace: 'nowrap' }}>
+                  Smart Home & Security
+                </div>
+              )}
             </div>
             {/* Cyber security shortcut */}
             <button
@@ -332,6 +342,9 @@ function AppInner() {
               )}
             </div>
 
+            {/* Voice control */}
+            <VoiceControl devices={devices} onReload={reload} />
+
             {/* Network scan icon button */}
             <button
               onClick={() => setTab('network')}
@@ -347,24 +360,24 @@ function AppInner() {
               📶
             </button>
 
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3 }}>
-              {/* WS connection status */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5,
-                background: wsConnected ? 'rgba(34,197,94,0.1)' : 'rgba(245,158,11,0.1)',
-                border: `1px solid ${wsConnected ? '#22c55e44' : '#f59e0b44'}`,
-                borderRadius: 20, padding: '2px 8px',
-              }}>
-                <div style={{ width: 6, height: 6, borderRadius: '50%', background: wsConnected ? '#22c55e' : '#f59e0b',
-                  boxShadow: wsConnected ? '0 0 6px #22c55e' : '0 0 6px #f59e0b',
-                }} />
+            {/* WS dot (always) + status text (tablet+) + version (desktop) */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <div style={{
+                width: 8, height: 8, borderRadius: '50%',
+                background: wsConnected ? '#22c55e' : '#f59e0b',
+                boxShadow: wsConnected ? '0 0 6px #22c55e' : '0 0 6px #f59e0b',
+                flexShrink: 0,
+              }} />
+              {!phone && (
                 <span style={{ fontSize: 10, fontWeight: 600, color: wsConnected ? '#22c55e' : '#f59e0b' }}>
                   {wsConnected ? t.connected : t.connecting}
                 </span>
-              </div>
-              {/* Version */}
-              <div style={{ fontSize: 9, color: '#334155' }}>
-                v{APP_VERSION}{hubVersion ? ` · Hub v${hubVersion}` : ''}
-              </div>
+              )}
+              {desktop && (
+                <span style={{ fontSize: 9, color: '#334155', marginLeft: 4 }}>
+                  v{APP_VERSION}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -415,6 +428,34 @@ function AppInner() {
               </button>
             ))}
           </nav>
+        )}
+
+        {/* Notification permission banner */}
+        {showNotifBanner && permission === 'default' && (
+          <div style={{
+            background: '#1a1f3a', border: '1px solid #6366f1',
+            borderRadius: 14, margin: '8px 14px 0',
+            padding: '12px 14px', display: 'flex', gap: 10, alignItems: 'center',
+          }}>
+            <span style={{ fontSize: 22 }}>🔔</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#e2e8f0' }}>
+                {t.notif_enable_title ?? 'Enable Notifications'}
+              </div>
+              <div style={{ fontSize: 11, color: '#64748b' }}>
+                {t.notif_enable_hint ?? 'Get alerts when devices change or automations trigger.'}
+              </div>
+            </div>
+            <button onClick={async () => { await requestPermission(); setShowNotifBanner(false) }} style={{
+              padding: '6px 14px', borderRadius: 8, border: 'none',
+              background: '#6366f1', color: '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 12, flexShrink: 0,
+            }}>
+              {t.notif_allow ?? 'Allow'}
+            </button>
+            <button onClick={() => setShowNotifBanner(false)} style={{
+              background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: 18, flexShrink: 0,
+            }}>✕</button>
+          </div>
         )}
 
         {/* Main content — v2.0 padding; 80px bottom clears the fixed nav */}

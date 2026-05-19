@@ -9,10 +9,37 @@
  *   "Mon + Wed at 08:30"              → "30 8 * * 1,3"
  *   days[] uses 0=Sun … 6=Sat (JS Date.getDay convention)
  */
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { api } from '../hooks/useHub'
 import { useLang } from '../context/LangContext'
 import { useScale } from '../context/ScaleContext'
+
+/* ── Analyse history → schedule suggestions ──────────────────────────── */
+async function analyseHistory(devices) {
+  try {
+    const { data } = await api.get('/history/?limit=200')
+    // bucket: key = "device_id|action|hour" → count
+    const buckets = {}
+    for (const h of data) {
+      if (h.action !== 'toggle' || !h.device_id) continue
+      const ts   = new Date(h.ts * 1000)
+      const hour = ts.getHours()
+      const key  = `${h.device_id}|${h.value}|${hour}`
+      buckets[key] = (buckets[key] || 0) + 1
+    }
+    // Keep only patterns seen ≥ 3 times
+    return Object.entries(buckets)
+      .filter(([, cnt]) => cnt >= 3)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 5)
+      .map(([key, cnt]) => {
+        const [deviceId, action, hour] = key.split('|')
+        const device = devices.find(d => d.id === deviceId)
+        return { deviceId, action, hour: parseInt(hour), minute: 0, cnt, device }
+      })
+      .filter(s => s.device)
+  } catch { return [] }
+}
 
 const DAY_LABELS_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const DAY_LABELS_HE = ['א׳',  'ב׳',  'ג׳',  'ד׳',  'ה׳',  'ו׳',  'ש׳']
@@ -107,7 +134,10 @@ export default function SchedulerPage({ devices }) {
   const isHe = lang === 'he'
   const dayLabels = isHe ? DAY_LABELS_HE : DAY_LABELS_EN
 
-  const [schedules, setSchedules] = useState([])   // enriched rule list
+  const [schedules,    setSchedules]    = useState([])
+  const [suggestions,  setSuggestions]  = useState([])
+  const [loadingSugg,  setLoadingSugg]  = useState(false)
+  const [suggDone,     setSuggDone]     = useState(false)
   const [showForm, setShowForm]   = useState(false)
   const [editId,   setEditId]     = useState(null)
   const [form, setForm]           = useState(EMPTY)
@@ -137,6 +167,29 @@ export default function SchedulerPage({ devices }) {
   }
 
   useEffect(() => { load() }, [])
+
+  const loadSuggestions = useCallback(async () => {
+    setLoadingSugg(true)
+    const sugg = await analyseHistory(devices)
+    setSuggestions(sugg)
+    setSuggDone(true)
+    setLoadingSugg(false)
+  }, [devices])
+
+  const applySuggestion = (s) => {
+    setForm({
+      name:     `${s.action === 'ON' ? (isHe ? 'הדלק' : 'Turn on') : (isHe ? 'כבה' : 'Turn off')} ${s.device.name}`,
+      deviceId: s.deviceId,
+      action:   s.action,
+      hour:     s.hour,
+      minute:   0,
+      days:     [0,1,2,3,4,5,6],
+      enabled:  true,
+    })
+    setEditId(null)
+    setErr('')
+    setShowForm(true)
+  }
 
   const openNew = () => {
     setForm(EMPTY)
@@ -219,6 +272,60 @@ export default function SchedulerPage({ devices }) {
         }}>
           + {t.scheduler_add ?? 'Add'}
         </button>
+      </div>
+
+      {/* ── Smart suggestions ─────────────────────────────────────────── */}
+      <div style={{
+        background: 'linear-gradient(135deg,#1a1f3a,#1e293b)',
+        border: '1px solid #334155', borderRadius: 14,
+        padding: '12px 14px', marginBottom: 16,
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: suggDone && suggestions.length > 0 ? 12 : 0 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#a78bfa' }}>
+            🤖 {t.sched_suggest_title ?? 'Smart Suggestions'}
+          </div>
+          <button onClick={loadSuggestions} disabled={loadingSugg} style={{
+            padding: '5px 12px', borderRadius: 8, border: 'none',
+            background: loadingSugg ? '#334155' : 'rgba(167,139,250,0.2)',
+            color: loadingSugg ? '#64748b' : '#a78bfa',
+            fontSize: 11, fontWeight: 700, cursor: loadingSugg ? 'default' : 'pointer',
+          }}>
+            {loadingSugg ? '⏳ …' : (suggDone ? '🔄' : (t.sched_analyse ?? 'Analyse History'))}
+          </button>
+        </div>
+
+        {suggDone && suggestions.length === 0 && (
+          <div style={{ fontSize: 12, color: '#475569', marginTop: 8 }}>
+            {t.sched_no_patterns ?? 'No patterns detected yet — use your devices for a few days first.'}
+          </div>
+        )}
+
+        {suggestions.map((s, i) => (
+          <div key={i} style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            background: '#0f172a', borderRadius: 10, padding: '10px 12px',
+            marginBottom: i < suggestions.length - 1 ? 8 : 0,
+          }}>
+            <span style={{ fontSize: 20 }}>{s.action === 'ON' ? '💡' : '🌙'}</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#e2e8f0' }}>
+                {s.device.name}
+              </div>
+              <div style={{ fontSize: 11, color: '#64748b' }}>
+                {s.action === 'ON' ? (t.cmd_on_lbl ?? 'ON') : (t.cmd_off_lbl ?? 'OFF')}
+                {' · '}{String(s.hour).padStart(2,'0')}:00
+                {' · '}{s.cnt}× {t.sched_times ?? 'times'}
+              </div>
+            </div>
+            <button onClick={() => applySuggestion(s)} style={{
+              padding: '6px 12px', borderRadius: 8, border: 'none',
+              background: 'rgba(167,139,250,0.2)', color: '#a78bfa',
+              fontSize: 11, fontWeight: 700, cursor: 'pointer', flexShrink: 0,
+            }}>
+              + {t.sched_add ?? 'Add'}
+            </button>
+          </div>
+        ))}
       </div>
 
       {/* Weekly strip */}
