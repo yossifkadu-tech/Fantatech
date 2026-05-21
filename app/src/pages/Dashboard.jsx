@@ -3,7 +3,6 @@ import { api, getHubUrl } from '../hooks/useHub'
 import DeviceCard from '../components/DeviceCard'
 import { useLang } from '../context/LangContext'
 import { useScale } from '../context/ScaleContext'
-import RotatingAdBanner from '../components/RotatingAdBanner'
 
 /* ── Greeting by time of day ─────────────────────────────────────────── */
 function greeting(t) {
@@ -367,12 +366,10 @@ export default function Dashboard({ devices, wsConnected, onNavigate, onReload }
         overflowX: 'auto', scrollbarWidth: 'none',
       }}>
         {[
-          { label: t.devices ?? 'Devices',         icon: '💡', tab: 'devices'     },
-          { label: t.scenes_title ?? 'Scenes',      icon: '🎭', tab: 'scenes'      },
-          { label: t.security ?? 'Security',        icon: '🔒', tab: 'security'    },
-          { label: t.cameras_title ?? 'Cameras',    icon: '📷', tab: 'cameras'     },
-          { label: t.gps_nav ?? 'GPS',              icon: '📍', tab: 'gps'         },
-          { label: t.settings ?? 'Settings',        icon: '⚙️', tab: 'settings'    },
+          { label: t.devices   ?? 'Devices',  icon: '💡', tab: 'devices'   },
+          { label: t.security  ?? 'Security', icon: '🔒', tab: 'security'  },
+          { label: t.cameras_title ?? 'Cameras', icon: '📷', tab: 'cameras' },
+          { label: t.scenes_title ?? 'Scenes', icon: '🎭', tab: 'scenes'   },
         ].map(q => (
           <button key={q.tab} onClick={() => onNavigate(q.tab)} style={{
             flexShrink: 0,
@@ -392,10 +389,6 @@ export default function Dashboard({ devices, wsConnected, onNavigate, onReload }
         ))}
       </div>
 
-      {/* ── Rotating ad card ─────────────────────────────────────────────── */}
-      <div style={{ marginBottom: 18 }}>
-        <RotatingAdBanner variant="card" />
-      </div>
 
       {/* ── Featured devices ──────────────────────────────────────────────── */}
       <SectionHeader

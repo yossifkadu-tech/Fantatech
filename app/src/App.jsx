@@ -24,7 +24,6 @@ import CalibrationScreen, { isCalibrated } from './pages/CalibrationScreen'
 import SchedulerPage from './pages/SchedulerPage'
 import StorePage, { STORE_URL } from './pages/StorePage'
 import PremiumPage from './pages/PremiumPage'
-import RotatingAdBanner from './components/RotatingAdBanner'
 import VoiceControl from './components/VoiceControl'
 import { useNotifications } from './hooks/useNotifications'
 
@@ -617,15 +616,6 @@ function AppInner() {
       )}
 
       {/* ── Rotating ad banner (above nav) ────────────────────────────────── */}
-      {!showSidebar && (
-        <div style={{
-          position: 'fixed', bottom: 'calc(56px + env(safe-area-inset-bottom))',
-          left: '50%', transform: 'translateX(-50%)',
-          width: '100%', maxWidth: maxW, zIndex: 79,
-        }}>
-          <RotatingAdBanner variant="strip" onShop={() => setTab('store')} />
-        </div>
-      )}
 
       {/* ── Bottom Nav (v2.0 style) — flex:1 equal buttons, position:fixed ── */}
       {!showSidebar && (
