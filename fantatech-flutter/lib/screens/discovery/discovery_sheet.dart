@@ -1,0 +1,897 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// DiscoverySheet
+//
+// Full-screen bottom sheet that drives the RealDiscoveryEngine:
+//   • Scan button → startScan()
+//   • Linear progress bar + status text
+//   • "Home Assistant נמצא!" banner when haIp != null && !haConnected
+//     └─ "חבר" opens inline token field → connectHA(ip, token)
+//   • Real-time list of discovered devices, one card per device
+//     └─ "הוסף" button → appState.addDevice + engine.markRegistered
+//   • "הוסף הכל" button adds every un-registered device at once
+//
+// Open with:
+//   showModalBottomSheet(
+//     context: context,
+//     isScrollControlled: true,
+//     backgroundColor: Colors.transparent,
+//     builder: (_) => const DiscoverySheet(),
+//   );
+// ─────────────────────────────────────────────────────────────────────────────
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../models/app_state.dart';
+import '../../models/device.dart';
+import '../../services/discovery/real_discovery_engine.dart';
+import '../../services/discovery/discovery_models.dart';
+import '../../services/discovery/device_classifier.dart';
+import '../../theme/app_theme.dart';
+
+class DiscoverySheet extends StatefulWidget {
+  const DiscoverySheet({super.key});
+
+  @override
+  State<DiscoverySheet> createState() => _DiscoverySheetState();
+}
+
+class _DiscoverySheetState extends State<DiscoverySheet> {
+  // HA connect form
+  bool _showHaForm   = false;
+  bool _haConnecting = false;
+  String? _haError;
+  final _tokenCtrl = TextEditingController();
+  final _ipCtrl    = TextEditingController();
+
+  @override
+  void dispose() {
+    _tokenCtrl.dispose();
+    _ipCtrl.dispose();
+    super.dispose();
+  }
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+
+  /// Add one discovered device to AppState and mark it as registered.
+  void _addDevice(
+    BuildContext context,
+    DiscoveredDevice d,
+    RealDiscoveryEngine engine,
+    AppState state,
+  ) {
+    final appType = DeviceClassifier.toAppType(d.type);
+    final room    = state.rooms.isNotEmpty
+        ? (state.rooms.first['name'] as String)
+        : '';
+
+    state.addDevice(Device(
+      id:   d.id,
+      name: d.displayName,
+      type: appType,
+      room: room,
+      attributes: {
+        if (d.ip != null) 'ip': d.ip,
+        if (d.manufacturer != null) 'manufacturer': d.manufacturer,
+        if (d.model != null) 'model': d.model,
+        ...d.metadata,
+      },
+    ));
+    engine.markRegistered(d.id);
+  }
+
+  /// Add all un-registered devices at once.
+  void _addAll(
+    BuildContext context,
+    RealDiscoveryEngine engine,
+    AppState state,
+  ) {
+    final pending = engine.found.where((d) => !d.isRegistered).toList();
+    for (final d in pending) {
+      _addDevice(context, d, engine, state);
+    }
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text('נוספו ${pending.length} מכשירים'),
+      backgroundColor: AppColors.secured,
+      duration: const Duration(seconds: 2),
+    ));
+  }
+
+  /// Attempt to connect to HA with the entered credentials.
+  Future<void> _connectHa(
+    RealDiscoveryEngine engine, {
+    required String ip,
+    required String token,
+  }) async {
+    if (ip.isEmpty || token.isEmpty) return;
+    setState(() {
+      _haConnecting = true;
+      _haError      = null;
+    });
+    final err = await engine.connectHA(ip, token);
+    if (!mounted) return;
+    setState(() {
+      _haConnecting = false;
+      if (err != null) {
+        _haError = err;
+      } else {
+        _showHaForm = false;
+      }
+    });
+  }
+
+  // ── Icon / colour maps ─────────────────────────────────────────────────────
+
+  static const _networkColor = Color(0xFF00B4D8);
+
+  Color _typeColor(DiscoveredDeviceType t) => switch (t) {
+    DiscoveredDeviceType.light         => AppColors.lightColor,
+    DiscoveredDeviceType.boiler        => AppColors.acColor,
+    DiscoveredDeviceType.thermostat    => AppColors.acColor,
+    DiscoveredDeviceType.camera        => AppColors.cameraColor,
+    DiscoveredDeviceType.motionSensor  => AppColors.motionColor,
+    DiscoveredDeviceType.windowSensor  => AppColors.motionColor,
+    DiscoveredDeviceType.doorSensor    => AppColors.motionColor,
+    DiscoveredDeviceType.smokeSensor   => const Color(0xFFFF6B35),
+    DiscoveredDeviceType.energyMeter   => const Color(0xFFFFD600),
+    DiscoveredDeviceType.gateway       => _networkColor,
+    DiscoveredDeviceType.router        => _networkColor,
+    _                                  => AppColors.plugColor,
+  };
+
+  IconData _typeIcon(DiscoveredDeviceType t) => switch (t) {
+    DiscoveredDeviceType.light         => Icons.lightbulb_outlined,
+    DiscoveredDeviceType.socket        => Icons.power_outlined,
+    DiscoveredDeviceType.smartSwitch   => Icons.toggle_on_outlined,
+    DiscoveredDeviceType.thermostat    => Icons.hvac,
+    DiscoveredDeviceType.camera        => Icons.videocam_outlined,
+    DiscoveredDeviceType.gateway       => Icons.hub_outlined,
+    DiscoveredDeviceType.boiler        => Icons.water_drop_outlined,
+    DiscoveredDeviceType.solar         => Icons.wb_sunny_outlined,
+    DiscoveredDeviceType.circuitBreaker => Icons.electrical_services,
+    DiscoveredDeviceType.energyMeter   => Icons.bolt_outlined,
+    DiscoveredDeviceType.smokeSensor   => Icons.local_fire_department_outlined,
+    DiscoveredDeviceType.motionSensor  => Icons.sensors_outlined,
+    DiscoveredDeviceType.windowSensor  => Icons.window_outlined,
+    DiscoveredDeviceType.doorSensor    => Icons.sensor_door_outlined,
+    DiscoveredDeviceType.router        => Icons.router_outlined,
+    DiscoveredDeviceType.speaker       => Icons.speaker_outlined,
+    DiscoveredDeviceType.tv            => Icons.tv_outlined,
+    _                                  => Icons.device_unknown_outlined,
+  };
+
+  String _protocolLabel(DiscoveryProtocol p) => switch (p) {
+    DiscoveryProtocol.zigbee  => 'Zigbee',
+    DiscoveryProtocol.zwave   => 'Z-Wave',
+    DiscoveryProtocol.matter  => 'Matter',
+    DiscoveryProtocol.ble     => 'BLE',
+    _                         => 'WiFi',
+  };
+
+  // ── Build ──────────────────────────────────────────────────────────────────
+
+  @override
+  Widget build(BuildContext context) {
+    final engine = context.watch<RealDiscoveryEngine>();
+    final state  = context.watch<AppState>();
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.88,
+      minChildSize:     0.5,
+      maxChildSize:     0.96,
+      expand:           false,
+      builder: (ctx, scrollCtrl) => Container(
+        decoration: BoxDecoration(
+          color:        AppColors.darkCard,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          children: [
+            // ── Handle ─────────────────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.only(top: 12, bottom: 8),
+              child: Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(
+                  color:        Colors.white24,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+
+            // ── Header row ────────────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                children: [
+                  const Icon(Icons.radar, color: AppColors.primary, size: 22),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Text(
+                      'חיפוש מכשירים',
+                      style: TextStyle(
+                        color:      Colors.white,
+                        fontSize:   18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  // Scan / stop button
+                  _ScanButton(
+                    isScanning: engine.isScanning,
+                    onScan:     () => engine.startScan(),
+                    onStop:     () => engine.stopScan(),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // ── Progress bar + status ──────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    height:   engine.isScanning || engine.progress > 0 ? 4 : 0,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(2),
+                      child: LinearProgressIndicator(
+                        value:            engine.isScanning ? engine.progress : 1.0,
+                        backgroundColor:  Colors.white12,
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(AppColors.primary),
+                      ),
+                    ),
+                  ),
+                  if (engine.status.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      engine.status,
+                      style: TextStyle(
+                        color:    Colors.white.withValues(alpha: 0.45),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+
+            // ── HA detected banner ─────────────────────────────────────────
+            if (engine.haIp != null)
+              _HaBanner(
+                ip:           engine.haIp!,
+                connected:    engine.haConnected,
+                deviceCount:  engine.haDeviceCount,
+                showForm:     _showHaForm,
+                connecting:   _haConnecting,
+                error:        _haError,
+                tokenCtrl:    _tokenCtrl,
+                ipCtrl:       _ipCtrl,
+                onToggleForm: () {
+                  setState(() {
+                    _showHaForm = !_showHaForm;
+                    _haError    = null;
+                    if (_showHaForm) _ipCtrl.text = engine.haIp!;
+                  });
+                },
+                onConnect: () => _connectHa(
+                  engine,
+                  ip:    _ipCtrl.text.trim(),
+                  token: _tokenCtrl.text.trim(),
+                ),
+              ),
+
+            // ── Device list ────────────────────────────────────────────────
+            Expanded(
+              child: engine.found.isEmpty
+                  ? _EmptyHint(isScanning: engine.isScanning)
+                  : ListView.builder(
+                      controller:  scrollCtrl,
+                      padding:
+                          const EdgeInsets.fromLTRB(16, 4, 16, 100),
+                      itemCount:   engine.found.length,
+                      itemBuilder: (_, i) {
+                        final d = engine.found[i];
+                        return _DeviceRow(
+                          device:    d,
+                          color:     _typeColor(d.type),
+                          icon:      _typeIcon(d.type),
+                          protocol:  _protocolLabel(d.protocol),
+                          onAdd:     d.isRegistered
+                              ? null
+                              : () => _addDevice(context, d, engine, state),
+                        );
+                      },
+                    ),
+            ),
+
+            // ── Add all button ─────────────────────────────────────────────
+            if (engine.found.any((d) => !d.isRegistered))
+              _AddAllBar(
+                count:  engine.found.where((d) => !d.isRegistered).length,
+                onTap:  () => _addAll(context, engine, state),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Scan / Stop button
+// ─────────────────────────────────────────────────────────────
+class _ScanButton extends StatelessWidget {
+  final bool isScanning;
+  final VoidCallback onScan;
+  final VoidCallback onStop;
+
+  const _ScanButton({
+    required this.isScanning,
+    required this.onScan,
+    required this.onStop,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: isScanning ? onStop : onScan,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+        decoration: BoxDecoration(
+          color:        isScanning
+              ? Colors.white.withValues(alpha: 0.07)
+              : AppColors.primary,
+          borderRadius: BorderRadius.circular(12),
+          border:       isScanning
+              ? Border.all(color: Colors.white.withValues(alpha: 0.15))
+              : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isScanning ? Icons.stop_rounded : Icons.radar,
+              color: isScanning
+                  ? Colors.white.withValues(alpha: 0.6)
+                  : Colors.white,
+              size: 16,
+            ),
+            const SizedBox(width: 7),
+            Text(
+              isScanning ? 'עצור' : 'סרוק',
+              style: TextStyle(
+                color:      isScanning
+                    ? Colors.white.withValues(alpha: 0.6)
+                    : Colors.white,
+                fontSize:   13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Home Assistant banner
+// ─────────────────────────────────────────────────────────────
+class _HaBanner extends StatelessWidget {
+  final String ip;
+  final bool connected;
+  final int deviceCount;
+  final bool showForm;
+  final bool connecting;
+  final String? error;
+  final TextEditingController tokenCtrl;
+  final TextEditingController ipCtrl;
+  final VoidCallback onToggleForm;
+  final VoidCallback onConnect;
+
+  const _HaBanner({
+    required this.ip,
+    required this.connected,
+    required this.deviceCount,
+    required this.showForm,
+    required this.connecting,
+    required this.error,
+    required this.tokenCtrl,
+    required this.ipCtrl,
+    required this.onToggleForm,
+    required this.onConnect,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const haColor = Color(0xFF18BCEC);
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+      decoration: BoxDecoration(
+        color:        haColor.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(14),
+        border:       Border.all(
+          color: connected
+              ? AppColors.secured.withValues(alpha: 0.4)
+              : haColor.withValues(alpha: 0.35),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Banner row
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            child: Row(
+              children: [
+                Icon(Icons.home_outlined,
+                    color: connected ? AppColors.secured : haColor, size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Home Assistant נמצא',
+                        style: TextStyle(
+                          color:      connected ? AppColors.secured : haColor,
+                          fontSize:   13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        connected
+                            ? 'מחובר — $deviceCount מכשירים יובאו'
+                            : ip,
+                        style: TextStyle(
+                          color:    Colors.white.withValues(alpha: 0.45),
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (!connected)
+                  GestureDetector(
+                    onTap: onToggleForm,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 7),
+                      decoration: BoxDecoration(
+                        color:        haColor.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(9),
+                        border:       Border.all(
+                            color: haColor.withValues(alpha: 0.4)),
+                      ),
+                      child: Text(
+                        showForm ? 'בטל' : 'חבר',
+                        style: const TextStyle(
+                          color:      haColor,
+                          fontSize:   12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  )
+                else
+                  const Icon(Icons.check_circle_outline,
+                      color: AppColors.secured, size: 20),
+              ],
+            ),
+          ),
+
+          // Expandable connect form
+          if (showForm && !connected)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // IP field
+                  _HaField(
+                    ctrl:        ipCtrl,
+                    label:       'כתובת IP',
+                    hint:        '192.168.x.x',
+                    icon:        Icons.wifi_outlined,
+                    keyboardType: TextInputType.url,
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Token field
+                  _HaField(
+                    ctrl:   tokenCtrl,
+                    label:  'Long-Lived Access Token',
+                    hint:   'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...',
+                    icon:   Icons.key_outlined,
+                    obscure: false,
+                    small:   true,
+                  ),
+
+                  const SizedBox(height: 6),
+                  Text(
+                    'צור Token ב: Profile → Long-Lived Access Tokens',
+                    style: TextStyle(
+                      color:    Colors.white.withValues(alpha: 0.35),
+                      fontSize: 10,
+                    ),
+                  ),
+
+                  if (error != null) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color:        AppColors.unsecured.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border:       Border.all(
+                            color: AppColors.unsecured.withValues(alpha: 0.3)),
+                      ),
+                      child: Text(
+                        error!,
+                        style: const TextStyle(
+                          color:    AppColors.unsecured,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                  ],
+
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width:  double.infinity,
+                    height: 42,
+                    child: ElevatedButton(
+                      onPressed: connecting ? null : onConnect,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: haColor,
+                        foregroundColor: Colors.white,
+                        disabledBackgroundColor:
+                            haColor.withValues(alpha: 0.4),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: connecting
+                          ? const SizedBox(
+                              width:  18,
+                              height: 18,
+                              child:  CircularProgressIndicator(
+                                color:       Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Text(
+                              'ייבא מכשירים מ-Home Assistant',
+                              style: TextStyle(
+                                fontSize:   13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+// Small text field used inside the HA form
+class _HaField extends StatelessWidget {
+  final TextEditingController ctrl;
+  final String label;
+  final String hint;
+  final IconData icon;
+  final bool obscure;
+  final bool small;
+  final TextInputType? keyboardType;
+
+  const _HaField({
+    required this.ctrl,
+    required this.label,
+    required this.hint,
+    required this.icon,
+    this.obscure = false,
+    this.small   = false,
+    this.keyboardType,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller:   ctrl,
+      obscureText:  obscure,
+      keyboardType: keyboardType,
+      style: TextStyle(
+        color:    Colors.white,
+        fontSize: small ? 11 : 13,
+      ),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(
+          color:    Colors.white.withValues(alpha: 0.45),
+          fontSize: 11,
+        ),
+        hintText:  hint,
+        hintStyle: TextStyle(
+          color:    Colors.white.withValues(alpha: 0.2),
+          fontSize: small ? 10 : 12,
+        ),
+        prefixIcon: Icon(icon,
+            color: Colors.white.withValues(alpha: 0.35), size: 16),
+        filled:        true,
+        fillColor:     Colors.white.withValues(alpha: 0.05),
+        border:        OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide:   BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide:
+              BorderSide(color: const Color(0xFF18BCEC).withValues(alpha: 0.5)),
+        ),
+        isDense:       true,
+        contentPadding: const EdgeInsets.symmetric(
+            vertical: 10, horizontal: 12),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Device row card
+// ─────────────────────────────────────────────────────────────
+class _DeviceRow extends StatelessWidget {
+  final DiscoveredDevice device;
+  final Color    color;
+  final IconData icon;
+  final String   protocol;
+  final VoidCallback? onAdd;
+
+  const _DeviceRow({
+    required this.device,
+    required this.color,
+    required this.icon,
+    required this.protocol,
+    required this.onAdd,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final added = device.isRegistered;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color:        AppColors.darkBg,
+        borderRadius: BorderRadius.circular(14),
+        border:       Border.all(
+          color: added
+              ? AppColors.secured.withValues(alpha: 0.3)
+              : Colors.white.withValues(alpha: 0.07),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          // Icon bubble
+          Container(
+            width:  40,
+            height: 40,
+            decoration: BoxDecoration(
+              color:        color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(width: 12),
+
+          // Name + info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  device.displayName,
+                  style: const TextStyle(
+                    color:      Colors.white,
+                    fontSize:   13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines:  1,
+                  overflow:  TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    // IP address
+                    if (device.ip != null) ...[
+                      Text(
+                        device.ip!,
+                        style: TextStyle(
+                          color:    Colors.white.withValues(alpha: 0.35),
+                          fontSize: 10,
+                          fontFamily: 'monospace',
+                        ),
+                      ),
+                      Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 5),
+                        width:  3,
+                        height: 3,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withValues(alpha: 0.2),
+                        ),
+                      ),
+                    ],
+                    // Protocol chip
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color:        color.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        protocol,
+                        style: TextStyle(
+                          color:    color,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    // Manufacturer
+                    if (device.manufacturer != null) ...[
+                      const SizedBox(width: 5),
+                      Text(
+                        device.manufacturer!,
+                        style: TextStyle(
+                          color:    Colors.white.withValues(alpha: 0.3),
+                          fontSize: 9,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          // Add / Added button
+          GestureDetector(
+            onTap: onAdd,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+              decoration: BoxDecoration(
+                color:        added
+                    ? AppColors.secured.withValues(alpha: 0.12)
+                    : AppColors.primary.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(9),
+                border:       Border.all(
+                  color: added
+                      ? AppColors.secured.withValues(alpha: 0.35)
+                      : AppColors.primary.withValues(alpha: 0.4),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    added ? Icons.check : Icons.add,
+                    color:  added ? AppColors.secured : AppColors.primary,
+                    size:   13,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    added ? 'נוסף' : 'הוסף',
+                    style: TextStyle(
+                      color:      added ? AppColors.secured : AppColors.primary,
+                      fontSize:   11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Empty hint — shown before first scan
+// ─────────────────────────────────────────────────────────────
+class _EmptyHint extends StatelessWidget {
+  final bool isScanning;
+  const _EmptyHint({required this.isScanning});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 40),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isScanning ? Icons.radar : Icons.wifi_find_outlined,
+              color: Colors.white.withValues(alpha: 0.15),
+              size:  56,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              isScanning ? 'מחפש מכשירים…' : 'לחץ "סרוק" כדי לחפש מכשירים ברשת',
+              style: TextStyle(
+                color:    Colors.white.withValues(alpha: 0.3),
+                fontSize: 14,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Add-all bottom bar
+// ─────────────────────────────────────────────────────────────
+class _AddAllBar extends StatelessWidget {
+  final int          count;
+  final VoidCallback onTap;
+  const _AddAllBar({required this.count, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.fromLTRB(
+          16, 10, 16, 10 + MediaQuery.of(context).padding.bottom),
+      decoration: BoxDecoration(
+        color:  AppColors.darkCard,
+        border: Border(
+          top: BorderSide(color: Colors.white.withValues(alpha: 0.07)),
+        ),
+      ),
+      child: SizedBox(
+        width:  double.infinity,
+        height: 48,
+        child: ElevatedButton.icon(
+          icon:  const Icon(Icons.add_circle_outline, size: 18),
+          label: Text(
+            'הוסף הכל ($count מכשירים)',
+            style: const TextStyle(
+              fontSize:   14,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          onPressed: onTap,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+            elevation: 0,
+          ),
+        ),
+      ),
+    );
+  }
+}

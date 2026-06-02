@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ניתוח שוק גלובלי · בית חכם + אבטחה 2025</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f4f4f0; color: #1a1a18; min-height: 100vh;
+    display: flex; align-items: center; justify-content: center; padding: 2rem;
+  }
+  .card {
+    background: #fff; border-radius: 16px; border: 0.5px solid #d3d1c7;
+    padding: 2rem; max-width: 680px; width: 100%;
+  }
+  .top-label {
+    font-size: 12px; font-weight: 500; letter-spacing: 0.06em;
+    color: #888780; text-transform: uppercase; margin-bottom: 1.5rem;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .reveal-btn {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    width: 100%; padding: 1.1rem 2rem; font-size: 18px; font-weight: 500;
+    color: #1a1a18; background: #f4f4f0;
+    border: 0.5px solid #b4b2a9; border-radius: 12px;
+    cursor: pointer; transition: background 0.15s, transform 0.1s;
+    margin-bottom: 1.5rem; font-family: inherit;
+  }
+  .reveal-btn:hover { background: #e8e7e3; }
+  .reveal-btn:active { transform: scale(0.98); }
+  .reveal-btn .icon { font-size: 22px; }
+
+  .market-content { display: none; flex-direction: column; gap: 1.5rem; }
+  .market-content.visible { display: flex; }
+
+  .section-label {
+    font-size: 11px; font-weight: 500; letter-spacing: 0.05em;
+    color: #888780; text-transform: uppercase; margin-bottom: 10px;
+  }
+  .metric-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+  .metric-card {
+    background: #f4f4f0; border-radius: 8px;
+    padding: 1rem; display: flex; flex-direction: column; gap: 4px;
+  }
+  .metric-label { font-size: 12px; color: #5f5e5a; }
+  .metric-value { font-size: 22px; font-weight: 500; color: #1a1a18; }
+  .metric-sub { font-size: 11px; color: #888780; }
+
+  .chart-section {
+    background: #fff; border: 0.5px solid #d3d1c7;
+    border-radius: 12px; padding: 1rem 1.25rem;
+  }
+  .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .bar-name { font-size: 13px; color: #5f5e5a; min-width: 120px; text-align: right; }
+  .bar-track { flex: 1; height: 22px; background: #f4f4f0; border-radius: 4px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; font-size: 11px; font-weight: 500; }
+  .bar-fill.purple { background: #AFA9EC; color: #3C3489; }
+  .bar-fill.teal   { background: #5DCAA5; color: #085041; }
+  .bar-fill.coral  { background: #F0997B; color: #4A1B0C; }
+  .bar-fill.blue   { background: #85B7EB; color: #042C53; }
+  .bar-fill.amber  { background: #FAC775; color: #412402; }
+  .bar-fill.green  { background: #97C459; color: #173404; }
+  .bar-fill.gray   { background: #B4B2A9; color: #2C2C2A; }
+  .animate-bar { width: 0; transition: width 0.9s cubic-bezier(0.4,0,0.2,1); }
+
+  .trend-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    font-size: 12px; padding: 5px 12px; border-radius: 8px;
+    border: 0.5px solid #d3d1c7; background: #f4f4f0; color: #5f5e5a;
+  }
+  .chip i { font-size: 14px; vertical-align: -2px; margin-left: 4px; }
+
+  .footer { margin-top: 1.5rem; font-size: 11px; color: #b4b2a9; text-align: center; }
+
+  .divider { border: none; border-top: 0.5px solid #d3d1c7; margin: 1.5rem 0; }
+
+  .comp-btn { background: #f0eefc; border-color: #AFA9EC; color: #3C3489; }
+  .comp-btn:hover { background: #e2dffa; }
+
+  .comp-content { display: none; flex-direction: column; gap: 1.5rem; }
+  .comp-content.visible { display: flex; }
+
+  .comp-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .comp-name { font-size: 13px; color: #1a1a18; font-weight: 500; min-width: 130px; text-align: right; }
+  .comp-sub  { font-size: 11px; color: #888780; font-weight: 400; display: block; }
+
+  .gap-card {
+    background: #f0eefc; border: 0.5px solid #AFA9EC;
+    border-radius: 12px; padding: 1.1rem 1.25rem;
+    display: flex; gap: 14px; align-items: flex-start;
+  }
+  .gap-icon { font-size: 24px; color: #534AB7; flex-shrink: 0; margin-top: 2px; }
+  .gap-title { font-size: 14px; font-weight: 500; color: #3C3489; margin-bottom: 4px; }
+  .gap-desc  { font-size: 13px; color: #534AB7; line-height: 1.6; }
+
+  .fantabar-fill { background: #534AB7; color: #fff; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="top-label">
+    <i class="ti ti-world" style="font-size:16px"></i>
+    ניתוח שוק גלובלי · 2025
+  </div>
+
+  <button class="reveal-btn" id="revealBtn" onclick="reveal()">
+    <i class="ti ti-home icon"></i>
+    <span>הצג ניתוח שוק — בית חכם + אבטחה 2025</span>
+    <i class="ti ti-chevron-down icon"></i>
+  </button>
+
+  <div class="market-content" id="marketContent">
+
+    <div>
+      <div class="section-label">מדדים מרכזיים</div>
+      <div class="metric-row">
+        <div class="metric-card">
+          <span class="metric-label">שוק בית חכם כולל</span>
+          <span class="metric-value">$174B</span>
+          <span class="metric-sub">2025 · גלובלי</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-label">צמיחה שנתית (CAGR)</span>
+          <span class="metric-value">+13.4%</span>
+          <span class="metric-sub">2024–2030</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-label">אבטחה חכמה</span>
+          <span class="metric-value">$68B</span>
+          <span class="metric-sub">39% מהשוק</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-label">בתים מחוברים</span>
+          <span class="metric-value">1.1B</span>
+          <span class="metric-sub">יחידות פעילות</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-section">
+      <div class="section-label">שווי שוק לפי קטגוריה</div>
+      <div id="bars"></div>
+    </div>
+
+    <div class="chart-section">
+      <div class="section-label">חלוקה אזורית — נתח שוק</div>
+      <div id="regions"></div>
+    </div>
+
+    <div>
+      <div class="section-label">מגמות מובילות 2025</div>
+      <div class="trend-chips">
+        <span class="chip"><i class="ti ti-cpu"></i>AI בזמן אמת</span>
+        <span class="chip"><i class="ti ti-shield-check"></i>זיהוי פנים עצמאי</span>
+        <span class="chip"><i class="ti ti-wifi"></i>Matter / Thread</span>
+        <span class="chip"><i class="ti ti-bolt"></i>ניהול אנרגיה חכם</span>
+        <span class="chip"><i class="ti ti-cloud"></i>Edge computing</span>
+        <span class="chip"><i class="ti ti-lock"></i>פרטיות ו-Zero Trust</span>
+        <span class="chip"><i class="ti ti-device-mobile"></i>שליטה קולית</span>
+      </div>
+    </div>
+
+  </div>
+
+  <hr class="divider">
+
+  <button class="reveal-btn comp-btn" id="compBtn" onclick="revealComp()">
+    <i class="ti ti-tournament icon"></i>
+    <span>הצג ניתוח מתחרים והפער שאנחנו ממלאים</span>
+    <i class="ti ti-chevron-down icon"></i>
+  </button>
+
+  <div class="comp-content" id="compContent">
+
+    <div class="chart-section">
+      <div class="section-label">נתח שוק מתחרים מרכזיים — אבטחה וניהול בית חכם</div>
+      <div id="competitors"></div>
+    </div>
+
+    <div>
+      <div class="section-label">היכן הם חלשים — הפער שאנחנו ממלאים</div>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div class="gap-card">
+          <i class="ti ti-puzzle gap-icon"></i>
+          <div>
+            <div class="gap-title">חוסר אינטגרציה אמיתית</div>
+            <div class="gap-desc">Ring, Arlo ו-ADT פועלות כאיים נפרדים. אין פלטפורמה אחת שמחברת אבטחה + אנרגיה + ניהול בית — זה בדיוק מה שאנחנו מציעים.</div>
+          </div>
+        </div>
+        <div class="gap-card">
+          <i class="ti ti-brain gap-icon"></i>
+          <div>
+            <div class="gap-title">AI שטחי בלי הקשר</div>
+            <div class="gap-desc">המתחרים מציעים זיהוי פנים בסיסי. אנחנו מביאים AI שמבין הרגלי הבית, מתריע בהתאם להקשר ולומד לאורך זמן.</div>
+          </div>
+        </div>
+        <div class="gap-card">
+          <i class="ti ti-device-mobile-dollar gap-icon"></i>
+          <div>
+            <div class="gap-title">מחיר כניסה גבוה ומנוי חודשי</div>
+            <div class="gap-desc">Google Nest ו-Ring דורשים מנוי $10–$20/חודש לתכונות מתקדמות. המודל שלנו: חינם עם פרמיום אופציונלי.</div>
+          </div>
+        </div>
+        <div class="gap-card">
+          <i class="ti ti-eye-off gap-icon"></i>
+          <div>
+            <div class="gap-title">פרטיות — נקודת כאב גדולה</div>
+            <div class="gap-desc">כל הענקיות מעבדות נתונים בענן שלהן. אנחנו מציעים עיבוד מקומי (on-device) — אפס שיתוף נתונים עם צדדים שלישיים.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer">מקורות: Grand View Research, Statista, MarketsandMarkets · 2025</div>
+</div>
+
+<script>
+const categories = [
+  { name: 'אבטחה חכמה',      pct: 39, cls: 'purple' },
+  { name: 'אנרגיה ותאורה',   pct: 22, cls: 'amber'  },
+  { name: 'בידור ומולטימדיה', pct: 16, cls: 'blue'   },
+  { name: 'HVAC חכם',        pct: 12, cls: 'teal'   },
+  { name: 'בריאות ומטפלים',  pct: 7,  cls: 'coral'  },
+  { name: 'אחר',             pct: 4,  cls: 'green'  },
+];
+const regions = [
+  { name: 'צפון אמריקה',  pct: 36, cls: 'blue'   },
+  { name: 'אסיה–פסיפיק', pct: 29, cls: 'teal'   },
+  { name: 'אירופה',       pct: 27, cls: 'purple' },
+  { name: 'שאר העולם',   pct: 8,  cls: 'coral'  },
+];
+
+function buildBars(containerId, data) {
+  const container = document.getElementById(containerId);
+  data.forEach(item => {
+    const row = document.createElement('div');
+    row.className = 'bar-row';
+    row.innerHTML = `
+      <span class="bar-name">${item.name}</span>
+      <div class="bar-track">
+        <div class="bar-fill animate-bar ${item.cls}" data-pct="${item.pct}">${item.pct}%</div>
+      </div>`;
+    container.appendChild(row);
+  });
+}
+
+const competitors = [
+  { name: 'Google Nest',    sub: 'בית חכם + אבטחה', pct: 22, cls: 'blue'   },
+  { name: 'Amazon Ring',    sub: 'אבטחה + Alexa',    pct: 18, cls: 'amber'  },
+  { name: 'ADT',            sub: 'אבטחה מסורתית',    pct: 14, cls: 'coral'  },
+  { name: 'Arlo',           sub: 'מצלמות חכמות',     pct: 9,  cls: 'teal'   },
+  { name: 'Honeywell',      sub: 'HVAC + ניהול',     pct: 8,  cls: 'green'  },
+  { name: 'SimpliSafe',     sub: 'אבטחה DIY',        pct: 6,  cls: 'purple' },
+  { name: 'FantaTech ⬤',   sub: 'הפתרון שלנו',      pct: 3,  cls: 'fantabar', highlight: true },
+  { name: 'Long tail / אחר', sub: 'שחקנים קטנים',   pct: 20, cls: 'gray'   },
+];
+
+function buildCompBars(containerId, data) {
+  const container = document.getElementById(containerId);
+  data.forEach(item => {
+    const row = document.createElement('div');
+    row.className = 'comp-row';
+    const highlight = item.highlight ? 'border: 1.5px solid #534AB7; background:#f0eefc; border-radius:6px; padding:2px 6px;' : '';
+    row.innerHTML = `
+      <span class="comp-name" style="${highlight}">${item.name}<span class="comp-sub">${item.sub}</span></span>
+      <div class="bar-track">
+        <div class="bar-fill animate-bar ${item.cls}" data-pct="${item.pct}" style="min-width:${item.pct > 3 ? 0 : 0}px">${item.pct}%</div>
+      </div>`;
+    container.appendChild(row);
+  });
+}
+
+function revealComp() {
+  document.getElementById('compContent').classList.add('visible');
+  document.getElementById('compBtn').style.display = 'none';
+  buildCompBars('competitors', competitors);
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      document.querySelectorAll('#competitors .animate-bar').forEach(bar => {
+        bar.style.width = bar.dataset.pct + '%';
+      });
+    }, 80);
+  });
+}
+
+function reveal() {
+  document.getElementById('marketContent').classList.add('visible');
+  document.getElementById('revealBtn').style.display = 'none';
+  buildBars('bars', categories);
+  buildBars('regions', regions);
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      document.querySelectorAll('.animate-bar').forEach(bar => {
+        bar.style.width = bar.dataset.pct + '%';
+      });
+    }, 80);
+  });
+}
+</script>
+</body>
+</html>

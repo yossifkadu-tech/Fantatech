@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>בחר אייקון מצלמה</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#0B2044;font-family:'Heebo',sans-serif;color:#fff;padding:40px 20px;}
+h1{text-align:center;font-size:26px;font-weight:800;margin-bottom:6px;color:#fff;}
+p{text-align:center;color:#6B7280;margin-bottom:40px;font-size:14px;}
+
+.grid{display:flex;flex-wrap:wrap;gap:24px;justify-content:center;}
+
+.option{
+  background:#153060;border:2px solid #2A5090;border-radius:16px;
+  padding:24px 20px;width:160px;text-align:center;cursor:pointer;
+  transition:all .2s;
+}
+.option:hover{border-color:#1A73E8;transform:translateY(-3px);box-shadow:0 8px 24px rgba(26,115,232,0.2);}
+
+.opt-num{font-size:11px;font-weight:600;color:#6B7280;margin-bottom:14px;letter-spacing:1px;}
+
+/* ─── STATE ROW ─── */
+.state-row{display:flex;gap:12px;justify-content:center;margin-bottom:14px;}
+.state{display:flex;flex-direction:column;align-items:center;gap:6px;}
+.state-label{font-size:9px;color:#6B7280;font-weight:600;}
+
+/* ─── ICON SIZES ─── */
+.icon-wrap{
+  width:44px;height:44px;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  position:relative;
+}
+
+/* ── LIVE state ── */
+.live{background:rgba(52,168,83,0.15);border:1.5px solid rgba(52,168,83,0.4);}
+.live svg{stroke:#34A853;fill:none;}
+.live svg .fill{fill:rgba(52,168,83,0.2);}
+.live .dot{width:7px;height:7px;border-radius:50%;background:#34A853;
+  position:absolute;top:4px;right:4px;
+  box-shadow:0 0 6px #34A853;
+  animation:pulse 1.5s infinite;}
+
+/* ── OFFLINE state ── */
+.offline{background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);}
+.offline svg{stroke:#374151;fill:none;}
+.offline svg .fill{fill:rgba(255,255,255,0.04);}
+
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.6;transform:scale(.8);}}
+
+.opt-name{font-size:12px;font-weight:700;color:#fff;margin-top:4px;}
+.opt-desc{font-size:10px;color:#6B7280;margin-top:4px;line-height:1.4;}
+
+/* ─── BADGE variant ─── */
+.badge{
+  position:absolute;top:-4px;right:-4px;
+  background:#34A853;color:#fff;
+  font-size:7px;font-weight:700;padding:1px 4px;border-radius:4px;
+  border:1px solid #0B2044;
+}
+.badge-offline{background:#374151;color:#6B7280;}
+
+/* top bar preview */
+.topbar-preview{
+  background:#112040;border:1px solid #2A5090;border-radius:10px;
+  padding:8px 12px;display:flex;align-items:center;gap:8px;
+  margin-top:14px;direction:rtl;
+}
+.topbar-greeting{font-size:11px;color:#fff;flex:1;}
+.topbar-greeting span{color:#34A853;}
+</style>
+</head>
+<body>
+
+<h1>בחר אייקון מצלמה 📷</h1>
+<p>בחר את האייקון שיופיע ליד "שלום" בראש מסך הבית — אפור = לא פעיל, ירוק = חי</p>
+
+<div class="grid">
+
+  <!-- OPTION 1 — Classic Camera -->
+  <div class="option">
+    <div class="opt-num">אפשרות 1</div>
+    <div class="state-row">
+      <div class="state">
+        <div class="icon-wrap live">
+          <svg width="22" height="18" viewBox="0 0 22 18" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <rect class="fill" x="1" y="4" width="20" height="13" rx="2"/>
+            <rect x="1" y="4" width="20" height="13" rx="2"/>
+            <circle class="fill" cx="11" cy="10.5" r="3.5"/>
+            <circle cx="11" cy="10.5" r="3.5"/>
+            <path d="M7 4L8.5 1h5L15 4"/>
+          </svg>
+          <div class="dot"></div>
+        </div>
+        <div class="state-label">LIVE</div>
+      </div>
+      <div class="state">
+        <div class="icon-wrap offline">
+          <svg width="22" height="18" viewBox="0 0 22 18" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <rect class="fill" x="1" y="4" width="20" height="13" rx="2"/>
+            <rect x="1" y="4" width="20" height="13" rx="2"/>
+            <circle class="fill" cx="11" cy="10.5" r="3.5"/>
+            <circle cx="11" cy="10.5" r="3.5"/>
+            <path d="M7 4L8.5 1h5L15 4"/>
+          </svg>
+        </div>
+        <div class="state-label">כבוי</div>
+      </div>
+    </div>
+    <div class="opt-name">מצלמה קלאסית</div>
+    <div class="opt-desc">מצלמה עם עדשה עגולה ובליטה עליונה</div>
+    <div class="topbar-preview">
+      <div class="topbar-greeting">שלום יוסי 👋 <span>✅ מאובטח</span></div>
+      <div class="icon-wrap live" style="width:32px;height:32px;border-radius:8px">
+        <svg width="17" height="14" viewBox="0 0 22 18" stroke="#34A853" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="1" y="4" width="20" height="13" rx="2"/>
+          <circle cx="11" cy="10.5" r="3.5"/>
+          <path d="M7 4L8.5 1h5L15 4"/>
+        </svg>
+        <div class="dot" style="width:5px;height:5px;top:2px;right:2px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OPTION 2 — CCTV Security Camera -->
+  <div class="option">
+    <div class="opt-num">אפשרות 2</div>
+    <div class="state-row">
+      <div class="state">
+        <div class="icon-wrap live">
+          <svg width="22" height="20" viewBox="0 0 22 20" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <rect class="fill" x="2" y="5" width="14" height="8" rx="2"/>
+            <rect x="2" y="5" width="14" height="8" rx="2"/>
+            <circle class="fill" cx="10" cy="9" r="2.5"/>
+            <circle cx="10" cy="9" r="2.5"/>
+            <line x1="16" y1="9" x2="20" y2="7"/>
+            <line x1="16" y1="9" x2="20" y2="11"/>
+            <line x1="7" y1="13" x2="7" y2="17"/>
+            <line x1="5" y1="17" x2="9" y2="17"/>
+          </svg>
+          <div class="dot"></div>
+        </div>
+        <div class="state-label">LIVE</div>
+      </div>
+      <div class="state">
+        <div class="icon-wrap offline">
+          <svg width="22" height="20" viewBox="0 0 22 20" stroke-width="1.6" stroke="#374151" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="5" width="14" height="8" rx="2" fill="rgba(255,255,255,0.04)"/>
+            <circle cx="10" cy="9" r="2.5"/>
+            <line x1="16" y1="9" x2="20" y2="7"/>
+            <line x1="16" y1="9" x2="20" y2="11"/>
+            <line x1="7" y1="13" x2="7" y2="17"/>
+            <line x1="5" y1="17" x2="9" y2="17"/>
+          </svg>
+        </div>
+        <div class="state-label">כבוי</div>
+      </div>
+    </div>
+    <div class="opt-name">CCTV אבטחה</div>
+    <div class="opt-desc">מצלמת אבטחה עם כבל וחצי מעגל</div>
+    <div class="topbar-preview">
+      <div class="topbar-greeting">שלום יוסי 👋 <span>✅ מאובטח</span></div>
+      <div class="icon-wrap live" style="width:32px;height:32px;border-radius:8px">
+        <svg width="17" height="15" viewBox="0 0 22 20" stroke="#34A853" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="5" width="14" height="8" rx="2"/>
+          <circle cx="10" cy="9" r="2.5"/>
+          <line x1="16" y1="9" x2="20" y2="7"/>
+          <line x1="16" y1="9" x2="20" y2="11"/>
+          <line x1="7" y1="13" x2="7" y2="17"/>
+          <line x1="5" y1="17" x2="9" y2="17"/>
+        </svg>
+        <div class="dot" style="width:5px;height:5px;top:2px;right:2px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OPTION 3 — Video Camera -->
+  <div class="option">
+    <div class="opt-num">אפשרות 3</div>
+    <div class="state-row">
+      <div class="state">
+        <div class="icon-wrap live">
+          <svg width="24" height="16" viewBox="0 0 24 16" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <rect class="fill" x="1" y="3" width="14" height="10" rx="2"/>
+            <rect x="1" y="3" width="14" height="10" rx="2"/>
+            <path class="fill" d="M15 6l7-3v10l-7-3V6z"/>
+            <path d="M15 6l7-3v10l-7-3V6z"/>
+          </svg>
+          <div class="dot"></div>
+        </div>
+        <div class="state-label">LIVE</div>
+      </div>
+      <div class="state">
+        <div class="icon-wrap offline">
+          <svg width="24" height="16" viewBox="0 0 24 16" stroke-width="1.6" stroke="#374151" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="1" y="3" width="14" height="10" rx="2" fill="rgba(255,255,255,0.04)"/>
+            <path d="M15 6l7-3v10l-7-3V6z" fill="rgba(255,255,255,0.04)"/>
+          </svg>
+        </div>
+        <div class="state-label">כבוי</div>
+      </div>
+    </div>
+    <div class="opt-name">וידאו קאם</div>
+    <div class="opt-desc">מצלמת וידאו עם טרפז צד</div>
+    <div class="topbar-preview">
+      <div class="topbar-greeting">שלום יוסי 👋 <span>✅ מאובטח</span></div>
+      <div class="icon-wrap live" style="width:32px;height:32px;border-radius:8px">
+        <svg width="18" height="12" viewBox="0 0 24 16" stroke="#34A853" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="1" y="3" width="14" height="10" rx="2"/>
+          <path d="M15 6l7-3v10l-7-3V6z"/>
+        </svg>
+        <div class="dot" style="width:5px;height:5px;top:2px;right:2px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OPTION 4 — Shield + Camera -->
+  <div class="option">
+    <div class="opt-num">אפשרות 4</div>
+    <div class="state-row">
+      <div class="state">
+        <div class="icon-wrap live">
+          <svg width="20" height="22" viewBox="0 0 20 22" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path class="fill" d="M10 1L2 4v6c0 5 4 9 8 11 4-2 8-6 8-11V4L10 1z"/>
+            <path d="M10 1L2 4v6c0 5 4 9 8 11 4-2 8-6 8-11V4L10 1z"/>
+            <circle class="fill" cx="10" cy="10" r="3"/>
+            <circle cx="10" cy="10" r="3"/>
+          </svg>
+          <div class="dot"></div>
+        </div>
+        <div class="state-label">LIVE</div>
+      </div>
+      <div class="state">
+        <div class="icon-wrap offline">
+          <svg width="20" height="22" viewBox="0 0 20 22" stroke-width="1.6" stroke="#374151" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10 1L2 4v6c0 5 4 9 8 11 4-2 8-6 8-11V4L10 1z" fill="rgba(255,255,255,0.04)"/>
+            <circle cx="10" cy="10" r="3" fill="rgba(255,255,255,0.04)"/>
+          </svg>
+        </div>
+        <div class="state-label">כבוי</div>
+      </div>
+    </div>
+    <div class="opt-name">מגן + עדשה</div>
+    <div class="opt-desc">מגן אבטחה עם עדשה במרכז</div>
+    <div class="topbar-preview">
+      <div class="topbar-greeting">שלום יוסי 👋 <span>✅ מאובטח</span></div>
+      <div class="icon-wrap live" style="width:32px;height:32px;border-radius:8px">
+        <svg width="16" height="18" viewBox="0 0 20 22" stroke="#34A853" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10 1L2 4v6c0 5 4 9 8 11 4-2 8-6 8-11V4L10 1z"/>
+          <circle cx="10" cy="10" r="3"/>
+        </svg>
+        <div class="dot" style="width:5px;height:5px;top:2px;right:2px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OPTION 5 — Eye (surveillance) -->
+  <div class="option">
+    <div class="opt-num">אפשרות 5</div>
+    <div class="state-row">
+      <div class="state">
+        <div class="icon-wrap live">
+          <svg width="24" height="16" viewBox="0 0 24 16" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path class="fill" d="M1 8s4-6 11-6 11 6 11 6-4 6-11 6S1 8 1 8z"/>
+            <path d="M1 8s4-6 11-6 11 6 11 6-4 6-11 6S1 8 1 8z"/>
+            <circle class="fill" cx="12" cy="8" r="3"/>
+            <circle cx="12" cy="8" r="3"/>
+            <circle cx="12" cy="8" r="1.2" fill="currentColor" stroke="none"/>
+          </svg>
+          <div class="dot"></div>
+        </div>
+        <div class="state-label">LIVE</div>
+      </div>
+      <div class="state">
+        <div class="icon-wrap offline">
+          <svg width="24" height="16" viewBox="0 0 24 16" stroke-width="1.6" stroke="#374151" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 8s4-6 11-6 11 6 11 6-4 6-11 6S1 8 1 8z" fill="rgba(255,255,255,0.04)"/>
+            <circle cx="12" cy="8" r="3" fill="rgba(255,255,255,0.04)"/>
+            <line x1="2" y1="2" x2="22" y2="14" stroke-width="1.8"/>
+          </svg>
+        </div>
+        <div class="state-label">כבוי</div>
+      </div>
+    </div>
+    <div class="opt-name">עין מעקב</div>
+    <div class="opt-desc">עין פתוחה = פעיל, קו חוצה = כבוי</div>
+    <div class="topbar-preview">
+      <div class="topbar-greeting">שלום יוסי 👋 <span>✅ מאובטח</span></div>
+      <div class="icon-wrap live" style="width:32px;height:32px;border-radius:8px">
+        <svg width="18" height="12" viewBox="0 0 24 16" stroke="#34A853" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1 8s4-6 11-6 11 6 11 6-4 6-11 6S1 8 1 8z"/>
+          <circle cx="12" cy="8" r="3"/>
+        </svg>
+        <div class="dot" style="width:5px;height:5px;top:2px;right:2px"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div style="text-align:center;margin-top:48px;padding:24px;background:#153060;border:1px solid #2A5090;border-radius:16px;max-width:500px;margin-left:auto;margin-right:auto;">
+  <div style="font-size:18px;font-weight:700;margin-bottom:8px">🟢 הסבר הצבעים</div>
+  <div style="font-size:13px;color:#9CA3AF;line-height:1.8;">
+    <span style="color:#34A853;font-weight:600">ירוק + נקודה מהבהבת</span> = מצלמות חיות ועובדות<br>
+    <span style="color:#374151;font-weight:600">אפור</span> = אין מצלמות פעילות / לא מחובר
+  </div>
+</div>
+
+</body>
+</html>

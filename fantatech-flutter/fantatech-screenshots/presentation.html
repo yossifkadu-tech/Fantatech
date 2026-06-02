@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>FantaTech — כל המסכים</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;600;700;800&family=Heebo:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#111827;font-family:'Heebo',sans-serif;color:#fff;padding:40px 20px;}
+
+h1{text-align:center;font-size:32px;font-weight:800;margin-bottom:8px;
+  background:linear-gradient(135deg,#7B2FFF,#FF2D8A);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.subtitle{text-align:center;color:#6B7280;margin-bottom:48px;font-size:15px;}
+
+.section{margin-bottom:56px;}
+.section-title{font-size:18px;font-weight:700;color:#9CA3AF;margin-bottom:20px;padding-bottom:8px;
+  border-bottom:1px solid #1F2937;letter-spacing:1px;text-transform:uppercase;}
+
+.grid{display:flex;flex-wrap:wrap;gap:32px;justify-content:flex-start;}
+
+.phone-wrap{display:flex;flex-direction:column;align-items:center;gap:12px;}
+.screen-label{font-size:13px;font-weight:600;color:#9CA3AF;text-align:center;}
+
+/* ─── PHONE FRAME ─── */
+.phone{
+  width:260px;min-height:560px;border-radius:32px;overflow:hidden;position:relative;
+  box-shadow:0 20px 60px rgba(0,0,0,0.6);border:2px solid rgba(255,255,255,0.08);
+  font-family:'Heebo',sans-serif;
+}
+
+/* ─── COMMON ─── */
+.bg-blue{background:#1D75BD;}
+.bg-dark{background:#0B2044;}
+.bg-img{background:linear-gradient(180deg,#1D75BD 0%,#0B2044 100%);}
+
+/* gradient overlay for auth screens */
+.auth-bg{
+  position:absolute;inset:0;
+  background-image:url('../smarthome-hub/fantatech-flutter/assets/images/main.jpg');
+  background-size:cover;background-position:center top;
+}
+.auth-overlay{position:absolute;inset:0;
+  background:linear-gradient(to bottom,rgba(29,117,189,0.2) 0%,rgba(29,117,189,0.85) 40%,rgba(29,117,189,1) 100%);}
+.auth-content{position:relative;z-index:2;padding:40px 20px 24px;display:flex;flex-direction:column;}
+
+/* brand logo */
+.logo-row{display:flex;align-items:center;justify-content:center;direction:ltr;gap:0;}
+.logo-fanta{font-family:'Outfit',sans-serif;font-size:34px;font-weight:200;color:#fff;line-height:1;}
+.logo-dot{width:5px;height:5px;border-radius:50%;background:linear-gradient(to right,#7B2FFF,#FF2D8A);margin:0 2px 12px;}
+.logo-tech{font-family:'Outfit',sans-serif;font-size:34px;font-weight:800;line-height:1;
+  background:linear-gradient(to right,#7B2FFF,#FF2D8A);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.logo-divider{width:150px;height:1px;background:linear-gradient(to right,transparent,#7B2FFF,#FF2D8A,transparent);margin:4px auto 6px;}
+.logo-sub{text-align:center;font-family:'Outfit',sans-serif;font-size:8px;font-weight:500;
+  color:#fff;letter-spacing:2.5px;text-transform:uppercase;}
+
+/* input fields */
+.input-white{background:#fff;border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.input-white .ico{font-size:14px;color:#6B7280;}
+.input-white .ph{font-size:13px;color:#9CA3AF;flex:1;}
+.input-white .eye{font-size:12px;color:#9CA3AF;}
+
+/* buttons */
+.btn-grad{background:linear-gradient(135deg,#7B2FFF,#FF2D8A);color:#fff;border-radius:10px;
+  padding:13px;text-align:center;font-weight:700;font-size:14px;margin-bottom:14px;}
+.btn-white{background:#fff;color:#3C4043;border-radius:10px;padding:12px;
+  text-align:center;font-weight:600;font-size:13px;margin-bottom:8px;
+  display:flex;align-items:center;justify-content:center;gap:6px;}
+.sso-row{display:flex;gap:8px;margin-bottom:8px;}
+.sso-row .btn-white{flex:1;margin-bottom:0;}
+
+/* greeting */
+.greeting{text-align:center;margin:16px 0;}
+.greeting h2{font-size:22px;font-weight:700;color:#fff;}
+.greeting p{font-size:12px;color:rgba(255,255,255,0.6);margin-top:4px;}
+
+/* forgot */
+.forgot{text-align:left;font-size:11px;color:#7B2FFF;margin-bottom:14px;}
+.or-div{display:flex;align-items:center;gap:8px;margin-bottom:14px;}
+.or-line{flex:1;height:1px;background:rgba(255,255,255,0.2);}
+.or-text{font-size:11px;color:rgba(255,255,255,0.4);}
+
+/* register link */
+.reg-link{text-align:center;font-size:12px;margin-top:8px;}
+.reg-link span{color:rgba(255,255,255,0.45);}
+.reg-link a{color:#7B2FFF;font-weight:600;}
+
+/* ─── DASHBOARD ─── */
+.dash-content{padding:12px 14px;background:#0B2044;min-height:560px;}
+.top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.top-bar .brand{font-family:'Outfit',sans-serif;font-size:16px;direction:ltr;}
+.top-bar .brand b{font-weight:800;background:linear-gradient(to right,#7B2FFF,#FF2D8A);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.top-bar .icons{display:flex;gap:8px;}
+.top-bar .ico-btn{width:28px;height:28px;border-radius:8px;background:rgba(255,255,255,0.06);
+  border:1px solid rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:12px;}
+
+.stat-cards{display:flex;gap:8px;margin-bottom:12px;}
+.stat-card{flex:1;background:#153060;border:1px solid #2A5090;border-radius:12px;padding:12px;}
+.stat-card .sc-icon{font-size:18px;margin-bottom:6px;}
+.stat-card .sc-val{font-size:20px;font-weight:700;color:#fff;}
+.stat-card .sc-label{font-size:10px;color:#6B7280;margin-top:2px;}
+
+.section-hdr{font-size:10px;font-weight:700;color:#6B7280;letter-spacing:1px;text-transform:uppercase;margin:10px 0 6px;}
+
+.quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;}
+.quick-tile{background:#153060;border:1px solid #2A5090;border-radius:10px;padding:10px;}
+.quick-tile .qt-icon{font-size:16px;margin-bottom:4px;}
+.quick-tile .qt-title{font-size:11px;font-weight:600;color:#fff;}
+.quick-tile .qt-sub{font-size:9px;color:#6B7280;margin-top:2px;}
+
+.scene-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;}
+.scene-btn{border-radius:10px;padding:10px;text-align:center;border:1px solid;}
+.scene-btn .sb-icon{font-size:18px;margin-bottom:4px;}
+.scene-btn .sb-label{font-size:10px;font-weight:600;}
+.sb-yellow{background:rgba(255,213,0,0.08);border-color:rgba(255,213,0,0.2);color:#FFD500;}
+.sb-blue{background:rgba(26,115,232,0.08);border-color:rgba(26,115,232,0.2);color:#1A73E8;}
+.sb-purple{background:rgba(156,122,255,0.08);border-color:rgba(156,122,255,0.2);color:#9C7AFF;}
+.sb-red{background:rgba(255,107,107,0.08);border-color:rgba(255,107,107,0.2);color:#FF6B6B;}
+
+.bottom-nav{position:absolute;bottom:0;left:0;right:0;background:#153060;
+  border-top:1px solid #2A5090;display:flex;padding:8px 0 4px;}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;}
+.nav-item .ni{font-size:16px;}
+.nav-item .nl{font-size:8px;color:#6B7280;}
+.nav-item.active .nl{color:#1A73E8;}
+
+/* ─── DEVICES ─── */
+.devices-content{padding:12px 14px;background:#0B2044;min-height:560px;}
+.cat-tabs{display:flex;gap:6px;overflow-x:auto;margin-bottom:12px;padding-bottom:4px;}
+.cat-tab{background:#153060;border:1px solid #2A5090;border-radius:20px;padding:5px 12px;
+  font-size:10px;font-weight:600;white-space:nowrap;color:#9CA3AF;}
+.cat-tab.active{background:rgba(26,115,232,0.15);border-color:#1A73E8;color:#1A73E8;}
+
+.device-list{display:flex;flex-direction:column;gap:6px;}
+.device-item{background:#153060;border:1px solid #2A5090;border-radius:10px;
+  padding:10px 12px;display:flex;align-items:center;gap:10px;}
+.device-item .di-icon{width:32px;height:32px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.device-item .di-info{flex:1;}
+.device-item .di-name{font-size:12px;font-weight:600;color:#fff;}
+.device-item .di-status{font-size:10px;color:#6B7280;margin-top:2px;}
+.toggle{width:32px;height:18px;border-radius:9px;position:relative;flex-shrink:0;}
+.toggle-on{background:#1A73E8;}
+.toggle-off{background:#374151;}
+.toggle::after{content:'';position:absolute;top:2px;width:14px;height:14px;border-radius:50%;background:#fff;}
+.toggle-on::after{right:2px;}
+.toggle-off::after{left:2px;}
+
+/* ─── CAMERAS ─── */
+.cams-content{padding:12px 14px;background:#0B2044;min-height:560px;}
+.cam-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;}
+.cam-tile{background:#153060;border:1px solid #2A5090;border-radius:10px;overflow:hidden;}
+.cam-preview{height:72px;background:linear-gradient(135deg,#0F1F3C,#1A3060);
+  display:flex;align-items:center;justify-content:center;font-size:24px;position:relative;}
+.cam-badge{position:absolute;top:4px;right:4px;background:rgba(52,168,83,0.2);
+  border:1px solid #34A853;border-radius:4px;padding:1px 4px;font-size:7px;color:#34A853;font-weight:600;}
+.cam-info{padding:6px 8px;}
+.cam-name{font-size:10px;font-weight:600;color:#fff;}
+.cam-loc{font-size:9px;color:#6B7280;}
+
+/* ─── SECURITY ─── */
+.sec-content{padding:12px 14px;background:#0B2044;min-height:560px;}
+.sec-status{background:rgba(52,168,83,0.1);border:1px solid rgba(52,168,83,0.3);
+  border-radius:14px;padding:16px;text-align:center;margin-bottom:14px;}
+.sec-icon{font-size:32px;margin-bottom:6px;}
+.sec-title{font-size:16px;font-weight:700;color:#34A853;}
+.sec-sub{font-size:11px;color:rgba(255,255,255,0.5);margin-top:4px;}
+.mode-row{display:flex;gap:6px;margin-bottom:12px;}
+.mode-btn{flex:1;padding:8px;border-radius:8px;text-align:center;font-size:10px;font-weight:600;}
+.mode-armed{background:rgba(52,168,83,0.1);border:1px solid rgba(52,168,83,0.3);color:#34A853;}
+.mode-home{background:rgba(251,188,4,0.1);border:1px solid rgba(251,188,4,0.3);color:#FBBC04;}
+.mode-disarmed{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#6B7280;}
+
+/* ─── ENERGY ─── */
+.energy-content{padding:12px 14px;background:#0B2044;min-height:560px;}
+.energy-big{text-align:center;padding:20px 0 14px;}
+.energy-num{font-size:48px;font-weight:800;color:#FFD500;}
+.energy-unit{font-size:14px;color:#6B7280;margin-top:2px;}
+.energy-change{display:inline-block;background:rgba(52,168,83,0.1);border:1px solid rgba(52,168,83,0.3);
+  color:#34A853;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;margin-top:6px;}
+.bar-chart{display:flex;align-items:flex-end;justify-content:space-between;height:60px;gap:4px;margin:10px 0;}
+.bar{flex:1;border-radius:4px 4px 0 0;min-width:0;}
+.bar-label{font-size:8px;color:#6B7280;text-align:center;margin-top:3px;}
+
+/* ─── AUTOMATIONS ─── */
+.auto-content{padding:12px 14px;background:#0B2044;min-height:560px;}
+.auto-item{background:#153060;border:1px solid #2A5090;border-radius:10px;
+  padding:10px 12px;margin-bottom:8px;display:flex;align-items:center;gap:10px;}
+.auto-ico{width:32px;height:32px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.auto-info{flex:1;}
+.auto-name{font-size:12px;font-weight:600;color:#fff;}
+.auto-trigger{font-size:10px;color:#6B7280;margin-top:2px;}
+
+/* ─── PROFILE ─── */
+.prof-content{padding:12px 14px;background:#0B2044;min-height:560px;}
+.prof-header{text-align:center;padding:20px 0 16px;}
+.prof-avatar{width:70px;height:70px;border-radius:35px;background:rgba(26,115,232,0.2);
+  border:2px solid #1A73E8;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:28px;}
+.prof-name{font-size:17px;font-weight:700;color:#fff;}
+.prof-email{font-size:12px;color:#6B7280;margin-top:3px;}
+.prof-item{background:#153060;border:1px solid #2A5090;border-radius:10px;
+  padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;}
+.prof-item .pi-icon{font-size:18px;width:28px;text-align:center;}
+.prof-item .pi-text{flex:1;font-size:13px;color:#fff;font-weight:500;}
+.prof-item .pi-arr{font-size:12px;color:#6B7280;}
+
+/* ─── AI ─── */
+.ai-content{padding:12px 14px;background:#0B2044;min-height:560px;display:flex;flex-direction:column;}
+.ai-header{text-align:center;padding:16px 0 12px;}
+.ai-logo{font-size:36px;margin-bottom:6px;}
+.ai-title{font-size:16px;font-weight:700;color:#fff;}
+.ai-sub{font-size:11px;color:#6B7280;margin-top:3px;}
+.chat-area{flex:1;display:flex;flex-direction:column;gap:8px;padding-bottom:10px;}
+.bubble-ai{background:#153060;border:1px solid #2A5090;border-radius:12px 12px 12px 2px;
+  padding:10px 12px;font-size:11px;color:#fff;max-width:85%;align-self:flex-start;line-height:1.5;}
+.bubble-user{background:rgba(26,115,232,0.15);border:1px solid rgba(26,115,232,0.3);
+  border-radius:12px 12px 2px 12px;padding:10px 12px;font-size:11px;color:#fff;
+  max-width:85%;align-self:flex-end;line-height:1.5;}
+.ai-input{background:#153060;border:1px solid #2A5090;border-radius:12px;
+  padding:10px 12px;display:flex;gap:8px;align-items:center;}
+.ai-input span{flex:1;font-size:12px;color:#6B7280;}
+.ai-send{font-size:16px;color:#1A73E8;}
+
+/* ─── ROOMS ─── */
+.rooms-content{padding:12px 14px;background:#0B2044;min-height:560px;}
+.room-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.room-tile{background:#153060;border:1px solid #2A5090;border-radius:12px;padding:12px;text-align:center;}
+.room-ico{font-size:24px;margin-bottom:6px;}
+.room-name{font-size:12px;font-weight:600;color:#fff;}
+.room-devices{font-size:10px;color:#6B7280;margin-top:3px;}
+
+/* ─── SOLAR ─── */
+.solar-content{padding:12px 14px;background:#0B2044;min-height:560px;}
+.solar-big{text-align:center;padding:16px 0 12px;}
+.solar-circle{width:110px;height:110px;border-radius:55px;
+  background:conic-gradient(#FFB300 0deg 270deg,#1E3D72 270deg);
+  margin:0 auto 12px;display:flex;align-items:center;justify-content:center;position:relative;}
+.solar-inner{width:82px;height:82px;border-radius:41px;background:#0B2044;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.solar-kw{font-size:22px;font-weight:800;color:#FFB300;}
+.solar-unit{font-size:10px;color:#6B7280;}
+.solar-stats{display:flex;gap:8px;margin-bottom:10px;}
+.solar-stat{flex:1;background:#153060;border:1px solid #2A5090;border-radius:10px;padding:10px;text-align:center;}
+.solar-stat .ss-val{font-size:16px;font-weight:700;color:#FFB300;}
+.solar-stat .ss-label{font-size:9px;color:#6B7280;margin-top:2px;}
+
+/* ─── BOILER ─── */
+.boiler-content{padding:12px 14px;background:#0B2044;min-height:560px;}
+.boiler-big{text-align:center;padding:16px 0 12px;}
+.boiler-tank{width:80px;height:110px;border-radius:40px;border:2px solid #00B4D8;
+  margin:0 auto 10px;position:relative;overflow:hidden;background:#0F1F3C;}
+.boiler-fill{position:absolute;bottom:0;left:0;right:0;height:75%;background:linear-gradient(to top,#FF5722,#FF8C00);}
+.boiler-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:18px;font-weight:800;color:#fff;}
+
+/* ─── SMARTHOME ─── */
+.sh-content{padding:12px 14px;background:#0B2044;min-height:560px;}
+.sh-room-tabs{display:flex;gap:6px;overflow-x:auto;margin-bottom:10px;}
+.sh-room-tab{background:#153060;border:1px solid #2A5090;border-radius:20px;
+  padding:5px 12px;font-size:10px;font-weight:600;white-space:nowrap;color:#9CA3AF;}
+.sh-room-tab.active{background:rgba(26,115,232,0.15);border-color:#1A73E8;color:#1A73E8;}
+.sh-device-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.sh-device{background:#153060;border:1px solid #2A5090;border-radius:10px;padding:10px;}
+.sh-device .sd-icon{font-size:22px;margin-bottom:6px;}
+.sh-device .sd-name{font-size:11px;font-weight:600;color:#fff;}
+.sh-device .sd-val{font-size:10px;color:#6B7280;margin-top:2px;}
+.sh-device-on{background:rgba(26,115,232,0.1);border-color:rgba(26,115,232,0.3);}
+
+/* ─── PAGE TITLE ─── */
+.page-title{font-size:13px;font-weight:700;color:#fff;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.page-title .back{font-size:14px;color:#6B7280;}
+
+/* google G */
+.gg{display:inline-block;width:14px;height:14px;border-radius:50%;
+  background:conic-gradient(#EA4335 90deg,#FBBC05 90deg 180deg,#34A853 180deg 270deg,#4285F4 270deg);vertical-align:middle;}
+</style>
+</head>
+<body>
+
+<h1>FantaTech Smart Home</h1>
+<p class="subtitle">כל מסכי האפליקציה — מוכן למצגת</p>
+
+<!-- ══════════════════════════════════════════════════ -->
+<!-- AUTH SCREENS -->
+<!-- ══════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title">🔐 מסכי כניסה</div>
+  <div class="grid">
+
+    <!-- LOGIN -->
+    <div class="phone-wrap">
+      <div class="screen-label">התחברות</div>
+      <div class="phone">
+        <div class="auth-bg"></div>
+        <div class="auth-overlay"></div>
+        <div class="auth-content">
+          <div class="logo-row"><span class="logo-fanta">Fanta</span><span class="logo-dot"></span><span class="logo-tech">Tech</span></div>
+          <div class="logo-divider"></div>
+          <div class="logo-sub">SMART HOME &amp; SECURITY</div>
+          <div class="greeting"><h2>!שלום לך</h2><p>היכנס לחשבון שלך</p></div>
+          <div class="input-white"><span class="ico">👤</span><span class="ph">אימייל או טלפון</span></div>
+          <div class="input-white"><span class="ico">🔒</span><span class="ph">סיסמה</span><span class="eye">👁</span></div>
+          <div class="forgot">שכחת סיסמה?</div>
+          <div class="btn-grad">התחבר</div>
+          <div class="or-div"><div class="or-line"></div><span class="or-text">או</span><div class="or-line"></div></div>
+          <div class="sso-row">
+            <div class="btn-white"><span>🍎</span>Apple</div>
+            <div class="btn-white"><span class="gg"></span>Google</div>
+          </div>
+          <div class="btn-white" style="margin-top:6px"><span>👥</span>כניסה כחבר בית</div>
+          <div class="reg-link"><span>אין לך חשבון? </span><a href="#">הרשם עכשיו</a></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REGISTER -->
+    <div class="phone-wrap">
+      <div class="screen-label">הרשמה</div>
+      <div class="phone">
+        <div class="auth-bg"></div>
+        <div class="auth-overlay"></div>
+        <div class="auth-content">
+          <div style="margin-bottom:14px">
+            <div class="logo-row"><span class="logo-fanta">Fanta</span><span class="logo-dot"></span><span class="logo-tech">Tech</span></div>
+            <div class="logo-divider"></div>
+            <div class="logo-sub">SMART HOME &amp; SECURITY</div>
+          </div>
+          <div class="greeting"><h2>יצירת חשבון</h2><p>הצטרף לבית החכם של FantaTech</p></div>
+          <div class="input-white"><span class="ico">🏷</span><span class="ph">שם מלא</span></div>
+          <div class="input-white"><span class="ico">👤</span><span class="ph">אימייל או טלפון</span></div>
+          <div class="input-white"><span class="ico">🔒</span><span class="ph">סיסמה</span><span class="eye">👁</span></div>
+          <div class="input-white"><span class="ico">🔒</span><span class="ph">אימות סיסמה</span><span class="eye">👁</span></div>
+          <div style="height:14px"></div>
+          <div class="btn-white" style="font-size:14px;font-weight:700;padding:14px">הרשם</div>
+          <div class="reg-link" style="margin-top:10px"><span>כבר יש לך חשבון? </span><a href="#">התחבר</a></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HOUSEHOLD -->
+    <div class="phone-wrap">
+      <div class="screen-label">כניסה כחבר בית</div>
+      <div class="phone">
+        <div class="auth-bg"></div>
+        <div class="auth-overlay"></div>
+        <div class="auth-content" style="padding-top:50px">
+          <div class="page-title" style="justify-content:center;color:#fff;font-size:15px">כניסה כחבר בית</div>
+          <div style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:12px;padding:12px;margin-bottom:16px;display:flex;align-items:center;gap:10px;">
+            <div style="width:36px;height:36px;border-radius:18px;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff">י</div>
+            <div><div style="font-size:13px;font-weight:600;color:#fff">יוסי פקדו</div><div style="font-size:10px;color:rgba(255,255,255,0.7)">✅ מנהל הבית</div></div>
+          </div>
+          <div style="font-size:10px;color:rgba(255,255,255,0.7);margin-bottom:8px;font-weight:700;letter-spacing:1px">בחר פרופיל</div>
+          <div style="background:#fff;border-radius:12px;padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:10px;">
+            <div style="width:40px;height:40px;border-radius:20px;background:rgba(29,117,189,0.15);display:flex;align-items:center;justify-content:center;font-weight:700;color:#1D75BD">ש</div>
+            <div style="flex:1"><div style="font-size:13px;font-weight:600;color:#3C4043">שרה</div><div style="font-size:10px;color:#9CA3AF">050-1234567</div></div>
+            <div style="font-size:16px;color:#1D75BD">→</div>
+          </div>
+          <div style="background:#fff;border-radius:12px;padding:12px;display:flex;align-items:center;gap:10px;">
+            <div style="width:40px;height:40px;border-radius:20px;background:rgba(29,117,189,0.15);display:flex;align-items:center;justify-content:center;font-weight:700;color:#1D75BD">ד</div>
+            <div style="flex:1"><div style="font-size:13px;font-weight:600;color:#3C4043">דוד</div><div style="font-size:10px;color:#9CA3AF">050-7654321</div></div>
+            <div style="font-size:16px;color:#1D75BD">→</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════ -->
+<!-- MAIN APP -->
+<!-- ══════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title">🏠 מסכים ראשיים</div>
+  <div class="grid">
+
+    <!-- DASHBOARD -->
+    <div class="phone-wrap">
+      <div class="screen-label">דשבורד ראשי</div>
+      <div class="phone">
+        <div class="dash-content" style="padding-bottom:52px">
+          <div class="top-bar">
+            <div class="ico-btn">☰</div>
+            <div class="brand">Fanta<b>Tech</b></div>
+            <div class="icons"><div class="ico-btn">🔔</div><div class="ico-btn">👤</div></div>
+          </div>
+          <div style="font-size:12px;color:rgba(255,255,255,0.6);margin-bottom:10px;text-align:right">שלום יוסי 👋 הבית מאובטח ✅</div>
+          <div class="stat-cards">
+            <div class="stat-card">
+              <div class="sc-icon">💡</div>
+              <div class="sc-val">3</div>
+              <div class="sc-label">אורות דלוקים</div>
+            </div>
+            <div class="stat-card">
+              <div class="sc-icon">🌡</div>
+              <div class="sc-val">24°C</div>
+              <div class="sc-label">נעים</div>
+            </div>
+          </div>
+          <div class="section-hdr">קישורים מהירים</div>
+          <div class="quick-grid">
+            <div class="quick-tile"><div class="qt-icon">⚡</div><div class="qt-title">אנרגיה</div><div class="qt-sub">245 kWh −12%</div></div>
+            <div class="quick-tile"><div class="qt-icon">🔗</div><div class="qt-title">אוטומציות</div><div class="qt-sub">4 פעילות</div></div>
+            <div class="quick-tile"><div class="qt-icon">☀️</div><div class="qt-title">סולארי</div><div class="qt-sub">4.7 kW ↑</div></div>
+            <div class="quick-tile"><div class="qt-icon">🔌</div><div class="qt-title">מנתקים</div><div class="qt-sub">8/9 פעיל</div></div>
+            <div class="quick-tile"><div class="qt-icon">🌡</div><div class="qt-title">דוד חכם</div><div class="qt-sub">60°C</div></div>
+            <div class="quick-tile"><div class="qt-icon">🪟</div><div class="qt-title">תריסים</div><div class="qt-sub">2 פתוחים</div></div>
+          </div>
+          <div class="section-hdr">סצנות</div>
+          <div class="scene-grid">
+            <div class="scene-btn sb-yellow"><div class="sb-icon">🌅</div><div class="sb-label">יציאה מהבית</div></div>
+            <div class="scene-btn sb-blue"><div class="sb-icon">⚡</div><div class="sb-label">כיבוי כל הבית</div></div>
+            <div class="scene-btn sb-purple"><div class="sb-icon">🌙</div><div class="sb-label">לילה טוב</div></div>
+            <div class="scene-btn sb-red"><div class="sb-icon">🎬</div><div class="sb-label">מצב סרט</div></div>
+          </div>
+        </div>
+        <div class="bottom-nav">
+          <div class="nav-item active"><div class="ni">🏠</div><div class="nl" style="color:#1A73E8">בית</div></div>
+          <div class="nav-item"><div class="ni">💡</div><div class="nl">מכשירים</div></div>
+          <div class="nav-item"><div class="ni">📷</div><div class="nl">מצלמות</div></div>
+          <div class="nav-item"><div class="ni">🤖</div><div class="nl">AI</div></div>
+          <div class="nav-item"><div class="ni">👤</div><div class="nl">פרופיל</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DEVICES -->
+    <div class="phone-wrap">
+      <div class="screen-label">מכשירים</div>
+      <div class="phone">
+        <div class="devices-content" style="padding-bottom:52px">
+          <div class="page-title"><span class="back">←</span>מכשירים</div>
+          <div class="cat-tabs">
+            <div class="cat-tab active">הכל</div>
+            <div class="cat-tab">💡 אורות</div>
+            <div class="cat-tab">❄️ מזגנים</div>
+            <div class="cat-tab">🔌 שקעים</div>
+            <div class="cat-tab">🪟 תריסים</div>
+          </div>
+          <div class="device-list">
+            <div class="device-item">
+              <div class="di-icon" style="background:rgba(255,213,0,0.1)">💡</div>
+              <div class="di-info"><div class="di-name">סלון — תאורה ראשית</div><div class="di-status">דולק • 80%</div></div>
+              <div class="toggle toggle-on"></div>
+            </div>
+            <div class="device-item">
+              <div class="di-icon" style="background:rgba(0,180,216,0.1)">❄️</div>
+              <div class="di-info"><div class="di-name">מזגן סלון</div><div class="di-status">דולק • 23°C קירור</div></div>
+              <div class="toggle toggle-on"></div>
+            </div>
+            <div class="device-item">
+              <div class="di-icon" style="background:rgba(123,47,190,0.1)">🔌</div>
+              <div class="di-info"><div class="di-name">שקע טלוויזיה</div><div class="di-status">דולק • 125W</div></div>
+              <div class="toggle toggle-on"></div>
+            </div>
+            <div class="device-item">
+              <div class="di-icon" style="background:rgba(255,255,255,0.05)">💡</div>
+              <div class="di-info"><div class="di-name">מנורת חדר שינה</div><div class="di-status">כבוי</div></div>
+              <div class="toggle toggle-off"></div>
+            </div>
+            <div class="device-item">
+              <div class="di-icon" style="background:rgba(45,156,219,0.1)">🪟</div>
+              <div class="di-info"><div class="di-name">תריס מטבח</div><div class="di-status">פתוח 60%</div></div>
+              <div class="toggle toggle-on"></div>
+            </div>
+          </div>
+        </div>
+        <div class="bottom-nav">
+          <div class="nav-item"><div class="ni">🏠</div><div class="nl">בית</div></div>
+          <div class="nav-item active"><div class="ni">💡</div><div class="nl" style="color:#1A73E8">מכשירים</div></div>
+          <div class="nav-item"><div class="ni">📷</div><div class="nl">מצלמות</div></div>
+          <div class="nav-item"><div class="ni">🤖</div><div class="nl">AI</div></div>
+          <div class="nav-item"><div class="ni">👤</div><div class="nl">פרופיל</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CAMERAS -->
+    <div class="phone-wrap">
+      <div class="screen-label">מצלמות</div>
+      <div class="phone">
+        <div class="cams-content" style="padding-bottom:52px">
+          <div class="page-title"><span class="back">←</span>מצלמות אבטחה</div>
+          <div style="display:flex;gap:6px;margin-bottom:10px;">
+            <div style="flex:1;background:rgba(52,168,83,0.1);border:1px solid rgba(52,168,83,0.3);border-radius:8px;padding:8px;text-align:center;">
+              <div style="font-size:18px;font-weight:700;color:#34A853">4</div>
+              <div style="font-size:9px;color:#6B7280">פעילות</div>
+            </div>
+            <div style="flex:1;background:rgba(251,188,4,0.1);border:1px solid rgba(251,188,4,0.3);border-radius:8px;padding:8px;text-align:center;">
+              <div style="font-size:18px;font-weight:700;color:#FBBC04">0</div>
+              <div style="font-size:9px;color:#6B7280">התראות</div>
+            </div>
+            <div style="flex:1;background:rgba(26,115,232,0.1);border:1px solid rgba(26,115,232,0.3);border-radius:8px;padding:8px;text-align:center;">
+              <div style="font-size:18px;font-weight:700;color:#1A73E8">HD</div>
+              <div style="font-size:9px;color:#6B7280">איכות</div>
+            </div>
+          </div>
+          <div class="cam-grid">
+            <div class="cam-tile">
+              <div class="cam-preview">📷<div class="cam-badge">LIVE</div></div>
+              <div class="cam-info"><div class="cam-name">כניסה ראשית</div><div class="cam-loc">חוץ</div></div>
+            </div>
+            <div class="cam-tile">
+              <div class="cam-preview">📷<div class="cam-badge">LIVE</div></div>
+              <div class="cam-info"><div class="cam-name">סלון</div><div class="cam-loc">פנים</div></div>
+            </div>
+            <div class="cam-tile">
+              <div class="cam-preview">📷<div class="cam-badge">LIVE</div></div>
+              <div class="cam-info"><div class="cam-name">גרז'</div><div class="cam-loc">חוץ</div></div>
+            </div>
+            <div class="cam-tile">
+              <div class="cam-preview">📷<div class="cam-badge">LIVE</div></div>
+              <div class="cam-info"><div class="cam-name">גינה</div><div class="cam-loc">חוץ</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="bottom-nav">
+          <div class="nav-item"><div class="ni">🏠</div><div class="nl">בית</div></div>
+          <div class="nav-item"><div class="ni">💡</div><div class="nl">מכשירים</div></div>
+          <div class="nav-item active"><div class="ni">📷</div><div class="nl" style="color:#1A73E8">מצלמות</div></div>
+          <div class="nav-item"><div class="ni">🤖</div><div class="nl">AI</div></div>
+          <div class="nav-item"><div class="ni">👤</div><div class="nl">פרופיל</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI -->
+    <div class="phone-wrap">
+      <div class="screen-label">FantaAI</div>
+      <div class="phone">
+        <div class="ai-content" style="padding-bottom:52px">
+          <div class="ai-header">
+            <div class="ai-logo">🤖</div>
+            <div class="ai-title">FantaAI</div>
+            <div class="ai-sub">העוזר החכם שלך</div>
+          </div>
+          <div class="chat-area">
+            <div class="bubble-ai">שלום! אני FantaAI, העוזר החכם שלך. כיצד אוכל לעזור היום? 🏠</div>
+            <div class="bubble-user">כבה את כל האורות בסלון</div>
+            <div class="bubble-ai">בצעתי! כיביתי 3 אורות בסלון ✅<br>הבית במצב חשכה.</div>
+            <div class="bubble-user">מה טמפרטורת הבית?</div>
+            <div class="bubble-ai">🌡 הבית עכשיו:<br>• סלון: 24°C<br>• חדר שינה: 22°C<br>• מזגן: פעיל, 23°C</div>
+          </div>
+          <div class="ai-input"><span>שאל אותי משהו...</span><span class="ai-send">➤</span></div>
+        </div>
+        <div class="bottom-nav">
+          <div class="nav-item"><div class="ni">🏠</div><div class="nl">בית</div></div>
+          <div class="nav-item"><div class="ni">💡</div><div class="nl">מכשירים</div></div>
+          <div class="nav-item"><div class="ni">📷</div><div class="nl">מצלמות</div></div>
+          <div class="nav-item active"><div class="ni">🤖</div><div class="nl" style="color:#1A73E8">AI</div></div>
+          <div class="nav-item"><div class="ni">👤</div><div class="nl">פרופיל</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROFILE -->
+    <div class="phone-wrap">
+      <div class="screen-label">פרופיל</div>
+      <div class="phone">
+        <div class="prof-content" style="padding-bottom:52px">
+          <div class="prof-header">
+            <div class="prof-avatar">👤</div>
+            <div class="prof-name">יוסי פקדו</div>
+            <div class="prof-email">yossi.fkadu@gmail.com</div>
+            <div style="display:inline-block;background:rgba(52,168,83,0.1);border:1px solid rgba(52,168,83,0.3);color:#34A853;padding:3px 12px;border-radius:20px;font-size:10px;font-weight:600;margin-top:8px">מנהל בית</div>
+          </div>
+          <div class="prof-item"><span class="pi-icon">🏠</span><span class="pi-text">ניהול בית</span><span class="pi-arr">›</span></div>
+          <div class="prof-item"><span class="pi-icon">🔔</span><span class="pi-text">התראות</span><span class="pi-arr">›</span></div>
+          <div class="prof-item"><span class="pi-icon">🌐</span><span class="pi-text">שפה</span><span class="pi-arr">›</span></div>
+          <div class="prof-item"><span class="pi-icon">🛡</span><span class="pi-text">אבטחה וסיסמה</span><span class="pi-arr">›</span></div>
+          <div class="prof-item"><span class="pi-icon">💳</span><span class="pi-text">תוכנית Premium</span><span class="pi-arr">›</span></div>
+          <div class="prof-item" style="border-color:rgba(234,67,53,0.3)"><span class="pi-icon">🚪</span><span class="pi-text" style="color:#EA4335">התנתק</span><span class="pi-arr">›</span></div>
+        </div>
+        <div class="bottom-nav">
+          <div class="nav-item"><div class="ni">🏠</div><div class="nl">בית</div></div>
+          <div class="nav-item"><div class="ni">💡</div><div class="nl">מכשירים</div></div>
+          <div class="nav-item"><div class="ni">📷</div><div class="nl">מצלמות</div></div>
+          <div class="nav-item"><div class="ni">🤖</div><div class="nl">AI</div></div>
+          <div class="nav-item active"><div class="ni">👤</div><div class="nl" style="color:#1A73E8">פרופיל</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════ -->
+<!-- FEATURE SCREENS -->
+<!-- ══════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title">⚡ מסכי תכונות</div>
+  <div class="grid">
+
+    <!-- SECURITY -->
+    <div class="phone-wrap">
+      <div class="screen-label">אבטחה</div>
+      <div class="phone">
+        <div class="sec-content">
+          <div class="page-title"><span class="back">←</span>מערכת אבטחה</div>
+          <div class="sec-status">
+            <div class="sec-icon">🛡</div>
+            <div class="sec-title">מצב: מאובטח</div>
+            <div class="sec-sub">כל החיישנים תקינים</div>
+          </div>
+          <div class="mode-row">
+            <div class="mode-btn mode-armed">מזוין</div>
+            <div class="mode-btn mode-home">ביתי</div>
+            <div class="mode-btn mode-disarmed">כבוי</div>
+          </div>
+          <div class="section-hdr">חיישנים</div>
+          <div class="device-list">
+            <div class="device-item"><div class="di-icon" style="background:rgba(52,168,83,0.1)">🚪</div><div class="di-info"><div class="di-name">דלת כניסה</div><div class="di-status" style="color:#34A853">סגור ✅</div></div></div>
+            <div class="device-item"><div class="di-icon" style="background:rgba(52,168,83,0.1)">🪟</div><div class="di-info"><div class="di-name">חלון סלון</div><div class="di-status" style="color:#34A853">סגור ✅</div></div></div>
+            <div class="device-item"><div class="di-icon" style="background:rgba(52,168,83,0.1)">🏃</div><div class="di-info"><div class="di-name">חיישן תנועה</div><div class="di-status" style="color:#34A853">שקט ✅</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ENERGY -->
+    <div class="phone-wrap">
+      <div class="screen-label">אנרגיה</div>
+      <div class="phone">
+        <div class="energy-content">
+          <div class="page-title"><span class="back">←</span>צריכת אנרגיה</div>
+          <div class="energy-big">
+            <div class="energy-num">245</div>
+            <div class="energy-unit">kWh החודש</div>
+            <div class="energy-change">↓ 12% מהחודש שעבר</div>
+          </div>
+          <div class="section-hdr">שימוש שבועי</div>
+          <div class="bar-chart">
+            <div style="display:flex;flex-direction:column;align-items:center;flex:1">
+              <div class="bar" style="height:30px;background:rgba(255,213,0,0.3)"></div>
+              <div class="bar-label">א</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;flex:1">
+              <div class="bar" style="height:45px;background:rgba(255,213,0,0.4)"></div>
+              <div class="bar-label">ב</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;flex:1">
+              <div class="bar" style="height:35px;background:rgba(255,213,0,0.35)"></div>
+              <div class="bar-label">ג</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;flex:1">
+              <div class="bar" style="height:55px;background:rgba(255,213,0,0.5)"></div>
+              <div class="bar-label">ד</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;flex:1">
+              <div class="bar" style="height:40px;background:rgba(255,213,0,0.4)"></div>
+              <div class="bar-label">ה</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;flex:1">
+              <div class="bar" style="height:25px;background:rgba(255,213,0,0.25)"></div>
+              <div class="bar-label">ו</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;flex:1">
+              <div class="bar" style="height:60px;background:#FFD500"></div>
+              <div class="bar-label">ש</div>
+            </div>
+          </div>
+          <div class="quick-grid" style="margin-top:10px">
+            <div class="quick-tile"><div class="qt-icon">💡</div><div class="qt-title">אורות</div><div class="qt-sub">42%</div></div>
+            <div class="quick-tile"><div class="qt-icon">❄️</div><div class="qt-title">מזגנים</div><div class="qt-sub">31%</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AUTOMATIONS -->
+    <div class="phone-wrap">
+      <div class="screen-label">אוטומציות</div>
+      <div class="phone">
+        <div class="auto-content">
+          <div class="page-title"><span class="back">←</span>אוטומציות</div>
+          <div class="auto-item">
+            <div class="auto-ico" style="background:rgba(255,213,0,0.1)">🌅</div>
+            <div class="auto-info"><div class="auto-name">השכמה בבוקר</div><div class="auto-trigger">⏰ 07:00 • כל יום</div></div>
+            <div class="toggle toggle-on"></div>
+          </div>
+          <div class="auto-item">
+            <div class="auto-ico" style="background:rgba(26,115,232,0.1)">🔐</div>
+            <div class="auto-info"><div class="auto-name">נעילה בלילה</div><div class="auto-trigger">⏰ 23:00 • א-ה</div></div>
+            <div class="toggle toggle-on"></div>
+          </div>
+          <div class="auto-item">
+            <div class="auto-ico" style="background:rgba(52,168,83,0.1)">🏃</div>
+            <div class="auto-info"><div class="auto-name">כניסה לבית</div><div class="auto-trigger">📍 כשמגיעים הביתה</div></div>
+            <div class="toggle toggle-on"></div>
+          </div>
+          <div class="auto-item">
+            <div class="auto-ico" style="background:rgba(156,122,255,0.1)">🌡</div>
+            <div class="auto-info"><div class="auto-name">ניהול טמפרטורה</div><div class="auto-trigger">🌡 אם מעל 28°C</div></div>
+            <div class="toggle toggle-off"></div>
+          </div>
+          <div class="auto-item">
+            <div class="auto-ico" style="background:rgba(255,107,107,0.1)">🎬</div>
+            <div class="auto-info"><div class="auto-name">מצב סרט</div><div class="auto-trigger">📺 בהפעלת טלוויזיה</div></div>
+            <div class="toggle toggle-on"></div>
+          </div>
+          <div style="margin-top:12px">
+            <div class="btn-grad" style="text-align:center;border-radius:10px;padding:12px;font-size:13px">+ הוסף אוטומציה</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SOLAR -->
+    <div class="phone-wrap">
+      <div class="screen-label">סולארי</div>
+      <div class="phone">
+        <div class="solar-content">
+          <div class="page-title"><span class="back">←</span>פאנלים סולאריים</div>
+          <div class="solar-big">
+            <div class="solar-circle">
+              <div class="solar-inner">
+                <div class="solar-kw">4.7</div>
+                <div class="solar-unit">kW כרגע</div>
+              </div>
+            </div>
+          </div>
+          <div class="solar-stats">
+            <div class="solar-stat"><div class="ss-val">28.4</div><div class="ss-label">kWh היום</div></div>
+            <div class="solar-stat"><div class="ss-val">642</div><div class="ss-label">kWh חודש</div></div>
+            <div class="solar-stat"><div class="ss-val">₪184</div><div class="ss-label">חסכון</div></div>
+          </div>
+          <div class="section-hdr">תרשים יומי</div>
+          <div class="bar-chart">
+            <div style="display:flex;flex-direction:column;align-items:center;flex:1"><div class="bar" style="height:5px;background:rgba(255,179,0,0.3)"></div><div class="bar-label">6</div></div>
+            <div style="display:flex;flex-direction:column;align-items:center;flex:1"><div class="bar" style="height:20px;background:rgba(255,179,0,0.4)"></div><div class="bar-label">8</div></div>
+            <div style="display:flex;flex-direction:column;align-items:center;flex:1"><div class="bar" style="height:42px;background:rgba(255,179,0,0.6)"></div><div class="bar-label">10</div></div>
+            <div style="display:flex;flex-direction:column;align-items:center;flex:1"><div class="bar" style="height:58px;background:#FFB300"></div><div class="bar-label">12</div></div>
+            <div style="display:flex;flex-direction:column;align-items:center;flex:1"><div class="bar" style="height:50px;background:rgba(255,179,0,0.8)"></div><div class="bar-label">14</div></div>
+            <div style="display:flex;flex-direction:column;align-items:center;flex:1"><div class="bar" style="height:32px;background:rgba(255,179,0,0.5)"></div><div class="bar-label">16</div></div>
+            <div style="display:flex;flex-direction:column;align-items:center;flex:1"><div class="bar" style="height:12px;background:rgba(255,179,0,0.3)"></div><div class="bar-label">18</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOILER -->
+    <div class="phone-wrap">
+      <div class="screen-label">דוד חכם</div>
+      <div class="phone">
+        <div class="boiler-content">
+          <div class="page-title"><span class="back">←</span>דוד חכם</div>
+          <div class="boiler-big">
+            <div class="boiler-tank">
+              <div class="boiler-fill"></div>
+              <div class="boiler-label">60°</div>
+            </div>
+            <div style="font-size:13px;color:#6B7280;margin-bottom:4px">טמפרטורה נוכחית</div>
+            <div style="font-size:32px;font-weight:800;color:#FF5722">60°C</div>
+          </div>
+          <div class="solar-stats" style="margin-bottom:10px">
+            <div class="solar-stat"><div class="ss-val" style="color:#FF5722">יעד</div><div class="ss-label">60°C</div></div>
+            <div class="solar-stat"><div class="ss-val" style="color:#34A853">פעיל</div><div class="ss-label">מצב</div></div>
+            <div class="solar-stat"><div class="ss-val" style="color:#1A73E8">3h</div><div class="ss-label">הופעל</div></div>
+          </div>
+          <div class="section-hdr">תזמון שבועי</div>
+          <div class="quick-grid">
+            <div class="quick-tile"><div class="qt-title">☀️ בוקר</div><div class="qt-sub">06:00–08:00</div></div>
+            <div class="quick-tile"><div class="qt-title">🌙 ערב</div><div class="qt-sub">20:00–22:00</div></div>
+          </div>
+          <div style="margin-top:10px">
+            <div class="btn-grad" style="text-align:center;border-radius:10px;padding:12px;font-size:13px">⚡ הפעל עכשיו</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROOMS -->
+    <div class="phone-wrap">
+      <div class="screen-label">חדרים</div>
+      <div class="phone">
+        <div class="rooms-content">
+          <div class="page-title"><span class="back">←</span>חדרי הבית</div>
+          <div class="room-grid">
+            <div class="room-tile"><div class="room-ico">🛋</div><div class="room-name">סלון</div><div class="room-devices">5 מכשירים</div></div>
+            <div class="room-tile"><div class="room-ico">🛏</div><div class="room-name">חדר שינה</div><div class="room-devices">3 מכשירים</div></div>
+            <div class="room-tile"><div class="room-ico">🍳</div><div class="room-name">מטבח</div><div class="room-devices">4 מכשירים</div></div>
+            <div class="room-tile"><div class="room-ico">🚿</div><div class="room-name">אמבטיה</div><div class="room-devices">2 מכשירים</div></div>
+            <div class="room-tile"><div class="room-ico">🏢</div><div class="room-name">משרד</div><div class="room-devices">3 מכשירים</div></div>
+            <div class="room-tile"><div class="room-ico">🌿</div><div class="room-name">גינה</div><div class="room-devices">2 מכשירים</div></div>
+          </div>
+          <div style="margin-top:12px">
+            <div class="btn-grad" style="text-align:center;border-radius:10px;padding:12px;font-size:13px">+ הוסף חדר</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════ -->
+<!-- MOVIE MODE -->
+<!-- ══════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title">🎬 סצנות חכמות</div>
+  <div class="grid">
+    <div class="phone-wrap">
+      <div class="screen-label">מצב סרט — פעיל</div>
+      <div class="phone">
+        <div class="dash-content" style="padding-bottom:52px">
+          <div class="top-bar">
+            <div class="ico-btn">☰</div>
+            <div class="brand">Fanta<b>Tech</b></div>
+            <div class="icons"><div class="ico-btn">🔔</div><div class="ico-btn">👤</div></div>
+          </div>
+          <div style="background:rgba(255,107,107,0.1);border:1px solid rgba(255,107,107,0.3);border-radius:14px;padding:16px;text-align:center;margin-bottom:14px;">
+            <div style="font-size:32px;margin-bottom:8px">🎬</div>
+            <div style="font-size:16px;font-weight:700;color:#FF6B6B">מצב סרט פעיל</div>
+            <div style="font-size:11px;color:rgba(255,255,255,0.55);margin-top:4px">האורות עומעמו • תריסים סגורים • מזגן 23°C</div>
+          </div>
+          <div class="section-hdr">שינויים שבוצעו</div>
+          <div class="device-list">
+            <div class="device-item"><div class="di-icon" style="background:rgba(255,213,0,0.1)">💡</div><div class="di-info"><div class="di-name">כל האורות</div><div class="di-status">עמעום ל-15%</div></div><div style="font-size:11px;color:#FF6B6B">●</div></div>
+            <div class="device-item"><div class="di-icon" style="background:rgba(45,156,219,0.1)">🪟</div><div class="di-info"><div class="di-name">כל התריסים</div><div class="di-status">סגורים לחלוטין</div></div><div style="font-size:11px;color:#FF6B6B">●</div></div>
+            <div class="device-item"><div class="di-icon" style="background:rgba(0,180,216,0.1)">❄️</div><div class="di-info"><div class="di-name">מזגן סלון</div><div class="di-status">23°C קירור</div></div><div style="font-size:11px;color:#FF6B6B">●</div></div>
+          </div>
+          <div style="margin-top:14px">
+            <div style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:12px;text-align:center;font-size:13px;font-weight:600;color:#fff">
+              ✖ בטל מצב סרט
+            </div>
+          </div>
+        </div>
+        <div class="bottom-nav">
+          <div class="nav-item active"><div class="ni">🏠</div><div class="nl" style="color:#1A73E8">בית</div></div>
+          <div class="nav-item"><div class="ni">💡</div><div class="nl">מכשירים</div></div>
+          <div class="nav-item"><div class="ni">📷</div><div class="nl">מצלמות</div></div>
+          <div class="nav-item"><div class="ni">🤖</div><div class="nl">AI</div></div>
+          <div class="nav-item"><div class="ni">👤</div><div class="nl">פרופיל</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="text-align:center;padding:40px 0;color:#374151;font-size:13px">
+  FantaTech Smart Home &amp; Security — כל הזכויות שמורות 2026
+</div>
+
+</body>
+</html>
