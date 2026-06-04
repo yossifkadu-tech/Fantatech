@@ -9,6 +9,9 @@ import 'custom_scene.dart';
 import '../mock/mock_data.dart';
 import '../l10n/strings.dart';
 import '../services/ai/azure_face_service.dart';
+import '../services/control/device_commander.dart';
+import '../services/gateways/gateway_manager.dart';
+import '../theme/app_theme.dart';
 
 enum SecurityMode { armed, disarmed }
 enum AppLocale { hebrew, english, arabic, amharic, spanish, russian }
@@ -106,6 +109,10 @@ class AppState extends ChangeNotifier {
 
   SecurityMode _securityMode = SecurityMode.disarmed;
   ThemeMode _themeMode = ThemeMode.dark;
+  AppThemePrefs _themePrefs = const AppThemePrefs();
+  bool _gridLayout = false; // home screen layout: false = classic, true = grid
+  GatewayManager? _gateways;
+  void attachGateways(GatewayManager m) => _gateways = m;
   AppLocale _locale = AppLocale.hebrew;
   UserPlan _userPlan = UserPlan.advancedPlus; // default for demo
   AdTrack _adTrack = AdTrack.featured;
@@ -149,6 +156,8 @@ class AppState extends ChangeNotifier {
 
   SecurityMode get securityMode => _securityMode;
   ThemeMode get themeMode => _themeMode;
+  AppThemePrefs get themePrefs => _themePrefs;
+  bool get gridLayout => _gridLayout;
   AppLocale get locale => _locale;
   UserPlan get userPlan => _userPlan;
   AdTrack get adTrack => _adTrack;
@@ -384,8 +393,21 @@ class AppState extends ChangeNotifier {
 
   void toggleDevice(String id) {
     final device = _devices.firstWhere((d) => d.id == id);
-    device.isOn = !device.isOn;
+    final wantOn = !device.isOn;
+    // Optimistic UI update — feels instant to the user.
+    device.isOn = wantOn;
     notifyListeners();
+    // Fire-and-forget: send the actual command to the physical device.
+    final gw = _gateways;
+    if (gw != null) {
+      DeviceCommander.setOnOff(device, wantOn, gateways: gw).then((ok) {
+        if (!ok) {
+          // Revert UI if the command failed (gateway offline, wrong creds, …)
+          device.isOn = !wantOn;
+          notifyListeners();
+        }
+      });
+    }
   }
 
   void setDeviceAttribute(String id, String key, dynamic value) {
@@ -402,6 +424,19 @@ class AppState extends ChangeNotifier {
 
   void setTheme(ThemeMode mode) {
     _themeMode = mode;
+    notifyListeners();
+  }
+
+  void setGridLayout(bool value) {
+    _gridLayout = value;
+    notifyListeners();
+    SharedPreferences.getInstance()
+        .then((p) => p.setBool('ft_grid_layout', value));
+  }
+
+  void setThemePrefs(AppThemePrefs prefs) {
+    _themePrefs = prefs;
+    _saveThemePrefs();
     notifyListeners();
   }
 
@@ -551,6 +586,20 @@ class AppState extends ChangeNotifier {
     // Load home style
     _homeIconCode   = prefs.getInt('home_icon_code')   ?? _homeIconCode;
     _homeColorValue = prefs.getInt('home_color_value') ?? _homeColorValue;
+    _gridLayout     = prefs.getBool('ft_grid_layout')  ?? false;
+    // Load theme prefs
+    final tpFont    = prefs.getString('tp_font');
+    final tpAccent  = prefs.getInt('tp_accent');
+    final tpBg      = prefs.getString('tp_bg');
+    final tpRadius  = prefs.getString('tp_radius');
+    if (tpFont != null || tpAccent != null || tpBg != null || tpRadius != null) {
+      _themePrefs = AppThemePrefs.fromMap({
+        'font':    tpFont    ?? 'heebo',
+        'accent':  tpAccent  ?? 0xFF1A73E8,
+        'bgStyle': tpBg      ?? 'darkBlue',
+        'radius':  tpRadius  ?? 'normal',
+      });
+    }
     // Load Azure credentials + known persons
     _azureEndpoint = prefs.getString('azure_endpoint');
     _azureApiKey   = prefs.getString('azure_api_key');
@@ -564,6 +613,15 @@ class AppState extends ChangeNotifier {
         .map((s) => CustomScene.fromJson(jsonDecode(s) as Map<String, dynamic>))
         .toList();
     notifyListeners();
+  }
+
+  Future<void> _saveThemePrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    final m = _themePrefs.toMap();
+    await prefs.setString('tp_font',   m['font']    as String);
+    await prefs.setInt   ('tp_accent', m['accent']  as int);
+    await prefs.setString('tp_bg',     m['bgStyle'] as String);
+    await prefs.setString('tp_radius', m['radius']  as String);
   }
 
   Future<void> _saveDevicesToPrefs() async {

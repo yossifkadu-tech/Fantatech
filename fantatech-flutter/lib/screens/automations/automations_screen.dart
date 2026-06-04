@@ -839,6 +839,8 @@ class _EditAutomationSheetState extends State<_EditAutomationSheet> {
                   style: const TextStyle(color: Colors.white),
                   decoration: _inputDeco(s.autoCondition),
                 ),
+                const SizedBox(height: 10),
+                _HebrewCalendarConditions(controller: _condCtrl),
                 const SizedBox(height: 12),
 
                 TextField(
@@ -905,4 +907,202 @@ class _AutomationMeta {
     required this.name,
     required this.description,
   });
+}
+
+// ─────────────────────────────────────────────────────────────
+// Hebrew-calendar condition picker
+//
+// Descriptive quick-picks that fill the automation's condition field with a
+// Hebrew-calendar trigger (Shabbat, holidays, Rosh Chodesh, a specific Hebrew
+// date, etc.). No scheduling engine yet — these describe the intended trigger,
+// matching how every other condition in the app works today.
+// ─────────────────────────────────────────────────────────────
+class _HebrewCalendarConditions extends StatelessWidget {
+  final TextEditingController controller;
+  const _HebrewCalendarConditions({required this.controller});
+
+  static const _presets = <String>[
+    'כניסת שבת',
+    'צאת שבת',
+    'ערב חג',
+    'חג / יום טוב',
+    'ראש חודש',
+    'חול המועד',
+  ];
+
+  static const _hebrewMonths = <String>[
+    'תשרי', 'חשוון', 'כסלו', 'טבת', 'שבט', 'אדר', 'אדר א׳', 'אדר ב׳',
+    'ניסן', 'אייר', 'סיוון', 'תמוז', 'אב', 'אלול',
+  ];
+
+  /// Hebrew gematria label for a day 1..30.
+  static String _gematriaDay(int d) {
+    const ones = ['', 'א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט'];
+    const tens = ['', 'י', 'כ', 'ל'];
+    if (d == 15) return 'ט״ו';
+    if (d == 16) return 'ט״ז';
+    final t = d ~/ 10, o = d % 10;
+    final letters = '${tens[t]}${ones[o]}';
+    if (letters.length == 1) return '$letters׳';
+    return '${letters.substring(0, letters.length - 1)}״${letters.substring(letters.length - 1)}';
+  }
+
+  Future<void> _pickHebrewDate(BuildContext context) async {
+    int day = 15;
+    int monthIdx = 5; // אדר
+    final result = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: const Color(0xFF12121E),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheet) => Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Center(
+                child: Text('בחר תאריך עברי',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold)),
+              ),
+              const SizedBox(height: 18),
+              Row(children: [
+                // Day
+                Expanded(
+                  child: _wheelBox(
+                    label: 'יום',
+                    child: DropdownButton<int>(
+                      value: day,
+                      isExpanded: true,
+                      dropdownColor: const Color(0xFF1B1B2A),
+                      underline: const SizedBox(),
+                      style: const TextStyle(color: Colors.white, fontSize: 15),
+                      items: [
+                        for (var d = 1; d <= 30; d++)
+                          DropdownMenuItem(value: d, child: Text(_gematriaDay(d))),
+                      ],
+                      onChanged: (v) => setSheet(() => day = v ?? day),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Month
+                Expanded(
+                  flex: 2,
+                  child: _wheelBox(
+                    label: 'חודש',
+                    child: DropdownButton<int>(
+                      value: monthIdx,
+                      isExpanded: true,
+                      dropdownColor: const Color(0xFF1B1B2A),
+                      underline: const SizedBox(),
+                      style: const TextStyle(color: Colors.white, fontSize: 15),
+                      items: [
+                        for (var i = 0; i < _hebrewMonths.length; i++)
+                          DropdownMenuItem(value: i, child: Text(_hebrewMonths[i])),
+                      ],
+                      onChanged: (v) => setSheet(() => monthIdx = v ?? monthIdx),
+                    ),
+                  ),
+                ),
+              ]),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(ctx,
+                      'תאריך עברי: ${_gematriaDay(day)} ב${_hebrewMonths[monthIdx]}'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(13)),
+                  ),
+                  child: const Text('אישור',
+                      style: TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.w600)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (result != null) controller.text = result;
+  }
+
+  static Widget _wheelBox({required String label, required Widget child}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label,
+            style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.5), fontSize: 11)),
+        const SizedBox(height: 4),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+          ),
+          child: child,
+        ),
+      ],
+    );
+  }
+
+  Widget _chip(String label, VoidCallback onTap, {bool outlined = false}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        decoration: BoxDecoration(
+          color: AppColors.primary.withValues(alpha: outlined ? 0.0 : 0.12),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+              color: AppColors.primary.withValues(alpha: 0.45), width: 1),
+        ),
+        child: Text(label,
+            style: const TextStyle(
+                color: AppColors.primary,
+                fontSize: 12,
+                fontWeight: FontWeight.w600)),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(children: [
+          const Icon(Icons.calendar_month_outlined,
+              size: 14, color: AppColors.primary),
+          const SizedBox(width: 6),
+          Text('לוח עברי',
+              style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.6),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5)),
+        ]),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final p in _presets) _chip(p, () => controller.text = p),
+            _chip('תאריך עברי…', () => _pickHebrewDate(context), outlined: true),
+          ],
+        ),
+      ],
+    );
+  }
 }

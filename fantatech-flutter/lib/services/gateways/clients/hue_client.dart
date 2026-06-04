@@ -123,6 +123,43 @@ class HueGatewayClient {
     }
   }
 
+  // ── Device control ─────────────────────────────────────────────────────────
+  //
+  // Hue v1: PUT /api/{user}/lights/{id}/state  body: {"on": true, "bri": 254}
+
+  static Future<bool> setOnOff(
+      String ip, String username, String lightId, bool isOn) =>
+      _putState(ip, username, lightId, {'on': isOn});
+
+  /// Brightness 0..100 → mapped to Hue 0..254
+  static Future<bool> setBrightness(
+      String ip, String username, String lightId, int level) {
+    final bri = (level.clamp(1, 100) * 2.54).round();
+    return _putState(ip, username, lightId, {'on': true, 'bri': bri});
+  }
+
+  static Future<bool> setColorTemperature(
+      String ip, String username, String lightId, int mireds) =>
+      _putState(ip, username, lightId,
+          {'on': true, 'ct': mireds.clamp(153, 500)});
+
+  /// Hue 0..65535, Sat 0..254
+  static Future<bool> setColor(String ip, String username, String lightId,
+      int hue, int sat) =>
+      _putState(ip, username, lightId, {
+        'on':  true,
+        'hue': hue.clamp(0, 65535),
+        'sat': sat.clamp(0, 254),
+      });
+
+  static Future<bool> _putState(String ip, String username, String lightId,
+      Map<String, dynamic> state) async {
+    final raw = await _request(
+        ip, '/api/$username/lights/$lightId/state', 'PUT',
+        jsonEncode(state));
+    return raw != null && raw.contains('"success"');
+  }
+
   // ── Bridge info ────────────────────────────────────────────────────────────
 
   static Future<String?> getBridgeName(String ip) async {

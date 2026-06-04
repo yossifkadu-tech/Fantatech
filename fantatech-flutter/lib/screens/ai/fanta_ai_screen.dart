@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../../models/app_state.dart';
 import '../../l10n/strings.dart';
 import '../../theme/app_theme.dart';
@@ -16,9 +17,14 @@ class _FantaAIScreenState extends State<FantaAIScreen>
     with TickerProviderStateMixin {
   final _inputCtrl = TextEditingController();
   final _scrollCtrl = ScrollController();
+  final _inputFocus = FocusNode();
   final List<_ChatMessage> _messages = [];
   bool _isThinking = false;
   bool _isListening = false;
+
+  // Speech-to-text
+  final stt.SpeechToText _speech = stt.SpeechToText();
+  bool _speechAvailable = false;
 
   late AnimationController _orbPulse;
   late AnimationController _orbGlow;
@@ -48,6 +54,84 @@ class _FantaAIScreenState extends State<FantaAIScreen>
     _glowAnim = Tween<double>(begin: 0.5, end: 1.0).animate(
       CurvedAnimation(parent: _orbGlow, curve: Curves.easeInOut),
     );
+
+    _initSpeech();
+  }
+
+  Future<void> _initSpeech() async {
+    try {
+      _speechAvailable = await _speech.initialize(
+        onError: (e) {
+          if (mounted) setState(() => _isListening = false);
+        },
+        onStatus: (status) {
+          // status: 'listening' | 'notListening' | 'done'
+          if (status == 'done' || status == 'notListening') {
+            if (mounted && _isListening) {
+              setState(() => _isListening = false);
+            }
+          }
+        },
+      );
+      if (mounted) setState(() {});
+    } catch (_) {
+      _speechAvailable = false;
+    }
+  }
+
+  Future<void> _toggleListening() async {
+    if (_isListening) {
+      await _speech.stop();
+      setState(() => _isListening = false);
+      // If we got transcribed text, send it as a message.
+      final text = _inputCtrl.text.trim();
+      if (text.isNotEmpty) {
+        _sendMessage(text);
+      }
+      return;
+    }
+
+    if (!_speechAvailable) {
+      await _initSpeech();
+    }
+    if (!mounted) return;
+    if (!_speechAvailable) {
+      final s = context.read<AppState>().strings;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(s.aiMicUnavailable),
+        behavior: SnackBarBehavior.floating,
+      ));
+      return;
+    }
+
+    final locale = _speechLocaleId(context.read<AppState>().locale);
+    setState(() => _isListening = true);
+    await _speech.listen(
+      onResult: (res) {
+        setState(() {
+          _inputCtrl.text = res.recognizedWords;
+          _inputCtrl.selection = TextSelection.fromPosition(
+              TextPosition(offset: _inputCtrl.text.length));
+        });
+      },
+      listenOptions: stt.SpeechListenOptions(
+        partialResults: true,
+        listenMode: stt.ListenMode.dictation,
+        cancelOnError: true,
+        localeId: locale,
+      ),
+    );
+  }
+
+  String _speechLocaleId(AppLocale loc) {
+    switch (loc) {
+      case AppLocale.hebrew:  return 'he-IL';
+      case AppLocale.english: return 'en-US';
+      case AppLocale.arabic:  return 'ar-SA';
+      case AppLocale.amharic: return 'am-ET';
+      case AppLocale.spanish: return 'es-ES';
+      case AppLocale.russian: return 'ru-RU';
+    }
   }
 
   @override
@@ -56,11 +140,12 @@ class _FantaAIScreenState extends State<FantaAIScreen>
     _orbGlow.dispose();
     _inputCtrl.dispose();
     _scrollCtrl.dispose();
+    _inputFocus.dispose();
     super.dispose();
   }
 
   Future<void> _sendMessage(String text, {int sugIndex = -1}) async {
-    if (text.trim().isEmpty) return;
+    if (text.trim().isEmpty || _isThinking) return;
     _inputCtrl.clear();
 
     setState(() {
@@ -73,12 +158,15 @@ class _FantaAIScreenState extends State<FantaAIScreen>
     await Future.delayed(const Duration(milliseconds: 1200));
 
     final replyKey = _generateReply(text, sugIndex: sugIndex);
+    if (!mounted) return;
     setState(() {
       _isThinking = false;
       _messages.add(_ChatMessage(text: '', isUser: false, replyKey: replyKey));
     });
 
     _scrollToBottom();
+    // Re-focus the input so the user can immediately type another message.
+    _inputFocus.requestFocus();
   }
 
   _ReplyKey _generateReply(String input, {int sugIndex = -1}) {
@@ -231,9 +319,9 @@ class _FantaAIScreenState extends State<FantaAIScreen>
       ),
       child: Row(
         children: [
-          // Mic button
+          // Mic button — real speech-to-text
           GestureDetector(
-            onTap: () => setState(() => _isListening = !_isListening),
+            onTap: _toggleListening,
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 250),
               width: 46,
@@ -276,7 +364,9 @@ class _FantaAIScreenState extends State<FantaAIScreen>
               ),
               child: TextField(
                 controller: _inputCtrl,
+                focusNode: _inputFocus,
                 textDirection: textDir,
+                textInputAction: TextInputAction.send,
                 style: const TextStyle(color: Colors.white, fontSize: 14),
                 decoration: InputDecoration(
                   hintText: s.aiInputHint,
@@ -289,16 +379,33 @@ class _FantaAIScreenState extends State<FantaAIScreen>
                     horizontal: 18,
                     vertical: 12,
                   ),
-                  suffixIcon: GestureDetector(
-                    onTap: () => _sendMessage(_inputCtrl.text),
-                    child: Icon(
-                      Icons.send_rounded,
-                      color: AppColors.primary.withValues(alpha: 0.7),
-                      size: 20,
-                    ),
-                  ),
                 ),
-                onSubmitted: _sendMessage,
+                onSubmitted: (t) => _sendMessage(t),
+              ),
+            ),
+          ),
+
+          const SizedBox(width: 8),
+
+          // Send button — proper 44px tap target
+          Material(
+            color: AppColors.primary,
+            shape: const CircleBorder(),
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: _isThinking
+                  ? null
+                  : () => _sendMessage(_inputCtrl.text),
+              child: SizedBox(
+                width: 46,
+                height: 46,
+                child: Icon(
+                  Icons.send_rounded,
+                  color: _isThinking
+                      ? Colors.white.withValues(alpha: 0.4)
+                      : Colors.white,
+                  size: 20,
+                ),
               ),
             ),
           ),

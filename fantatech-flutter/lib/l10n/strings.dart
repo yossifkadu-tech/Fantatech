@@ -103,6 +103,10 @@ class S {
   final String tvSource;
   final String tvChannel;
   final String tvMute;
+  final String faq1Q; final String faq1A;
+  final String faq2Q; final String faq2A;
+  final String faq3Q; final String faq3A;
+  final String faq4Q; final String faq4A;
   final String energyTitle;
   final String automationsTitle;
   final String activeAutomations;
@@ -119,6 +123,17 @@ class S {
   final String themeLabel;
   final String darkMode;
   final String lightMode;
+  final String appearanceTitle;
+  final String themeFont;
+  final String themeAccent;
+  final String themeBg;
+  final String themeRadius;
+  final String themeBgDarkBlue;
+  final String themeBgAmoled;
+  final String themeBgDarkGray;
+  final String themeRadiusSharp;
+  final String themeRadiusNormal;
+  final String themeRadiusRound;
   final String saveChanges;
   final String editProfile;
   final String fullName;
@@ -198,6 +213,7 @@ class S {
 
   // AI screen
   final String aiInputHint;
+  final String aiMicUnavailable;
   final String aiSug1;
   final String aiSug2;
   final String aiSug3;
@@ -729,6 +745,10 @@ class S {
     required this.tvSource,
     required this.tvChannel,
     required this.tvMute,
+    required this.faq1Q, required this.faq1A,
+    required this.faq2Q, required this.faq2A,
+    required this.faq3Q, required this.faq3A,
+    required this.faq4Q, required this.faq4A,
     required this.energyTitle,
     required this.automationsTitle,
     required this.activeAutomations,
@@ -743,6 +763,17 @@ class S {
     required this.themeLabel,
     required this.darkMode,
     required this.lightMode,
+    required this.appearanceTitle,
+    required this.themeFont,
+    required this.themeAccent,
+    required this.themeBg,
+    required this.themeRadius,
+    required this.themeBgDarkBlue,
+    required this.themeBgAmoled,
+    required this.themeBgDarkGray,
+    required this.themeRadiusSharp,
+    required this.themeRadiusNormal,
+    required this.themeRadiusRound,
     required this.saveChanges,
     required this.editProfile,
     required this.fullName,
@@ -805,6 +836,7 @@ class S {
     required this.notifSettings,
     required this.aboutApp,
     required this.aiInputHint,
+    required this.aiMicUnavailable,
     required this.aiSug1,
     required this.aiSug2,
     required this.aiSug3,
@@ -1099,11 +1131,12 @@ class S {
     acMode: 'מצב', acFanSpeed: 'מהירות מאוורר', acSwing: 'סוויינג', acMethod: 'שיטת בקרה', modeCool: 'קירור', modeHeat: 'חימום', modeFan: 'מאוורר', modeDry: 'ייבוש', modeAuto: 'אוטו', fanLow: 'נמוך', fanMed: 'בינוני', fanHigh: 'גבוה',
     mediaMaster: 'עוצמה כללית', mediaParty: 'נגן בכל הרמקולים', mediaStopAll: 'עצור הכל',
     tvRemote: 'שלט טלוויזיה', tvSource: 'מקור', tvChannel: 'ערוץ', tvMute: 'השתק',
+    faq1Q: 'כיצד מוסיפים מכשיר?', faq1A: 'לחץ על + בלוח הראשי ובחר את המכשיר מהקטלוג.', faq2Q: 'כיצד משנים שפה?', faq2A: 'פרופיל ← הגדרות ← שפה.', faq3Q: 'האם האפליקציה עובדת ללא אינטרנט?', faq3A: 'פקודות מקומיות עובדות. ענן דורש אינטרנט.', faq4Q: 'כיצד מגדירים אוטומציה?', faq4A: 'לחץ על "אוטומציות" בתפריט התחתון ← הוסף.',
     energyTitle: 'צריכת אנרגיה', automationsTitle: 'אוטומציות', activeAutomations: 'אוטומציות פעילות',
     myProfile: 'הפרופיל שלי', myHome: 'הבית שלי', usersTitle: 'משתמשים',
     subscriptionTitle: 'מנוי וחיוב', settingsTitle: 'הגדרות', helpTitle: 'עזרה ותמיכה',
     signOut: 'יציאה מחשבון', languageLabel: 'שפה', themeLabel: 'מצב תצוגה',
-    darkMode: 'כהה', lightMode: 'בהיר', saveChanges: 'שמור שינויים',
+    darkMode: 'כהה', lightMode: 'בהיר', appearanceTitle: 'מראה', themeFont: 'פונט', themeAccent: 'צבע ראשי', themeBg: 'רקע', themeRadius: 'עיגול', themeBgDarkBlue: 'כחול כהה', themeBgAmoled: 'שחור AMOLED', themeBgDarkGray: 'אפור כהה', themeRadiusSharp: 'חד', themeRadiusNormal: 'רגיל', themeRadiusRound: 'מעוגל', saveChanges: 'שמור שינויים',
     editProfile: 'עריכת פרופיל', fullName: 'שם מלא', emailLabel: 'אימייל',
     profileUpdated: 'הפרופיל עודכן בהצלחה', signOutConfirm: 'יציאה מחשבון', signOutQuestion: 'האם לצאת מהחשבון?', confirmSignOut: 'יציאה',
     securityTitle: 'אבטחה', armedMode: 'מצב מוגן', disarmedMode: 'לא מוגן',
@@ -1124,7 +1157,7 @@ class S {
     plugsCategory: 'שקעים', switchesCategory: 'מפסקים', sensorsCategory: 'חיישנים',
     deviceTemp: 'טמפרטורה', deviceBrightness: 'עוצמה', devicePosition: 'מיקום',
     notifSettings: 'הגדרות התראות', aboutApp: 'אודות האפליקציה',
-    aiInputHint: 'הקש או דבר אליי',
+    aiInputHint: 'הקש או דבר אליי', aiMicUnavailable: 'המיקרופון לא זמין במכשיר',
     aiSug1: 'כבה את כל האורות',
     aiSug2: 'מה מצב הבית עכשיו?',
     aiSug3: 'הפעל מצב לילה',
@@ -1313,11 +1346,12 @@ class S {
     acMode: 'Mode', acFanSpeed: 'Fan Speed', acSwing: 'Swing', acMethod: 'Control', modeCool: 'Cool', modeHeat: 'Heat', modeFan: 'Fan', modeDry: 'Dry', modeAuto: 'Auto', fanLow: 'Low', fanMed: 'Med', fanHigh: 'High',
     mediaMaster: 'Master Volume', mediaParty: 'Play on all', mediaStopAll: 'Stop all',
     tvRemote: 'TV Remote', tvSource: 'Source', tvChannel: 'Channel', tvMute: 'Mute',
+    faq1Q: 'How to add a device?', faq1A: 'Tap + on the dashboard and pick the device from the catalog.', faq2Q: 'How to change language?', faq2A: 'Profile → Settings → Language.', faq3Q: 'Does the app work offline?', faq3A: 'Local commands work. Cloud requires internet.', faq4Q: 'How to set an automation?', faq4A: 'Tap "Automations" in the bottom menu → Add.',
     energyTitle: 'Energy Usage', automationsTitle: 'Automations', activeAutomations: 'active automations',
     myProfile: 'My Profile', myHome: 'My Home', usersTitle: 'Users',
     subscriptionTitle: 'Subscription', settingsTitle: 'Settings', helpTitle: 'Help & Support',
     signOut: 'Sign Out', languageLabel: 'Language', themeLabel: 'Theme',
-    darkMode: 'Dark', lightMode: 'Light', saveChanges: 'Save Changes',
+    darkMode: 'Dark', lightMode: 'Light', appearanceTitle: 'Appearance', themeFont: 'Font', themeAccent: 'Accent Color', themeBg: 'Background', themeRadius: 'Roundness', themeBgDarkBlue: 'Dark Blue', themeBgAmoled: 'AMOLED Black', themeBgDarkGray: 'Dark Gray', themeRadiusSharp: 'Sharp', themeRadiusNormal: 'Normal', themeRadiusRound: 'Round', saveChanges: 'Save Changes',
     editProfile: 'Edit Profile', fullName: 'Full Name', emailLabel: 'Email',
     profileUpdated: 'Profile updated successfully', signOutConfirm: 'Sign Out', signOutQuestion: 'Are you sure you want to sign out?', confirmSignOut: 'Sign Out',
     securityTitle: 'Security', armedMode: 'Armed', disarmedMode: 'Disarmed',
@@ -1338,7 +1372,7 @@ class S {
     plugsCategory: 'Plugs', switchesCategory: 'Switches', sensorsCategory: 'Sensors',
     deviceTemp: 'Temperature', deviceBrightness: 'Brightness', devicePosition: 'Position',
     notifSettings: 'Notification Settings', aboutApp: 'About App',
-    aiInputHint: 'Type or speak to me',
+    aiInputHint: 'Type or speak to me', aiMicUnavailable: 'Microphone not available',
     aiSug1: 'Turn off all lights',
     aiSug2: "What's the home status?",
     aiSug3: 'Activate night mode',
@@ -1524,11 +1558,12 @@ class S {
     acMode: 'الوضع', acFanSpeed: 'سرعة المروحة', acSwing: 'تأرجح', acMethod: 'التحكم', modeCool: 'تبريد', modeHeat: 'تدفئة', modeFan: 'مروحة', modeDry: 'تجفيف', modeAuto: 'تلقائي', fanLow: 'منخفض', fanMed: 'متوسط', fanHigh: 'مرتفع',
     mediaMaster: 'مستوى الصوت العام', mediaParty: 'تشغيل على الكل', mediaStopAll: 'إيقاف الكل',
     tvRemote: 'جهاز التحكم', tvSource: 'المصدر', tvChannel: 'القناة', tvMute: 'كتم',
+    faq1Q: 'كيف أضيف جهازاً؟', faq1A: 'اضغط + في اللوحة الرئيسية واختر الجهاز من الكتالوج.', faq2Q: 'كيف أغيّر اللغة؟', faq2A: 'الملف الشخصي ← الإعدادات ← اللغة.', faq3Q: 'هل يعمل التطبيق دون إنترنت؟', faq3A: 'الأوامر المحلية تعمل. السحابة تتطلب إنترنت.', faq4Q: 'كيف أعدّ الأتمتة؟', faq4A: 'اضغط "الأتمتة" في القائمة السفلية ← إضافة.',
     energyTitle: 'استهلاك الطاقة', automationsTitle: 'الأتمتة', activeAutomations: 'أتمتة نشطة',
     myProfile: 'ملفي الشخصي', myHome: 'منزلي', usersTitle: 'المستخدمون',
     subscriptionTitle: 'الاشتراك', settingsTitle: 'الإعدادات', helpTitle: 'المساعدة',
     signOut: 'تسجيل خروج', languageLabel: 'اللغة', themeLabel: 'المظهر',
-    darkMode: 'داكن', lightMode: 'فاتح', saveChanges: 'حفظ التغييرات',
+    darkMode: 'داكن', lightMode: 'فاتح', appearanceTitle: 'المظهر', themeFont: 'الخط', themeAccent: 'اللون الرئيسي', themeBg: 'الخلفية', themeRadius: 'الحواف', themeBgDarkBlue: 'أزرق داكن', themeBgAmoled: 'أسود AMOLED', themeBgDarkGray: 'رمادي داكن', themeRadiusSharp: 'حاد', themeRadiusNormal: 'عادي', themeRadiusRound: 'مدوّر', saveChanges: 'حفظ التغييرات',
     editProfile: 'تعديل الملف', fullName: 'الاسم الكامل', emailLabel: 'البريد الإلكتروني',
     profileUpdated: 'تم تحديث الملف بنجاح', signOutConfirm: 'تسجيل خروج', signOutQuestion: 'هل تريد تسجيل الخروج؟', confirmSignOut: 'خروج',
     securityTitle: 'الأمان', armedMode: 'مفعّل', disarmedMode: 'معطل',
@@ -1549,7 +1584,7 @@ class S {
     plugsCategory: 'مقابس', switchesCategory: 'مفاتيح', sensorsCategory: 'حساسات',
     deviceTemp: 'الحرارة', deviceBrightness: 'السطوع', devicePosition: 'الموضع',
     notifSettings: 'إعدادات الإشعارات', aboutApp: 'حول التطبيق',
-    aiInputHint: 'اكتب أو تحدث إليّ',
+    aiInputHint: 'اكتب أو تحدث إليّ', aiMicUnavailable: 'الميكروفون غير متاح',
     aiSug1: 'أطفئ كل الأضواء',
     aiSug2: 'ما حالة المنزل الآن؟',
     aiSug3: 'تفعيل وضع الليل',
@@ -1735,11 +1770,12 @@ class S {
     acMode: 'ሁነታ', acFanSpeed: 'የአየር ፍጥነት', acSwing: 'ማወዛወዝ', acMethod: 'መቆጣጠሪያ', modeCool: 'ማቀዝቀዝ', modeHeat: 'ማሞቅ', modeFan: 'ማራገቢያ', modeDry: 'ማድረቅ', modeAuto: 'ራስ-ሰር', fanLow: 'ዝቅተኛ', fanMed: 'መካከለኛ', fanHigh: 'ከፍተኛ',
     mediaMaster: 'አጠቃላይ ድምጽ', mediaParty: 'በሁሉም ላይ አጫውት', mediaStopAll: 'ሁሉንም አቁም',
     tvRemote: 'የቲቪ መቆጣጠሪያ', tvSource: 'ምንጭ', tvChannel: 'ጣቢያ', tvMute: 'ድምጽ አጥፋ',
+    faq1Q: 'መሣሪያ እንዴት ይታከላል?', faq1A: 'በዋናው ሰሌዳ + ይጫኑ እና ከካታሎጉ መሣሪያ ይምረጡ።', faq2Q: 'ቋንቋ እንዴት ይቀየራል?', faq2A: 'መገለጫ ← ቅንብሮች ← ቋንቋ።', faq3Q: 'መተግበሪያው ያለ ኢንተርኔት ይሰራል?', faq3A: 'የአካባቢ ትዕዛዞች ይሰራሉ። ደመና ኢንተርኔት ይፈልጋል።', faq4Q: 'አውቶሜሽን እንዴት ይዘጋጃል?', faq4A: 'በታችኛው ምናሌ "አውቶሜሽን" ይጫኑ ← ጨምር።',
     energyTitle: 'ኃይል ፍጆታ', automationsTitle: 'አውቶሜሽን', activeAutomations: 'ንቁ አውቶሜሽን',
     myProfile: 'የኔ መገለጫ', myHome: 'የኔ ቤት', usersTitle: 'ተጠቃሚዎች',
     subscriptionTitle: 'ምዝገባ', settingsTitle: 'ቅንብሮች', helpTitle: 'እርዳታ',
     signOut: 'ውጣ', languageLabel: 'ቋንቋ', themeLabel: 'ቅርጸ-ቀለም',
-    darkMode: 'ጨለማ', lightMode: 'ብርሃን', saveChanges: 'ለውጦችን አስቀምጥ',
+    darkMode: 'ጨለማ', lightMode: 'ብርሃን', appearanceTitle: 'መልክ', themeFont: 'ቅርጸ-ቁምፊ', themeAccent: 'ዋና ቀለም', themeBg: 'ዳራ', themeRadius: 'ጥምዝ', themeBgDarkBlue: 'ጥቁር ሰማያዊ', themeBgAmoled: 'AMOLED ጥቁር', themeBgDarkGray: 'ጥቁር ግራጫ', themeRadiusSharp: 'ሹል', themeRadiusNormal: 'መደበኛ', themeRadiusRound: 'ክብ', saveChanges: 'ለውጦችን አስቀምጥ',
     editProfile: 'መገለጫ አርትዕ', fullName: 'ሙሉ ስም', emailLabel: 'ኢሜይል',
     profileUpdated: 'መገለጫ ተዘምኗ', signOutConfirm: 'ውጣ', signOutQuestion: 'ለመውጣት እርግጠኛ ነህ?', confirmSignOut: 'ውጣ',
     securityTitle: 'ደህንነት', armedMode: 'ታጥቋ', disarmedMode: ' አልታጠቀም',
@@ -1760,7 +1796,7 @@ class S {
     plugsCategory: 'ሶኬቶች', switchesCategory: 'ማብሪያዎች', sensorsCategory: 'ሴንሰሮች',
     deviceTemp: 'ሙቀት', deviceBrightness: 'ብሩህነት', devicePosition: 'ቦታ',
     notifSettings: 'የማሳወቂያ ቅንብሮች', aboutApp: 'ስለ መተግበሪያ',
-    aiInputHint: 'ተፃፍ ወይም ተናገር',
+    aiInputHint: 'ተፃፍ ወይም ተናገር', aiMicUnavailable: 'ማይክሮፎን አይገኝም',
     aiSug1: 'ሁሉም መብራቶች አጥፋ',
     aiSug2: 'የቤቱ ሁኔታ ምንድን ነው?',
     aiSug3: 'የሌሊት ሁነታ አንቃ',
@@ -1946,11 +1982,12 @@ class S {
     acMode: 'Modo', acFanSpeed: 'Ventilador', acSwing: 'Oscilación', acMethod: 'Control', modeCool: 'Frío', modeHeat: 'Calor', modeFan: 'Ventilador', modeDry: 'Seco', modeAuto: 'Auto', fanLow: 'Bajo', fanMed: 'Medio', fanHigh: 'Alto',
     mediaMaster: 'Volumen general', mediaParty: 'Reproducir en todos', mediaStopAll: 'Detener todo',
     tvRemote: 'Control TV', tvSource: 'Fuente', tvChannel: 'Canal', tvMute: 'Silenciar',
+    faq1Q: '¿Cómo añadir un dispositivo?', faq1A: 'Toca + en el panel y elige el dispositivo del catálogo.', faq2Q: '¿Cómo cambiar el idioma?', faq2A: 'Perfil → Ajustes → Idioma.', faq3Q: '¿Funciona sin internet?', faq3A: 'Los comandos locales funcionan. La nube requiere internet.', faq4Q: '¿Cómo crear una automatización?', faq4A: 'Toca "Automatizaciones" en el menú inferior → Añadir.',
     energyTitle: 'Consumo de energía', automationsTitle: 'Automatizaciones', activeAutomations: 'automatizaciones activas',
     myProfile: 'Mi Perfil', myHome: 'Mi Casa', usersTitle: 'Usuarios',
     subscriptionTitle: 'Suscripción', settingsTitle: 'Configuración', helpTitle: 'Ayuda',
     signOut: 'Cerrar sesión', languageLabel: 'Idioma', themeLabel: 'Tema',
-    darkMode: 'Oscuro', lightMode: 'Claro', saveChanges: 'Guardar cambios',
+    darkMode: 'Oscuro', lightMode: 'Claro', appearanceTitle: 'Apariencia', themeFont: 'Fuente', themeAccent: 'Color principal', themeBg: 'Fondo', themeRadius: 'Bordes', themeBgDarkBlue: 'Azul oscuro', themeBgAmoled: 'Negro AMOLED', themeBgDarkGray: 'Gris oscuro', themeRadiusSharp: 'Recto', themeRadiusNormal: 'Normal', themeRadiusRound: 'Redondeado', saveChanges: 'Guardar cambios',
     editProfile: 'Editar perfil', fullName: 'Nombre completo', emailLabel: 'Correo electrónico',
     profileUpdated: 'Perfil actualizado', signOutConfirm: 'Cerrar sesión', signOutQuestion: '¿Cerrar sesión?', confirmSignOut: 'Salir',
     securityTitle: 'Seguridad', armedMode: 'Armado', disarmedMode: 'Desarmado',
@@ -1971,7 +2008,7 @@ class S {
     plugsCategory: 'Enchufes', switchesCategory: 'Interruptores', sensorsCategory: 'Sensores',
     deviceTemp: 'Temperatura', deviceBrightness: 'Brillo', devicePosition: 'Posición',
     notifSettings: 'Configurar notificaciones', aboutApp: 'Acerca de',
-    aiInputHint: 'Escribe o háblame',
+    aiInputHint: 'Escribe o háblame', aiMicUnavailable: 'Micrófono no disponible',
     aiSug1: 'Apagar todas las luces',
     aiSug2: '¿Estado del hogar ahora?',
     aiSug3: 'Activar modo noche',
@@ -2157,11 +2194,12 @@ class S {
     acMode: 'Режим', acFanSpeed: 'Вентилятор', acSwing: 'Качание', acMethod: 'Управление', modeCool: 'Охлаждение', modeHeat: 'Обогрев', modeFan: 'Вентилятор', modeDry: 'Осушение', modeAuto: 'Авто', fanLow: 'Низкий', fanMed: 'Средний', fanHigh: 'Высокий',
     mediaMaster: 'Общая громкость', mediaParty: 'Играть на всех', mediaStopAll: 'Остановить все',
     tvRemote: 'Пульт ТВ', tvSource: 'Источник', tvChannel: 'Канал', tvMute: 'Без звука',
+    faq1Q: 'Как добавить устройство?', faq1A: 'Нажмите + на панели и выберите устройство из каталога.', faq2Q: 'Как сменить язык?', faq2A: 'Профиль → Настройки → Язык.', faq3Q: 'Работает ли без интернета?', faq3A: 'Локальные команды работают. Облако требует интернет.', faq4Q: 'Как настроить автоматизацию?', faq4A: 'Нажмите "Автоматизации" в нижнем меню → Добавить.',
     energyTitle: 'Потребление энергии', automationsTitle: 'Автоматизация', activeAutomations: 'активных сценариев',
     myProfile: 'Мой профиль', myHome: 'Мой дом', usersTitle: 'Пользователи',
     subscriptionTitle: 'Подписка', settingsTitle: 'Настройки', helpTitle: 'Помощь',
     signOut: 'Выйти', languageLabel: 'Язык', themeLabel: 'Тема',
-    darkMode: 'Тёмная', lightMode: 'Светлая', saveChanges: 'Сохранить',
+    darkMode: 'Тёмная', lightMode: 'Светлая', appearanceTitle: 'Внешний вид', themeFont: 'Шрифт', themeAccent: 'Акцент', themeBg: 'Фон', themeRadius: 'Скругление', themeBgDarkBlue: 'Тёмно-синий', themeBgAmoled: 'AMOLED чёрный', themeBgDarkGray: 'Тёмно-серый', themeRadiusSharp: 'Острые', themeRadiusNormal: 'Обычные', themeRadiusRound: 'Круглые', saveChanges: 'Сохранить',
     editProfile: 'Редактировать', fullName: 'Полное имя', emailLabel: 'Эл. почта',
     profileUpdated: 'Профиль обновлён', signOutConfirm: 'Выйти', signOutQuestion: 'Вы уверены, что хотите выйти?', confirmSignOut: 'Выйти',
     securityTitle: 'Безопасность', armedMode: 'Вооружён', disarmedMode: 'Разоружён',
@@ -2182,7 +2220,7 @@ class S {
     plugsCategory: 'Розетки', switchesCategory: 'Выключатели', sensorsCategory: 'Датчики',
     deviceTemp: 'Температура', deviceBrightness: 'Яркость', devicePosition: 'Позиция',
     notifSettings: 'Настройки уведомлений', aboutApp: 'О приложении',
-    aiInputHint: 'Введите или говорите со мной',
+    aiInputHint: 'Введите или говорите со мной', aiMicUnavailable: 'Микрофон недоступен',
     aiSug1: 'Выключить весь свет',
     aiSug2: 'Статус дома сейчас?',
     aiSug3: 'Активировать ночной режим',

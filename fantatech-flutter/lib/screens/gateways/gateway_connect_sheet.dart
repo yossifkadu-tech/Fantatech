@@ -16,7 +16,20 @@ import '../../theme/app_theme.dart';
 
 class GatewayConnectSheet extends StatefulWidget {
   final GatewayMeta meta;
-  const GatewayConnectSheet({super.key, required this.meta});
+
+  /// Pre-fill field values (e.g. IP from a discovery scan), keyed by field key.
+  final Map<String, String>? initialFields;
+
+  /// When true, the connect flow starts automatically as soon as the sheet
+  /// opens, provided all required fields are already filled.
+  final bool autoConnect;
+
+  const GatewayConnectSheet({
+    super.key,
+    required this.meta,
+    this.initialFields,
+    this.autoConnect = false,
+  });
 
   @override
   State<GatewayConnectSheet> createState() => _GatewayConnectSheetState();
@@ -39,7 +52,8 @@ class _GatewayConnectSheetState extends State<GatewayConnectSheet>
     super.initState();
     _ctrls = {
       for (final f in widget.meta.fields)
-        f.key: TextEditingController(text: f.defaultValue ?? ''),
+        f.key: TextEditingController(
+            text: widget.initialFields?[f.key] ?? f.defaultValue ?? ''),
     };
     _pulseCtrl = AnimationController(
       vsync:    this,
@@ -47,6 +61,14 @@ class _GatewayConnectSheetState extends State<GatewayConnectSheet>
     )..repeat(reverse: true);
     _pulseAnim = Tween<double>(begin: 0.6, end: 1.0).animate(
         CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut));
+
+    // Auto-start the connection (e.g. when launched from a discovery result
+    // with the IP already known).
+    if (widget.autoConnect && _canConnect) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _connect();
+      });
+    }
   }
 
   @override
@@ -161,6 +183,10 @@ class _GatewayConnectSheetState extends State<GatewayConnectSheet>
                 // Cloud badge
                 if (meta.isCloud)
                   _CloudBadge(color: color),
+
+                // Setup steps (e.g. how to obtain cloud credentials)
+                if (meta.setupSteps != null && meta.setupSteps!.isNotEmpty)
+                  _SetupSteps(steps: meta.setupSteps!, color: color),
 
                 // Button-press instructions
                 if (meta.requiresButtonPress && meta.buttonInstruction != null)
@@ -512,6 +538,105 @@ class _CloudBadge extends StatelessWidget {
             )),
         ),
       ]),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Setup steps (collapsible numbered guide)
+// ─────────────────────────────────────────────────────────────
+class _SetupSteps extends StatefulWidget {
+  final List<String> steps;
+  final Color        color;
+  const _SetupSteps({required this.steps, required this.color});
+
+  @override
+  State<_SetupSteps> createState() => _SetupStepsState();
+}
+
+class _SetupStepsState extends State<_SetupSteps> {
+  bool _open = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      decoration: BoxDecoration(
+        color:        widget.color.withValues(alpha: 0.07),
+        borderRadius: BorderRadius.circular(12),
+        border:       Border.all(color: widget.color.withValues(alpha: 0.22)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header (tap to expand)
+          InkWell(
+            onTap: () => setState(() => _open = !_open),
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  Icon(Icons.help_outline, color: widget.color, size: 18),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text('איך משיגים את הפרטים? (${widget.steps.length} צעדים)',
+                      style: TextStyle(
+                        color:      widget.color,
+                        fontSize:   12.5,
+                        fontWeight: FontWeight.w600,
+                      )),
+                  ),
+                  Icon(_open ? Icons.expand_less : Icons.expand_more,
+                      color: widget.color, size: 20),
+                ],
+              ),
+            ),
+          ),
+          // Steps
+          if (_open)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (var i = 0; i < widget.steps.length; i++)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: 20, height: 20,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color:  widget.color.withValues(alpha: 0.18),
+                              shape:  BoxShape.circle,
+                            ),
+                            child: Text('${i + 1}',
+                              style: TextStyle(
+                                color:      widget.color,
+                                fontSize:   11,
+                                fontWeight: FontWeight.bold,
+                              )),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(widget.steps[i],
+                              style: TextStyle(
+                                color:    Colors.white.withValues(alpha: 0.65),
+                                fontSize: 12,
+                                height:   1.45,
+                              )),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

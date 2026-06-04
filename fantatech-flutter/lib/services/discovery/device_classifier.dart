@@ -114,6 +114,10 @@ class DeviceClassifier {
     }
 
     // 5. Sensors
+    if (_any(lower, ['water leak', 'leak', 'flood', 'shflood', 'נזיל',
+                      'water sensor', 'badring'])) {
+      return DiscoveredDeviceType.waterLeak;
+    }
     if (_any(lower, ['motion', 'pir', 'תנועה', 'shmos', 'occupancy'])) {
       return DiscoveredDeviceType.motionSensor;
     }
@@ -185,7 +189,7 @@ class DeviceClassifier {
     if (m.contains('SHSMOKE')) return DiscoveredDeviceType.smokeSensor;
     if (m.contains('SHDW'))    return DiscoveredDeviceType.windowSensor;
     if (m.contains('SHMOS'))   return DiscoveredDeviceType.motionSensor;
-    if (m.contains('SHFLOOD')) return DiscoveredDeviceType.sensor;
+    if (m.contains('SHFLOOD')) return DiscoveredDeviceType.waterLeak;
     if (m.contains('SHSW') || m.contains('SHUNI') || m.contains('SHIX3')) {
       return DiscoveredDeviceType.smartSwitch;
     }
@@ -200,6 +204,7 @@ class DeviceClassifier {
     if (s.contains('home-assistant')) return DiscoveredDeviceType.gateway;
     if (s.contains('hue'))            return DiscoveredDeviceType.gateway;
     if (s.contains('dirigera'))       return DiscoveredDeviceType.gateway;
+    if (s.contains('ihsp'))           return DiscoveredDeviceType.gateway; // IKEA DIRIGERA
     if (s.contains('hap'))            return DiscoveredDeviceType.gateway;
     if (s.contains('mqtt'))           return DiscoveredDeviceType.gateway;
     if (s.contains('googlecast'))     return DiscoveredDeviceType.speaker;
@@ -273,6 +278,7 @@ class DeviceClassifier {
     DiscoveredDeviceType.motionSensor  => DeviceType.motionSensor,
     DiscoveredDeviceType.windowSensor  => DeviceType.windowSensor,
     DiscoveredDeviceType.doorSensor    => DeviceType.doorSensor,
+    DiscoveredDeviceType.waterLeak     => DeviceType.waterLeakSensor,
     DiscoveredDeviceType.router        => DeviceType.router,
     _                                  => DeviceType.gateway,
   };

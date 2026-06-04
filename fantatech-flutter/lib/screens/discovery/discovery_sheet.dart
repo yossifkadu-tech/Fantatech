@@ -25,6 +25,8 @@ import '../../models/device.dart';
 import '../../services/discovery/real_discovery_engine.dart';
 import '../../services/discovery/discovery_models.dart';
 import '../../services/discovery/device_classifier.dart';
+import '../../services/gateways/gateway_types.dart';
+import '../gateways/gateway_connect_sheet.dart';
 import '../../theme/app_theme.dart';
 
 class DiscoverySheet extends StatefulWidget {
@@ -51,6 +53,40 @@ class _DiscoverySheetState extends State<DiscoverySheet> {
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 
+  /// If a discovered device is a gateway we can pair with directly (currently
+  /// IKEA DIRIGERA), returns its GatewayType — otherwise null.
+  GatewayType? _pairableGateway(DiscoveredDevice d) {
+    final svc  = (d.metadata['serviceType'] ?? '').toString().toLowerCase();
+    final name = d.displayName.toLowerCase();
+    final mfr  = (d.manufacturer ?? '').toLowerCase();
+    final isDirigera = svc.contains('ihsp') ||
+        svc.contains('dirigera') ||
+        name.contains('dirigera') ||
+        (mfr.contains('ikea') && d.type == DiscoveredDeviceType.gateway);
+    if (isDirigera) return GatewayType.dirigera;
+    return null;
+  }
+
+  /// Opens the gateway pairing sheet with the IP pre-filled and the connection
+  /// started automatically — the user only has to press the physical button.
+  void _connectGateway(
+    BuildContext context,
+    GatewayType type,
+    DiscoveredDevice d,
+  ) {
+    final meta = GatewayRegistry.forType(type);
+    showModalBottomSheet(
+      context:            context,
+      isScrollControlled: true,
+      backgroundColor:    Colors.transparent,
+      builder: (_) => GatewayConnectSheet(
+        meta:          meta,
+        initialFields: {if (d.ip != null) 'ip': d.ip!},
+        autoConnect:   d.ip != null,
+      ),
+    );
+  }
+
   /// Add one discovered device to AppState and mark it as registered.
   void _addDevice(
     BuildContext context,
@@ -58,6 +94,14 @@ class _DiscoverySheetState extends State<DiscoverySheet> {
     RealDiscoveryEngine engine,
     AppState state,
   ) {
+    // Pairable gateways (DIRIGERA) route to the OAuth pairing flow instead of
+    // being added as a plain device.
+    final gw = _pairableGateway(d);
+    if (gw != null) {
+      _connectGateway(context, gw, d);
+      return;
+    }
+
     final appType = DeviceClassifier.toAppType(d.type);
     final room    = state.rooms.isNotEmpty
         ? (state.rooms.first['name'] as String)
@@ -84,7 +128,11 @@ class _DiscoverySheetState extends State<DiscoverySheet> {
     RealDiscoveryEngine engine,
     AppState state,
   ) {
-    final pending = engine.found.where((d) => !d.isRegistered).toList();
+    // Gateways that need interactive pairing (button press) are skipped here —
+    // they must be connected individually via their "הוסף" button.
+    final pending = engine.found
+        .where((d) => !d.isRegistered && _pairableGateway(d) == null)
+        .toList();
     for (final d in pending) {
       _addDevice(context, d, engine, state);
     }
@@ -130,6 +178,7 @@ class _DiscoverySheetState extends State<DiscoverySheet> {
     DiscoveredDeviceType.motionSensor  => AppColors.motionColor,
     DiscoveredDeviceType.windowSensor  => AppColors.motionColor,
     DiscoveredDeviceType.doorSensor    => AppColors.motionColor,
+    DiscoveredDeviceType.waterLeak     => const Color(0xFF00B4D8),
     DiscoveredDeviceType.smokeSensor   => const Color(0xFFFF6B35),
     DiscoveredDeviceType.energyMeter   => const Color(0xFFFFD600),
     DiscoveredDeviceType.gateway       => _networkColor,
@@ -152,6 +201,7 @@ class _DiscoverySheetState extends State<DiscoverySheet> {
     DiscoveredDeviceType.motionSensor  => Icons.sensors_outlined,
     DiscoveredDeviceType.windowSensor  => Icons.window_outlined,
     DiscoveredDeviceType.doorSensor    => Icons.sensor_door_outlined,
+    DiscoveredDeviceType.waterLeak     => Icons.water_damage_outlined,
     DiscoveredDeviceType.router        => Icons.router_outlined,
     DiscoveredDeviceType.speaker       => Icons.speaker_outlined,
     DiscoveredDeviceType.tv            => Icons.tv_outlined,

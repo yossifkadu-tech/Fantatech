@@ -40,8 +40,25 @@ class _MediaScreenState extends State<MediaScreen> {
 
   Future<void> _open(String url) async {
     final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    try {
+      // Try the external app/browser first, then fall back to in-app webview.
+      var ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!ok) {
+        ok = await launchUrl(uri, mode: LaunchMode.platformDefault);
+      }
+      if (!ok && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(context.read<AppState>().strings.storeBrowserError),
+          behavior: SnackBarBehavior.floating,
+        ));
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(context.read<AppState>().strings.storeBrowserError),
+          behavior: SnackBarBehavior.floating,
+        ));
+      }
     }
   }
 

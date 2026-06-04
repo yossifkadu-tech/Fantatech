@@ -19,7 +19,6 @@ import '../solar/solar_screen.dart';
 import '../breakers/breakers_screen.dart';
 import '../boiler/boiler_screen.dart';
 import '../media/media_screen.dart';
-import '../../widgets/store_ad_banner.dart';
 import '../../models/custom_scene.dart';
 import '../../utils/haptics.dart';
 
@@ -473,8 +472,12 @@ class DashboardScreen extends StatelessWidget {
     final state = context.watch<AppState>();
     final s = state.strings;
 
+    if (state.gridLayout) {
+      return const _GridHome();
+    }
+
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: context.tBg,
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
@@ -570,11 +573,6 @@ class DashboardScreen extends StatelessWidget {
             // ── Quick links (Energy + Automations) ───────────
             SliverToBoxAdapter(child: _QuickLinksRow()),
 
-            const SliverToBoxAdapter(child: SizedBox(height: 10)),
-
-            // ── Smart Energy row (Solar + Breakers) ──────────
-            SliverToBoxAdapter(child: _SmartEnergyRow()),
-
             const SliverToBoxAdapter(child: SizedBox(height: 12)),
 
             // ── Scene controls (3 equal buttons) ─────────────
@@ -585,12 +583,245 @@ class DashboardScreen extends StatelessWidget {
               ),
             ),
 
-            const SliverToBoxAdapter(child: SizedBox(height: 12)),
-
-            // ── Store ad banner ───────────────────────────────
-            const SliverToBoxAdapter(child: StoreAdBanner()),
-
+            // NOTE: "Smart Energy" (Solar + Breakers) and the store ad banner
+            // were moved off the home screen to reduce clutter. Energy remains
+            // reachable via the Quick Links row above.
             const SliverToBoxAdapter(child: SizedBox(height: 90)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ──────────────────────────────────────────────────────────────
+//  Grid home layout — clean uniform 2-column card grid (light-first)
+//  Selectable alternative to the classic layout (Settings → Display).
+// ──────────────────────────────────────────────────────────────
+class _GridHome extends StatelessWidget {
+  const _GridHome();
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.watch<AppState>();
+    final s = state.strings;
+
+    final lightsOn = state.devices
+        .where((d) => d.type == DeviceType.light && d.isOn).length;
+    final blindsOn = state.devices
+        .where((d) => d.type == DeviceType.blind && d.isOn).length;
+    final acCount = state.devices
+        .where((d) => d.type == DeviceType.airConditioner).length;
+    final autos = state.automations.where((a) => a.isEnabled).length;
+    final camsLive = state.cameras.where((c) => c.isOnline).length;
+
+    final tiles = <Widget>[
+      _GridTile(
+        ft: _Ft.rooms, color: const Color(0xFF9C7AFF),
+        title: s.roomManagement, subtitle: '${state.rooms.length} ${s.roomsUnit}',
+        onTap: () => Navigator.push(context,
+            MaterialPageRoute(builder: (_) => const RoomsScreen())),
+      ),
+      _GridTile(
+        ft: _Ft.snow, color: AppColors.acColor,
+        title: s.acCategory,
+        subtitle: acCount == 0 ? s.acNoUnits : '$acCount ${s.acConnected}',
+        onTap: () => showModalBottomSheet(
+            context: context, backgroundColor: Colors.transparent,
+            isScrollControlled: true,
+            builder: (_) => _AcListSheet(state: state, s: s)),
+      ),
+      _GridTile(
+        ft: _Ft.thermo, color: AppColors.acColor,
+        title: s.tempTitle, bigText: '${state.targetTemp.toStringAsFixed(0)}°C',
+        subtitle: s.tempComfy,
+        onTap: () => _showTempSheet(context, state, s),
+      ),
+      _GridTile(
+        ft: _Ft.bulb, color: AppColors.lightColor,
+        title: s.lightingTitle, subtitle: '$lightsOn ${s.lightsOn}',
+        onTap: () => Navigator.push(context, MaterialPageRoute(
+            builder: (_) => DevicesScreen(initialCategory: DeviceType.light))),
+      ),
+      _GridTile(
+        ft: _Ft.hub, color: const Color(0xFF9C7AFF),
+        title: s.automationsTitle, subtitle: '$autos ${s.activeAutomations}',
+        onTap: () => Navigator.push(context,
+            MaterialPageRoute(builder: (_) => const AutomationsScreen())),
+      ),
+      _GridTile(
+        ft: _Ft.bolt, color: AppColors.lightColor,
+        title: s.energyTitle, subtitle: '245 kWh  −12%',
+        onTap: () => Navigator.push(context,
+            MaterialPageRoute(builder: (_) => const EnergyScreen())),
+      ),
+      _GridTile(
+        ft: _Ft.switches, color: const Color(0xFF7BB8FF),
+        title: s.breakersTitle, subtitle: '8/9 ${s.breakerOn}',
+        onTap: () => Navigator.push(context,
+            MaterialPageRoute(builder: (_) => const BreakersScreen())),
+      ),
+      _GridTile(
+        ft: _Ft.sun, color: const Color(0xFFFFB300),
+        title: s.solarTitle, subtitle: '4.7 kW  ↑',
+        onTap: () => Navigator.push(context,
+            MaterialPageRoute(builder: (_) => const SolarScreen())),
+      ),
+      _GridTile(
+        ft: _Ft.blind, color: AppColors.primary,
+        title: s.blindsCategory, subtitle: '$blindsOn ${s.devicesOn}',
+        onTap: () => Navigator.push(context, MaterialPageRoute(
+            builder: (_) => DevicesScreen(initialCategory: DeviceType.blind))),
+      ),
+      _GridTile(
+        ft: _Ft.thermo, color: AppColors.acColor,
+        title: s.boilerTitle, subtitle: '60°C',
+        onTap: () => Navigator.push(context,
+            MaterialPageRoute(builder: (_) => const BoilerScreen())),
+      ),
+      _GridTile(
+        ft: _Ft.bolt, color: AppColors.primary,
+        title: s.turnOffAll,
+        onTap: () => _activateScene(
+            context, s, s.turnOffAll, state.activateTurnOffAll),
+      ),
+      _GridTile(
+        ft: _Ft.sun, color: AppColors.lightColor,
+        title: s.leaveHome,
+        onTap: () => _activateScene(
+            context, s, s.leaveHome, state.activateLeaveHome),
+      ),
+      _GridTile(
+        ft: _Ft.cam, color: AppColors.cameraColor,
+        title: s.camerasTitle, subtitle: '$camsLive ${s.activeAutomations}',
+        onTap: () => Navigator.push(context,
+            MaterialPageRoute(builder: (_) => const CamerasScreen())),
+      ),
+      _GridTile(
+        ft: _Ft.moon, color: const Color(0xFF9C7AFF),
+        title: s.goodNight,
+        onTap: () => _activateScene(
+            context, s, s.goodNight, state.activateGoodNight),
+      ),
+    ];
+
+    return Scaffold(
+      backgroundColor: context.tBg,
+      body: SafeArea(
+        child: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(child: _TopBar()),
+            SliverToBoxAdapter(
+              child: _WelcomeCard(
+                isSecured: state.isSecured,
+                firstName: state.userFirstName,
+                strings: s,
+                onToggle: state.toggleSecurity,
+                camerasLive: camsLive,
+              ),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
+              sliver: SliverGrid(
+                gridDelegate:
+                    const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  childAspectRatio: 1.55,
+                ),
+                delegate: SliverChildListDelegate(tiles),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Single soft-shadow card used by the grid layout.
+class _GridTile extends StatelessWidget {
+  final _Ft ft;
+  final Color color;
+  final String title;
+  final String? subtitle;
+  final String? bigText;
+  final VoidCallback onTap;
+  const _GridTile({
+    required this.ft,
+    required this.color,
+    required this.title,
+    this.subtitle,
+    this.bigText,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final light = context.isLight;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: context.tCard,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: light
+                  ? const Color(0xFF1A1D27).withValues(alpha: 0.06)
+                  : Colors.black.withValues(alpha: 0.25),
+              blurRadius: 14,
+              offset: const Offset(0, 4),
+            ),
+          ],
+          border: light
+              ? null
+              : Border.all(color: color.withValues(alpha: 0.16), width: 1),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(title,
+                      style: TextStyle(
+                        color: context.tText,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      maxLines: 1, overflow: TextOverflow.ellipsis),
+                  if (bigText != null) ...[
+                    const SizedBox(height: 2),
+                    Text(bigText!,
+                        style: TextStyle(
+                            color: color,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold)),
+                  ],
+                  if (subtitle != null && subtitle!.isNotEmpty) ...[
+                    const SizedBox(height: 3),
+                    Text(subtitle!,
+                        style: TextStyle(
+                            color: color, fontSize: 11,
+                            fontWeight: FontWeight.w500),
+                        maxLines: 1, overflow: TextOverflow.ellipsis),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              width: 46, height: 46,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: color.withValues(alpha: light ? 0.12 : 0.16),
+              ),
+              child: Center(child: _FtIcon(type: ft, color: color, size: 22)),
+            ),
           ],
         ),
       ),
@@ -671,12 +902,12 @@ class _NavBtn extends StatelessWidget {
           width: 38,
           height: 38,
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.06),
+            color: context.tText2(0.06),
             borderRadius: BorderRadius.circular(11),
             border: Border.all(
-                color: Colors.white.withValues(alpha: 0.08), width: 1),
+                color: context.tText2(0.08), width: 1),
           ),
-          child: Icon(icon, color: Colors.white70, size: 19),
+          child: Icon(icon, color: context.tText2(0.7), size: 19),
         ),
         if (badge)
           Positioned(
@@ -758,8 +989,8 @@ class _WelcomeCard extends StatelessWidget {
                 children: [
                   Text(
                     '${strings.greetingPrefix} $firstName',
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: context.tText,
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
                     ),
@@ -870,7 +1101,7 @@ class _CameraStatusBadgeState extends State<_CameraStatusBadge>
                   decoration: BoxDecoration(
                     color: AppColors.secured,
                     shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.darkBg, width: 1.5),
+                    border: Border.all(color: context.tBg, width: 1.5),
                     boxShadow: [
                       BoxShadow(
                         color: AppColors.secured.withValues(alpha: 0.7),
@@ -1205,7 +1436,7 @@ class _StatCard extends StatelessWidget {
         child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         decoration: BoxDecoration(
-          color: AppColors.darkCard,
+          color: context.tCard,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
               color: iconColor.withValues(alpha: 0.18), width: 1),
@@ -1235,8 +1466,8 @@ class _StatCard extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: context.tText,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
@@ -2015,7 +2246,7 @@ class _QuickLink extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         decoration: BoxDecoration(
-          color: AppColors.darkCard,
+          color: context.tCard,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: color.withValues(alpha: 0.20)),
         ),
@@ -2037,8 +2268,8 @@ class _QuickLink extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(title,
-                    style: const TextStyle(
-                        color: Colors.white,
+                    style: TextStyle(
+                        color: context.tText,
                         fontSize: 12,
                         fontWeight: FontWeight.w600),
                     maxLines: 1,
@@ -2206,22 +2437,22 @@ class _AddSceneBtn extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.05),
+          color: context.tText2(0.05),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: Colors.white.withValues(alpha: 0.18),
+            color: context.tText2(0.18),
             width: 1.2,
           ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.add, color: Colors.white.withValues(alpha: 0.7), size: 18),
+            Icon(Icons.add, color: context.tText2(0.7), size: 18),
             const SizedBox(width: 6),
             Text(
               context.read<AppState>().strings.sceneCreate,
               style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.7),
+                  color: context.tText2(0.7),
                   fontSize: 12,
                   fontWeight: FontWeight.w600),
             ),

@@ -68,6 +68,10 @@ class GatewayMeta {
   /// True = connects to a cloud API, not LAN.
   final bool isCloud;
 
+  /// Optional numbered setup steps shown in the connect sheet (e.g. how to
+  /// obtain cloud credentials).
+  final List<String>? setupSteps;
+
   const GatewayMeta({
     required this.type,
     required this.name,
@@ -79,6 +83,7 @@ class GatewayMeta {
     this.requiresButtonPress = false,
     this.buttonInstruction,
     this.isCloud = false,
+    this.setupSteps,
   });
 }
 
@@ -141,12 +146,12 @@ class GatewayRegistry {
       type:        GatewayType.dirigera,
       name:        'IKEA DIRIGERA',
       subtitle:    'Zigbee · Bluetooth',
-      description: 'לחץ על כפתור ההצמדה ב-DIRIGERA פעם אחת.',
+      description: 'לחץ "חבר" ואז על כפתור ההצמדה ב-DIRIGERA.',
       icon:        Icons.hub_outlined,
       color:       Color(0xFF0058A3),
       requiresButtonPress: true,
       buttonInstruction:
-          'לחץ פעם אחת על כפתור ההצמדה מתחת ל-DIRIGERA ולאחר מכן לחץ "חבר".',
+          'לחץ "חבר", ותוך 60 שניות לחץ פעם אחת על כפתור ההצמדה בתחתית ה-DIRIGERA.',
       fields: [
         GatewayFieldDef(
           key:       'ip',
@@ -280,6 +285,14 @@ class GatewayRegistry {
       icon:        Icons.cloud_outlined,
       color:       Color(0xFFFF6600),
       isCloud:     true,
+      setupSteps: [
+        'ודא שהמכשירים עובדים באפליקציית Smart Life / Tuya Smart.',
+        'היכנס ל-iot.tuya.com → Cloud → Create Cloud Project (Data Center: Central Europe).',
+        'העתק את ה-Access ID וה-Access Secret מהפרויקט.',
+        'Devices → Link Tuya App Account → סרוק QR מ-Smart Life ("Me" → סריקה).',
+        'Cloud → API → ודא ש-IoT Core + Smart Home Basic Service מאופשרים.',
+        'הזן כאן Access ID, Secret ואזור (eu אם בחרת Central Europe).',
+      ],
       fields: [
         GatewayFieldDef(
           key:       'clientId',

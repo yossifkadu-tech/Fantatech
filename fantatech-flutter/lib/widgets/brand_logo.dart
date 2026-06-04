@@ -137,6 +137,9 @@ class _LargeLogo extends StatelessWidget {
 class _MediumLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final fantaColor = Theme.of(context).brightness == Brightness.light
+        ? const Color(0xFF1A1D27)
+        : Colors.white;
     return Row(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -146,8 +149,8 @@ class _MediumLogo extends StatelessWidget {
           'Fanta',
           style: GoogleFonts.outfit(
             fontSize: 19,
-            fontWeight: FontWeight.w200,
-            color: Colors.white,
+            fontWeight: FontWeight.w700,
+            color: fantaColor,
             letterSpacing: -0.5,
             height: 1.0,
           ),
@@ -191,6 +194,9 @@ class _MediumLogo extends StatelessWidget {
 class _SmallLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final fantaColor = Theme.of(context).brightness == Brightness.light
+        ? const Color(0xFF1A1D27)
+        : Colors.white;
     return Row(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -200,8 +206,8 @@ class _SmallLogo extends StatelessWidget {
           'Fanta',
           style: GoogleFonts.outfit(
             fontSize: 14,
-            fontWeight: FontWeight.w200,
-            color: Colors.white,
+            fontWeight: FontWeight.w700,
+            color: fantaColor,
             letterSpacing: -0.3,
             height: 1.0,
           ),

@@ -75,6 +75,13 @@ class ProfileScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 10),
                     _MenuItem(
+                      icon: Icons.palette_outlined,
+                      label: s.appearanceTitle,
+                      color: AppColors.cameraColor,
+                      onTap: () => _showAppearanceSheet(context),
+                    ),
+                    const SizedBox(height: 10),
+                    _MenuItem(
                       icon: Icons.settings_outlined,
                       label: s.settingsTitle,
                       color: Colors.white70,
@@ -160,6 +167,18 @@ class ProfileScreen extends StatelessWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (_) => _SettingsSheet(state: state),
+    );
+  }
+
+  void _showAppearanceSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.darkCard,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => const _AppearanceSheet(),
     );
   }
 
@@ -2014,6 +2033,22 @@ class _SettingsSheetState extends State<_SettingsSheet> {
           ),
           const SizedBox(height: 14),
 
+          // Home layout — classic list vs clean grid
+          _SettingsRow(
+            label: 'פריסת מסך הבית',
+            child: SegmentedButton<bool>(
+              segments: const [
+                ButtonSegment(value: false, icon: Icon(Icons.view_agenda_outlined, size: 15)),
+                ButtonSegment(value: true,  icon: Icon(Icons.grid_view_rounded,    size: 15)),
+              ],
+              selected: {state.gridLayout},
+              onSelectionChanged: (sel) =>
+                  context.read<AppState>().setGridLayout(sel.first),
+              style: const ButtonStyle(visualDensity: VisualDensity.compact),
+            ),
+          ),
+          const SizedBox(height: 14),
+
           // Language
           _SettingsRow(
             label: s.languageLabel,
@@ -2351,6 +2386,332 @@ class _AboutRow extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────
+// ─── Appearance Sheet ─────────────────────────────────────────────────────────
+
+class _AppearanceSheet extends StatefulWidget {
+  const _AppearanceSheet();
+  @override
+  State<_AppearanceSheet> createState() => _AppearanceSheetState();
+}
+
+class _AppearanceSheetState extends State<_AppearanceSheet> {
+  late AppThemePrefs _prefs;
+
+  @override
+  void initState() {
+    super.initState();
+    _prefs = context.read<AppState>().themePrefs;
+  }
+
+  void _apply() {
+    context.read<AppState>().setThemePrefs(_prefs);
+  }
+
+  Widget _sectionTitle(String text) => Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: Text(text,
+            style: const TextStyle(
+                color: Colors.white54, fontSize: 12, fontWeight: FontWeight.w600,
+                letterSpacing: 0.8)),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.watch<AppState>().strings;
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.75,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      expand: false,
+      builder: (ctx, scroll) => SingleChildScrollView(
+        controller: scroll,
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Handle
+            Center(
+              child: Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius: BorderRadius.circular(2)),
+              ),
+            ),
+            const SizedBox(height: 18),
+            Text(s.appearanceTitle,
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold)),
+            const SizedBox(height: 24),
+
+            // ── Font ─────────────────────────────────────────────
+            _sectionTitle(s.themeFont.toUpperCase()),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: AppFont.values.map((f) {
+                final name = switch (f) {
+                  AppFont.heebo     => 'Heebo',
+                  AppFont.rubik     => 'Rubik',
+                  AppFont.notoSans  => 'Noto Sans',
+                  AppFont.assistant => 'Assistant',
+                };
+                final sel = _prefs.font == f;
+                return GestureDetector(
+                  onTap: () => setState(() {
+                    _prefs = _prefs.copyWith(font: f);
+                    _apply();
+                  }),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: sel
+                          ? _prefs.accent.withValues(alpha: 0.18)
+                          : Colors.white.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                          color: sel
+                              ? _prefs.accent
+                              : Colors.white.withValues(alpha: 0.12)),
+                    ),
+                    child: Text(name,
+                        style: TextStyle(
+                            color: sel ? _prefs.accent : Colors.white70,
+                            fontSize: 13,
+                            fontWeight: sel ? FontWeight.w700 : FontWeight.normal)),
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 22),
+
+            // ── Accent Color ──────────────────────────────────────
+            _sectionTitle(s.themeAccent.toUpperCase()),
+            Row(
+              children: accentPresets.map((c) {
+                final sel = _prefs.accent == c;
+                return GestureDetector(
+                  onTap: () => setState(() {
+                    _prefs = _prefs.copyWith(accent: c);
+                    _apply();
+                  }),
+                  child: Container(
+                    margin: const EdgeInsets.only(right: 10),
+                    width: 36, height: 36,
+                    decoration: BoxDecoration(
+                      color: c,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                          color: sel ? Colors.white : Colors.transparent,
+                          width: 2.5),
+                      boxShadow: sel
+                          ? [BoxShadow(color: c.withValues(alpha: 0.5), blurRadius: 8)]
+                          : [],
+                    ),
+                    child: sel
+                        ? const Icon(Icons.check, color: Colors.white, size: 16)
+                        : null,
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 22),
+
+            // ── Background ────────────────────────────────────────
+            _sectionTitle(s.themeBg.toUpperCase()),
+            Column(
+              children: [
+                _BgTile(
+                  label: s.themeBgDarkBlue,
+                  bg: const Color(0xFF0B2044),
+                  card: const Color(0xFF153060),
+                  selected: _prefs.bgStyle == AppBgStyle.darkBlue,
+                  onTap: () => setState(() {
+                    _prefs = _prefs.copyWith(bgStyle: AppBgStyle.darkBlue);
+                    _apply();
+                  }),
+                  accent: _prefs.accent,
+                ),
+                const SizedBox(height: 8),
+                _BgTile(
+                  label: s.themeBgAmoled,
+                  bg: const Color(0xFF000000),
+                  card: const Color(0xFF0D0D0D),
+                  selected: _prefs.bgStyle == AppBgStyle.amoled,
+                  onTap: () => setState(() {
+                    _prefs = _prefs.copyWith(bgStyle: AppBgStyle.amoled);
+                    _apply();
+                  }),
+                  accent: _prefs.accent,
+                ),
+                const SizedBox(height: 8),
+                _BgTile(
+                  label: s.themeBgDarkGray,
+                  bg: const Color(0xFF111318),
+                  card: const Color(0xFF1C1F26),
+                  selected: _prefs.bgStyle == AppBgStyle.darkGray,
+                  onTap: () => setState(() {
+                    _prefs = _prefs.copyWith(bgStyle: AppBgStyle.darkGray);
+                    _apply();
+                  }),
+                  accent: _prefs.accent,
+                ),
+              ],
+            ),
+            const SizedBox(height: 22),
+
+            // ── Radius ────────────────────────────────────────────
+            _sectionTitle(s.themeRadius.toUpperCase()),
+            Row(
+              children: [
+                _RadiusTile(
+                  label: s.themeRadiusSharp,
+                  radius: 4,
+                  selected: _prefs.radius == AppRadius.sharp,
+                  accent: _prefs.accent,
+                  onTap: () => setState(() {
+                    _prefs = _prefs.copyWith(radius: AppRadius.sharp);
+                    _apply();
+                  }),
+                ),
+                const SizedBox(width: 8),
+                _RadiusTile(
+                  label: s.themeRadiusNormal,
+                  radius: 14,
+                  selected: _prefs.radius == AppRadius.normal,
+                  accent: _prefs.accent,
+                  onTap: () => setState(() {
+                    _prefs = _prefs.copyWith(radius: AppRadius.normal);
+                    _apply();
+                  }),
+                ),
+                const SizedBox(width: 8),
+                _RadiusTile(
+                  label: s.themeRadiusRound,
+                  radius: 24,
+                  selected: _prefs.radius == AppRadius.round,
+                  accent: _prefs.accent,
+                  onTap: () => setState(() {
+                    _prefs = _prefs.copyWith(radius: AppRadius.round);
+                    _apply();
+                  }),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BgTile extends StatelessWidget {
+  final String label;
+  final Color bg;
+  final Color card;
+  final bool selected;
+  final VoidCallback onTap;
+  final Color accent;
+
+  const _BgTile({
+    required this.label,
+    required this.bg,
+    required this.card,
+    required this.selected,
+    required this.onTap,
+    required this.accent,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+              color: selected ? accent : Colors.white.withValues(alpha: 0.12),
+              width: selected ? 2 : 1),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 28, height: 28,
+              decoration: BoxDecoration(
+                  color: card, borderRadius: BorderRadius.circular(6)),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(label,
+                  style: const TextStyle(color: Colors.white, fontSize: 13)),
+            ),
+            if (selected)
+              Icon(Icons.check_circle, color: accent, size: 18),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RadiusTile extends StatelessWidget {
+  final String label;
+  final double radius;
+  final bool selected;
+  final Color accent;
+  final VoidCallback onTap;
+
+  const _RadiusTile({
+    required this.label,
+    required this.radius,
+    required this.selected,
+    required this.accent,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          decoration: BoxDecoration(
+            color: selected
+                ? accent.withValues(alpha: 0.12)
+                : Colors.white.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+                color: selected ? accent : Colors.white.withValues(alpha: 0.10)),
+          ),
+          child: Column(
+            children: [
+              Container(
+                width: 36, height: 22,
+                decoration: BoxDecoration(
+                  color: selected ? accent.withValues(alpha: 0.3) : Colors.white24,
+                  borderRadius: BorderRadius.circular(radius),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(label,
+                  style: TextStyle(
+                      color: selected ? accent : Colors.white54,
+                      fontSize: 11,
+                      fontWeight: selected ? FontWeight.w600 : FontWeight.normal)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 // Help & Support sheet — FAQ + registration/contact form
 // ─────────────────────────────────────────────────────────────
 class _HelpSheet extends StatefulWidget {
@@ -2367,13 +2728,6 @@ class _HelpSheetState extends State<_HelpSheet>
   final _emailCtrl = TextEditingController();
   final _msgCtrl = TextEditingController();
   bool _sent = false;
-
-  static const _faqs = [
-    ('כיצד מוסיפים מכשיר?', 'How to add a device?', 'לחץ על + בלוח הראשי ובחר את המכשיר מהקטלוג.'),
-    ('כיצד משנים שפה?', 'How to change language?', 'פרופיל ← הגדרות ← שפה.'),
-    ('האם האפליקציה עובדת ללא אינטרנט?', 'Does the app work offline?', 'פקודות מקומיות עובדות. ענן דורש אינטרנט.'),
-    ('כיצד מגדירים אוטומציה?', 'How to set an automation?', 'לחץ על "אוטומציות" בתפריט התחתון ← הוסף.'),
-  ];
 
   @override
   void initState() {
@@ -2485,15 +2839,23 @@ class _HelpSheetState extends State<_HelpSheet>
                 controller: _tab,
                 children: [
                   // ── FAQ tab ────────────────────────────────
-                  ListView.builder(
-                    controller: scroll,
-                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-                    itemCount: _faqs.length,
-                    itemBuilder: (ctx, i) {
-                      final (q, qEn, a) = _faqs[i];
-                      return _FaqTile(question: q, questionEn: qEn, answer: a);
-                    },
-                  ),
+                  Builder(builder: (ctx) {
+                    final faqs = [
+                      (s.faq1Q, s.faq1A),
+                      (s.faq2Q, s.faq2A),
+                      (s.faq3Q, s.faq3A),
+                      (s.faq4Q, s.faq4A),
+                    ];
+                    return ListView.builder(
+                      controller: scroll,
+                      padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+                      itemCount: faqs.length,
+                      itemBuilder: (ctx, i) {
+                        final (q, a) = faqs[i];
+                        return _FaqTile(question: q, answer: a);
+                      },
+                    );
+                  }),
 
                   // ── Contact / Register tab ─────────────────
                   SingleChildScrollView(
@@ -2614,9 +2976,8 @@ class _HelpSheetState extends State<_HelpSheet>
 
 class _FaqTile extends StatefulWidget {
   final String question;
-  final String questionEn;
   final String answer;
-  const _FaqTile({required this.question, required this.questionEn, required this.answer});
+  const _FaqTile({required this.question, required this.answer});
 
   @override
   State<_FaqTile> createState() => _FaqTileState();

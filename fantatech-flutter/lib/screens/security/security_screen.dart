@@ -94,6 +94,10 @@ class _SecurityScreenState extends State<SecurityScreen>
                       status: _sensorStatusLabel(doorSensor, s),
                       color: _sensorColor(doorSensor),
                       statusIcon: _sensorIcon(doorSensor, true),
+                      onTap: () => _showSensorDetail(context, s, s.doorSensor,
+                          _sensorStatusLabel(doorSensor, s),
+                          _sensorColor(doorSensor), Icons.lock_outline,
+                          doorSensor),
                     ),
                     const SizedBox(height: 10),
                     _SensorRow(
@@ -102,6 +106,10 @@ class _SecurityScreenState extends State<SecurityScreen>
                       status: _sensorStatusLabel(windowSensor, s),
                       color: _sensorColor(windowSensor),
                       statusIcon: _sensorIcon(windowSensor, true),
+                      onTap: () => _showSensorDetail(context, s, s.windowsSensor,
+                          _sensorStatusLabel(windowSensor, s),
+                          _sensorColor(windowSensor), Icons.window_outlined,
+                          windowSensor),
                     ),
                     const SizedBox(height: 10),
                     _SensorRow(
@@ -118,6 +126,19 @@ class _SecurityScreenState extends State<SecurityScreen>
                           ? AppColors.unsecured
                           : AppColors.secured,
                       statusIcon: Icons.sensors,
+                      onTap: () => _showSensorDetail(
+                          context,
+                          s,
+                          s.motionSensors,
+                          motionSensors.isEmpty
+                              ? s.offlineLabel
+                              : s.normalStatus,
+                          motionSensors.any(
+                                  (m) => m.attributes['detected'] == true)
+                              ? AppColors.unsecured
+                              : AppColors.secured,
+                          Icons.sensors_outlined,
+                          motionSensors.isEmpty ? null : motionSensors.first),
                     ),
                     const SizedBox(height: 10),
                     _SensorRow(
@@ -126,6 +147,9 @@ class _SecurityScreenState extends State<SecurityScreen>
                       status: s.normalStatus,
                       color: AppColors.secured,
                       statusIcon: Icons.verified_outlined,
+                      onTap: () => _showSensorDetail(context, s, s.smokeDetector,
+                          s.normalStatus, AppColors.secured,
+                          Icons.smoke_free_outlined, null),
                     ),
 
                     const SizedBox(height: 28),
@@ -141,6 +165,87 @@ class _SecurityScreenState extends State<SecurityScreen>
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showSensorDetail(BuildContext context, S s, String label,
+      String status, Color color, IconData icon, Device? device) {
+    HapticFeedback.lightImpact();
+    final battery = device?.attributes['battery'];
+    final online = device != null;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF12121E),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40, height: 4,
+              decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(2)),
+            ),
+            const SizedBox(height: 22),
+            Container(
+              width: 72, height: 72,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.14),
+                shape: BoxShape.circle,
+                border: Border.all(color: color.withValues(alpha: 0.4)),
+              ),
+              child: Icon(icon, color: color, size: 34),
+            ),
+            const SizedBox(height: 16),
+            Text(label,
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold)),
+            const SizedBox(height: 6),
+            Text(status,
+                style: TextStyle(color: color, fontSize: 14,
+                    fontWeight: FontWeight.w600)),
+            const SizedBox(height: 22),
+            _detailRow(Icons.wifi, s.normalStatus,
+                online ? s.activeStatus : s.offlineLabel,
+                online ? AppColors.secured : Colors.white38),
+            if (battery != null) ...[
+              const SizedBox(height: 10),
+              _detailRow(Icons.battery_full, '🔋', '$battery%',
+                  AppColors.secured),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _detailRow(IconData icon, String label, String value, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 18),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(label,
+                style: const TextStyle(color: Colors.white, fontSize: 13)),
+          ),
+          Text(value,
+              style: TextStyle(
+                  color: color, fontSize: 13, fontWeight: FontWeight.w600)),
+        ],
       ),
     );
   }
@@ -374,6 +479,7 @@ class _SensorRow extends StatelessWidget {
   final String status;
   final Color color;
   final IconData statusIcon;
+  final VoidCallback? onTap;
 
   const _SensorRow({
     required this.icon,
@@ -381,65 +487,75 @@ class _SensorRow extends StatelessWidget {
     required this.status,
     required this.color,
     required this.statusIcon,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-      decoration: BoxDecoration(
-        color: AppColors.darkCard,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.07),
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.07),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, color: Colors.white70, size: 19),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        decoration: BoxDecoration(
+          color: AppColors.darkCard,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.07),
           ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.07),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: Colors.white70, size: 19),
+            ),
 
-          const SizedBox(width: 14),
+            const SizedBox(width: 14),
 
-          Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 15,
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+
+            Text(
+              status,
+              style: TextStyle(
+                color: color.withValues(alpha: 0.85),
+                fontSize: 13,
                 fontWeight: FontWeight.w500,
               ),
             ),
-          ),
 
-          Text(
-            status,
-            style: TextStyle(
-              color: color.withValues(alpha: 0.85),
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
+            const SizedBox(width: 10),
+
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(9),
+              ),
+              child: Icon(statusIcon, color: color, size: 17),
             ),
-          ),
 
-          const SizedBox(width: 10),
-
-          Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(9),
-            ),
-            child: Icon(statusIcon, color: color, size: 17),
-          ),
-        ],
+            if (onTap != null) ...[
+              const SizedBox(width: 4),
+              Icon(Icons.chevron_left,
+                  color: Colors.white.withValues(alpha: 0.3), size: 18),
+            ],
+          ],
+        ),
       ),
     );
   }

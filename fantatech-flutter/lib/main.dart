@@ -32,12 +32,14 @@ void main() async {
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
+  final gateways = GatewayManager();
+  final appState = AppState()..attachGateways(gateways);
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AppState()),
+        ChangeNotifierProvider.value(value: appState),
         ChangeNotifierProvider(create: (_) => RealDiscoveryEngine()),
-        ChangeNotifierProvider(create: (_) => GatewayManager()),
+        ChangeNotifierProvider.value(value: gateways),
       ],
       child: const FantaTechApp(),
     ),
@@ -55,8 +57,8 @@ class FantaTechApp extends StatelessWidget {
       title: 'FantaTech',
       debugShowCheckedModeBanner: false,
       themeMode: state.themeMode,
-      theme: AppTheme.light(),
-      darkTheme: AppTheme.dark(),
+      theme: AppTheme.light(state.themePrefs),
+      darkTheme: AppTheme.dark(state.themePrefs),
       locale: state.flutterLocale,
       supportedLocales: const [
         Locale('he'),

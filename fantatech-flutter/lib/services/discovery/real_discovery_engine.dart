@@ -171,10 +171,15 @@ class RealDiscoveryEngine extends ChangeNotifier {
     '_esphomelib._tcp',
     '_home-assistant._tcp',
     '_hue._tcp',
+    // IKEA DIRIGERA — the hub advertises as _ihsp._tcp (IKEA Home Smart
+    // Protocol). Older firmware variants also used _dirigera._tcp; keep both
+    // so we catch every Hub.
+    '_ihsp._tcp',
     '_dirigera._tcp',
     '_hap._tcp',
     '_mqtt._tcp',
     '_matter._tcp',
+    '_zeroconf._tcp',
   ];
 
   Future<void> _runMdns() async {

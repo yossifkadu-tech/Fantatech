@@ -107,6 +107,56 @@ class DeCONZGatewayClient {
     }
   }
 
+  // ── Device control ─────────────────────────────────────────────────────────
+  //
+  // deCONZ uses the Hue v1 REST API. Light state is set via:
+  //   PUT /api/{key}/lights/{id}/state  body: {"on": true, "bri": 0..254}
+  //
+  // Internal IDs are prefixed "deconz_light_" — strip before sending.
+
+  static String _stripLightId(String id) =>
+      id.startsWith('deconz_light_') ? id.substring(13) : id;
+
+  static Future<bool> setOnOff(String ip, int port, String apiKey,
+      String deviceId, bool isOn) async {
+    return _putState(ip, port, apiKey, deviceId, {'on': isOn});
+  }
+
+  /// Set brightness 0..100 (mapped to deCONZ 0..254).
+  static Future<bool> setBrightness(String ip, int port, String apiKey,
+      String deviceId, int level) async {
+    final bri = (level.clamp(1, 100) * 2.54).round();
+    return _putState(ip, port, apiKey, deviceId, {'on': true, 'bri': bri});
+  }
+
+  /// Set color temperature in mireds (typically 153..500).
+  static Future<bool> setColorTemperature(String ip, int port, String apiKey,
+      String deviceId, int mireds) async {
+    return _putState(ip, port, apiKey, deviceId,
+        {'on': true, 'ct': mireds.clamp(153, 500)});
+  }
+
+  /// Set color via Hue (0..65535) and Saturation (0..254).
+  static Future<bool> setColor(String ip, int port, String apiKey,
+      String deviceId, int hue, int sat) async {
+    return _putState(ip, port, apiKey, deviceId, {
+      'on':  true,
+      'hue': hue.clamp(0, 65535),
+      'sat': sat.clamp(0, 254),
+    });
+  }
+
+  static Future<bool> _putState(String ip, int port, String apiKey,
+      String deviceId, Map<String, dynamic> state) async {
+    final body = jsonEncode(state);
+    final id   = _stripLightId(deviceId);
+    final raw  = await _request(
+        ip, port, 'PUT', '/api/$apiKey/lights/$id/state', body);
+    if (raw == null) return false;
+    // deCONZ returns [{"success": {...}}] for each updated attribute
+    return raw.contains('"success"');
+  }
+
   // ── Type mapping ───────────────────────────────────────────────────────────
 
   static DeviceType? _sensorType(String type) {

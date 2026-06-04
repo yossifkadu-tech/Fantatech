@@ -141,18 +141,25 @@ class GatewayManager extends ChangeNotifier {
 
       // ── IKEA DIRIGERA ────────────────────────────────────────────────────────
       case GatewayType.dirigera: {
-        _setPairStatus('לחץ כפתור ב-DIRIGERA…', 30);
-        final code = await DIRIGERAGatewayClient.authorizeWithPolling(ip,
+        _setPairStatus('לחץ עכשיו על הכפתור בתחתית ה-DIRIGERA…', 60);
+        var diag = '';
+        final accessToken = await DIRIGERAGatewayClient.pairWithPolling(ip,
+          seconds: 60,
           onWaiting: (rem) {
             pairCountdown = rem;
-            pairStatus    = 'ממתין לכפתור… $rem שניות';
+            pairStatus    = 'ממתין ללחיצת כפתור… $rem שניות';
+            notifyListeners();
+          },
+          onStatus: (msg) {
+            diag       = msg;
+            pairStatus = msg;
             notifyListeners();
           },
         );
-        if (code == null) return const GatewayConnectResult.fail('הזמן פג — לא נלחץ הכפתור');
-
-        final accessToken = await DIRIGERAGatewayClient.exchangeToken(ip, code);
-        if (accessToken == null) return const GatewayConnectResult.fail('לא ניתן לקבל Token');
+        if (accessToken == null) {
+          return GatewayConnectResult.fail(
+              diag.isEmpty ? 'לא הושלם החיבור — ודא שלחצת על הכפתור בזמן' : diag);
+        }
 
         _addConnection(GatewayConnection(
           id:          _uuid.v4(),

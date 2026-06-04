@@ -19,6 +19,7 @@ enum DiscoveredDeviceType {
   motionSensor,   // PIR motion
   windowSensor,   // Window / door contact
   doorSensor,     // Door sensor
+  waterLeak,      // Water leak / flood sensor
   sensor,         // Generic sensor
   speaker,
   tv,
