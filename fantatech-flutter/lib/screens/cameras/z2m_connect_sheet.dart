@@ -82,7 +82,7 @@ class _Z2MConnectSheetState extends State<Z2MConnectSheet> {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Color(0xFF12121E),
+        color: context.tCard,
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       padding: EdgeInsets.fromLTRB(

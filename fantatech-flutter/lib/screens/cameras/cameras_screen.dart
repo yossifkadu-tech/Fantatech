@@ -492,7 +492,7 @@ class _NightSceneBackground extends StatelessWidget {
     final isIndoor = camera.room == 'indoor';
     final List<Color> palette = isIndoor
         ? [
-            const Color(0xFF1A1A2E),
+            context.tCard,
             const Color(0xFF16213E),
             const Color(0xFF0F3460),
           ]
@@ -1035,7 +1035,7 @@ class _ManualCameraSheetState extends State<_ManualCameraSheet> {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Color(0xFF12121E),
+        color: context.tCard,
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       padding: EdgeInsets.fromLTRB(
@@ -1325,7 +1325,7 @@ class _RoomDropdown extends StatelessWidget {
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: value,
-          dropdownColor: const Color(0xFF1A1A2E),
+          dropdownColor: context.tCard,
           style: TextStyle(color: context.tText, fontSize: 13),
           items: const [
             DropdownMenuItem(value: 'outdoor', child: Text('חוץ')),

@@ -104,7 +104,7 @@ class FaceAnalysisScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: const Color(0xFF1A1A2E),
+        backgroundColor: context.tCard,
         title: Text('נקה היסטוריה',
             style: TextStyle(color: context.tText)),
         content: Text('האם למחוק את כל תוצאות הניתוח?',

@@ -1268,8 +1268,8 @@ class _AcListSheet extends StatelessWidget {
         .toList();
 
     return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF12121E),
+      decoration: BoxDecoration(
+        color: context.tCard,
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 36),
@@ -2468,7 +2468,7 @@ void showSceneEditor(BuildContext context, AppState state, CustomScene? existing
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    backgroundColor: const Color(0xFF12121E),
+    backgroundColor: context.tCard,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
     ),
@@ -2999,8 +2999,8 @@ class _TempControlSheetState extends State<_TempControlSheet> {
         .where((d) => d.type == DeviceType.airConditioner).length;
 
     return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF12121E),
+      decoration: BoxDecoration(
+        color: context.tCard,
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 36),

@@ -636,7 +636,7 @@ void showTvRemote(BuildContext context, MediaDevice device) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    backgroundColor: const Color(0xFF12121E),
+    backgroundColor: context.tCard,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
     ),

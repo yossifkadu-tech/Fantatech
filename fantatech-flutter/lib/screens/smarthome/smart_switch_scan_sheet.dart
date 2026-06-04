@@ -144,7 +144,7 @@ class _SmartSwitchScanSheetState extends State<SmartSwitchScanSheet> {
       maxChildSize: 0.92,
       builder: (_, ctrl) => Container(
         decoration: BoxDecoration(
-          color: Color(0xFF12121E),
+          color: context.tCard,
           borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
         ),
         child: Column(

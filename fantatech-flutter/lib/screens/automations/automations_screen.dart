@@ -952,7 +952,7 @@ class _HebrewCalendarConditions extends StatelessWidget {
     int monthIdx = 5; // אדר
     final result = await showModalBottomSheet<String>(
       context: context,
-      backgroundColor: const Color(0xFF12121E),
+      backgroundColor: context.tCard,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
       ),
@@ -979,7 +979,7 @@ class _HebrewCalendarConditions extends StatelessWidget {
                     child: DropdownButton<int>(
                       value: day,
                       isExpanded: true,
-                      dropdownColor: const Color(0xFF1B1B2A),
+                      dropdownColor: context.tCardAlt,
                       underline: const SizedBox(),
                       style: TextStyle(color: context.tText, fontSize: 15),
                       items: [
@@ -999,7 +999,7 @@ class _HebrewCalendarConditions extends StatelessWidget {
                     child: DropdownButton<int>(
                       value: monthIdx,
                       isExpanded: true,
-                      dropdownColor: const Color(0xFF1B1B2A),
+                      dropdownColor: context.tCardAlt,
                       underline: const SizedBox(),
                       style: TextStyle(color: context.tText, fontSize: 15),
                       items: [

@@ -98,7 +98,7 @@ class _StoreScreenState extends State<StoreScreen> {
       builder: (ctx) {
         final ctrl = TextEditingController();
         return AlertDialog(
-          backgroundColor: const Color(0xFF1A1A2E),
+          backgroundColor: context.tCard,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: Text(s.storeNotifyMe,
@@ -402,8 +402,8 @@ class _StoreScreenState extends State<StoreScreen> {
                   child: Container(
                     height: 175,
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF1A1A2E), Color(0xFF16213E)],
+                      gradient: LinearGradient(
+                        colors: [context.tCard, Color(0xFF16213E)],
                         begin: Alignment.centerLeft,
                         end: Alignment.centerRight,
                       ),
