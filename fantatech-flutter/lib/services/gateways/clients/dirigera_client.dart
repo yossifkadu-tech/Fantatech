@@ -262,12 +262,31 @@ class DIRIGERAGatewayClient {
   // ── Type mapping ───────────────────────────────────────────────────────────
 
   static DeviceType? _mapType(String dType, Map<String, dynamic> attrs) {
-    switch (dType.toLowerCase()) {
+    // 1. Attribute-based detection — most reliable, independent of how IKEA
+    //    names the deviceType (Badring etc. can report several variants).
+    if (attrs.containsKey('waterLeakDetected')) return DeviceType.waterLeakSensor;
+    if (attrs.containsKey('isDetected'))        return DeviceType.motionSensor;
+    if (attrs.containsKey('isOpen'))            return DeviceType.windowSensor;
+    if (attrs.containsKey('blindsTargetLevel') ||
+        attrs.containsKey('blindsCurrentLevel')) return DeviceType.blind;
+
+    final t     = dType.toLowerCase();
+    final model = (attrs['model'] ?? '').toString().toLowerCase();
+
+    // 2. Name/model hints for water-leak sensors.
+    if (t.contains('water') || t.contains('leak') ||
+        model.contains('badring') || model.contains('water') ||
+        model.contains('leak')) {
+      return DeviceType.waterLeakSensor;
+    }
+
+    // 3. Fallback to deviceType string.
+    switch (t) {
       case 'light':          return DeviceType.light;
       case 'outlet':         return DeviceType.smartPlug;
       case 'motionsensor':   return DeviceType.motionSensor;
       case 'contactsensor':  return DeviceType.windowSensor;
-      case 'watersensor':    return DeviceType.waterLeakSensor; // IKEA Badring
+      case 'watersensor':    return DeviceType.waterLeakSensor;
       case 'blinds':         return DeviceType.blind;
       case 'speaker':        return null; // skip
       case 'controller':     return null; // remotes etc.
@@ -275,15 +294,15 @@ class DIRIGERAGatewayClient {
     }
   }
 
-  /// Extracts a sensor's "triggered" state from DIRIGERA attributes, covering
-  /// the different attribute names IKEA uses per sensor kind.
+  /// Extracts a sensor's "triggered" state from DIRIGERA attributes, by
+  /// attribute presence (independent of deviceType naming).
   static bool? _detectionState(String dType, Map<String, dynamic> attrs) {
-    switch (dType.toLowerCase()) {
-      case 'watersensor':   return attrs['waterLeakDetected'] as bool?;
-      case 'motionsensor':  return attrs['isDetected'] as bool?;
-      case 'contactsensor': return attrs['isOpen'] as bool?;
-      default:              return null;
+    if (attrs.containsKey('waterLeakDetected')) {
+      return attrs['waterLeakDetected'] as bool?;
     }
+    if (attrs.containsKey('isDetected')) return attrs['isDetected'] as bool?;
+    if (attrs.containsKey('isOpen'))     return attrs['isOpen'] as bool?;
+    return null;
   }
 
   // ── HTTPS helpers (self-signed cert allowed) ───────────────────────────────
