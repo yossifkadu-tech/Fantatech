@@ -102,33 +102,33 @@ class _StoreScreenState extends State<StoreScreen> {
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: Text(s.storeNotifyMe,
-              style: const TextStyle(color: Colors.white, fontSize: 16)),
+              style: TextStyle(color: context.tText, fontSize: 16)),
           content: Column(mainAxisSize: MainAxisSize.min, children: [
             Text(
               s.storeNotifyDesc,
               style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.65), fontSize: 13),
+                  color: context.tText2(0.65), fontSize: 13),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: ctrl,
               keyboardType: TextInputType.emailAddress,
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(color: context.tText),
               decoration: InputDecoration(
                 hintText: s.storeYourEmail,
                 hintStyle:
-                    TextStyle(color: Colors.white.withValues(alpha: 0.35)),
+                    TextStyle(color: context.tText2(0.35)),
                 filled: true,
-                fillColor: Colors.white.withValues(alpha: 0.07),
+                fillColor: context.tText2(0.07),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                   borderSide: BorderSide(
-                      color: Colors.white.withValues(alpha: 0.15)),
+                      color: context.tText2(0.15)),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                   borderSide: BorderSide(
-                      color: Colors.white.withValues(alpha: 0.15)),
+                      color: context.tText2(0.15)),
                 ),
               ),
             ),
@@ -138,7 +138,7 @@ class _StoreScreenState extends State<StoreScreen> {
               onPressed: () => Navigator.pop(ctx),
               child: Text(s.cancel,
                   style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.45))),
+                      color: context.tText2(0.45))),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -159,7 +159,7 @@ class _StoreScreenState extends State<StoreScreen> {
                 ));
               },
               child: Text(s.save,
-                  style: const TextStyle(color: Colors.white)),
+                  style: TextStyle(color: context.tText)),
             ),
           ],
         );
@@ -192,7 +192,7 @@ class _StoreScreenState extends State<StoreScreen> {
     final newArrivals = _filter(_newArrivals);
 
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: context.tBg,
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
@@ -204,8 +204,8 @@ class _StoreScreenState extends State<StoreScreen> {
                   children: [
                     Text(
                       s.storeTitle,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: context.tText,
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
                       ),
@@ -217,13 +217,13 @@ class _StoreScreenState extends State<StoreScreen> {
                       child: Container(
                         width: 38, height: 38,
                         decoration: BoxDecoration(
-                          color: AppColors.darkCard,
+                          color: context.tCard,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.10)),
+                              color: context.tText2(0.10)),
                         ),
-                        child: const Icon(Icons.shopping_bag_outlined,
-                            color: Colors.white70, size: 20),
+                        child: Icon(Icons.shopping_bag_outlined,
+                            color: context.tText2(0.7), size: 20),
                       ),
                     ),
                   ],
@@ -238,27 +238,27 @@ class _StoreScreenState extends State<StoreScreen> {
                 child: Container(
                   height: 42,
                   decoration: BoxDecoration(
-                    color: AppColors.darkCard,
+                    color: context.tCard,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.08)),
+                        color: context.tText2(0.08)),
                   ),
                   child: Row(children: [
                     const SizedBox(width: 12),
                     Icon(Icons.search_outlined,
-                        color: Colors.white.withValues(alpha: 0.35),
+                        color: context.tText2(0.35),
                         size: 18),
                     const SizedBox(width: 8),
                     Expanded(
                       child: TextField(
                         controller: _searchCtrl,
-                        style: const TextStyle(
-                            color: Colors.white, fontSize: 13),
+                        style: TextStyle(
+                            color: context.tText, fontSize: 13),
                         textDirection: textDir,
                         decoration: InputDecoration(
                           hintText: s.storeSearchHint,
                           hintStyle: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.30),
+                            color: context.tText2(0.30),
                             fontSize: 13,
                           ),
                           border: InputBorder.none,
@@ -276,7 +276,7 @@ class _StoreScreenState extends State<StoreScreen> {
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 8),
                           child: Icon(Icons.close_rounded,
-                              color: Colors.white.withValues(alpha: 0.45),
+                              color: context.tText2(0.45),
                               size: 16),
                         ),
                       ),
@@ -294,20 +294,20 @@ class _StoreScreenState extends State<StoreScreen> {
                     child: Column(
                       children: [
                         Icon(Icons.search_off_rounded,
-                            color: Colors.white.withValues(alpha: 0.2),
+                            color: context.tText2(0.2),
                             size: 48),
                         const SizedBox(height: 12),
                         Text(
                           '${s.storeNoResultsFor} "$_query"',
                           style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.35),
+                              color: context.tText2(0.35),
                               fontSize: 13),
                         ),
                         const SizedBox(height: 8),
                         TextButton(
                           onPressed: _openShop,
                           child: Text(s.storeSearchSite,
-                              style: const TextStyle(color: AppColors.primary)),
+                              style: TextStyle(color: AppColors.primary)),
                         ),
                       ],
                     ),
@@ -347,11 +347,11 @@ class _StoreScreenState extends State<StoreScreen> {
                             Container(
                               width: 44, height: 44,
                               decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.15),
+                                color: context.tText2(0.15),
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(Icons.language_outlined,
-                                  color: Colors.white, size: 22),
+                              child: Icon(Icons.language_outlined,
+                                  color: context.tText, size: 22),
                             ),
                             const SizedBox(width: 14),
                             Expanded(
@@ -361,15 +361,15 @@ class _StoreScreenState extends State<StoreScreen> {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Text(s.visitWebsite,
-                                      style: const TextStyle(
-                                        color: Colors.white,
+                                      style: TextStyle(
+                                        color: context.tText,
                                         fontSize: 15,
                                         fontWeight: FontWeight.w700,
                                       )),
                                   const SizedBox(height: 2),
                                   Text('fantatech.co.il',
                                       style: TextStyle(
-                                        color: Colors.white
+                                        color: context.tText
                                             .withValues(alpha: 0.70),
                                         fontSize: 12,
                                       )),
@@ -380,11 +380,11 @@ class _StoreScreenState extends State<StoreScreen> {
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
                                 color:
-                                    Colors.white.withValues(alpha: 0.15),
+                                    context.tText2(0.15),
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: const Icon(Icons.open_in_new,
-                                  color: Colors.white, size: 16),
+                              child: Icon(Icons.open_in_new,
+                                  color: context.tText, size: 16),
                             ),
                           ],
                         ),
@@ -444,7 +444,7 @@ class _StoreScreenState extends State<StoreScreen> {
                                 ),
                                 child: Text(
                                   s.storeComingSoon.toUpperCase(),
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     color: Color(0xFF9B8AFF),
                                     fontSize: 10,
                                     fontWeight: FontWeight.w700,
@@ -453,10 +453,10 @@ class _StoreScreenState extends State<StoreScreen> {
                                 ),
                               ),
                               const SizedBox(height: 10),
-                              const Text(
+                              Text(
                                 'FantaTech Hub Pro 2.0',
                                 style: TextStyle(
-                                  color: Colors.white,
+                                  color: context.tText,
                                   fontSize: 22,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -465,7 +465,7 @@ class _StoreScreenState extends State<StoreScreen> {
                               Text(
                                 s.storeHubProTagline,
                                 style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.60),
+                                  color: context.tText2(0.60),
                                   fontSize: 13,
                                   height: 1.4,
                                 ),
@@ -483,8 +483,8 @@ class _StoreScreenState extends State<StoreScreen> {
                                           BorderRadius.circular(20),
                                     ),
                                     child: Text(s.storeNotifyMe,
-                                        style: const TextStyle(
-                                            color: Colors.white,
+                                        style: TextStyle(
+                                            color: context.tText,
                                             fontSize: 12,
                                             fontWeight: FontWeight.w600)),
                                   ),
@@ -507,8 +507,8 @@ class _StoreScreenState extends State<StoreScreen> {
                   child: Row(children: [
                     Text(
                       s.storeFeatured,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: context.tText,
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
@@ -552,8 +552,8 @@ class _StoreScreenState extends State<StoreScreen> {
                   child: Row(children: [
                     Text(
                       s.storeNewArrivals,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: context.tText,
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
@@ -638,7 +638,7 @@ class _ProductCard extends StatelessWidget {
       case 'ft_plug':  return AppColors.plugColor;
       case 'ft_gw':    return const Color(0xFF00B4D8);
       case 'ft_strip': return AppColors.lightColor;
-      default:         return Colors.white54;
+      default:         return Colors.white.withValues(alpha: 0.54);
     }
   }
 
@@ -664,10 +664,10 @@ class _ProductCard extends StatelessWidget {
       child: Container(
         width: wide ? null : 140.0,
         decoration: BoxDecoration(
-          color: AppColors.darkCard,
+          color: context.tCard,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: Colors.white.withValues(alpha: 0.07),
+            color: context.tText2(0.07),
             width: 1.2,
           ),
         ),
@@ -699,7 +699,7 @@ class _ProductCard extends StatelessWidget {
                             color: const Color(0xFFFBBC05),
                             borderRadius: BorderRadius.circular(5),
                           ),
-                          child: const Text(
+                          child: Text(
                             'TOP',
                             style: TextStyle(
                               color: Colors.black,
@@ -714,7 +714,7 @@ class _ProductCard extends StatelessWidget {
                       top: 6, right: 6,
                       child: Icon(
                         Icons.open_in_new,
-                        color: Colors.white.withValues(alpha: 0.25),
+                        color: context.tText2(0.25),
                         size: 12,
                       ),
                     ),
@@ -726,8 +726,8 @@ class _ProductCard extends StatelessWidget {
               // ── Name ─────────────────────────────────────────
               Text(
                 _name(s),
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: context.tText,
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
@@ -738,13 +738,13 @@ class _ProductCard extends StatelessWidget {
 
               // ── Rating ────────────────────────────────────────
               Row(children: [
-                const Icon(Icons.star_rounded,
+                Icon(Icons.star_rounded,
                     color: Color(0xFFFBBC05), size: 12),
                 const SizedBox(width: 3),
                 Text(
                   product.rating.toString(),
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.55),
+                    color: context.tText2(0.55),
                     fontSize: 10,
                   ),
                 ),
@@ -757,7 +757,7 @@ class _ProductCard extends StatelessWidget {
                 children: [
                   Text(
                     formatPrice(product.priceUsd, isHebrew: isHebrew),
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppColors.primary,
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -772,8 +772,8 @@ class _ProductCard extends StatelessWidget {
                         color: AppColors.primary,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Icon(Icons.shopping_cart_outlined,
-                          color: Colors.white, size: 14),
+                      child: Icon(Icons.shopping_cart_outlined,
+                          color: context.tText, size: 14),
                     ),
                   ),
                 ],

@@ -109,7 +109,7 @@ class _BreakersScreenState extends State<BreakersScreen>
     final s = context.watch<AppState>().strings;
 
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: context.tBg,
       body: SafeArea(
         child: Column(
           children: [
@@ -191,19 +191,19 @@ class _TopBar extends StatelessWidget {
               width: 38,
               height: 38,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.07),
+                color: context.tText2(0.07),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.chevron_right,
-                  color: Colors.white, size: 22),
+              child: Icon(Icons.chevron_right,
+                  color: context.tText, size: 22),
             ),
           ),
           Expanded(
             child: Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: context.tText,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
@@ -260,9 +260,9 @@ class _StatusStrip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: AppColors.darkCard,
+          color: context.tCard,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
+          border: Border.all(color: context.tText2(0.07)),
         ),
         child: Row(
           children: [
@@ -295,8 +295,8 @@ class _StatusStrip extends StatelessWidget {
                 children: [
                   Text(
                     '${(onCount / total * 100).round()}%',
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: context.tText,
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
                     ),
@@ -306,7 +306,7 @@ class _StatusStrip extends StatelessWidget {
                     borderRadius: BorderRadius.circular(3),
                     child: LinearProgressIndicator(
                       value: onCount / total,
-                      backgroundColor: Colors.white.withValues(alpha: 0.1),
+                      backgroundColor: context.tText2(0.1),
                       valueColor:
                           const AlwaysStoppedAnimation(AppColors.secured),
                       minHeight: 4,
@@ -380,15 +380,15 @@ class _PanelHeader extends StatelessWidget {
         const SizedBox(width: 8),
         Text(
           label,
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: context.tText,
             fontSize: 15,
             fontWeight: FontWeight.w600,
           ),
         ),
         const Spacer(),
         Icon(Icons.electrical_services,
-            color: Colors.white.withValues(alpha: 0.3), size: 18),
+            color: context.tText2(0.3), size: 18),
       ],
     );
   }
@@ -421,7 +421,7 @@ class _MainBreakerCard extends StatelessWidget {
   Color get _stateColor {
     return switch (breaker.state) {
       BreakerState.on => AppColors.secured,
-      BreakerState.off => Colors.white38,
+      BreakerState.off => Colors.white.withValues(alpha: 0.38),
       BreakerState.tripped => AppColors.unsecured,
     };
   }
@@ -447,7 +447,7 @@ class _MainBreakerCard extends StatelessWidget {
             end: Alignment.bottomRight,
             colors: [
               color.withValues(alpha: 0.18),
-              AppColors.darkCard,
+              context.tCard,
             ],
           ),
           borderRadius: BorderRadius.circular(18),
@@ -465,8 +465,8 @@ class _MainBreakerCard extends StatelessWidget {
                 children: [
                   Text(
                     breaker.room,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: context.tText,
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
@@ -475,7 +475,7 @@ class _MainBreakerCard extends StatelessWidget {
                   Text(
                     '${breaker.amps}A  ·  $ampsLabel',
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.5),
+                      color: context.tText2(0.5),
                       fontSize: 12,
                     ),
                   ),
@@ -612,10 +612,10 @@ class _SubBreakerCard extends StatelessWidget {
   });
 
   Color get _stateColor {
-    if (!breaker.isConnected) return Colors.white24;
+    if (!breaker.isConnected) return Colors.white.withValues(alpha: 0.24);
     return switch (breaker.state) {
       BreakerState.on => AppColors.secured,
-      BreakerState.off => Colors.white38,
+      BreakerState.off => Colors.white.withValues(alpha: 0.38),
       BreakerState.tripped => AppColors.unsecured,
     };
   }
@@ -639,7 +639,7 @@ class _SubBreakerCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: AppColors.darkCard,
+          color: context.tCard,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: color.withValues(alpha: 0.35),
@@ -675,8 +675,8 @@ class _SubBreakerCard extends StatelessWidget {
             const Spacer(),
             Text(
               breaker.room,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: context.tText,
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
               ),
@@ -689,7 +689,7 @@ class _SubBreakerCard extends StatelessWidget {
                 Text(
                   '${breaker.amps}A',
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.4),
+                    color: context.tText2(0.4),
                     fontSize: 9,
                   ),
                 ),
@@ -707,7 +707,7 @@ class _SubBreakerCard extends StatelessWidget {
                   Text(
                     connectLabel,
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.3),
+                      color: context.tText2(0.3),
                       fontSize: 10,
                     ),
                   ),
@@ -769,8 +769,8 @@ class _BreakerVisual extends StatelessWidget {
   Widget build(BuildContext context) {
     Color bg, switchColor;
     if (disconnected) {
-      bg = Colors.white.withValues(alpha: 0.06);
-      switchColor = Colors.white24;
+      bg = context.tText2(0.06);
+      switchColor = context.tText2(0.24);
     } else {
       switch (state) {
         case BreakerState.on:
@@ -778,8 +778,8 @@ class _BreakerVisual extends StatelessWidget {
           switchColor = AppColors.secured;
           break;
         case BreakerState.off:
-          bg = Colors.white.withValues(alpha: 0.06);
-          switchColor = Colors.white38;
+          bg = context.tText2(0.06);
+          switchColor = context.tText2(0.38);
           break;
         case BreakerState.tripped:
           bg = AppColors.unsecured.withValues(alpha: 0.12);

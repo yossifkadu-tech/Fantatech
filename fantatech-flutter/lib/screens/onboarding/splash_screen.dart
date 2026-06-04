@@ -1,6 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // SplashScreen — branded launch screen with a fade-in logo.
 // ─────────────────────────────────────────────────────────────────────────────
+import '../../theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
 import '../../widgets/brand_logo.dart';
@@ -56,7 +57,7 @@ class _SplashScreenState extends State<SplashScreen>
                   height: 26,
                   child: CircularProgressIndicator(
                     strokeWidth: 2.2,
-                    color: Colors.white.withValues(alpha: 0.6),
+                    color: context.tText2(0.6),
                   ),
                 ),
               ],

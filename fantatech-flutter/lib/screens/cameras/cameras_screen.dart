@@ -119,7 +119,7 @@ class _CamerasScreenState extends State<CamerasScreen>
         : state.cameras.where((c) => c.room == _selectedRoom).toList();
 
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: context.tBg,
       floatingActionButton: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -129,7 +129,7 @@ class _CamerasScreenState extends State<CamerasScreen>
             heroTag: 'z2m',
             onPressed: () => _showZ2MSheet(context),
             backgroundColor: const Color(0xFFFF9D00),
-            child: const Icon(Icons.settings_input_antenna, size: 18),
+            child: Icon(Icons.settings_input_antenna, size: 18),
           ),
           const SizedBox(height: 8),
           // Add manually button
@@ -137,7 +137,7 @@ class _CamerasScreenState extends State<CamerasScreen>
             heroTag: 'manual',
             onPressed: () => _showAddManualSheet(context),
             backgroundColor: AppColors.primary,
-            child: const Icon(Icons.videocam_outlined, size: 18),
+            child: Icon(Icons.videocam_outlined, size: 18),
           ),
           const SizedBox(height: 8),
           // Scan button
@@ -145,19 +145,19 @@ class _CamerasScreenState extends State<CamerasScreen>
             heroTag: 'scan',
             onPressed: _scanning ? null : _scanForCameras,
             backgroundColor: _scanning
-                ? Colors.white12
+                ? context.tText2(0.12)
                 : const Color(0xFF00B4D8),
             icon: _scanning
                 ? const SizedBox(
                     width: 16, height: 16,
                     child: CircularProgressIndicator(
                         strokeWidth: 2, color: Colors.white))
-                : const Icon(Icons.radar, size: 18),
+                : Icon(Icons.radar, size: 18),
             label: Text(
               _scanning
                   ? 'סורק... ${_scanFound > 0 ? "($_scanFound)" : ""}'
                   : 'סרוק רשת',
-              style: const TextStyle(fontSize: 13),
+              style: TextStyle(fontSize: 13),
             ),
           ),
         ],
@@ -191,20 +191,20 @@ class _CamerasScreenState extends State<CamerasScreen>
                       decoration: BoxDecoration(
                         color: selected
                             ? AppColors.primary
-                            : Colors.white.withValues(alpha: 0.07),
+                            : context.tText2(0.07),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
                           color: selected
                               ? AppColors.primary
-                              : Colors.white.withValues(alpha: 0.1),
+                              : context.tText2(0.1),
                         ),
                       ),
                       child: Text(
                         label,
                         style: TextStyle(
                           color: selected
-                              ? Colors.white
-                              : Colors.white.withValues(alpha: 0.55),
+                              ? context.tText
+                              : context.tText2(0.55),
                           fontSize: 13,
                           fontWeight: selected
                               ? FontWeight.w600
@@ -270,8 +270,8 @@ class _TopBar extends StatelessWidget {
           Expanded(
             child: Text(
               title,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: context.tText,
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
@@ -287,11 +287,11 @@ class _TopBar extends StatelessWidget {
               width: 38,
               height: 38,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.07),
+                color: context.tText2(0.07),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(
-                  Icons.notifications_outlined, color: Colors.white, size: 20),
+              child: Icon(
+                  Icons.notifications_outlined, color: context.tText, size: 20),
             ),
           ),
           const SizedBox(width: 10),
@@ -309,7 +309,7 @@ class _TopBar extends StatelessWidget {
                 border: Border.all(
                     color: AppColors.primary.withValues(alpha: 0.3)),
               ),
-              child: const Icon(
+              child: Icon(
                   Icons.add, color: AppColors.primary, size: 22),
             ),
           ),
@@ -400,7 +400,7 @@ class _CameraCard extends StatelessWidget {
                     ),
                     child: Text(
                       s.offlineLabel,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.grey,
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
@@ -423,13 +423,13 @@ class _CameraCard extends StatelessWidget {
                       color: Colors.black.withValues(alpha: 0.45),
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.4),
+                        color: context.tText2(0.4),
                         width: 1.5,
                       ),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.play_arrow_rounded,
-                      color: Colors.white,
+                      color: context.tText,
                       size: 24,
                     ),
                   ),
@@ -447,8 +447,8 @@ class _CameraCard extends StatelessWidget {
                   children: [
                     Text(
                       camera.name,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: context.tText,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         shadows: [
@@ -459,7 +459,7 @@ class _CameraCard extends StatelessWidget {
                     Text(
                       _localizeRoom(camera.room, s),
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.65),
+                        color: context.tText2(0.65),
                         fontSize: 11,
                         shadows: const [
                           Shadow(color: Colors.black54, blurRadius: 6),
@@ -702,7 +702,7 @@ class _LiveBadge extends StatelessWidget {
             const SizedBox(width: 5),
             Text(
               s.liveLabel,
-              style: const TextStyle(
+              style: TextStyle(
                 color: AppColors.secured,
                 fontSize: 10,
                 fontWeight: FontWeight.bold,
@@ -762,7 +762,7 @@ class _FullscreenCameraState extends State<_FullscreenCamera>
 
           // Top + bottom gradient
           Container(
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
@@ -787,8 +787,8 @@ class _FullscreenCameraState extends State<_FullscreenCamera>
                         color: Colors.black45,
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(Icons.chevron_right,
-                          color: Colors.white, size: 22),
+                      child: Icon(Icons.chevron_right,
+                          color: context.tText, size: 22),
                     ),
                   ),
                   const Spacer(),
@@ -797,8 +797,8 @@ class _FullscreenCameraState extends State<_FullscreenCamera>
                     children: [
                       Text(
                         widget.camera.name,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: context.tText,
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
@@ -806,7 +806,7 @@ class _FullscreenCameraState extends State<_FullscreenCamera>
                       Text(
                         _localizeRoom(widget.camera.room, s),
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.6),
+                          color: context.tText2(0.6),
                           fontSize: 12,
                         ),
                       ),
@@ -820,8 +820,8 @@ class _FullscreenCameraState extends State<_FullscreenCamera>
                       color: Colors.black45,
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.fullscreen,
-                        color: Colors.white, size: 22),
+                    child: Icon(Icons.fullscreen,
+                        color: context.tText, size: 22),
                   ),
                 ],
               ),
@@ -893,7 +893,7 @@ class _ControlBtn extends StatelessWidget {
           width: 50,
           height: 50,
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.12),
+            color: context.tText2(0.12),
             shape: BoxShape.circle,
             border: Border.all(
                 color: color.withValues(alpha: 0.3), width: 1),
@@ -904,7 +904,7 @@ class _ControlBtn extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.7),
+            color: context.tText2(0.7),
             fontSize: 11,
           ),
         ),
@@ -1034,7 +1034,7 @@ class _ManualCameraSheetState extends State<_ManualCameraSheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: Color(0xFF12121E),
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
@@ -1046,7 +1046,7 @@ class _ManualCameraSheetState extends State<_ManualCameraSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Center(child: Container(width: 40, height: 4,
-                decoration: BoxDecoration(color: Colors.white24,
+                decoration: BoxDecoration(color: context.tText2(0.24),
                     borderRadius: BorderRadius.circular(2)))),
             const SizedBox(height: 16),
             const Row(children: [
@@ -1115,7 +1115,7 @@ class _ManualCameraSheetState extends State<_ManualCameraSheet> {
                   ? 'Hikvision: /Streaming/Channels/101  |  Dahua: /cam/realmonitor?channel=1&subtype=0'
                   : 'MJPEG: /mjpeg  |  Snapshot: /snapshot.jpg  |  Hikvision: /Streaming/Channels/1',
               style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.25), fontSize: 10),
+                  color: context.tText2(0.25), fontSize: 10),
             ),
             const SizedBox(height: 12),
 
@@ -1128,18 +1128,18 @@ class _ManualCameraSheetState extends State<_ManualCameraSheet> {
                 decoration: BoxDecoration(
                   color: _isPtz
                       ? AppColors.primary.withValues(alpha: 0.10)
-                      : Colors.white.withValues(alpha: 0.05),
+                      : context.tText2(0.05),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: _isPtz
                         ? AppColors.primary.withValues(alpha: 0.40)
-                        : Colors.white.withValues(alpha: 0.10),
+                        : context.tText2(0.10),
                   ),
                 ),
                 child: Row(
                   children: [
                     Icon(Icons.control_camera_outlined,
-                        color: _isPtz ? AppColors.primary : Colors.white38,
+                        color: _isPtz ? AppColors.primary : context.tText2(0.38),
                         size: 18),
                     const SizedBox(width: 10),
                     Expanded(
@@ -1148,12 +1148,12 @@ class _ManualCameraSheetState extends State<_ManualCameraSheet> {
                         children: [
                           Text('מצלמת PTZ',
                               style: TextStyle(
-                                  color: _isPtz ? Colors.white : Colors.white60,
+                                  color: _isPtz ? context.tText : context.tText2(0.6),
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600)),
                           Text('הפעל שליטת Pan / Tilt / Zoom',
                               style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.35),
+                                  color: context.tText2(0.35),
                                   fontSize: 11)),
                         ],
                       ),
@@ -1162,7 +1162,7 @@ class _ManualCameraSheetState extends State<_ManualCameraSheet> {
                       _isPtz
                           ? Icons.toggle_on_rounded
                           : Icons.toggle_off_rounded,
-                      color: _isPtz ? AppColors.primary : Colors.white24,
+                      color: _isPtz ? AppColors.primary : context.tText2(0.24),
                       size: 28,
                     ),
                   ],
@@ -1196,8 +1196,8 @@ class _ManualCameraSheetState extends State<_ManualCameraSheet> {
                   icon: _testing
                       ? const SizedBox(width: 14, height: 14,
                           child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Icon(Icons.network_check, size: 16),
-                  label: const Text('בדוק חיבור'),
+                      : Icon(Icons.network_check, size: 16),
+                  label: Text('בדוק חיבור'),
                   style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFF00B4D8),
                       side: const BorderSide(color: Color(0xFF00B4D8)),
@@ -1209,11 +1209,11 @@ class _ManualCameraSheetState extends State<_ManualCameraSheet> {
               Expanded(
                 child: ElevatedButton.icon(
                   onPressed: _ipCtrl.text.isEmpty ? null : _add,
-                  icon: const Icon(Icons.add, size: 16),
-                  label: const Text('הוסף מצלמה'),
+                  icon: Icon(Icons.add, size: 16),
+                  label: Text('הוסף מצלמה'),
                   style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
+                      foregroundColor: context.tText,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12))),
                 ),
@@ -1245,19 +1245,19 @@ class _TF extends StatelessWidget {
       controller: ctrl,
       keyboardType: keyboardType,
       obscureText: obscure,
-      style: const TextStyle(color: Colors.white, fontSize: 13),
+      style: TextStyle(color: context.tText, fontSize: 13),
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
-        labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.45), fontSize: 12),
-        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.22), fontSize: 11),
-        prefixIcon: Icon(icon, color: Colors.white38, size: 16),
+        labelStyle: TextStyle(color: context.tText2(0.45), fontSize: 12),
+        hintStyle: TextStyle(color: context.tText2(0.22), fontSize: 11),
+        prefixIcon: Icon(icon, color: context.tText2(0.38), size: 16),
         filled: true,
-        fillColor: Colors.white.withValues(alpha: 0.06),
+        fillColor: context.tText2(0.06),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.12))),
+            borderSide: BorderSide(color: context.tText2(0.12))),
         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.12))),
+            borderSide: BorderSide(color: context.tText2(0.12))),
         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(color: Color(0xFF00B4D8), width: 1.5)),
         contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
@@ -1287,18 +1287,18 @@ class _ProtoChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: selected
               ? AppColors.primary.withValues(alpha: 0.15)
-              : Colors.white.withValues(alpha: 0.05),
+              : context.tText2(0.05),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: selected
                 ? AppColors.primary.withValues(alpha: 0.5)
-                : Colors.white.withValues(alpha: 0.12),
+                : context.tText2(0.12),
           ),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: selected ? AppColors.primary : Colors.white54,
+            color: selected ? AppColors.primary : context.tText2(0.54),
             fontSize: 12,
             fontWeight: selected ? FontWeight.w700 : FontWeight.normal,
           ),
@@ -1318,15 +1318,15 @@ class _RoomDropdown extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.06),
+        color: context.tText2(0.06),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+        border: Border.all(color: context.tText2(0.12)),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: value,
           dropdownColor: const Color(0xFF1A1A2E),
-          style: const TextStyle(color: Colors.white, fontSize: 13),
+          style: TextStyle(color: context.tText, fontSize: 13),
           items: const [
             DropdownMenuItem(value: 'outdoor', child: Text('חוץ')),
             DropdownMenuItem(value: 'indoor',  child: Text('פנים')),

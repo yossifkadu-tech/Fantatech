@@ -81,7 +81,7 @@ class _Z2MConnectSheetState extends State<Z2MConnectSheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: Color(0xFF12121E),
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
@@ -96,7 +96,7 @@ class _Z2MConnectSheetState extends State<Z2MConnectSheet> {
             child: Container(
               width: 40, height: 4,
               decoration: BoxDecoration(
-                color: Colors.white24,
+                color: context.tText2(0.24),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -112,13 +112,13 @@ class _Z2MConnectSheetState extends State<Z2MConnectSheet> {
                   color: const Color(0xFFFF9D00).withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.settings_input_antenna,
+                child: Icon(Icons.settings_input_antenna,
                     color: Color(0xFFFF9D00), size: 18),
               ),
               const SizedBox(width: 12),
-              const Text('Zigbee2MQTT',
+              Text('Zigbee2MQTT',
                   style: TextStyle(
-                      color: Colors.white,
+                      color: context.tText,
                       fontSize: 18,
                       fontWeight: FontWeight.w700)),
             ],
@@ -126,7 +126,7 @@ class _Z2MConnectSheetState extends State<Z2MConnectSheet> {
           const SizedBox(height: 6),
           Text('חיבור לגייטוויי Zigbee — ייבוא מכשירים אוטומטי',
               style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.45), fontSize: 12)),
+                  color: context.tText2(0.45), fontSize: 12)),
           const SizedBox(height: 20),
 
           // IP field
@@ -178,7 +178,7 @@ class _Z2MConnectSheetState extends State<Z2MConnectSheet> {
                 border: Border.all(color: Colors.red.withValues(alpha: 0.30)),
               ),
               child: Text(_error!,
-                  style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
+                  style: TextStyle(color: Colors.redAccent, fontSize: 12)),
             ),
 
           // Success
@@ -226,7 +226,7 @@ class _Z2MConnectSheetState extends State<Z2MConnectSheet> {
                           strokeWidth: 2, color: Colors.black))
                   : Text(
                       _devicesFound > 0 ? 'סגור' : 'התחבר וייבא מכשירים',
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontWeight: FontWeight.w700, fontSize: 15)),
             ),
           ),
@@ -236,7 +236,7 @@ class _Z2MConnectSheetState extends State<Z2MConnectSheet> {
           Text(
             'הפעל frontend ב-Z2M config:\n  frontend:\n    port: 8080',
             style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.25),
+                color: context.tText2(0.25),
                 fontSize: 10,
                 fontFamily: 'monospace'),
           ),
@@ -271,26 +271,26 @@ class _Field extends StatelessWidget {
       controller: controller,
       keyboardType: keyboardType,
       obscureText: obscure,
-      style: const TextStyle(color: Colors.white, fontSize: 14),
+      style: TextStyle(color: context.tText, fontSize: 14),
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
         labelStyle: TextStyle(
-            color: Colors.white.withValues(alpha: 0.45), fontSize: 12),
+            color: context.tText2(0.45), fontSize: 12),
         hintStyle: TextStyle(
-            color: Colors.white.withValues(alpha: 0.25), fontSize: 12),
-        prefixIcon: Icon(icon, color: Colors.white38, size: 18),
+            color: context.tText2(0.25), fontSize: 12),
+        prefixIcon: Icon(icon, color: context.tText2(0.38), size: 18),
         filled: true,
-        fillColor: Colors.white.withValues(alpha: 0.06),
+        fillColor: context.tText2(0.06),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide:
-              BorderSide(color: Colors.white.withValues(alpha: 0.12)),
+              BorderSide(color: context.tText2(0.12)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide:
-              BorderSide(color: Colors.white.withValues(alpha: 0.12)),
+              BorderSide(color: context.tText2(0.12)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),

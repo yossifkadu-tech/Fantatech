@@ -121,7 +121,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
     final filters = [s.allNotif, s.alertsNotif, s.camerasNotif, s.automationsTitle];
 
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: context.tBg,
       body: SafeArea(
         child: Column(
           children: [
@@ -151,20 +151,20 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                       decoration: BoxDecoration(
                         color: selected
                             ? AppColors.primary
-                            : Colors.white.withValues(alpha: 0.07),
+                            : context.tText2(0.07),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
                           color: selected
                               ? AppColors.primary
-                              : Colors.white.withValues(alpha: 0.1),
+                              : context.tText2(0.1),
                         ),
                       ),
                       child: Text(
                         filters[i],
                         style: TextStyle(
                           color: selected
-                              ? Colors.white
-                              : Colors.white.withValues(alpha: 0.55),
+                              ? context.tText
+                              : context.tText2(0.55),
                           fontSize: 13,
                           fontWeight: selected
                               ? FontWeight.w600
@@ -208,15 +208,15 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                   child: OutlinedButton(
                     onPressed: _markAllRead,
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.white,
+                      foregroundColor: context.tText,
                       side: BorderSide(
-                          color: Colors.white.withValues(alpha: 0.18)),
+                          color: context.tText2(0.18)),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14)),
                     ),
                     child: Text(
                       s.markAllRead,
-                      style: const TextStyle(fontSize: 15),
+                      style: TextStyle(fontSize: 15),
                     ),
                   ),
                 ),
@@ -230,7 +230,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
   void _showFilterMenu(BuildContext context, S s) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.darkCard,
+      backgroundColor: context.tCard,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -242,7 +242,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
             Text(
               s.settingsTitle,
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.6),
+                color: context.tText2(0.6),
                 fontSize: 13,
               ),
             ),
@@ -297,8 +297,8 @@ class _TopBar extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: context.tText,
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                 ),
@@ -314,8 +314,8 @@ class _TopBar extends StatelessWidget {
                   ),
                   child: Text(
                     '$unreadCount',
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: context.tText,
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
                     ),
@@ -333,11 +333,11 @@ class _TopBar extends StatelessWidget {
               width: 38,
               height: 38,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.07),
+                color: context.tText2(0.07),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(
-                  Icons.more_vert, color: Colors.white, size: 20),
+              child: Icon(
+                  Icons.more_vert, color: context.tText, size: 20),
             ),
           ),
         ],
@@ -373,7 +373,7 @@ class _SwipeableNotifCard extends StatelessWidget {
           color: AppColors.unsecured.withValues(alpha: 0.2),
           borderRadius: BorderRadius.circular(16),
         ),
-        child: const Icon(Icons.delete_outline,
+        child: Icon(Icons.delete_outline,
             color: AppColors.unsecured, size: 22),
       ),
       child: GestureDetector(
@@ -400,12 +400,12 @@ class _NotifCard extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: n.isRead
-            ? AppColors.darkCard
-            : AppColors.darkCard.withValues(alpha: 1.0),
+            ? context.tCard
+            : context.tCard.withValues(alpha: 1.0),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: n.isRead
-              ? Colors.white.withValues(alpha: 0.07)
+              ? context.tText2(0.07)
               : n.iconColor.withValues(alpha: 0.25),
           width: n.isRead ? 1 : 1.5,
         ),
@@ -434,7 +434,7 @@ class _NotifCard extends StatelessWidget {
                       color: AppColors.primary,
                       shape: BoxShape.circle,
                       border: Border.all(
-                          color: AppColors.darkCard, width: 1.5),
+                          color: context.tCard, width: 1.5),
                     ),
                   ),
                 ),
@@ -451,8 +451,8 @@ class _NotifCard extends StatelessWidget {
                   n.title,
                   style: TextStyle(
                     color: n.isRead
-                        ? Colors.white.withValues(alpha: 0.7)
-                        : Colors.white,
+                        ? context.tText2(0.7)
+                        : context.tText,
                     fontSize: 14,
                     fontWeight: n.isRead
                         ? FontWeight.normal
@@ -463,7 +463,7 @@ class _NotifCard extends StatelessWidget {
                 Text(
                   n.time,
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.35),
+                    color: context.tText2(0.35),
                     fontSize: 12,
                   ),
                 ),
@@ -547,7 +547,7 @@ class _NotifThumbnail extends StatelessWidget {
                     height: 34,
                     decoration: BoxDecoration(
                       border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.1),
+                        color: context.tText2(0.1),
                         width: 2,
                       ),
                       borderRadius: BorderRadius.circular(3),
@@ -559,7 +559,7 @@ class _NotifThumbnail extends StatelessWidget {
 
             Icon(
               Icons.videocam_outlined,
-              color: Colors.white.withValues(alpha: 0.25),
+              color: context.tText2(0.25),
               size: 14,
             ),
           ],
@@ -623,14 +623,14 @@ class _EmptyState extends StatelessWidget {
         children: [
           Icon(
             Icons.notifications_none_outlined,
-            color: Colors.white.withValues(alpha: 0.2),
+            color: context.tText2(0.2),
             size: 56,
           ),
           const SizedBox(height: 14),
           Text(
             s.noNotifications,
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.35),
+              color: context.tText2(0.35),
               fontSize: 16,
             ),
           ),

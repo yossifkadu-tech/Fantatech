@@ -4,6 +4,7 @@
 // Shows existing member profiles so a household member can enter without auth.
 // If no home manager exists yet, shows an info message.
 // ─────────────────────────────────────────────────────────────────────────────
+import '../../theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -29,12 +30,12 @@ class HouseholdLoginScreen extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white70, size: 18),
+          icon: Icon(Icons.arrow_back_ios_new, color: context.tText2(0.7), size: 18),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           s.loginHousehold,
-          style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
+          style: TextStyle(color: context.tText, fontSize: 17, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
       ),
@@ -69,17 +70,17 @@ class _NoManagerState extends StatelessWidget {
             width: 72,
             height: 72,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.15),
+              color: context.tText2(0.15),
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+              border: Border.all(color: context.tText2(0.3)),
             ),
-            child: const Icon(Icons.people_outline, color: Colors.white, size: 36),
+            child: Icon(Icons.people_outline, color: context.tText, size: 36),
           ),
           const SizedBox(height: 20),
-          const Text(
+          Text(
             'עדיין אין מנהל בית',
             style: TextStyle(
-              color: Colors.white,
+              color: context.tText,
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
@@ -89,7 +90,7 @@ class _NoManagerState extends StatelessWidget {
             'כניסה כחבר בית זמינה לאחר שמנהל הבית\nנרשם עם Google או Apple.',
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.75),
+              color: context.tText2(0.75),
               fontSize: 14,
               height: 1.5,
             ),
@@ -101,14 +102,14 @@ class _NoManagerState extends StatelessWidget {
             child: ElevatedButton(
               onPressed: () => Navigator.pop(context),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
+                backgroundColor: context.tText,
                 foregroundColor: const Color(0xFF3C4043),
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
                 ),
               ),
-              child: const Text(
+              child: Text(
                 'חזור למסך הכניסה',
                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
               ),
@@ -144,19 +145,19 @@ class _MemberPicker extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.15),
+            color: context.tText2(0.15),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+            border: Border.all(color: context.tText2(0.3)),
           ),
           child: Row(
             children: [
               CircleAvatar(
                 radius: 18,
-                backgroundColor: Colors.white.withValues(alpha: 0.25),
+                backgroundColor: context.tText2(0.25),
                 child: Text(
                   manager.name.isNotEmpty ? manager.name[0].toUpperCase() : '?',
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: context.tText,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -168,20 +169,20 @@ class _MemberPicker extends StatelessWidget {
                   children: [
                     Text(
                       manager.name,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: context.tText,
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
                       ),
                     ),
                     Row(
                       children: [
-                        const Icon(Icons.verified, color: Colors.white70, size: 12),
+                        Icon(Icons.verified, color: context.tText2(0.7), size: 12),
                         const SizedBox(width: 4),
                         Text(
                           'מנהל הבית',
                           style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.7),
+                            color: context.tText2(0.7),
                             fontSize: 11,
                           ),
                         ),
@@ -200,7 +201,7 @@ class _MemberPicker extends StatelessWidget {
         Text(
           members.isEmpty ? 'אין חברי בית עדיין' : 'בחר פרופיל',
           style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.75),
+            color: context.tText2(0.75),
             fontSize: 11,
             fontWeight: FontWeight.w700,
             letterSpacing: 1.0,
@@ -217,7 +218,7 @@ class _MemberPicker extends StatelessWidget {
                 'מנהל הבית יכול להוסיף חברי בית\nבאזור הפרופיל ← ניהול בית.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.6),
+                  color: context.tText2(0.6),
                   fontSize: 13,
                   height: 1.5,
                 ),
@@ -259,7 +260,7 @@ class _MemberTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.tText,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
@@ -276,7 +277,7 @@ class _MemberTile extends StatelessWidget {
               backgroundColor: const Color(0xFF1D75BD).withValues(alpha: 0.15),
               child: Text(
                 member.name.isNotEmpty ? member.name[0].toUpperCase() : '?',
-                style: const TextStyle(
+                style: TextStyle(
                   color: Color(0xFF1D75BD),
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
@@ -290,7 +291,7 @@ class _MemberTile extends StatelessWidget {
                 children: [
                   Text(
                     member.name,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Color(0xFF3C4043),
                       fontWeight: FontWeight.w600,
                       fontSize: 15,
@@ -314,7 +315,7 @@ class _MemberTile extends StatelessWidget {
                 color: const Color(0xFF1D75BD).withValues(alpha: 0.10),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.login, color: Color(0xFF1D75BD), size: 16),
+              child: Icon(Icons.login, color: Color(0xFF1D75BD), size: 16),
             ),
           ],
         ),

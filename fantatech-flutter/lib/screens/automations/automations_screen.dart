@@ -46,7 +46,7 @@ class _AutomationsScreenState extends State<AutomationsScreen> {
     final s = state.strings;
 
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: context.tBg,
       body: SafeArea(
         child: Column(
           children: [
@@ -85,7 +85,7 @@ class _AutomationsScreenState extends State<AutomationsScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.darkCard,
+      backgroundColor: context.tCard,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -113,12 +113,12 @@ class _TopBar extends StatelessWidget {
               width: 38,
               height: 38,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.07),
+                color: context.tText2(0.07),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.chevron_right,
-                color: Colors.white,
+                color: context.tText,
                 size: 22,
               ),
             ),
@@ -127,8 +127,8 @@ class _TopBar extends StatelessWidget {
             child: Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: context.tText,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
@@ -162,9 +162,9 @@ class _SegmentedTabs extends StatelessWidget {
     return Container(
       height: 44,
       decoration: BoxDecoration(
-        color: AppColors.darkCard,
+        color: context.tCard,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
+        border: Border.all(color: context.tText2(0.07)),
       ),
       child: Row(
         children: [
@@ -215,7 +215,7 @@ class _Tab extends StatelessWidget {
           child: Text(
             label,
             style: TextStyle(
-              color: active ? Colors.white : Colors.white54,
+              color: active ? context.tText : context.tText2(0.54),
               fontSize: 13,
               fontWeight: active ? FontWeight.w600 : FontWeight.normal,
             ),
@@ -281,7 +281,7 @@ class _AllAutomationsList extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.darkCard,
+      backgroundColor: context.tCard,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -294,20 +294,20 @@ class _AllAutomationsList extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.darkCard,
+        backgroundColor: context.tCard,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           '${s.delete} ${s.automationsTitle}',
-          style: const TextStyle(color: Colors.white),
+          style: TextStyle(color: context.tText),
         ),
         content: Text(
           '"${auto.name}"?',
-          style: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
+          style: TextStyle(color: context.tText2(0.6)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text(s.cancel, style: const TextStyle(color: Colors.white54)),
+            child: Text(s.cancel, style: TextStyle(color: context.tText2(0.54))),
           ),
           TextButton(
             onPressed: () {
@@ -316,7 +316,7 @@ class _AllAutomationsList extends StatelessWidget {
             },
             child: Text(
               s.delete,
-              style: const TextStyle(color: AppColors.unsecured),
+              style: TextStyle(color: AppColors.unsecured),
             ),
           ),
         ],
@@ -387,12 +387,12 @@ class _AutomationCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.darkCard,
+        color: context.tCard,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: enabled
               ? AppColors.primary.withValues(alpha: 0.2)
-              : Colors.white.withValues(alpha: 0.07),
+              : context.tText2(0.07),
         ),
       ),
       child: Padding(
@@ -419,8 +419,8 @@ class _AutomationCard extends StatelessWidget {
                 children: [
                   Text(
                     name,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: context.tText,
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
                     ),
@@ -429,7 +429,7 @@ class _AutomationCard extends StatelessWidget {
                   Text(
                     description,
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.45),
+                      color: context.tText2(0.45),
                       fontSize: 12,
                       height: 1.4,
                     ),
@@ -457,11 +457,11 @@ class _AutomationCard extends StatelessWidget {
                         width: 32, height: 32,
                         margin: const EdgeInsets.only(left: 4),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.06),
+                          color: context.tText2(0.06),
                           borderRadius: BorderRadius.circular(9),
                         ),
-                        child: const Icon(Icons.edit_outlined,
-                            color: Colors.white38, size: 15),
+                        child: Icon(Icons.edit_outlined,
+                            color: context.tText2(0.38), size: 15),
                       ),
                     ),
                   // Delete button
@@ -475,7 +475,7 @@ class _AutomationCard extends StatelessWidget {
                           color: AppColors.unsecured.withValues(alpha: 0.07),
                           borderRadius: BorderRadius.circular(9),
                         ),
-                        child: const Icon(Icons.delete_outline,
+                        child: Icon(Icons.delete_outline,
                             color: AppColors.unsecured, size: 15),
                       ),
                     ),
@@ -483,10 +483,10 @@ class _AutomationCard extends StatelessWidget {
                   Switch(
                     value: enabled,
                     onChanged: (_) => onToggle(),
-                    activeColor: Colors.white,
+                    activeColor: context.tText,
                     activeTrackColor: AppColors.primary,
-                    inactiveTrackColor: Colors.white.withValues(alpha: 0.1),
-                    inactiveThumbColor: Colors.white38,
+                    inactiveTrackColor: context.tText2(0.1),
+                    inactiveThumbColor: context.tText2(0.38),
                     trackOutlineColor:
                         WidgetStateProperty.all(Colors.transparent),
                   ),
@@ -518,7 +518,7 @@ class _AddButton extends StatelessWidget {
         ),
         child: Text(
           s.add,
-          style: const TextStyle(
+          style: TextStyle(
             color: AppColors.primary,
             fontSize: 13,
             fontWeight: FontWeight.w600,
@@ -561,12 +561,12 @@ class _AddFab extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.add, color: Colors.white, size: 20),
+            Icon(Icons.add, color: context.tText, size: 20),
             const SizedBox(width: 8),
             Text(
               label,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: context.tText,
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
               ),
@@ -604,16 +604,16 @@ class _AddAutomationSheetState extends State<_AddAutomationSheet> {
 
   InputDecoration _inputDeco(String label) => InputDecoration(
         labelText: label,
-        labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+        labelStyle: TextStyle(color: context.tText2(0.5)),
         filled: true,
-        fillColor: Colors.white.withValues(alpha: 0.05),
+        fillColor: context.tText2(0.05),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.12)),
+          borderSide: BorderSide(color: context.tText2(0.12)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.12)),
+          borderSide: BorderSide(color: context.tText2(0.12)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -640,7 +640,7 @@ class _AddAutomationSheetState extends State<_AddAutomationSheet> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.white24,
+                color: context.tText2(0.24),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -657,8 +657,8 @@ class _AddAutomationSheetState extends State<_AddAutomationSheet> {
               children: [
                 Text(
                   s.addAutomation,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: context.tText,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
@@ -669,7 +669,7 @@ class _AddAutomationSheetState extends State<_AddAutomationSheet> {
                 TextField(
                   controller: _nameCtrl,
                   textDirection: textDir,
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: context.tText),
                   decoration: _inputDeco(s.autoName),
                 ),
 
@@ -678,7 +678,7 @@ class _AddAutomationSheetState extends State<_AddAutomationSheet> {
                 TextField(
                   controller: _condCtrl,
                   textDirection: textDir,
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: context.tText),
                   decoration: _inputDeco(s.autoCondition),
                 ),
 
@@ -687,7 +687,7 @@ class _AddAutomationSheetState extends State<_AddAutomationSheet> {
                 TextField(
                   controller: _actionCtrl,
                   textDirection: textDir,
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: context.tText),
                   decoration: _inputDeco(s.autoAction),
                 ),
 
@@ -716,8 +716,8 @@ class _AddAutomationSheetState extends State<_AddAutomationSheet> {
                     ),
                     child: Text(
                       s.save,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: context.tText,
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),
@@ -770,16 +770,16 @@ class _EditAutomationSheetState extends State<_EditAutomationSheet> {
 
   InputDecoration _inputDeco(String label) => InputDecoration(
         labelText: label,
-        labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+        labelStyle: TextStyle(color: context.tText2(0.5)),
         filled: true,
-        fillColor: Colors.white.withValues(alpha: 0.05),
+        fillColor: context.tText2(0.05),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.12)),
+          borderSide: BorderSide(color: context.tText2(0.12)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.12)),
+          borderSide: BorderSide(color: context.tText2(0.12)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -803,7 +803,7 @@ class _EditAutomationSheetState extends State<_EditAutomationSheet> {
             child: Container(
               width: 40, height: 4,
               decoration: BoxDecoration(
-                  color: Colors.white24,
+                  color: context.tText2(0.24),
                   borderRadius: BorderRadius.circular(2)),
             ),
           ),
@@ -818,8 +818,8 @@ class _EditAutomationSheetState extends State<_EditAutomationSheet> {
               children: [
                 Text(
                   s.edit,
-                  style: const TextStyle(
-                      color: Colors.white,
+                  style: TextStyle(
+                      color: context.tText,
                       fontSize: 18,
                       fontWeight: FontWeight.bold),
                 ),
@@ -828,7 +828,7 @@ class _EditAutomationSheetState extends State<_EditAutomationSheet> {
                 TextField(
                   controller: _nameCtrl,
                   textDirection: textDir,
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: context.tText),
                   decoration: _inputDeco(s.autoName),
                 ),
                 const SizedBox(height: 12),
@@ -836,7 +836,7 @@ class _EditAutomationSheetState extends State<_EditAutomationSheet> {
                 TextField(
                   controller: _condCtrl,
                   textDirection: textDir,
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: context.tText),
                   decoration: _inputDeco(s.autoCondition),
                 ),
                 const SizedBox(height: 10),
@@ -846,7 +846,7 @@ class _EditAutomationSheetState extends State<_EditAutomationSheet> {
                 TextField(
                   controller: _actionCtrl,
                   textDirection: textDir,
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: context.tText),
                   decoration: _inputDeco(s.autoAction),
                 ),
                 const SizedBox(height: 24),
@@ -873,8 +873,8 @@ class _EditAutomationSheetState extends State<_EditAutomationSheet> {
                     ),
                     child: Text(
                       s.save,
-                      style: const TextStyle(
-                          color: Colors.white,
+                      style: TextStyle(
+                          color: context.tText,
                           fontSize: 16,
                           fontWeight: FontWeight.w600),
                     ),
@@ -981,7 +981,7 @@ class _HebrewCalendarConditions extends StatelessWidget {
                       isExpanded: true,
                       dropdownColor: const Color(0xFF1B1B2A),
                       underline: const SizedBox(),
-                      style: const TextStyle(color: Colors.white, fontSize: 15),
+                      style: TextStyle(color: context.tText, fontSize: 15),
                       items: [
                         for (var d = 1; d <= 30; d++)
                           DropdownMenuItem(value: d, child: Text(_gematriaDay(d))),
@@ -1001,7 +1001,7 @@ class _HebrewCalendarConditions extends StatelessWidget {
                       isExpanded: true,
                       dropdownColor: const Color(0xFF1B1B2A),
                       underline: const SizedBox(),
-                      style: const TextStyle(color: Colors.white, fontSize: 15),
+                      style: TextStyle(color: context.tText, fontSize: 15),
                       items: [
                         for (var i = 0; i < _hebrewMonths.length; i++)
                           DropdownMenuItem(value: i, child: Text(_hebrewMonths[i])),
@@ -1023,9 +1023,9 @@ class _HebrewCalendarConditions extends StatelessWidget {
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(13)),
                   ),
-                  child: const Text('אישור',
+                  child: Text('אישור',
                       style: TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.w600)),
+                          color: context.tText, fontWeight: FontWeight.w600)),
                 ),
               ),
             ],
@@ -1069,7 +1069,7 @@ class _HebrewCalendarConditions extends StatelessWidget {
               color: AppColors.primary.withValues(alpha: 0.45), width: 1),
         ),
         child: Text(label,
-            style: const TextStyle(
+            style: TextStyle(
                 color: AppColors.primary,
                 fontSize: 12,
                 fontWeight: FontWeight.w600)),
@@ -1083,12 +1083,12 @@ class _HebrewCalendarConditions extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(children: [
-          const Icon(Icons.calendar_month_outlined,
+          Icon(Icons.calendar_month_outlined,
               size: 14, color: AppColors.primary),
           const SizedBox(width: 6),
           Text('לוח עברי',
               style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.6),
+                  color: context.tText2(0.6),
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 0.5)),

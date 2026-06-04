@@ -62,7 +62,7 @@ class _SecurityScreenState extends State<SecurityScreen>
         motionSensors.every((m) => m.attributes['detected'] != true);
 
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: context.tBg,
       body: SafeArea(
         child: Column(
           children: [
@@ -188,7 +188,7 @@ class _SecurityScreenState extends State<SecurityScreen>
             Container(
               width: 40, height: 4,
               decoration: BoxDecoration(
-                  color: Colors.white24,
+                  color: context.tText2(0.24),
                   borderRadius: BorderRadius.circular(2)),
             ),
             const SizedBox(height: 22),
@@ -203,8 +203,8 @@ class _SecurityScreenState extends State<SecurityScreen>
             ),
             const SizedBox(height: 16),
             Text(label,
-                style: const TextStyle(
-                    color: Colors.white,
+                style: TextStyle(
+                    color: context.tText,
                     fontSize: 18,
                     fontWeight: FontWeight.bold)),
             const SizedBox(height: 6),
@@ -214,7 +214,7 @@ class _SecurityScreenState extends State<SecurityScreen>
             const SizedBox(height: 22),
             _detailRow(Icons.wifi, s.normalStatus,
                 online ? s.activeStatus : s.offlineLabel,
-                online ? AppColors.secured : Colors.white38),
+                online ? AppColors.secured : context.tText2(0.38)),
             if (battery != null) ...[
               const SizedBox(height: 10),
               _detailRow(Icons.battery_full, '🔋', '$battery%',
@@ -230,9 +230,9 @@ class _SecurityScreenState extends State<SecurityScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.04),
+        color: context.tText2(0.04),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
+        border: Border.all(color: context.tText2(0.07)),
       ),
       child: Row(
         children: [
@@ -240,7 +240,7 @@ class _SecurityScreenState extends State<SecurityScreen>
           const SizedBox(width: 10),
           Expanded(
             child: Text(label,
-                style: const TextStyle(color: Colors.white, fontSize: 13)),
+                style: TextStyle(color: context.tText, fontSize: 13)),
           ),
           Text(value,
               style: TextStyle(
@@ -292,7 +292,7 @@ class _SecurityScreenState extends State<SecurityScreen>
     HapticFeedback.heavyImpact();
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.darkCard,
+      backgroundColor: context.tCard,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -339,18 +339,18 @@ class _TopBar extends StatelessWidget {
               width: 38,
               height: 38,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.07),
+                color: context.tText2(0.07),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.chevron_right, color: Colors.white, size: 22),
+              child: Icon(Icons.chevron_right, color: context.tText, size: 22),
             ),
           ),
           Expanded(
             child: Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: context.tText,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
@@ -431,7 +431,7 @@ class _AnimatedShield extends StatelessWidget {
                       child: Icon(
                         isSecured ? Icons.shield : Icons.shield_outlined,
                         size: 130,
-                        color: Colors.white,
+                        color: context.tText,
                       ),
                     ),
 
@@ -458,7 +458,7 @@ class _AnimatedShield extends StatelessWidget {
               Text(
                 isSecured ? activeText : tapText,
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.4),
+                  color: context.tText2(0.4),
                   fontSize: 13,
                 ),
               ),
@@ -497,10 +497,10 @@ class _SensorRow extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
         decoration: BoxDecoration(
-          color: AppColors.darkCard,
+          color: context.tCard,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: Colors.white.withValues(alpha: 0.07),
+            color: context.tText2(0.07),
           ),
         ),
         child: Row(
@@ -509,10 +509,10 @@ class _SensorRow extends StatelessWidget {
               width: 38,
               height: 38,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.07),
+                color: context.tText2(0.07),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(icon, color: Colors.white70, size: 19),
+              child: Icon(icon, color: context.tText2(0.7), size: 19),
             ),
 
             const SizedBox(width: 14),
@@ -520,8 +520,8 @@ class _SensorRow extends StatelessWidget {
             Expanded(
               child: Text(
                 label,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: context.tText,
                   fontSize: 15,
                   fontWeight: FontWeight.w500,
                 ),
@@ -552,7 +552,7 @@ class _SensorRow extends StatelessWidget {
             if (onTap != null) ...[
               const SizedBox(width: 4),
               Icon(Icons.chevron_left,
-                  color: Colors.white.withValues(alpha: 0.3), size: 18),
+                  color: context.tText2(0.3), size: 18),
             ],
           ],
         ),
@@ -635,12 +635,12 @@ class _PanicButtonState extends State<_PanicButton>
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.15),
+                    color: context.tText2(0.15),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.warning_amber_rounded,
-                    color: Colors.white,
+                    color: context.tText,
                     size: 20,
                   ),
                 ),
@@ -651,8 +651,8 @@ class _PanicButtonState extends State<_PanicButton>
                   children: [
                     Text(
                       widget.panicLabel,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: context.tText,
                         fontSize: 17,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1.5,
@@ -660,8 +660,8 @@ class _PanicButtonState extends State<_PanicButton>
                     ),
                     Text(
                       widget.warningLabel,
-                      style: const TextStyle(
-                        color: Colors.white70,
+                      style: TextStyle(
+                        color: context.tText2(0.7),
                         fontSize: 11,
                       ),
                     ),
@@ -710,7 +710,7 @@ class _PanicSheet extends StatelessWidget {
               color: AppColors.unsecured.withValues(alpha: 0.15),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.warning_amber_rounded,
               color: AppColors.unsecured,
               size: 30,
@@ -719,8 +719,8 @@ class _PanicSheet extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             title,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: context.tText,
               fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
@@ -730,7 +730,7 @@ class _PanicSheet extends StatelessWidget {
             question,
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.5),
+              color: context.tText2(0.5),
               fontSize: 14,
               height: 1.5,
             ),
@@ -742,9 +742,9 @@ class _PanicSheet extends StatelessWidget {
                 child: OutlinedButton(
                   onPressed: onCancel,
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.white,
+                    foregroundColor: context.tText,
                     side: BorderSide(
-                        color: Colors.white.withValues(alpha: 0.2)),
+                        color: context.tText2(0.2)),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14)),
@@ -758,7 +758,7 @@ class _PanicSheet extends StatelessWidget {
                   onPressed: onConfirm,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.unsecured,
-                    foregroundColor: Colors.white,
+                    foregroundColor: context.tText,
                     elevation: 0,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
@@ -766,7 +766,7 @@ class _PanicSheet extends StatelessWidget {
                   ),
                   child: Text(
                     confirmLabel,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
               ),

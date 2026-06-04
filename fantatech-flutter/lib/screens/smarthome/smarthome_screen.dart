@@ -55,7 +55,7 @@ class _SmartHomeScreenState extends State<SmartHomeScreen> {
                           ),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.add_circle_outline),
+                          icon: Icon(Icons.add_circle_outline),
                           color: AppColors.primary,
                           onPressed: () => Navigator.push(
                             context,
@@ -126,7 +126,7 @@ class _SmartHomeScreenState extends State<SmartHomeScreen> {
                               child: Text(
                                 room,
                                 style: TextStyle(
-                                  color: selected ? Colors.white : null,
+                                  color: selected ? context.tText : null,
                                   fontWeight: selected
                                       ? FontWeight.w600
                                       : FontWeight.normal,

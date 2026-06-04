@@ -1,3 +1,4 @@
+import '../../theme/app_theme.dart';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -103,31 +104,31 @@ class _LoginScreenState extends State<LoginScreen>
         title: Row(children: [
           _GoogleLogo(),
           const SizedBox(width: 10),
-          const Text('כניסה עם Google',
-              style: TextStyle(color: Colors.white, fontSize: 16)),
+          Text('כניסה עם Google',
+              style: TextStyle(color: context.tText, fontSize: 16)),
         ]),
         content: Column(mainAxisSize: MainAxisSize.min, children: [
           Text(
             'הזן את כתובת ה-Gmail שלך להמשך',
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.65), fontSize: 13),
+            style: TextStyle(color: context.tText2(0.65), fontSize: 13),
           ),
           const SizedBox(height: 14),
           TextField(
             controller: ctrl,
             keyboardType: TextInputType.emailAddress,
-            style: const TextStyle(color: Colors.white),
+            style: TextStyle(color: context.tText),
             decoration: InputDecoration(
               hintText: 'example@gmail.com',
-              hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.35)),
+              hintStyle: TextStyle(color: context.tText2(0.35)),
               filled: true,
-              fillColor: Colors.white.withValues(alpha: 0.07),
+              fillColor: context.tText2(0.07),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+                borderSide: BorderSide(color: context.tText2(0.15)),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+                borderSide: BorderSide(color: context.tText2(0.15)),
               ),
             ),
           ),
@@ -136,7 +137,7 @@ class _LoginScreenState extends State<LoginScreen>
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text('ביטול',
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.45))),
+                style: TextStyle(color: context.tText2(0.45))),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -153,7 +154,7 @@ class _LoginScreenState extends State<LoginScreen>
                 if (mounted) _showError(e.toString().replaceFirst('Exception: ', ''));
               }
             },
-            child: const Text('כניסה', style: TextStyle(color: Colors.white)),
+            child: Text('כניסה', style: TextStyle(color: context.tText)),
           ),
         ],
       ),
@@ -222,7 +223,7 @@ class _LoginScreenState extends State<LoginScreen>
           ),
           // Gradient overlay: blue-tinted — matches illustration colour
           Container(
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
@@ -259,7 +260,7 @@ class _LoginScreenState extends State<LoginScreen>
                     Text(
                       s.loginGreeting,
                       style: TextStyle(
-                        color: Colors.white,
+                        color: context.tText,
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
                       ),
@@ -269,7 +270,7 @@ class _LoginScreenState extends State<LoginScreen>
                     Text(
                       s.loginSubtitle,
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.55),
+                        color: context.tText2(0.55),
                         fontSize: 15,
                       ),
                       textAlign: TextAlign.center,
@@ -321,7 +322,7 @@ class _LoginScreenState extends State<LoginScreen>
                         child: Text(
                           s.loginForgot,
                           style: TextStyle(
-                            color: Colors.white,
+                            color: context.tText,
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
                           ),
@@ -371,7 +372,7 @@ class _LoginScreenState extends State<LoginScreen>
                                   : Text(
                                       s.loginButton,
                                       style: TextStyle(
-                                        color: Colors.white,
+                                        color: context.tText,
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -389,7 +390,7 @@ class _LoginScreenState extends State<LoginScreen>
                       children: [
                         Expanded(
                           child: Divider(
-                            color: Colors.white.withValues(alpha: 0.15),
+                            color: context.tText2(0.15),
                             thickness: 1,
                           ),
                         ),
@@ -398,14 +399,14 @@ class _LoginScreenState extends State<LoginScreen>
                           child: Text(
                             s.authOr,
                             style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.40),
+                              color: context.tText2(0.40),
                               fontSize: 13,
                             ),
                           ),
                         ),
                         Expanded(
                           child: Divider(
-                            color: Colors.white.withValues(alpha: 0.15),
+                            color: context.tText2(0.15),
                             thickness: 1,
                           ),
                         ),
@@ -422,8 +423,8 @@ class _LoginScreenState extends State<LoginScreen>
                           child: _SsoButton(
                             onTap: _handleAppleSignIn,
                             isLoading: _isAppleLoading,
-                            backgroundColor: Colors.white,
-                            borderColor: Colors.white.withValues(alpha: 0.15),
+                            backgroundColor: context.tText,
+                            borderColor: context.tText2(0.15),
                             child: _isAppleLoading
                                 ? const _Spinner(color: Color(0xFF3C4043))
                                 : Row(
@@ -431,7 +432,7 @@ class _LoginScreenState extends State<LoginScreen>
                                     children: [
                                       _AppleLogo(color: const Color(0xFF3C4043)),
                                       const SizedBox(width: 8),
-                                      const Text(
+                                      Text(
                                         'Apple',
                                         style: TextStyle(
                                           fontSize: 14,
@@ -451,8 +452,8 @@ class _LoginScreenState extends State<LoginScreen>
                           child: _SsoButton(
                             onTap: _handleGoogleSignIn,
                             isLoading: _isGoogleLoading,
-                            backgroundColor: Colors.white,
-                            borderColor: Colors.white.withValues(alpha: 0.15),
+                            backgroundColor: context.tText,
+                            borderColor: context.tText2(0.15),
                             child: _isGoogleLoading
                                 ? const _Spinner(color: Color(0xFF4285F4))
                                 : Row(
@@ -460,7 +461,7 @@ class _LoginScreenState extends State<LoginScreen>
                                     children: [
                                       _GoogleLogo(),
                                       const SizedBox(width: 8),
-                                      const Text(
+                                      Text(
                                         'Google',
                                         style: TextStyle(
                                           fontSize: 14,
@@ -481,8 +482,8 @@ class _LoginScreenState extends State<LoginScreen>
                     _SsoButton(
                       onTap: _handleHouseholdMember,
                       isLoading: false,
-                      backgroundColor: Colors.white,
-                      borderColor: Colors.white.withValues(alpha: 0.15),
+                      backgroundColor: context.tText,
+                      borderColor: context.tText2(0.15),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -510,7 +511,7 @@ class _LoginScreenState extends State<LoginScreen>
                         Text(
                           s.loginNoAccount,
                           style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.85),
+                            color: context.tText2(0.85),
                             fontSize: 14,
                           ),
                         ),
@@ -528,17 +529,17 @@ class _LoginScreenState extends State<LoginScreen>
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 18, vertical: 8),
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.15),
+                              color: context.tText2(0.15),
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.55),
+                                color: context.tText2(0.55),
                                 width: 1.2,
                               ),
                             ),
                             child: Text(
                               s.registerNow,
                               style: TextStyle(
-                                color: Colors.white,
+                                color: context.tText,
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -633,12 +634,12 @@ class _InputField extends StatelessWidget {
   Widget build(BuildContext context) {
     final borderColor = highlight
         ? const Color(0xFF1D75BD).withValues(alpha: 0.60)
-        : Colors.white.withValues(alpha: 0.25);
+        : context.tText2(0.25);
     final iconColor = highlight ? const Color(0xFF1D75BD) : const Color(0xFF6B7280);
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.tText,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: borderColor, width: highlight ? 1.5 : 1),
         boxShadow: [
@@ -654,10 +655,10 @@ class _InputField extends StatelessWidget {
         obscureText: obscureText,
         keyboardType: keyboardType,
         textDirection: TextDirection.rtl,
-        style: const TextStyle(color: Color(0xFF1A1D27), fontSize: 15),
+        style: TextStyle(color: Color(0xFF1A1D27), fontSize: 15),
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: const TextStyle(
+          hintStyle: TextStyle(
             color: Color(0xFF9CA3AF),
             fontSize: 14,
           ),

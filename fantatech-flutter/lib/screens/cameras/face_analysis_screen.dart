@@ -17,7 +17,7 @@ class FaceAnalysisScreen extends StatelessWidget {
     final history = state.faceAnalysisHistory;
 
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: context.tBg,
       body: SafeArea(
         child: Column(
           children: [
@@ -31,11 +31,11 @@ class FaceAnalysisScreen extends StatelessWidget {
                     child: Container(
                       width: 38, height: 38,
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.07),
+                        color: context.tText2(0.07),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(Icons.chevron_right,
-                          color: Colors.white, size: 22),
+                      child: Icon(Icons.chevron_right,
+                          color: context.tText, size: 22),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -66,7 +66,7 @@ class FaceAnalysisScreen extends StatelessWidget {
                           border: Border.all(
                               color: Colors.red.withValues(alpha: 0.3)),
                         ),
-                        child: const Text('נקה',
+                        child: Text('נקה',
                             style: TextStyle(
                                 color: Colors.redAccent, fontSize: 12)),
                       ),
@@ -105,22 +105,22 @@ class FaceAnalysisScreen extends StatelessWidget {
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: const Color(0xFF1A1A2E),
-        title: const Text('נקה היסטוריה',
-            style: TextStyle(color: Colors.white)),
-        content: const Text('האם למחוק את כל תוצאות הניתוח?',
-            style: TextStyle(color: Colors.white70)),
+        title: Text('נקה היסטוריה',
+            style: TextStyle(color: context.tText)),
+        content: Text('האם למחוק את כל תוצאות הניתוח?',
+            style: TextStyle(color: context.tText2(0.7))),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('ביטול',
-                style: TextStyle(color: Colors.white54)),
+            child: Text('ביטול',
+                style: TextStyle(color: context.tText2(0.54))),
           ),
           TextButton(
             onPressed: () {
               state.clearFaceAnalysisHistory();
               Navigator.pop(context);
             },
-            child: const Text('מחק',
+            child: Text('מחק',
                 style: TextStyle(color: Colors.redAccent)),
           ),
         ],
@@ -215,7 +215,7 @@ class _ResultCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.darkCard,
+        color: context.tCard,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
             color: level.color.withValues(alpha: 0.25), width: 1.2),
@@ -252,18 +252,18 @@ class _ResultCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(result.cameraName,
-                          style: const TextStyle(
-                              color: Colors.white,
+                          style: TextStyle(
+                              color: context.tText,
                               fontSize: 14,
                               fontWeight: FontWeight.w600)),
                       const SizedBox(height: 2),
                       Row(children: [
                         Icon(Icons.access_time_outlined,
-                            color: Colors.white38, size: 11),
+                            color: context.tText2(0.38), size: 11),
                         const SizedBox(width: 4),
                         Text(timeStr,
-                            style: const TextStyle(
-                                color: Colors.white38, fontSize: 11)),
+                            style: TextStyle(
+                                color: context.tText2(0.38), fontSize: 11)),
                       ]),
                     ],
                   ),
@@ -303,7 +303,7 @@ class _ResultCard extends StatelessWidget {
               margin: const EdgeInsets.fromLTRB(14, 0, 14, 12),
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.04),
+                color: context.tText2(0.04),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Column(
@@ -322,7 +322,7 @@ class _ResultCard extends StatelessWidget {
                           ),
                           child: Center(
                             child: Text('${idx + 1}',
-                                style: const TextStyle(
+                                style: TextStyle(
                                     color: AppColors.primary,
                                     fontSize: 10,
                                     fontWeight: FontWeight.w700)),
@@ -349,8 +349,8 @@ class _ResultCard extends StatelessWidget {
                         const Spacer(),
                         Text(
                           '${face.boundingBox.width.toInt()}×${face.boundingBox.height.toInt()}px',
-                          style: const TextStyle(
-                              color: Colors.white24, fontSize: 10),
+                          style: TextStyle(
+                              color: context.tText2(0.24), fontSize: 10),
                         ),
                       ],
                     ),
@@ -363,11 +363,11 @@ class _ResultCard extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
               child: Row(children: [
                 Icon(Icons.search_off_outlined,
-                    color: Colors.white24, size: 14),
+                    color: context.tText2(0.24), size: 14),
                 const SizedBox(width: 6),
-                const Text('לא זוהו פנים בפריים זה',
+                Text('לא זוהו פנים בפריים זה',
                     style:
-                        TextStyle(color: Colors.white24, fontSize: 12)),
+                        TextStyle(color: context.tText2(0.24), fontSize: 12)),
               ]),
             ),
         ],
@@ -414,20 +414,20 @@ class _EmptyState extends StatelessWidget {
               border: Border.all(
                   color: AppColors.primary.withValues(alpha: 0.2)),
             ),
-            child: const Icon(Icons.face_outlined,
+            child: Icon(Icons.face_outlined,
                 color: AppColors.primary, size: 38),
           ),
           const SizedBox(height: 16),
-          const Text('אין ניתוחים עדיין',
+          Text('אין ניתוחים עדיין',
               style: TextStyle(
-                  color: Colors.white60,
+                  color: context.tText2(0.6),
                   fontSize: 16,
                   fontWeight: FontWeight.w600)),
           const SizedBox(height: 6),
-          const Text(
+          Text(
             'פתח מצלמה ולחץ על כפתור "נתח"\nכדי להפעיל זיהוי פנים',
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white30, fontSize: 13),
+            style: TextStyle(color: context.tText2(0.3), fontSize: 13),
           ),
         ],
       ),

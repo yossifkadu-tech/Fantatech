@@ -171,7 +171,7 @@ class _ScanDiscoveryScreenState extends State<ScanDiscoveryScreen>
     final isScanning = _manager.isScanning;
 
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: context.tBg,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       floatingActionButton: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -186,8 +186,8 @@ class _ScanDiscoveryScreenState extends State<ScanDiscoveryScreen>
                     MaterialPageRoute(
                         builder: (_) => const SmartSwitchHubScreen())),
                 backgroundColor: const Color(0xFF00B4D8),
-                icon: const Icon(Icons.power_settings_new, size: 18),
-                label: const Text('מפסקים',
+                icon: Icon(Icons.power_settings_new, size: 18),
+                label: Text('מפסקים',
                     style: TextStyle(
                         fontSize: 12, fontWeight: FontWeight.w700)),
               ),
@@ -201,8 +201,8 @@ class _ScanDiscoveryScreenState extends State<ScanDiscoveryScreen>
                     MaterialPageRoute(
                         builder: (_) => const SensorHubScreen())),
                 backgroundColor: const Color(0xFFFF6B35),
-                icon: const Icon(Icons.sensors_rounded, size: 18),
-                label: const Text('חיישנים · תריסים',
+                icon: Icon(Icons.sensors_rounded, size: 18),
+                label: Text('חיישנים · תריסים',
                     style: TextStyle(
                         fontSize: 12, fontWeight: FontWeight.w700)),
               ),
@@ -252,12 +252,12 @@ class _ScanDiscoveryScreenState extends State<ScanDiscoveryScreen>
                       decoration: BoxDecoration(
                         color: active
                             ? p.color.withValues(alpha: 0.18)
-                            : Colors.white.withValues(alpha: 0.06),
+                            : context.tText2(0.06),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
                           color: active
                               ? p.color.withValues(alpha: 0.6)
-                              : Colors.white.withValues(alpha: 0.1),
+                              : context.tText2(0.1),
                         ),
                       ),
                       child: Row(
@@ -267,13 +267,13 @@ class _ScanDiscoveryScreenState extends State<ScanDiscoveryScreen>
                               size: 14,
                               color: active
                                   ? p.color
-                                  : Colors.white.withValues(alpha: 0.45)),
+                                  : context.tText2(0.45)),
                           const SizedBox(width: 5),
                           Text(p.label,
                               style: TextStyle(
                                 color: active
                                     ? p.color
-                                    : Colors.white.withValues(alpha: 0.45),
+                                    : context.tText2(0.45),
                                 fontSize: 12,
                                 fontWeight: active
                                     ? FontWeight.w700
@@ -356,11 +356,11 @@ class _TopBar extends StatelessWidget {
             child: Container(
               width: 38, height: 38,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.07),
+                color: context.tText2(0.07),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.arrow_back_ios_new,
-                  color: Colors.white, size: 16),
+              child: Icon(Icons.arrow_back_ios_new,
+                  color: context.tText, size: 16),
             ),
           ),
           const SizedBox(width: 12),
@@ -368,15 +368,15 @@ class _TopBar extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('סריקת רשת',
+                Text('סריקת רשת',
                     style: TextStyle(
-                        color: Colors.white,
+                        color: context.tText,
                         fontSize: 18,
                         fontWeight: FontWeight.bold)),
                 Text(
                   isScanning ? 'מחפש מכשירים...' : 'בחר מכשיר להוספה',
                   style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.45),
+                      color: context.tText2(0.45),
                       fontSize: 12),
                 ),
               ],
@@ -467,12 +467,12 @@ class _ScanProgress extends StatelessWidget {
       margin: const EdgeInsets.fromLTRB(16, 4, 16, 8),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.darkCard,
+        color: context.tCard,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isScanning
               ? AppColors.primary.withValues(alpha: 0.25)
-              : Colors.white.withValues(alpha: 0.07),
+              : context.tText2(0.07),
         ),
       ),
       child: Column(
@@ -500,7 +500,7 @@ class _ScanProgress extends StatelessWidget {
                             shape: BoxShape.circle,
                             color: found > 0
                                 ? AppColors.secured.withValues(alpha: 0.15)
-                                : Colors.white.withValues(alpha: 0.05),
+                                : context.tText2(0.05),
                           ),
                           child: Icon(
                             found > 0
@@ -508,7 +508,7 @@ class _ScanProgress extends StatelessWidget {
                                 : Icons.wifi_find_outlined,
                             color: found > 0
                                 ? AppColors.secured
-                                : Colors.white38,
+                                : context.tText2(0.38),
                             size: 20,
                           ),
                         ),
@@ -530,8 +530,8 @@ class _ScanProgress extends StatelessWidget {
                           : (found > 0
                               ? '$found מכשירים נמצאו'
                               : 'לא נמצאו מכשירים'),
-                      style: const TextStyle(
-                          color: Colors.white,
+                      style: TextStyle(
+                          color: context.tText,
                           fontSize: 13,
                           fontWeight: FontWeight.w600),
                       maxLines: 1,
@@ -543,7 +543,7 @@ class _ScanProgress extends StatelessWidget {
                       borderRadius: BorderRadius.circular(4),
                       child: LinearProgressIndicator(
                         value: isScanning ? (progress > 0 ? progress : null) : 1.0,
-                        backgroundColor: Colors.white.withValues(alpha: 0.07),
+                        backgroundColor: context.tText2(0.07),
                         valueColor: AlwaysStoppedAnimation(
                           found > 0 ? AppColors.secured : AppColors.primary,
                         ),
@@ -613,12 +613,12 @@ class _ProtoChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: active
             ? color.withValues(alpha: 0.15)
-            : Colors.white.withValues(alpha: 0.04),
+            : context.tText2(0.04),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: active
               ? color.withValues(alpha: 0.45)
-              : Colors.white.withValues(alpha: 0.08),
+              : context.tText2(0.08),
         ),
       ),
       child: Row(
@@ -626,13 +626,13 @@ class _ProtoChip extends StatelessWidget {
         children: [
           Icon(icon,
               size: 11,
-              color: active ? color : Colors.white.withValues(alpha: 0.25)),
+              color: active ? color : context.tText2(0.25)),
           const SizedBox(width: 4),
           Text(label,
               style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
-                  color: active ? color : Colors.white.withValues(alpha: 0.25))),
+                  color: active ? color : context.tText2(0.25))),
           if (active) ...[
             const SizedBox(width: 4),
             _PulseDot(color: color),
@@ -801,7 +801,7 @@ class _DeviceResultCard extends StatelessWidget {
     DiscoveryProtocol.matter => const Color(0xFF00C896),
     DiscoveryProtocol.zigbee => const Color(0xFFFF9D00),
     DiscoveryProtocol.zwave  => const Color(0xFFFF6B6B),
-    _                        => Colors.white38,
+    _                        => Colors.white.withValues(alpha: 0.38),
   };
 
   static String _protocolLabel(DiscoveryProtocol p) => switch (p) {
@@ -824,12 +824,12 @@ class _DeviceResultCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.darkCard,
+        color: context.tCard,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: added
               ? AppColors.secured.withValues(alpha: 0.3)
-              : Colors.white.withValues(alpha: 0.07),
+              : context.tText2(0.07),
         ),
       ),
       child: Row(
@@ -856,8 +856,8 @@ class _DeviceResultCard extends StatelessWidget {
                     Flexible(
                       child: Text(
                         device.displayName,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: context.tText,
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                         ),
@@ -895,21 +895,21 @@ class _DeviceResultCard extends StatelessWidget {
                       Text(
                         device.manufacturer!,
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.55),
+                          color: context.tText2(0.55),
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
                       Text(' · ',
                           style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.25),
+                              color: context.tText2(0.25),
                               fontSize: 11)),
                     ],
                     Flexible(
                       child: Text(
                         address,
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.35),
+                          color: context.tText2(0.35),
                           fontSize: 11,
                           fontFamily: 'monospace',
                         ),
@@ -974,7 +974,7 @@ class _EmptyState extends StatelessWidget {
           Icon(
             isScanning ? Icons.radar : Icons.wifi_find_outlined,
             size: 56,
-            color: Colors.white.withValues(alpha: 0.15),
+            color: context.tText2(0.15),
           ),
           const SizedBox(height: 14),
           Text(
@@ -982,7 +982,7 @@ class _EmptyState extends StatelessWidget {
                 ? 'מחפש מכשירים ${filter == _Protocol.all ? "" : "(${filter.label})"}'
                 : 'לא נמצאו מכשירים',
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.35),
+              color: context.tText2(0.35),
               fontSize: 15,
             ),
           ),
@@ -991,7 +991,7 @@ class _EmptyState extends StatelessWidget {
             Text(
               'ודא שהמכשיר מחובר לאותה רשת WiFi',
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.22),
+                color: context.tText2(0.22),
                 fontSize: 12,
               ),
             ),

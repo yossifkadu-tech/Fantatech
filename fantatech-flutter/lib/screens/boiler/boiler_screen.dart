@@ -193,7 +193,7 @@ class _BoilerScreenState extends State<BoilerScreen>
     final s = context.watch<AppState>().strings;
 
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: context.tBg,
       body: SafeArea(
         child: Column(
           children: [
@@ -261,7 +261,7 @@ class _BoilerCard extends StatelessWidget {
   });
 
   Color get _mainColor =>
-      unit.isOn ? AppColors.acColor : Colors.white24;
+      unit.isOn ? AppColors.acColor : Colors.white.withValues(alpha: 0.24);
 
   @override
   Widget build(BuildContext context) {
@@ -272,7 +272,7 @@ class _BoilerCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppColors.darkCard,
+        color: context.tCard,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: color.withValues(alpha: 0.3),
@@ -296,13 +296,13 @@ class _BoilerCard extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.wifi_off_rounded,
+                  Icon(Icons.wifi_off_rounded,
                       color: Color(0xFFFF5252), size: 15),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       s.boilerNotResponding,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Color(0xFFFF5252),
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
@@ -323,7 +323,7 @@ class _BoilerCard extends StatelessWidget {
                       ),
                       child: Text(
                         s.boilerFindGateway,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: Color(0xFFFF5252),
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
@@ -349,12 +349,12 @@ class _BoilerCard extends StatelessWidget {
                     color: unit.isOn
                         ? AppColors.acColor
                             .withValues(alpha: 0.1 + 0.08 * heatAnim.value)
-                        : Colors.white.withValues(alpha: 0.06),
+                        : context.tText2(0.06),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
                       color: unit.isOn
                           ? AppColors.acColor.withValues(alpha: 0.3)
-                          : Colors.white.withValues(alpha: 0.08),
+                          : context.tText2(0.08),
                     ),
                   ),
                   child: _BoilerIcon(isOn: unit.isOn, anim: heatAnim),
@@ -367,8 +367,8 @@ class _BoilerCard extends StatelessWidget {
                   children: [
                     Text(
                       unit.name,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: context.tText,
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
                       ),
@@ -377,7 +377,7 @@ class _BoilerCard extends StatelessWidget {
                     Text(
                       unit.room,
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.4),
+                        color: context.tText2(0.4),
                         fontSize: 12,
                       ),
                     ),
@@ -394,7 +394,7 @@ class _BoilerCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: unit.isOn
                         ? AppColors.acColor
-                        : Colors.white.withValues(alpha: 0.12),
+                        : context.tText2(0.12),
                     borderRadius: BorderRadius.circular(15),
                   ),
                   child: AnimatedAlign(
@@ -406,9 +406,9 @@ class _BoilerCard extends StatelessWidget {
                       width: 24,
                       height: 24,
                       margin: const EdgeInsets.symmetric(horizontal: 3),
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.white,
+                        color: context.tText,
                       ),
                     ),
                   ),
@@ -438,7 +438,7 @@ class _BoilerCard extends StatelessWidget {
               Text(
                 '${s.boilerMode}:',
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.5),
+                  color: context.tText2(0.5),
                   fontSize: 12,
                 ),
               ),
@@ -486,13 +486,13 @@ class _BoilerCard extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(
                     horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.05),
+                  color: context.tText2(0.05),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   '${unit.powerW}W',
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.45),
+                    color: context.tText2(0.45),
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),
@@ -525,7 +525,7 @@ class _BoilerCard extends StatelessWidget {
                     const SizedBox(width: 6),
                     Text(
                       '${unit.currentTemp.toInt()}° → ${unit.targetTemp.toInt()}°',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: AppColors.acColor,
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -577,7 +577,7 @@ class _TempGauge extends StatelessWidget {
                 Text(
                   '${current.toInt()}°C',
                   style: TextStyle(
-                    color: isOn ? AppColors.acColor : Colors.white54,
+                    color: isOn ? AppColors.acColor : context.tText2(0.54),
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
                     height: 1.0,
@@ -586,7 +586,7 @@ class _TempGauge extends StatelessWidget {
                 Text(
                   tempLabel,
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.35),
+                    color: context.tText2(0.35),
                     fontSize: 11,
                   ),
                 ),
@@ -599,8 +599,8 @@ class _TempGauge extends StatelessWidget {
               children: [
                 Text(
                   '→ ${target.toInt()}°C',
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: context.tText,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),
@@ -608,7 +608,7 @@ class _TempGauge extends StatelessWidget {
                 Text(
                   'Target',
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.35),
+                    color: context.tText2(0.35),
                     fontSize: 11,
                   ),
                 ),
@@ -622,9 +622,9 @@ class _TempGauge extends StatelessWidget {
           borderRadius: BorderRadius.circular(4),
           child: LinearProgressIndicator(
             value: (current / 80).clamp(0.0, 1.0),
-            backgroundColor: Colors.white.withValues(alpha: 0.08),
+            backgroundColor: context.tText2(0.08),
             valueColor: AlwaysStoppedAnimation(
-                isOn ? AppColors.acColor : Colors.white24),
+                isOn ? AppColors.acColor : context.tText2(0.24)),
             minHeight: 6,
           ),
         ),
@@ -632,21 +632,21 @@ class _TempGauge extends StatelessWidget {
         // Target temp slider
         Row(
           children: [
-            const Text('30°',
-                style: TextStyle(color: Colors.white38, fontSize: 10)),
+            Text('30°',
+                style: TextStyle(color: context.tText2(0.38), fontSize: 10)),
             Expanded(
               child: Slider(
                 value: target,
                 min: 30,
                 max: 80,
                 divisions: 10,
-                activeColor: isOn ? AppColors.acColor : Colors.white38,
-                inactiveColor: Colors.white.withValues(alpha: 0.1),
+                activeColor: isOn ? AppColors.acColor : context.tText2(0.38),
+                inactiveColor: context.tText2(0.1),
                 onChanged: isOn ? onChanged : null,
               ),
             ),
-            const Text('80°',
-                style: TextStyle(color: Colors.white38, fontSize: 10)),
+            Text('80°',
+                style: TextStyle(color: context.tText2(0.38), fontSize: 10)),
           ],
         ),
       ],
@@ -682,24 +682,24 @@ class _ModeChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: selected
               ? color.withValues(alpha: 0.15)
-              : Colors.white.withValues(alpha: 0.06),
+              : context.tText2(0.06),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: selected
                 ? color.withValues(alpha: 0.4)
-                : Colors.white.withValues(alpha: 0.08),
+                : context.tText2(0.08),
           ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(icon,
-                color: selected ? color : Colors.white38, size: 12),
+                color: selected ? color : context.tText2(0.38), size: 12),
             const SizedBox(width: 4),
             Text(
               label,
               style: TextStyle(
-                color: selected ? color : Colors.white38,
+                color: selected ? color : context.tText2(0.38),
                 fontSize: 11,
                 fontWeight: FontWeight.w500,
               ),
@@ -732,12 +732,12 @@ class _TimerRow extends StatelessWidget {
     return Row(
       children: [
         Icon(Icons.timer_outlined,
-            color: Colors.white.withValues(alpha: 0.4), size: 14),
+            color: context.tText2(0.4), size: 14),
         const SizedBox(width: 6),
         Text(
           '$timerLabel:',
           style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.4),
+            color: context.tText2(0.4),
             fontSize: 12,
           ),
         ),
@@ -758,12 +758,12 @@ class _TimerRow extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: selected
                           ? AppColors.primary.withValues(alpha: 0.2)
-                          : Colors.white.withValues(alpha: 0.05),
+                          : context.tText2(0.05),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: selected
                             ? AppColors.primary.withValues(alpha: 0.4)
-                            : Colors.white.withValues(alpha: 0.06),
+                            : context.tText2(0.06),
                       ),
                     ),
                     child: Text(
@@ -771,7 +771,7 @@ class _TimerRow extends StatelessWidget {
                       style: TextStyle(
                         color: selected
                             ? AppColors.primary
-                            : Colors.white38,
+                            : context.tText2(0.38),
                         fontSize: 11,
                         fontWeight: selected
                             ? FontWeight.w600
@@ -809,7 +809,7 @@ class _ProtocolToggle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.06),
+        color: context.tText2(0.06),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -870,7 +870,7 @@ class _ProtoBtn extends StatelessWidget {
             Icon(icon,
                 color: selected
                     ? const Color(0xFF7BB8FF)
-                    : Colors.white38,
+                    : context.tText2(0.38),
                 size: 11),
             const SizedBox(width: 4),
             Text(
@@ -878,7 +878,7 @@ class _ProtoBtn extends StatelessWidget {
               style: TextStyle(
                 color: selected
                     ? const Color(0xFF7BB8FF)
-                    : Colors.white38,
+                    : context.tText2(0.38),
                 fontSize: 10,
                 fontWeight: FontWeight.w500,
               ),
@@ -917,7 +917,7 @@ class _BoilerPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final cx = size.width / 2;
     final cy = size.height / 2;
-    final color = isOn ? AppColors.acColor : Colors.white38;
+    final color = isOn ? AppColors.acColor : Colors.white.withValues(alpha: 0.38);
     final paint = Paint()
       ..color = color
       ..style = PaintingStyle.stroke
@@ -1057,7 +1057,7 @@ class _GatewayDiscoverySheetState extends State<_GatewayDiscoverySheet> {
       minChildSize: 0.4,
       maxChildSize: 0.85,
       builder: (_, ctrl) => Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: Color(0xFF1A1F2E),
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
@@ -1069,7 +1069,7 @@ class _GatewayDiscoverySheetState extends State<_GatewayDiscoverySheet> {
               height: 4,
               margin: const EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(
-                color: Colors.white24,
+                color: context.tText2(0.24),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -1086,7 +1086,7 @@ class _GatewayDiscoverySheetState extends State<_GatewayDiscoverySheet> {
                       color: AppColors.primary.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.router_outlined,
+                    child: Icon(Icons.router_outlined,
                         color: AppColors.primary, size: 18),
                   ),
                   const SizedBox(width: 12),
@@ -1096,8 +1096,8 @@ class _GatewayDiscoverySheetState extends State<_GatewayDiscoverySheet> {
                       children: [
                         Text(
                           s.boilerSelectGateway,
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: context.tText,
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
@@ -1105,7 +1105,7 @@ class _GatewayDiscoverySheetState extends State<_GatewayDiscoverySheet> {
                         Text(
                           widget.unit.name,
                           style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.4),
+                            color: context.tText2(0.4),
                             fontSize: 12,
                           ),
                         ),
@@ -1116,7 +1116,7 @@ class _GatewayDiscoverySheetState extends State<_GatewayDiscoverySheet> {
               ),
             ),
 
-            Divider(color: Colors.white.withValues(alpha: 0.07), height: 1),
+            Divider(color: context.tText2(0.07), height: 1),
 
             // Content
             Expanded(
@@ -1132,7 +1132,7 @@ class _GatewayDiscoverySheetState extends State<_GatewayDiscoverySheet> {
                           child: Text(
                             '${s.boilerGatewayFound} (${_found.length})',
                             style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.5),
+                              color: context.tText2(0.5),
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
                             ),
@@ -1166,12 +1166,12 @@ class _GatewayDiscoverySheetState extends State<_GatewayDiscoverySheet> {
                             height: 50,
                             child: ElevatedButton.icon(
                               onPressed: widget.onConnected,
-                              icon: const Icon(Icons.check_circle_outline,
+                              icon: Icon(Icons.check_circle_outline,
                                   size: 18),
                               label: Text(s.boilerReconnect),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.secured,
-                                foregroundColor: Colors.white,
+                                foregroundColor: context.tText,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(14),
                                 ),
@@ -1213,7 +1213,7 @@ class _ScanningView extends StatelessWidget {
                     AppColors.primary.withValues(alpha: 0.4)),
               ),
             ),
-            const Icon(Icons.router_outlined,
+            Icon(Icons.router_outlined,
                 color: AppColors.primary, size: 32),
           ],
         ),
@@ -1221,7 +1221,7 @@ class _ScanningView extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.6),
+            color: context.tText2(0.6),
             fontSize: 14,
           ),
         ),
@@ -1267,12 +1267,12 @@ class _GatewayTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.darkCard,
+        color: context.tCard,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: gateway.driverInstalled
               ? AppColors.secured.withValues(alpha: 0.4)
-              : Colors.white.withValues(alpha: 0.08),
+              : context.tText2(0.08),
         ),
       ),
       child: Row(
@@ -1296,8 +1296,8 @@ class _GatewayTile extends StatelessWidget {
               children: [
                 Text(
                   gateway.name,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: context.tText,
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                   ),
@@ -1306,7 +1306,7 @@ class _GatewayTile extends StatelessWidget {
                 Text(
                   '${gateway.model}  •  ${gateway.ip}',
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.35),
+                    color: context.tText2(0.35),
                     fontSize: 10,
                   ),
                 ),
@@ -1330,7 +1330,7 @@ class _GatewayTile extends StatelessWidget {
                 ),
                 child: Text(
                   labels.ready,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: AppColors.secured,
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
@@ -1356,7 +1356,7 @@ class _GatewayTile extends StatelessWidget {
                   Text(
                     labels.downloading,
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.4),
+                      color: context.tText2(0.4),
                       fontSize: 9,
                     ),
                     textAlign: TextAlign.center,
@@ -1378,7 +1378,7 @@ class _GatewayTile extends StatelessWidget {
                 ),
                 child: Text(
                   labels.download,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: AppColors.primary,
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
@@ -1406,10 +1406,10 @@ class _AddBoilerCard extends StatelessWidget {
       child: Container(
         height: 72,
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.04),
+          color: context.tText2(0.04),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: Colors.white.withValues(alpha: 0.1),
+            color: context.tText2(0.1),
             style: BorderStyle.solid,
           ),
         ),
@@ -1417,12 +1417,12 @@ class _AddBoilerCard extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.add_circle_outline,
-                color: Colors.white.withValues(alpha: 0.3), size: 20),
+                color: context.tText2(0.3), size: 20),
             const SizedBox(width: 10),
             Text(
               label,
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.4),
+                color: context.tText2(0.4),
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
               ),
@@ -1453,19 +1453,19 @@ class _TopBar extends StatelessWidget {
               width: 38,
               height: 38,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.07),
+                color: context.tText2(0.07),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.chevron_right,
-                  color: Colors.white, size: 22),
+              child: Icon(Icons.chevron_right,
+                  color: context.tText, size: 22),
             ),
           ),
           Expanded(
             child: Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: context.tText,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
@@ -1506,7 +1506,7 @@ class _ProtoBadge extends StatelessWidget {
           Icon(icon, color: const Color(0xFF7BB8FF), size: 10),
           const SizedBox(width: 3),
           Text(label,
-              style: const TextStyle(
+              style: TextStyle(
                   color: Color(0xFF7BB8FF),
                   fontSize: 9,
                   fontWeight: FontWeight.w500)),
@@ -1537,13 +1537,13 @@ class _SmartSwitchesSection extends StatelessWidget {
         const SizedBox(height: 8),
         Row(
           children: [
-            const Icon(Icons.toggle_on_outlined,
+            Icon(Icons.toggle_on_outlined,
                 color: AppColors.primary, size: 20),
             const SizedBox(width: 8),
             Text(
               s.switchesCategory,
-              style: const TextStyle(
-                  color: Colors.white,
+              style: TextStyle(
+                  color: context.tText,
                   fontSize: 16,
                   fontWeight: FontWeight.bold),
             ),
@@ -1555,15 +1555,15 @@ class _SmartSwitchesSection extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 22),
             decoration: BoxDecoration(
-              color: AppColors.darkCard,
+              color: context.tCard,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
+              border: Border.all(color: context.tText2(0.07)),
             ),
             child: Center(
               child: Text(
                 s.noDevicesConnected,
                 style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.4), fontSize: 13),
+                    color: context.tText2(0.4), fontSize: 13),
               ),
             ),
           )
@@ -1586,12 +1586,12 @@ class _SwitchRow extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.darkCard,
+        color: context.tCard,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: on
               ? AppColors.primary.withValues(alpha: 0.35)
-              : Colors.white.withValues(alpha: 0.07),
+              : context.tText2(0.07),
         ),
       ),
       child: Row(
@@ -1600,12 +1600,12 @@ class _SwitchRow extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: (on ? AppColors.primary : Colors.white)
+              color: (on ? AppColors.primary : context.tText)
                   .withValues(alpha: on ? 0.15 : 0.05),
               borderRadius: BorderRadius.circular(11),
             ),
             child: Icon(Icons.toggle_on_outlined,
-                color: on ? AppColors.primary : Colors.white38, size: 22),
+                color: on ? AppColors.primary : context.tText2(0.38), size: 22),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -1613,8 +1613,8 @@ class _SwitchRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(device.name,
-                    style: const TextStyle(
-                        color: Colors.white,
+                    style: TextStyle(
+                        color: context.tText,
                         fontSize: 14,
                         fontWeight: FontWeight.w600),
                     maxLines: 1,
@@ -1622,14 +1622,14 @@ class _SwitchRow extends StatelessWidget {
                 if (device.room.isNotEmpty)
                   Text(device.room,
                       style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.4),
+                          color: context.tText2(0.4),
                           fontSize: 11)),
               ],
             ),
           ),
           Switch(
             value: on,
-            activeThumbColor: Colors.white,
+            activeThumbColor: context.tText,
             activeTrackColor: AppColors.primary,
             onChanged: (_) => state.toggleDevice(device.id),
           ),

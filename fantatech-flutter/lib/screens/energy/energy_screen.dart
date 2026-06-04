@@ -185,7 +185,7 @@ class _EnergyScreenState extends State<EnergyScreen>
     final tabs = [s.energyDay, s.energyWeek, s.energyMonth];
 
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: context.tBg,
       body: SafeArea(
         child: Column(
           children: [
@@ -237,7 +237,7 @@ class _EnergyScreenState extends State<EnergyScreen>
                     Text(
                       s.activeDevices,
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.55),
+                        color: context.tText2(0.55),
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
                         letterSpacing: 0.3,
@@ -247,10 +247,10 @@ class _EnergyScreenState extends State<EnergyScreen>
 
                     Container(
                       decoration: BoxDecoration(
-                        color: AppColors.darkCard,
+                        color: context.tCard,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.07)),
+                            color: context.tText2(0.07)),
                       ),
                       child: Column(
                         children: [
@@ -259,7 +259,7 @@ class _EnergyScreenState extends State<EnergyScreen>
                             if (i < _devices.length - 1)
                               Divider(
                                 height: 1,
-                                color: Colors.white.withValues(alpha: 0.06),
+                                color: context.tText2(0.06),
                                 indent: 56,
                               ),
                           ],
@@ -299,15 +299,15 @@ class _EnergyScreenState extends State<EnergyScreen>
                       child: OutlinedButton(
                         onPressed: () {},
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.white,
+                          foregroundColor: context.tText,
                           side: BorderSide(
-                              color: Colors.white.withValues(alpha: 0.18)),
+                              color: context.tText2(0.18)),
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(14)),
                         ),
                         child: Text(
                           s.fullReport,
-                          style: const TextStyle(fontSize: 15),
+                          style: TextStyle(fontSize: 15),
                         ),
                       ),
                     ),
@@ -343,7 +343,7 @@ class _TabSelector extends StatelessWidget {
     return Container(
       height: 40,
       decoration: BoxDecoration(
-        color: AppColors.darkCard,
+        color: context.tCard,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -363,7 +363,7 @@ class _TabSelector extends StatelessWidget {
                 child: Text(
                   tabs[i],
                   style: TextStyle(
-                    color: isSelected ? Colors.white : Colors.white38,
+                    color: isSelected ? context.tText : context.tText2(0.38),
                     fontSize: 13,
                     fontWeight: isSelected
                         ? FontWeight.w600
@@ -414,9 +414,9 @@ class _ChartCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.darkCard,
+        color: context.tCard,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
+        border: Border.all(color: context.tText2(0.07)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -430,8 +430,8 @@ class _ChartCard extends StatelessWidget {
                 children: [
                   Text(
                     '${totalKwh.toStringAsFixed(1)} kWh',
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: context.tText,
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
                       height: 1.1,
@@ -440,12 +440,12 @@ class _ChartCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      const Icon(Icons.arrow_downward,
+                      Icon(Icons.arrow_downward,
                           color: AppColors.secured, size: 12),
                       const SizedBox(width: 3),
                       Text(
                         '$fromLastLabel  ${savingPct.toStringAsFixed(0)}% solar',
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: AppColors.secured,
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
@@ -472,14 +472,14 @@ class _ChartCard extends StatelessWidget {
                     Text(
                       sel.label,
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.5),
+                        color: context.tText2(0.5),
                         fontSize: 10,
                       ),
                     ),
                     Text(
                       '${sel.consumption.toStringAsFixed(1)} kWh',
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: context.tText,
                         fontSize: 13,
                         fontWeight: FontWeight.bold,
                       ),
@@ -542,7 +542,7 @@ class _LegendDot extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.45), fontSize: 11),
+              color: context.tText2(0.45), fontSize: 11),
         ),
       ],
     );
@@ -612,8 +612,8 @@ class _LineChart extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: i == selectedIndex
-                      ? Colors.white
-                      : Colors.white.withValues(alpha: 0.35),
+                      ? context.tText
+                      : context.tText2(0.35),
                   fontSize: 9,
                   fontWeight: i == selectedIndex
                       ? FontWeight.w600
@@ -850,9 +850,9 @@ class _SummaryCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       decoration: BoxDecoration(
-        color: AppColors.darkCard,
+        color: context.tCard,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
+        border: Border.all(color: context.tText2(0.07)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -864,8 +864,8 @@ class _SummaryCard extends StatelessWidget {
               children: [
                 TextSpan(
                   text: value,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: context.tText,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
@@ -873,7 +873,7 @@ class _SummaryCard extends StatelessWidget {
                 TextSpan(
                   text: ' $unit',
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.4),
+                    color: context.tText2(0.4),
                     fontSize: 11,
                   ),
                 ),
@@ -883,7 +883,7 @@ class _SummaryCard extends StatelessWidget {
           Text(
             label,
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.35),
+              color: context.tText2(0.35),
               fontSize: 11,
             ),
           ),
@@ -912,19 +912,19 @@ class _TopBar extends StatelessWidget {
               width: 38,
               height: 38,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.07),
+                color: context.tText2(0.07),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(
-                  Icons.chevron_right, color: Colors.white, size: 22),
+              child: Icon(
+                  Icons.chevron_right, color: context.tText, size: 22),
             ),
           ),
           Expanded(
             child: Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: context.tText,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
@@ -988,7 +988,7 @@ class _SmartSocketsSection extends StatelessWidget {
             Text(
               s.socketsTitle,
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.55),
+                color: context.tText2(0.55),
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
                 letterSpacing: 0.3,
@@ -1009,11 +1009,11 @@ class _SmartSocketsSection extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.add, color: AppColors.primary, size: 13),
+                    Icon(Icons.add, color: AppColors.primary, size: 13),
                     const SizedBox(width: 4),
                     Text(
                       s.socketRegister,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: AppColors.primary,
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
@@ -1058,9 +1058,9 @@ class _SmartSocketsSection extends StatelessWidget {
         // Socket cards list
         Container(
           decoration: BoxDecoration(
-            color: AppColors.darkCard,
+            color: context.tCard,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
+            border: Border.all(color: context.tText2(0.07)),
           ),
           child: sockets.isEmpty
               ? Padding(
@@ -1069,7 +1069,7 @@ class _SmartSocketsSection extends StatelessWidget {
                     child: Text(
                       s.socketAddNew,
                       style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.3),
+                          color: context.tText2(0.3),
                           fontSize: 13),
                     ),
                   ),
@@ -1085,7 +1085,7 @@ class _SmartSocketsSection extends StatelessWidget {
                       if (i < sockets.length - 1)
                         Divider(
                           height: 1,
-                          color: Colors.white.withValues(alpha: 0.06),
+                          color: context.tText2(0.06),
                           indent: 56,
                         ),
                     ],
@@ -1125,12 +1125,12 @@ class _SocketTile extends StatelessWidget {
             decoration: BoxDecoration(
               color: entry.isOn
                   ? AppColors.plugColor.withValues(alpha: 0.12)
-                  : Colors.white.withValues(alpha: 0.05),
+                  : context.tText2(0.05),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
               Icons.power_outlined,
-              color: entry.isOn ? AppColors.plugColor : Colors.white24,
+              color: entry.isOn ? AppColors.plugColor : context.tText2(0.24),
               size: 19,
             ),
           ),
@@ -1143,8 +1143,8 @@ class _SocketTile extends StatelessWidget {
               children: [
                 Text(
                   entry.name,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: context.tText,
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
                   ),
@@ -1155,7 +1155,7 @@ class _SocketTile extends StatelessWidget {
                     Text(
                       entry.room,
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.35),
+                        color: context.tText2(0.35),
                         fontSize: 11,
                       ),
                     ),
@@ -1196,7 +1196,7 @@ class _SocketTile extends StatelessWidget {
               decoration: BoxDecoration(
                 color: entry.isOn
                     ? AppColors.plugColor
-                    : Colors.white.withValues(alpha: 0.1),
+                    : context.tText2(0.1),
                 borderRadius: BorderRadius.circular(13),
               ),
               child: AnimatedAlign(
@@ -1208,8 +1208,8 @@ class _SocketTile extends StatelessWidget {
                   width: 20,
                   height: 20,
                   margin: const EdgeInsets.symmetric(horizontal: 3),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
+                  decoration: BoxDecoration(
+                    color: context.tText,
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -1254,7 +1254,7 @@ class _RegisterSocketSheetState extends State<_RegisterSocketSheet> {
 
     return Container(
       padding: EdgeInsets.fromLTRB(20, 16, 20, 24 + bottom),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: Color(0xFF1A1F2E),
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -1268,7 +1268,7 @@ class _RegisterSocketSheetState extends State<_RegisterSocketSheet> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                  color: Colors.white24,
+                  color: context.tText2(0.24),
                   borderRadius: BorderRadius.circular(2)),
             ),
           ),
@@ -1276,8 +1276,8 @@ class _RegisterSocketSheetState extends State<_RegisterSocketSheet> {
 
           Text(
             s.socketRegister,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: context.tText,
               fontSize: 17,
               fontWeight: FontWeight.bold,
             ),
@@ -1304,7 +1304,7 @@ class _RegisterSocketSheetState extends State<_RegisterSocketSheet> {
           Text(
             s.socketProtocol,
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.5),
+              color: context.tText2(0.5),
               fontSize: 12,
             ),
           ),
@@ -1343,12 +1343,12 @@ class _RegisterSocketSheetState extends State<_RegisterSocketSheet> {
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
+                foregroundColor: context.tText,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14)),
               ),
               child: Text(s.socketRegister,
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontSize: 15, fontWeight: FontWeight.w600)),
             ),
           ),
@@ -1370,19 +1370,19 @@ class _SheetField extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextField(
       controller: ctrl,
-      style: const TextStyle(color: Colors.white, fontSize: 14),
+      style: TextStyle(color: context.tText, fontSize: 14),
       decoration: InputDecoration(
         labelText: label,
         labelStyle:
-            TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 13),
+            TextStyle(color: context.tText2(0.4), fontSize: 13),
         prefixIcon:
-            Icon(icon, color: Colors.white.withValues(alpha: 0.3), size: 18),
+            Icon(icon, color: context.tText2(0.3), size: 18),
         filled: true,
-        fillColor: Colors.white.withValues(alpha: 0.06),
+        fillColor: context.tText2(0.06),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide:
-              BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+              BorderSide(color: context.tText2(0.1)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -1420,23 +1420,23 @@ class _ProtoOption extends StatelessWidget {
         decoration: BoxDecoration(
           color: selected
               ? color.withValues(alpha: 0.12)
-              : Colors.white.withValues(alpha: 0.05),
+              : context.tText2(0.05),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: selected
                 ? color.withValues(alpha: 0.4)
-                : Colors.white.withValues(alpha: 0.08),
+                : context.tText2(0.08),
           ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: selected ? color : Colors.white38, size: 15),
+            Icon(icon, color: selected ? color : context.tText2(0.38), size: 15),
             const SizedBox(width: 6),
             Text(
               label,
               style: TextStyle(
-                color: selected ? color : Colors.white38,
+                color: selected ? color : context.tText2(0.38),
                 fontSize: 12,
                 fontWeight:
                     selected ? FontWeight.w600 : FontWeight.normal,
@@ -1483,8 +1483,8 @@ class _DeviceTile extends StatelessWidget {
               children: [
                 Text(
                   row.name,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: context.tText,
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                   ),
@@ -1494,7 +1494,7 @@ class _DeviceTile extends StatelessWidget {
                   borderRadius: BorderRadius.circular(3),
                   child: LinearProgressIndicator(
                     value: row.watts / 1200.0,
-                    backgroundColor: Colors.white.withValues(alpha: 0.08),
+                    backgroundColor: context.tText2(0.08),
                     valueColor:
                         AlwaysStoppedAnimation(row.color.withValues(alpha: 0.7)),
                     minHeight: 3,
@@ -1509,8 +1509,8 @@ class _DeviceTile extends StatelessWidget {
             children: [
               Text(
                 '${row.watts}W',
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: context.tText,
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
                 ),
@@ -1518,7 +1518,7 @@ class _DeviceTile extends StatelessWidget {
               Text(
                 _percentage,
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.35),
+                  color: context.tText2(0.35),
                   fontSize: 11,
                 ),
               ),

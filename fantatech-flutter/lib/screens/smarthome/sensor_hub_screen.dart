@@ -105,7 +105,7 @@ class _SensorHubViewState extends State<_SensorHubView>
     final engine = context.watch<SensorScanEngine>();
 
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: context.tBg,
       body: SafeArea(
         child: Column(
           children: [
@@ -164,8 +164,8 @@ class _Header extends StatelessWidget {
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                color: Colors.white70, size: 20),
+            icon: Icon(Icons.arrow_back_ios_new_rounded,
+                color: context.tText2(0.7), size: 20),
             onPressed: () => Navigator.pop(context),
           ),
           const SizedBox(width: 4),
@@ -173,9 +173,9 @@ class _Header extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('חיישנים ותריסים',
+                Text('חיישנים ותריסים',
                     style: TextStyle(
-                        color: Colors.white,
+                        color: context.tText,
                         fontSize: 18,
                         fontWeight: FontWeight.w700)),
                 Text(
@@ -184,7 +184,7 @@ class _Header extends StatelessWidget {
                       : total == 0
                           ? 'לא נמצאו מכשירים'
                           : '$sensorsCount חיישנים · $coversCount תריסים',
-                  style: const TextStyle(color: Colors.white54, fontSize: 12),
+                  style: TextStyle(color: context.tText2(0.54), fontSize: 12),
                 ),
               ],
             ),
@@ -198,8 +198,8 @@ class _Header extends StatelessWidget {
           else
             TextButton.icon(
               onPressed: onScan,
-              icon: const Icon(Icons.radar_rounded, size: 16),
-              label: const Text('סרוק', style: TextStyle(fontSize: 13)),
+              icon: Icon(Icons.radar_rounded, size: 16),
+              label: Text('סרוק', style: TextStyle(fontSize: 13)),
               style: TextButton.styleFrom(
                   foregroundColor: AppColors.primary,
                   padding:
@@ -234,12 +234,12 @@ class _ProgressChips extends StatelessWidget {
             decoration: BoxDecoration(
               color: hasFound
                   ? s.color.withValues(alpha: 0.15)
-                  : Colors.white.withValues(alpha: 0.05),
+                  : context.tText2(0.05),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
                   color: hasFound
                       ? s.color.withValues(alpha: 0.45)
-                      : Colors.white.withValues(alpha: 0.10)),
+                      : context.tText2(0.10)),
             ),
             child: Row(mainAxisSize: MainAxisSize.min, children: [
               if (scanning)
@@ -253,7 +253,7 @@ class _ProgressChips extends StatelessWidget {
               const SizedBox(width: 5),
               Text(s.key,
                   style: TextStyle(
-                      color: hasFound ? s.color : Colors.white38,
+                      color: hasFound ? s.color : context.tText2(0.38),
                       fontSize: 10,
                       fontWeight: FontWeight.w700)),
               if (hasFound) ...[
@@ -266,7 +266,7 @@ class _ProgressChips extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text('${s.found}',
-                      style: const TextStyle(
+                      style: TextStyle(
                           color: Colors.black,
                           fontSize: 9,
                           fontWeight: FontWeight.w800)),
@@ -291,7 +291,7 @@ class _TabBar extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: context.tText2(0.05),
         borderRadius: BorderRadius.circular(12),
       ),
       child: TabBar(
@@ -304,11 +304,11 @@ class _TabBar extends StatelessWidget {
         indicatorSize: TabBarIndicatorSize.tab,
         dividerColor: Colors.transparent,
         labelColor: AppColors.primary,
-        unselectedLabelColor: Colors.white38,
+        unselectedLabelColor: context.tText2(0.38),
         labelStyle:
-            const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+            TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
         unselectedLabelStyle:
-            const TextStyle(fontSize: 13, fontWeight: FontWeight.w400),
+            TextStyle(fontSize: 13, fontWeight: FontWeight.w400),
         tabs: const [
           Tab(icon: Icon(Icons.sensors_rounded, size: 16), text: 'חיישנים'),
           Tab(icon: Icon(Icons.window_outlined,  size: 16), text: 'תריסים'),
@@ -406,12 +406,12 @@ class _SensorCardState extends State<_SensorCard> {
       decoration: BoxDecoration(
         color: triggered == true
             ? color.withValues(alpha: 0.10)
-            : Colors.white.withValues(alpha: 0.04),
+            : context.tText2(0.04),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: triggered == true
               ? color.withValues(alpha: 0.40)
-              : Colors.white.withValues(alpha: 0.07),
+              : context.tText2(0.07),
           width: 1.2,
         ),
       ),
@@ -460,8 +460,8 @@ class _SensorCardState extends State<_SensorCard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(s.name,
-                      style: const TextStyle(
-                          color: Colors.white,
+                      style: TextStyle(
+                          color: context.tText,
                           fontSize: 14,
                           fontWeight: FontWeight.w600)),
                   const SizedBox(height: 2),
@@ -475,7 +475,7 @@ class _SensorCardState extends State<_SensorCard> {
                   Text(
                     s.type.triggeredLabel(triggered),
                     style: TextStyle(
-                        color: triggered == true ? color : Colors.white38,
+                        color: triggered == true ? color : context.tText2(0.38),
                         fontSize: 13,
                         fontWeight: FontWeight.w700),
                   ),
@@ -490,8 +490,8 @@ class _SensorCardState extends State<_SensorCard> {
                           if (s.humidity != null)
                             '💧 ${s.humidity!.toStringAsFixed(0)} %',
                         ].join('  '),
-                        style: const TextStyle(
-                            color: Colors.white54, fontSize: 11),
+                        style: TextStyle(
+                            color: context.tText2(0.54), fontSize: 11),
                       ),
                     ),
                   if (s.batteryPercent != null)
@@ -502,7 +502,7 @@ class _SensorCardState extends State<_SensorCard> {
                         style: TextStyle(
                             color: s.batteryPercent! < 20
                                 ? Colors.red.shade400
-                                : Colors.white38,
+                                : context.tText2(0.38),
                             fontSize: 11),
                       ),
                     ),
@@ -520,7 +520,7 @@ class _SensorCardState extends State<_SensorCard> {
                   child: Container(
                     width: 34, height: 34,
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.06),
+                      color: context.tText2(0.06),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: _refreshing
@@ -529,8 +529,8 @@ class _SensorCardState extends State<_SensorCard> {
                             child: CircularProgressIndicator(
                                 strokeWidth: 1.8,
                                 color: AppColors.primary))
-                        : const Icon(Icons.refresh_rounded,
-                            color: Colors.white54, size: 18),
+                        : Icon(Icons.refresh_rounded,
+                            color: context.tText2(0.54), size: 18),
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -678,12 +678,12 @@ class _CoverCardState extends State<_CoverCard> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.04),
+        color: context.tText2(0.04),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: c.isRegistered
               ? color.withValues(alpha: 0.35)
-              : Colors.white.withValues(alpha: 0.07),
+              : context.tText2(0.07),
           width: 1.2,
         ),
       ),
@@ -708,8 +708,8 @@ class _CoverCardState extends State<_CoverCard> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(c.name,
-                        style: const TextStyle(
-                            color: Colors.white,
+                        style: TextStyle(
+                            color: context.tText,
                             fontSize: 14,
                             fontWeight: FontWeight.w600)),
                     Text(
@@ -717,8 +717,8 @@ class _CoverCardState extends State<_CoverCard> {
                         if (c.ip != null) c.ip!,
                         if (c.model != null) c.model!,
                       ].join(' · '),
-                      style: const TextStyle(
-                          color: Colors.white54, fontSize: 11),
+                      style: TextStyle(
+                          color: context.tText2(0.54), fontSize: 11),
                     ),
                   ],
                 ),
@@ -758,7 +758,7 @@ class _CoverCardState extends State<_CoverCard> {
               _Tag(c.protocol.displayName, color),
               if (pos != null) ...[
                 const SizedBox(width: 6),
-                _Tag('$pos %', Colors.white54),
+                _Tag('$pos %', context.tText2(0.54)),
               ],
               const Spacer(),
               if (!c.isRegistered)
@@ -789,8 +789,8 @@ class _CoverCardState extends State<_CoverCard> {
             // ── Position slider ───────────────────────────────────────────────
             if (c.hasPositionControl && pos != null) ...[
               Row(children: [
-                const Icon(Icons.unfold_less_rounded,
-                    color: Colors.white38, size: 14),
+                Icon(Icons.unfold_less_rounded,
+                    color: context.tText2(0.38), size: 14),
                 Expanded(
                   child: SliderTheme(
                     data: SliderTheme.of(context).copyWith(
@@ -798,7 +798,7 @@ class _CoverCardState extends State<_CoverCard> {
                       thumbShape: const RoundSliderThumbShape(
                           enabledThumbRadius: 7),
                       activeTrackColor: color,
-                      inactiveTrackColor: Colors.white12,
+                      inactiveTrackColor: context.tText2(0.12),
                       thumbColor: color,
                       overlayColor: color.withValues(alpha: 0.2),
                     ),
@@ -816,8 +816,8 @@ class _CoverCardState extends State<_CoverCard> {
                     ),
                   ),
                 ),
-                const Icon(Icons.unfold_more_rounded,
-                    color: Colors.white38, size: 14),
+                Icon(Icons.unfold_more_rounded,
+                    color: context.tText2(0.38), size: 14),
               ]),
             ],
 
@@ -881,12 +881,12 @@ class _CtrlButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
           color: busy
-              ? Colors.white.withValues(alpha: 0.04)
+              ? context.tText2(0.04)
               : color.withValues(alpha: 0.14),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: busy
-                ? Colors.white.withValues(alpha: 0.08)
+                ? context.tText2(0.08)
                 : color.withValues(alpha: 0.40),
             width: 1.2,
           ),
@@ -894,7 +894,7 @@ class _CtrlButton extends StatelessWidget {
         child: Center(
           child: Text(label,
               style: TextStyle(
-                  color: busy ? Colors.white24 : color,
+                  color: busy ? context.tText2(0.24) : color,
                   fontSize: 12,
                   fontWeight: FontWeight.w700)),
         ),
@@ -940,26 +940,26 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: Colors.white.withValues(alpha: 0.15), size: 48),
+          Icon(icon, color: context.tText2(0.15), size: 48),
           const SizedBox(height: 16),
           Text(message,
-              style: const TextStyle(
-                  color: Colors.white38,
+              style: TextStyle(
+                  color: context.tText2(0.38),
                   fontSize: 15,
                   fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 48),
             child: Text(hint,
-                style: const TextStyle(
-                    color: Colors.white24, fontSize: 11),
+                style: TextStyle(
+                    color: context.tText2(0.24), fontSize: 11),
                 textAlign: TextAlign.center),
           ),
           const SizedBox(height: 20),
           ElevatedButton.icon(
             onPressed: onScan,
-            icon: const Icon(Icons.radar_rounded, size: 16),
-            label: const Text('סרוק שוב'),
+            icon: Icon(Icons.radar_rounded, size: 16),
+            label: Text('סרוק שוב'),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.black,

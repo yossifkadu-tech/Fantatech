@@ -230,7 +230,7 @@ class _DiscoverySheetState extends State<DiscoverySheet> {
       expand:           false,
       builder: (ctx, scrollCtrl) => Container(
         decoration: BoxDecoration(
-          color:        AppColors.darkCard,
+          color:        context.tCard,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(
@@ -241,7 +241,7 @@ class _DiscoverySheetState extends State<DiscoverySheet> {
               child: Container(
                 width: 40, height: 4,
                 decoration: BoxDecoration(
-                  color:        Colors.white24,
+                  color:        context.tText2(0.24),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -252,7 +252,7 @@ class _DiscoverySheetState extends State<DiscoverySheet> {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 children: [
-                  const Icon(Icons.radar, color: AppColors.primary, size: 22),
+                  Icon(Icons.radar, color: AppColors.primary, size: 22),
                   const SizedBox(width: 10),
                   const Expanded(
                     child: Text(
@@ -288,7 +288,7 @@ class _DiscoverySheetState extends State<DiscoverySheet> {
                       borderRadius: BorderRadius.circular(2),
                       child: LinearProgressIndicator(
                         value:            engine.isScanning ? engine.progress : 1.0,
-                        backgroundColor:  Colors.white12,
+                        backgroundColor:  context.tText2(0.12),
                         valueColor:
                             AlwaysStoppedAnimation<Color>(AppColors.primary),
                       ),
@@ -299,7 +299,7 @@ class _DiscoverySheetState extends State<DiscoverySheet> {
                     Text(
                       engine.status,
                       style: TextStyle(
-                        color:    Colors.white.withValues(alpha: 0.45),
+                        color:    context.tText2(0.45),
                         fontSize: 12,
                       ),
                     ),
@@ -394,11 +394,11 @@ class _ScanButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
         decoration: BoxDecoration(
           color:        isScanning
-              ? Colors.white.withValues(alpha: 0.07)
+              ? context.tText2(0.07)
               : AppColors.primary,
           borderRadius: BorderRadius.circular(12),
           border:       isScanning
-              ? Border.all(color: Colors.white.withValues(alpha: 0.15))
+              ? Border.all(color: context.tText2(0.15))
               : null,
         ),
         child: Row(
@@ -407,8 +407,8 @@ class _ScanButton extends StatelessWidget {
             Icon(
               isScanning ? Icons.stop_rounded : Icons.radar,
               color: isScanning
-                  ? Colors.white.withValues(alpha: 0.6)
-                  : Colors.white,
+                  ? context.tText2(0.6)
+                  : context.tText,
               size: 16,
             ),
             const SizedBox(width: 7),
@@ -416,8 +416,8 @@ class _ScanButton extends StatelessWidget {
               isScanning ? 'עצור' : 'סרוק',
               style: TextStyle(
                 color:      isScanning
-                    ? Colors.white.withValues(alpha: 0.6)
-                    : Colors.white,
+                    ? context.tText2(0.6)
+                    : context.tText,
                 fontSize:   13,
                 fontWeight: FontWeight.w600,
               ),
@@ -501,7 +501,7 @@ class _HaBanner extends StatelessWidget {
                             ? 'מחובר — $deviceCount מכשירים יובאו'
                             : ip,
                         style: TextStyle(
-                          color:    Colors.white.withValues(alpha: 0.45),
+                          color:    context.tText2(0.45),
                           fontSize: 11,
                         ),
                       ),
@@ -522,7 +522,7 @@ class _HaBanner extends StatelessWidget {
                       ),
                       child: Text(
                         showForm ? 'בטל' : 'חבר',
-                        style: const TextStyle(
+                        style: TextStyle(
                           color:      haColor,
                           fontSize:   12,
                           fontWeight: FontWeight.w600,
@@ -531,7 +531,7 @@ class _HaBanner extends StatelessWidget {
                     ),
                   )
                 else
-                  const Icon(Icons.check_circle_outline,
+                  Icon(Icons.check_circle_outline,
                       color: AppColors.secured, size: 20),
               ],
             ),
@@ -568,7 +568,7 @@ class _HaBanner extends StatelessWidget {
                   Text(
                     'צור Token ב: Profile → Long-Lived Access Tokens',
                     style: TextStyle(
-                      color:    Colors.white.withValues(alpha: 0.35),
+                      color:    context.tText2(0.35),
                       fontSize: 10,
                     ),
                   ),
@@ -586,7 +586,7 @@ class _HaBanner extends StatelessWidget {
                       ),
                       child: Text(
                         error!,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color:    AppColors.unsecured,
                           fontSize: 11,
                         ),
@@ -602,7 +602,7 @@ class _HaBanner extends StatelessWidget {
                       onPressed: connecting ? null : onConnect,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: haColor,
-                        foregroundColor: Colors.white,
+                        foregroundColor: context.tText,
                         disabledBackgroundColor:
                             haColor.withValues(alpha: 0.4),
                         shape: RoundedRectangleBorder(
@@ -619,7 +619,7 @@ class _HaBanner extends StatelessWidget {
                                 strokeWidth: 2,
                               ),
                             )
-                          : const Text(
+                          : Text(
                               'ייבא מכשירים מ-Home Assistant',
                               style: TextStyle(
                                 fontSize:   13,
@@ -664,24 +664,24 @@ class _HaField extends StatelessWidget {
       obscureText:  obscure,
       keyboardType: keyboardType,
       style: TextStyle(
-        color:    Colors.white,
+        color:    context.tText,
         fontSize: small ? 11 : 13,
       ),
       decoration: InputDecoration(
         labelText: label,
         labelStyle: TextStyle(
-          color:    Colors.white.withValues(alpha: 0.45),
+          color:    context.tText2(0.45),
           fontSize: 11,
         ),
         hintText:  hint,
         hintStyle: TextStyle(
-          color:    Colors.white.withValues(alpha: 0.2),
+          color:    context.tText2(0.2),
           fontSize: small ? 10 : 12,
         ),
         prefixIcon: Icon(icon,
-            color: Colors.white.withValues(alpha: 0.35), size: 16),
+            color: context.tText2(0.35), size: 16),
         filled:        true,
-        fillColor:     Colors.white.withValues(alpha: 0.05),
+        fillColor:     context.tText2(0.05),
         border:        OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
           borderSide:   BorderSide.none,
@@ -725,12 +725,12 @@ class _DeviceRow extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color:        AppColors.darkBg,
+        color:        context.tBg,
         borderRadius: BorderRadius.circular(14),
         border:       Border.all(
           color: added
               ? AppColors.secured.withValues(alpha: 0.3)
-              : Colors.white.withValues(alpha: 0.07),
+              : context.tText2(0.07),
           width: 1,
         ),
       ),
@@ -755,8 +755,8 @@ class _DeviceRow extends StatelessWidget {
               children: [
                 Text(
                   device.displayName,
-                  style: const TextStyle(
-                    color:      Colors.white,
+                  style: TextStyle(
+                    color:      context.tText,
                     fontSize:   13,
                     fontWeight: FontWeight.w600,
                   ),
@@ -771,7 +771,7 @@ class _DeviceRow extends StatelessWidget {
                       Text(
                         device.ip!,
                         style: TextStyle(
-                          color:    Colors.white.withValues(alpha: 0.35),
+                          color:    context.tText2(0.35),
                           fontSize: 10,
                           fontFamily: 'monospace',
                         ),
@@ -782,7 +782,7 @@ class _DeviceRow extends StatelessWidget {
                         height: 3,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Colors.white.withValues(alpha: 0.2),
+                          color: context.tText2(0.2),
                         ),
                       ),
                     ],
@@ -809,7 +809,7 @@ class _DeviceRow extends StatelessWidget {
                       Text(
                         device.manufacturer!,
                         style: TextStyle(
-                          color:    Colors.white.withValues(alpha: 0.3),
+                          color:    context.tText2(0.3),
                           fontSize: 9,
                         ),
                       ),
@@ -881,14 +881,14 @@ class _EmptyHint extends StatelessWidget {
           children: [
             Icon(
               isScanning ? Icons.radar : Icons.wifi_find_outlined,
-              color: Colors.white.withValues(alpha: 0.15),
+              color: context.tText2(0.15),
               size:  56,
             ),
             const SizedBox(height: 16),
             Text(
               isScanning ? 'מחפש מכשירים…' : 'לחץ "סרוק" כדי לחפש מכשירים ברשת',
               style: TextStyle(
-                color:    Colors.white.withValues(alpha: 0.3),
+                color:    context.tText2(0.3),
                 fontSize: 14,
               ),
               textAlign: TextAlign.center,
@@ -914,19 +914,19 @@ class _AddAllBar extends StatelessWidget {
       padding: EdgeInsets.fromLTRB(
           16, 10, 16, 10 + MediaQuery.of(context).padding.bottom),
       decoration: BoxDecoration(
-        color:  AppColors.darkCard,
+        color:  context.tCard,
         border: Border(
-          top: BorderSide(color: Colors.white.withValues(alpha: 0.07)),
+          top: BorderSide(color: context.tText2(0.07)),
         ),
       ),
       child: SizedBox(
         width:  double.infinity,
         height: 48,
         child: ElevatedButton.icon(
-          icon:  const Icon(Icons.add_circle_outline, size: 18),
+          icon:  Icon(Icons.add_circle_outline, size: 18),
           label: Text(
             'הוסף הכל ($count מכשירים)',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize:   14,
               fontWeight: FontWeight.w600,
             ),
@@ -934,7 +934,7 @@ class _AddAllBar extends StatelessWidget {
           onPressed: onTap,
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primary,
-            foregroundColor: Colors.white,
+            foregroundColor: context.tText,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(14),
             ),

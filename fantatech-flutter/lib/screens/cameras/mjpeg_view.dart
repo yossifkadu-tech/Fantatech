@@ -4,6 +4,7 @@
 // MJPEG: parses multipart/x-mixed-replace HTTP stream into JPEG frames.
 // Snapshot: fetches a JPEG image URL repeatedly at [refreshMs] interval.
 // ─────────────────────────────────────────────────────────────────────────────
+import '../../theme/app_theme.dart';
 import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
@@ -201,12 +202,12 @@ class _MjpegViewState extends State<MjpegView> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.videocam_off_outlined,
-                color: Colors.white38, size: 40),
+            Icon(Icons.videocam_off_outlined,
+                color: context.tText2(0.38), size: 40),
             const SizedBox(height: 8),
             Text(
               _error!,
-              style: const TextStyle(color: Colors.white38, fontSize: 12),
+              style: TextStyle(color: context.tText2(0.38), fontSize: 12),
               textAlign: TextAlign.center,
             ),
           ],

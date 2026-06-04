@@ -128,7 +128,7 @@ class _GatewayConnectSheetState extends State<GatewayConnectSheet>
       expand:           false,
       builder: (ctx, scrollCtrl) => Container(
         decoration: BoxDecoration(
-          color:        AppColors.darkCard,
+          color:        context.tCard,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: SingleChildScrollView(
@@ -146,7 +146,7 @@ class _GatewayConnectSheetState extends State<GatewayConnectSheet>
                   width: 40, height: 4,
                   margin: const EdgeInsets.only(bottom: 20),
                   decoration: BoxDecoration(
-                    color:        Colors.white24,
+                    color:        context.tText2(0.24),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -221,7 +221,7 @@ class _GatewayConnectSheetState extends State<GatewayConnectSheet>
                     onPressed: _canConnect ? _connect : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: color,
-                      foregroundColor: Colors.white,
+                      foregroundColor: context.tText,
                       disabledBackgroundColor:
                           color.withValues(alpha: 0.35),
                       shape: RoundedRectangleBorder(
@@ -241,7 +241,7 @@ class _GatewayConnectSheetState extends State<GatewayConnectSheet>
                           meta.requiresButtonPress
                               ? 'חבר (לאחר לחיצת כפתור)'
                               : 'חבר',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize:   15,
                             fontWeight: FontWeight.w600,
                           ),
@@ -259,7 +259,7 @@ class _GatewayConnectSheetState extends State<GatewayConnectSheet>
                     child: Text(
                       'Token נוצר בפורטל ${meta.name}',
                       style: TextStyle(
-                        color:    Colors.white.withValues(alpha: 0.3),
+                        color:    context.tText2(0.3),
                         fontSize: 11,
                       ),
                     ),
@@ -308,14 +308,14 @@ class _GatewayHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(meta.name,
-                style: const TextStyle(
-                  color:      Colors.white,
+                style: TextStyle(
+                  color:      context.tText,
                   fontSize:   18,
                   fontWeight: FontWeight.bold,
                 )),
               Text(meta.subtitle,
                 style: TextStyle(
-                  color:    Colors.white.withValues(alpha: 0.4),
+                  color:    context.tText2(0.4),
                   fontSize: 12,
                 )),
             ],
@@ -390,8 +390,8 @@ class _PairingView extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             Text(status,
-              style: const TextStyle(
-                color:      Colors.white,
+              style: TextStyle(
+                color:      context.tText,
                 fontSize:   15,
                 fontWeight: FontWeight.w500,
               ),
@@ -400,7 +400,7 @@ class _PairingView extends StatelessWidget {
               const SizedBox(height: 8),
               Text('$countdown שניות נותרו',
                 style: TextStyle(
-                  color:    Colors.white.withValues(alpha: 0.35),
+                  color:    context.tText2(0.35),
                   fontSize: 12,
                 )),
             ],
@@ -422,7 +422,7 @@ class _PairingView extends StatelessWidget {
                     Expanded(
                       child: Text(meta.buttonInstruction!,
                         style: TextStyle(
-                          color:    Colors.white.withValues(alpha: 0.6),
+                          color:    context.tText2(0.6),
                           fontSize: 12,
                           height:   1.5,
                         )),
@@ -469,20 +469,20 @@ class _SuccessView extends StatelessWidget {
                 border: Border.all(
                     color: AppColors.secured.withValues(alpha: 0.4), width: 2),
               ),
-              child: const Icon(Icons.check_rounded,
+              child: Icon(Icons.check_rounded,
                   color: AppColors.secured, size: 36),
             ),
             const SizedBox(height: 16),
-            const Text('מחובר בהצלחה!',
+            Text('מחובר בהצלחה!',
               style: TextStyle(
-                color:      Colors.white,
+                color:      context.tText,
                 fontSize:   18,
                 fontWeight: FontWeight.bold,
               )),
             const SizedBox(height: 6),
             Text(conn.displayName,
               style: TextStyle(
-                color:    Colors.white.withValues(alpha: 0.45),
+                color:    context.tText2(0.45),
                 fontSize: 13,
               )),
             const SizedBox(height: 32),
@@ -493,12 +493,12 @@ class _SuccessView extends StatelessWidget {
                 onPressed: onClose,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
+                  foregroundColor: context.tText,
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(13)),
                   elevation: 0,
                 ),
-                child: const Text('סגור',
+                child: Text('סגור',
                   style: TextStyle(
                       fontSize: 14, fontWeight: FontWeight.w600)),
               ),
@@ -533,7 +533,7 @@ class _CloudBadge extends StatelessWidget {
         Expanded(
           child: Text('חיבור ענן — הנתונים עוברים דרך שרתי היצרן',
             style: TextStyle(
-              color:    Colors.white.withValues(alpha: 0.5),
+              color:    context.tText2(0.5),
               fontSize: 11,
             )),
         ),
@@ -624,7 +624,7 @@ class _SetupStepsState extends State<_SetupSteps> {
                           Expanded(
                             child: Text(widget.steps[i],
                               style: TextStyle(
-                                color:    Colors.white.withValues(alpha: 0.65),
+                                color:    context.tText2(0.65),
                                 fontSize: 12,
                                 height:   1.45,
                               )),
@@ -667,7 +667,7 @@ class _ButtonPressHint extends StatelessWidget {
           Expanded(
             child: Text(instruction,
               style: TextStyle(
-                color:    Colors.white.withValues(alpha: 0.6),
+                color:    context.tText2(0.6),
                 fontSize: 12,
                 height:   1.5,
               )),
@@ -693,22 +693,22 @@ class _GatewayField extends StatelessWidget {
       obscureText:  field.obscure,
       keyboardType: field.keyboardType,
       maxLines:     field.inputType == FieldInputType.token ? 3 : 1,
-      style: const TextStyle(color: Colors.white, fontSize: 13),
+      style: TextStyle(color: context.tText, fontSize: 13),
       decoration: InputDecoration(
         labelText: field.label,
         labelStyle: TextStyle(
-          color:    Colors.white.withValues(alpha: 0.45),
+          color:    context.tText2(0.45),
           fontSize: 12,
         ),
         hintText:  field.hint,
         hintStyle: TextStyle(
-          color:    Colors.white.withValues(alpha: 0.18),
+          color:    context.tText2(0.18),
           fontSize: 12,
         ),
         prefixIcon: Icon(field.icon,
-            color: Colors.white.withValues(alpha: 0.35), size: 18),
+            color: context.tText2(0.35), size: 18),
         filled:        true,
-        fillColor:     Colors.white.withValues(alpha: 0.05),
+        fillColor:     context.tText2(0.05),
         border:        OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide:   BorderSide.none,
@@ -726,7 +726,7 @@ class _GatewayField extends StatelessWidget {
                 padding: const EdgeInsets.only(right: 8),
                 child: Text('אופציונלי',
                   style: TextStyle(
-                    color:    Colors.white.withValues(alpha: 0.2),
+                    color:    context.tText2(0.2),
                     fontSize: 9,
                   )),
               )
@@ -755,12 +755,12 @@ class _ErrorBanner extends StatelessWidget {
             color: AppColors.unsecured.withValues(alpha: 0.3)),
       ),
       child: Row(children: [
-        const Icon(Icons.error_outline,
+        Icon(Icons.error_outline,
             color: AppColors.unsecured, size: 16),
         const SizedBox(width: 8),
         Expanded(
           child: Text(error,
-            style: const TextStyle(
+            style: TextStyle(
               color:    AppColors.unsecured,
               fontSize: 12,
             )),

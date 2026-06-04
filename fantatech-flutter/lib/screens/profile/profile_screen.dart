@@ -21,7 +21,7 @@ class ProfileScreen extends StatelessWidget {
     final s = state.strings;
 
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: context.tBg,
       body: SafeArea(
         child: Column(
           children: [
@@ -31,8 +31,8 @@ class ProfileScreen extends StatelessWidget {
               child: Center(
                 child: Text(
                   s.myProfile,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: context.tText,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
@@ -84,7 +84,7 @@ class ProfileScreen extends StatelessWidget {
                     _MenuItem(
                       icon: Icons.settings_outlined,
                       label: s.settingsTitle,
-                      color: Colors.white70,
+                      color: context.tText2(0.7),
                       onTap: () => _showSettingsSheet(context, state),
                     ),
                     const SizedBox(height: 10),
@@ -109,7 +109,7 @@ class ProfileScreen extends StatelessWidget {
                     Text(
                       'FantaTech v2.6.0',
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.2),
+                        color: context.tText2(0.2),
                         fontSize: 12,
                       ),
                     ),
@@ -128,7 +128,7 @@ class ProfileScreen extends StatelessWidget {
   void _showUsersSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.darkCard,
+      backgroundColor: context.tCard,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -140,7 +140,7 @@ class ProfileScreen extends StatelessWidget {
   void _showHomeManagementSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.darkCard,
+      backgroundColor: context.tCard,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -161,7 +161,7 @@ class ProfileScreen extends StatelessWidget {
   void _showSettingsSheet(BuildContext context, AppState state) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.darkCard,
+      backgroundColor: context.tCard,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -173,7 +173,7 @@ class ProfileScreen extends StatelessWidget {
   void _showAppearanceSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.darkCard,
+      backgroundColor: context.tCard,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -185,7 +185,7 @@ class ProfileScreen extends StatelessWidget {
   void _showHelpSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.darkCard,
+      backgroundColor: context.tCard,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -198,16 +198,16 @@ class ProfileScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.darkCard,
+        backgroundColor: context.tCard,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
+        title: Text(
           'יציאה מהאפליקציה',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: TextStyle(color: context.tText, fontWeight: FontWeight.bold),
           textAlign: TextAlign.center,
         ),
         content: Text(
           'בחר כיצד ברצונך לצאת',
-          style: TextStyle(color: Colors.white.withValues(alpha: 0.55)),
+          style: TextStyle(color: context.tText2(0.55)),
           textAlign: TextAlign.center,
         ),
         contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
@@ -217,7 +217,7 @@ class ProfileScreen extends StatelessWidget {
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text(s.cancel,
-                style: const TextStyle(color: Colors.white38, fontSize: 13)),
+                style: TextStyle(color: context.tText2(0.38), fontSize: 13)),
           ),
           const SizedBox(height: 8),
           // Option 1 — Return to main (no sign out)
@@ -259,7 +259,7 @@ class _AvatarSection extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.darkCard,
+      backgroundColor: context.tCard,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -272,7 +272,7 @@ class _AvatarSection extends StatelessWidget {
     // Show source chooser
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
-      backgroundColor: AppColors.darkCard,
+      backgroundColor: context.tCard,
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) {
@@ -284,12 +284,12 @@ class _AvatarSection extends StatelessWidget {
             children: [
               Container(width: 36, height: 4,
                   decoration: BoxDecoration(
-                      color: Colors.white24,
+                      color: context.tText2(0.24),
                       borderRadius: BorderRadius.circular(2))),
               const SizedBox(height: 20),
               Text(s.editProfile,
-                  style: const TextStyle(
-                      color: Colors.white,
+                  style: TextStyle(
+                      color: context.tText,
                       fontSize: 16,
                       fontWeight: FontWeight.bold)),
               const SizedBox(height: 20),
@@ -346,7 +346,7 @@ class _AvatarSection extends StatelessWidget {
               Container(
                 width: 96,
                 height: 96,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: LinearGradient(
                     colors: [AppColors.primary, Color(0xFF7B6FCD)],
@@ -369,9 +369,9 @@ class _AvatarSection extends StatelessWidget {
                 Container(
                   width: 88,
                   height: 88,
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: AppColors.darkBg,
+                    color: context.tBg,
                   ),
                 ),
                 Container(
@@ -398,9 +398,9 @@ class _AvatarSection extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: AppColors.primary,
                     shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.darkBg, width: 2),
+                    border: Border.all(color: context.tBg, width: 2),
                   ),
-                  child: const Icon(Icons.camera_alt, color: Colors.white, size: 14),
+                  child: Icon(Icons.camera_alt, color: context.tText, size: 14),
                 ),
               ),
               // Edit pencil (bottom-right)
@@ -415,9 +415,9 @@ class _AvatarSection extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: const Color(0xFF7B6FCD),
                       shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.darkBg, width: 2),
+                      border: Border.all(color: context.tBg, width: 2),
                     ),
-                    child: const Icon(Icons.edit, color: Colors.white, size: 14),
+                    child: Icon(Icons.edit, color: context.tText, size: 14),
                   ),
                 ),
               ),
@@ -435,8 +435,8 @@ class _AvatarSection extends StatelessWidget {
             children: [
               Text(
                 state.userName,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: context.tText,
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
@@ -444,7 +444,7 @@ class _AvatarSection extends StatelessWidget {
               const SizedBox(width: 6),
               Icon(
                 Icons.edit_outlined,
-                color: Colors.white.withValues(alpha: 0.3),
+                color: context.tText2(0.3),
                 size: 15,
               ),
             ],
@@ -456,7 +456,7 @@ class _AvatarSection extends StatelessWidget {
         Text(
           state.userEmail,
           style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.4),
+            color: context.tText2(0.4),
             fontSize: 13,
           ),
         ),
@@ -585,17 +585,17 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
 
   InputDecoration _inputDeco(String label, IconData icon) => InputDecoration(
         labelText: label,
-        labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
-        prefixIcon: Icon(icon, color: Colors.white38, size: 20),
+        labelStyle: TextStyle(color: context.tText2(0.5)),
+        prefixIcon: Icon(icon, color: context.tText2(0.38), size: 20),
         filled: true,
-        fillColor: Colors.white.withValues(alpha: 0.05),
+        fillColor: context.tText2(0.05),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.12)),
+          borderSide: BorderSide(color: context.tText2(0.12)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.12)),
+          borderSide: BorderSide(color: context.tText2(0.12)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -622,7 +622,7 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.white24,
+                color: context.tText2(0.24),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -639,8 +639,8 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
               children: [
                 Text(
                   s.editProfile,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: context.tText,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
@@ -650,7 +650,7 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
 
                 TextField(
                   controller: _nameCtrl,
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: context.tText),
                   textDirection: textDir,
                   decoration: _inputDeco(s.fullName, Icons.person_outline),
                 ),
@@ -659,7 +659,7 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
 
                 TextField(
                   controller: _emailCtrl,
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: context.tText),
                   keyboardType: TextInputType.emailAddress,
                   decoration: _inputDeco(s.emailLabel, Icons.email_outlined),
                 ),
@@ -697,8 +697,8 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                     ),
                     child: Text(
                       s.saveChanges,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: context.tText,
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),
@@ -741,12 +741,12 @@ class _MenuItem extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
         decoration: BoxDecoration(
-          color: AppColors.darkCard,
+          color: context.tCard,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isDestructive
                 ? AppColors.unsecured.withValues(alpha: 0.15)
-                : Colors.white.withValues(alpha: 0.07),
+                : context.tText2(0.07),
           ),
         ),
         child: Row(
@@ -771,7 +771,7 @@ class _MenuItem extends StatelessWidget {
                 style: TextStyle(
                   color: isDestructive
                       ? AppColors.unsecured
-                      : Colors.white,
+                      : context.tText,
                   fontSize: 15,
                   fontWeight: FontWeight.w500,
                 ),
@@ -783,7 +783,7 @@ class _MenuItem extends StatelessWidget {
               Icons.chevron_left,
               color: isDestructive
                   ? AppColors.unsecured.withValues(alpha: 0.6)
-                  : Colors.white.withValues(alpha: 0.25),
+                  : context.tText2(0.25),
               size: 20,
             ),
           ],
@@ -820,7 +820,7 @@ class _UsersSheet extends StatelessWidget {
               child: Container(
                 width: 40, height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.white24,
+                  color: context.tText2(0.24),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -832,8 +832,8 @@ class _UsersSheet extends StatelessWidget {
               children: [
                 Text(
                   s.usersTitle,
-                  style: const TextStyle(
-                    color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold,
+                  style: TextStyle(
+                    color: context.tText, fontSize: 18, fontWeight: FontWeight.bold,
                   ),
                 ),
                 if (state.hasHomeManager)
@@ -842,7 +842,7 @@ class _UsersSheet extends StatelessWidget {
                       Navigator.pop(context);
                       showModalBottomSheet(
                         context: context,
-                        backgroundColor: AppColors.darkCard,
+                        backgroundColor: context.tCard,
                         isScrollControlled: true,
                         shape: const RoundedRectangleBorder(
                             borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
@@ -858,11 +858,11 @@ class _UsersSheet extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.manage_accounts_outlined,
+                          Icon(Icons.manage_accounts_outlined,
                               color: AppColors.primary, size: 15),
                           const SizedBox(width: 4),
                           Text(s.edit,
-                              style: const TextStyle(
+                              style: TextStyle(
                                   color: AppColors.primary, fontSize: 13)),
                         ],
                       ),
@@ -882,17 +882,17 @@ class _UsersSheet extends StatelessWidget {
                           Container(
                             width: 60, height: 60,
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.05),
+                              color: context.tText2(0.05),
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(Icons.people_outline,
-                                color: Colors.white24, size: 30),
+                            child: Icon(Icons.people_outline,
+                                color: context.tText2(0.24), size: 30),
                           ),
                           const SizedBox(height: 12),
                           Text(
                             s.noHomeUsers,
                             style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.4),
+                              color: context.tText2(0.4),
                               fontSize: 14,
                             ),
                           ),
@@ -902,7 +902,7 @@ class _UsersSheet extends StatelessWidget {
                               Navigator.pop(context);
                               showModalBottomSheet(
                                 context: context,
-                                backgroundColor: AppColors.darkCard,
+                                backgroundColor: context.tCard,
                                 isScrollControlled: true,
                                 shape: const RoundedRectangleBorder(
                                     borderRadius: BorderRadius.vertical(
@@ -921,7 +921,7 @@ class _UsersSheet extends StatelessWidget {
                               ),
                               child: Text(
                                 s.registerAsManager,
-                                style: const TextStyle(
+                                style: TextStyle(
                                     color: AppColors.primary,
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600),
@@ -957,12 +957,12 @@ class _HomeMemberTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: context.tText2(0.05),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: user.isManager
               ? AppColors.primary.withValues(alpha: 0.2)
-              : Colors.white.withValues(alpha: 0.08),
+              : context.tText2(0.08),
         ),
       ),
       child: Row(
@@ -981,11 +981,11 @@ class _HomeMemberTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(user.name,
-                    style: const TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.w600)),
+                    style: TextStyle(
+                        color: context.tText, fontWeight: FontWeight.w600)),
                 Text(roleLabel,
                     style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.4),
+                        color: context.tText2(0.4),
                         fontSize: 12)),
               ],
             ),
@@ -1098,7 +1098,7 @@ class _HomeManagementSheetState extends State<_HomeManagementSheet> {
               child: Container(
                 width: 40, height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.white24,
+                  color: context.tText2(0.24),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -1112,12 +1112,12 @@ class _HomeManagementSheetState extends State<_HomeManagementSheet> {
                   color: AppColors.primary.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.home, color: AppColors.primary, size: 18),
+                child: Icon(Icons.home, color: AppColors.primary, size: 18),
               ),
               const SizedBox(width: 12),
               Text(s.myHome,
-                  style: const TextStyle(
-                      color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                  style: TextStyle(
+                      color: context.tText, fontSize: 18, fontWeight: FontWeight.bold)),
             ]),
             const SizedBox(height: 24),
 
@@ -1149,7 +1149,7 @@ class _HomeManagementSheetState extends State<_HomeManagementSheet> {
                         color: AppColors.primary.withValues(alpha: 0.15),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.person_add_outlined,
+                      child: Icon(Icons.person_add_outlined,
                           color: AppColors.primary, size: 22),
                     ),
                     const SizedBox(width: 14),
@@ -1158,18 +1158,18 @@ class _HomeManagementSheetState extends State<_HomeManagementSheet> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(s.registerAsManager,
-                              style: const TextStyle(
-                                  color: Colors.white,
+                              style: TextStyle(
+                                  color: context.tText,
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600)),
                           Text(state.userName,
                               style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.4),
+                                  color: context.tText2(0.4),
                                   fontSize: 12)),
                         ],
                       ),
                     ),
-                    const Icon(Icons.chevron_left,
+                    Icon(Icons.chevron_left,
                         color: AppColors.primary, size: 20),
                   ]),
                 ),
@@ -1192,7 +1192,7 @@ class _HomeManagementSheetState extends State<_HomeManagementSheet> {
                       state.homeManager!.name.isNotEmpty
                           ? state.homeManager!.name[0]
                           : '?',
-                      style: const TextStyle(
+                      style: TextStyle(
                           color: AppColors.primary, fontWeight: FontWeight.bold,
                           fontSize: 16),
                     ),
@@ -1203,8 +1203,8 @@ class _HomeManagementSheetState extends State<_HomeManagementSheet> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(state.homeManager!.name,
-                            style: const TextStyle(
-                                color: Colors.white, fontWeight: FontWeight.w600)),
+                            style: TextStyle(
+                                color: context.tText, fontWeight: FontWeight.w600)),
                         Text(s.homeManagerLabel,
                             style: TextStyle(
                                 color: AppColors.primary.withValues(alpha: 0.8),
@@ -1219,7 +1219,7 @@ class _HomeManagementSheetState extends State<_HomeManagementSheet> {
                       color: AppColors.primary.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(Icons.verified_outlined,
+                    child: Icon(Icons.verified_outlined,
                         color: AppColors.primary, size: 16),
                   ),
                 ]),
@@ -1239,10 +1239,10 @@ class _HomeManagementSheetState extends State<_HomeManagementSheet> {
                   padding: const EdgeInsets.symmetric(
                       horizontal: 14, vertical: 12),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.04),
+                    color: context.tText2(0.04),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.08)),
+                        color: context.tText2(0.08)),
                   ),
                   child: Row(children: [
                     CircleAvatar(
@@ -1251,7 +1251,7 @@ class _HomeManagementSheetState extends State<_HomeManagementSheet> {
                           const Color(0xFF7B6FCD).withValues(alpha: 0.15),
                       child: Text(
                         u.name.isNotEmpty ? u.name[0] : '?',
-                        style: const TextStyle(
+                        style: TextStyle(
                             color: Color(0xFF7B6FCD),
                             fontWeight: FontWeight.bold),
                       ),
@@ -1262,12 +1262,12 @@ class _HomeManagementSheetState extends State<_HomeManagementSheet> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(u.name,
-                              style: const TextStyle(
-                                  color: Colors.white,
+                              style: TextStyle(
+                                  color: context.tText,
                                   fontWeight: FontWeight.w500)),
                           Text(s.memberLabel,
                               style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.35),
+                                  color: context.tText2(0.35),
                                   fontSize: 11)),
                         ],
                       ),
@@ -1280,7 +1280,7 @@ class _HomeManagementSheetState extends State<_HomeManagementSheet> {
                           color: AppColors.unsecured.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Icon(Icons.close,
+                        child: Icon(Icons.close,
                             color: AppColors.unsecured, size: 14),
                       ),
                     ),
@@ -1296,26 +1296,26 @@ class _HomeManagementSheetState extends State<_HomeManagementSheet> {
                     controller: _memberCtrl,
                     textDirection:
                         state.isRtl ? TextDirection.rtl : TextDirection.ltr,
-                    style: const TextStyle(color: Colors.white, fontSize: 14),
+                    style: TextStyle(color: context.tText, fontSize: 14),
                     decoration: InputDecoration(
                       hintText: s.memberName,
                       hintStyle: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.3)),
-                      prefixIcon: const Icon(Icons.person_add_outlined,
-                          color: Colors.white38, size: 18),
+                          color: context.tText2(0.3)),
+                      prefixIcon: Icon(Icons.person_add_outlined,
+                          color: context.tText2(0.38), size: 18),
                       filled: true,
-                      fillColor: Colors.white.withValues(alpha: 0.05),
+                      fillColor: context.tText2(0.05),
                       contentPadding: const EdgeInsets.symmetric(
                           horizontal: 14, vertical: 12),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(
-                            color: Colors.white.withValues(alpha: 0.10)),
+                            color: context.tText2(0.10)),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(
-                            color: Colors.white.withValues(alpha: 0.10)),
+                            color: context.tText2(0.10)),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -1337,7 +1337,7 @@ class _HomeManagementSheetState extends State<_HomeManagementSheet> {
                       border: Border.all(
                           color: AppColors.primary.withValues(alpha: 0.3)),
                     ),
-                    child: const Icon(Icons.add,
+                    child: Icon(Icons.add,
                         color: AppColors.primary, size: 20),
                   ),
                 ),
@@ -1351,10 +1351,10 @@ class _HomeManagementSheetState extends State<_HomeManagementSheet> {
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.04),
+                color: context.tText2(0.04),
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.08)),
+                    color: context.tText2(0.08)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1367,7 +1367,7 @@ class _HomeManagementSheetState extends State<_HomeManagementSheet> {
                           : Icons.lock_open_outlined,
                       color: state.homePin != null
                           ? AppColors.secured
-                          : Colors.white38,
+                          : context.tText2(0.38),
                       size: 18,
                     ),
                     const SizedBox(width: 8),
@@ -1377,8 +1377,8 @@ class _HomeManagementSheetState extends State<_HomeManagementSheet> {
                           : s.pinCodeLabel,
                       style: TextStyle(
                         color: state.homePin != null
-                            ? Colors.white
-                            : Colors.white.withValues(alpha: 0.4),
+                            ? context.tText
+                            : context.tText2(0.4),
                         fontSize: 13,
                       ),
                     ),
@@ -1402,18 +1402,18 @@ class _HomeManagementSheetState extends State<_HomeManagementSheet> {
                         obscureText: !_pinVisible,
                         keyboardType: TextInputType.number,
                         maxLength: 4,
-                        style: const TextStyle(
-                            color: Colors.white,
+                        style: TextStyle(
+                            color: context.tText,
                             fontSize: 18,
                             letterSpacing: 6),
                         decoration: InputDecoration(
                           hintText: '• • • •',
                           hintStyle: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.2),
+                              color: context.tText2(0.2),
                               letterSpacing: 6),
                           counterText: '',
                           filled: true,
-                          fillColor: Colors.white.withValues(alpha: 0.05),
+                          fillColor: context.tText2(0.05),
                           contentPadding: const EdgeInsets.symmetric(
                               horizontal: 14, vertical: 12),
                           suffixIcon: GestureDetector(
@@ -1423,19 +1423,19 @@ class _HomeManagementSheetState extends State<_HomeManagementSheet> {
                               _pinVisible
                                   ? Icons.visibility_off_outlined
                                   : Icons.visibility_outlined,
-                              color: Colors.white38,
+                              color: context.tText2(0.38),
                               size: 18,
                             ),
                           ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(
-                                color: Colors.white.withValues(alpha: 0.10)),
+                                color: context.tText2(0.10)),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(
-                                color: Colors.white.withValues(alpha: 0.10)),
+                                color: context.tText2(0.10)),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -1461,7 +1461,7 @@ class _HomeManagementSheetState extends State<_HomeManagementSheet> {
                         ),
                         child: Center(
                           child: Text(s.save,
-                              style: const TextStyle(
+                              style: TextStyle(
                                   color: AppColors.secured,
                                   fontWeight: FontWeight.w600)),
                         ),
@@ -1510,7 +1510,7 @@ class _SubscriptionSheetState extends State<_SubscriptionSheet> {
   }
 
   Color _planColor(UserPlan p) => switch (p) {
-    UserPlan.free         => Colors.white54,
+    UserPlan.free         => context.tText2(0.54),
     UserPlan.basic        => AppColors.primary,
     UserPlan.advanced     => AppColors.acColor,
     UserPlan.advancedPlus => const Color(0xFF9C7AFF),
@@ -1593,8 +1593,8 @@ class _SubscriptionSheetState extends State<_SubscriptionSheet> {
       maxChildSize: 0.95,
       expand: false,
       builder: (ctx, scrollCtrl) => Container(
-        decoration: const BoxDecoration(
-          color: AppColors.darkCard,
+        decoration: BoxDecoration(
+          color: context.tCard,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(
@@ -1606,7 +1606,7 @@ class _SubscriptionSheetState extends State<_SubscriptionSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.white24,
+                  color: context.tText2(0.24),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -1616,13 +1616,13 @@ class _SubscriptionSheetState extends State<_SubscriptionSheet> {
               padding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
               child: Row(
                 children: [
-                  const Icon(Icons.workspace_premium,
+                  Icon(Icons.workspace_premium,
                       color: Color(0xFFFFD700), size: 22),
                   const SizedBox(width: 10),
                   Text(
                     s.subscriptionTitle,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: context.tText,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
@@ -1687,13 +1687,13 @@ class _SubscriptionSheetState extends State<_SubscriptionSheet> {
                         icon: Icon(_planIcon(_selected), size: 18),
                         label: Text(
                           '${s.planUpgradeNow} → ${_planName(_selected, s)}',
-                          style: const TextStyle(
+                          style: TextStyle(
                               fontWeight: FontWeight.bold, fontSize: 15),
                         ),
                         onPressed: () => _applyPlan(context),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: _planColor(_selected),
-                          foregroundColor: Colors.white,
+                          foregroundColor: context.tText,
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(14)),
                           elevation: 0,
@@ -1788,12 +1788,12 @@ class _PlanCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: isSelected
               ? color.withValues(alpha: 0.1)
-              : AppColors.darkBg.withValues(alpha: 0.8),
+              : context.tBg.withValues(alpha: 0.8),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected
                 ? color.withValues(alpha: 0.5)
-                : Colors.white.withValues(alpha: 0.08),
+                : context.tText2(0.08),
             width: isSelected ? 1.5 : 1,
           ),
         ),
@@ -1818,7 +1818,7 @@ class _PlanCard extends StatelessWidget {
                     Text(
                       name,
                       style: TextStyle(
-                        color: isSelected ? color : Colors.white,
+                        color: isSelected ? color : context.tText,
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
                       ),
@@ -1836,7 +1836,7 @@ class _PlanCard extends StatelessWidget {
                         Text(
                           monthlyLabel,
                           style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.35),
+                            color: context.tText2(0.35),
                             fontSize: 11,
                           ),
                         ),
@@ -1872,8 +1872,8 @@ class _PlanCard extends StatelessWidget {
                       color: color,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.check,
-                        color: Colors.white, size: 14),
+                    child: Icon(Icons.check,
+                        color: context.tText, size: 14),
                   )
                 else
                   Container(
@@ -1882,7 +1882,7 @@ class _PlanCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.2)),
+                          color: context.tText2(0.2)),
                     ),
                   ),
               ],
@@ -1897,7 +1897,7 @@ class _PlanCard extends StatelessWidget {
                       : Icons.remove_circle_outline,
                   color: r.included
                       ? color.withValues(alpha: 0.8)
-                      : Colors.white.withValues(alpha: 0.2),
+                      : context.tText2(0.2),
                   size: 14,
                 ),
                 const SizedBox(width: 8),
@@ -1905,8 +1905,8 @@ class _PlanCard extends StatelessWidget {
                   r.label,
                   style: TextStyle(
                     color: r.included
-                        ? Colors.white.withValues(alpha: 0.85)
-                        : Colors.white.withValues(alpha: 0.3),
+                        ? context.tText2(0.85)
+                        : context.tText2(0.3),
                     fontSize: 12,
                     decoration: r.included
                         ? null
@@ -1995,7 +1995,7 @@ class _SettingsSheetState extends State<_SettingsSheet> {
             child: Container(
               width: 40, height: 4,
               decoration: BoxDecoration(
-                color: Colors.white24,
+                color: context.tText2(0.24),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -2004,8 +2004,8 @@ class _SettingsSheetState extends State<_SettingsSheet> {
 
           Text(
             s.settingsTitle,
-            style: const TextStyle(
-                color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+            style: TextStyle(
+                color: context.tText, fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 20),
 
@@ -2054,9 +2054,9 @@ class _SettingsSheetState extends State<_SettingsSheet> {
             label: s.languageLabel,
             child: DropdownButton<AppLocale>(
               value: state.locale,
-              dropdownColor: AppColors.darkCard,
+              dropdownColor: context.tCard,
               underline: const SizedBox(),
-              style: const TextStyle(color: Colors.white, fontSize: 13),
+              style: TextStyle(color: context.tText, fontSize: 13),
               items: const [
                 DropdownMenuItem(value: AppLocale.hebrew,  child: Text('עברית 🇮🇱')),
                 DropdownMenuItem(value: AppLocale.english, child: Text('English 🇺🇸')),
@@ -2131,22 +2131,22 @@ class _SettingsSheetState extends State<_SettingsSheet> {
                       color: const Color(0xFFFFD700).withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.calendar_month,
+                    child: Icon(Icons.calendar_month,
                         color: Color(0xFFFFD700), size: 18),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       s.calendarTitle,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: context.tText,
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
                   Icon(Icons.chevron_left,
-                      color: Colors.white.withValues(alpha: 0.3), size: 20),
+                      color: context.tText2(0.3), size: 20),
                 ],
               ),
             ),
@@ -2162,9 +2162,9 @@ class _SettingsSheetState extends State<_SettingsSheet> {
               padding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.04),
+                color: context.tText2(0.04),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                border: Border.all(color: context.tText2(0.08)),
               ),
               child: Row(
                 children: [
@@ -2175,7 +2175,7 @@ class _SettingsSheetState extends State<_SettingsSheet> {
                       color: AppColors.primary.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.fingerprint,
+                    child: Icon(Icons.fingerprint,
                         color: AppColors.primary, size: 20),
                   ),
                   const SizedBox(width: 12),
@@ -2184,20 +2184,20 @@ class _SettingsSheetState extends State<_SettingsSheet> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(s.bioLoginLabel,
-                            style: const TextStyle(
-                                color: Colors.white,
+                            style: TextStyle(
+                                color: context.tText,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500)),
                         Text(s.bioLoginSub,
                             style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.4),
+                                color: context.tText2(0.4),
                                 fontSize: 11)),
                       ],
                     ),
                   ),
                   Switch(
                     value: _bioEnabled,
-                    activeThumbColor: Colors.white,
+                    activeThumbColor: context.tText,
                     activeTrackColor: AppColors.primary,
                     onChanged: _toggleBiometric,
                   ),
@@ -2230,9 +2230,9 @@ class _SettingsSheetState extends State<_SettingsSheet> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.04),
+              color: context.tText2(0.04),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+              border: Border.all(color: context.tText2(0.08)),
             ),
             child: Column(
               children: [
@@ -2261,7 +2261,7 @@ class _SectionLabel extends StatelessWidget {
     return Text(
       label.toUpperCase(),
       style: TextStyle(
-        color: Colors.white.withValues(alpha: 0.35),
+        color: context.tText2(0.35),
         fontSize: 11,
         fontWeight: FontWeight.w700,
         letterSpacing: 1.0,
@@ -2285,9 +2285,9 @@ class _LinkRow extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.04),
+          color: context.tText2(0.04),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+          border: Border.all(color: context.tText2(0.08)),
         ),
         child: Row(
           children: [
@@ -2295,21 +2295,21 @@ class _LinkRow extends StatelessWidget {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.06),
+                color: context.tText2(0.06),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(icon, color: Colors.white70, size: 18),
+              child: Icon(icon, color: context.tText2(0.7), size: 18),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Text(label,
-                  style: const TextStyle(
-                      color: Colors.white,
+                  style: TextStyle(
+                      color: context.tText,
                       fontSize: 14,
                       fontWeight: FontWeight.w500)),
             ),
             Icon(Icons.open_in_new,
-                color: Colors.white.withValues(alpha: 0.3), size: 18),
+                color: context.tText2(0.3), size: 18),
           ],
         ),
       ),
@@ -2337,9 +2337,9 @@ class _ToggleRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.04),
+        color: context.tText2(0.04),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
+        border: Border.all(color: context.tText2(0.07)),
       ),
       child: Row(
         children: [
@@ -2354,7 +2354,7 @@ class _ToggleRow extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Text(label,
-                style: const TextStyle(color: Colors.white, fontSize: 14)),
+                style: TextStyle(color: context.tText, fontSize: 14)),
           ),
           Switch(
             value: value,
@@ -2378,8 +2378,8 @@ class _AboutRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.45), fontSize: 13)),
-        Text(value,  style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500)),
+        Text(label, style: TextStyle(color: context.tText2(0.45), fontSize: 13)),
+        Text(value,  style: TextStyle(color: context.tText, fontSize: 13, fontWeight: FontWeight.w500)),
       ],
     );
   }
@@ -2410,8 +2410,8 @@ class _AppearanceSheetState extends State<_AppearanceSheet> {
   Widget _sectionTitle(String text) => Padding(
         padding: const EdgeInsets.only(bottom: 10),
         child: Text(text,
-            style: const TextStyle(
-                color: Colors.white54, fontSize: 12, fontWeight: FontWeight.w600,
+            style: TextStyle(
+                color: context.tText2(0.54), fontSize: 12, fontWeight: FontWeight.w600,
                 letterSpacing: 0.8)),
       );
 
@@ -2435,14 +2435,14 @@ class _AppearanceSheetState extends State<_AppearanceSheet> {
               child: Container(
                 width: 40, height: 4,
                 decoration: BoxDecoration(
-                    color: Colors.white24,
+                    color: context.tText2(0.24),
                     borderRadius: BorderRadius.circular(2)),
               ),
             ),
             const SizedBox(height: 18),
             Text(s.appearanceTitle,
-                style: const TextStyle(
-                    color: Colors.white,
+                style: TextStyle(
+                    color: context.tText,
                     fontSize: 18,
                     fontWeight: FontWeight.bold)),
             const SizedBox(height: 24),
@@ -2470,16 +2470,16 @@ class _AppearanceSheetState extends State<_AppearanceSheet> {
                     decoration: BoxDecoration(
                       color: sel
                           ? _prefs.accent.withValues(alpha: 0.18)
-                          : Colors.white.withValues(alpha: 0.05),
+                          : context.tText2(0.05),
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
                           color: sel
                               ? _prefs.accent
-                              : Colors.white.withValues(alpha: 0.12)),
+                              : context.tText2(0.12)),
                     ),
                     child: Text(name,
                         style: TextStyle(
-                            color: sel ? _prefs.accent : Colors.white70,
+                            color: sel ? _prefs.accent : context.tText2(0.7),
                             fontSize: 13,
                             fontWeight: sel ? FontWeight.w700 : FontWeight.normal)),
                   ),
@@ -2505,14 +2505,14 @@ class _AppearanceSheetState extends State<_AppearanceSheet> {
                       color: c,
                       shape: BoxShape.circle,
                       border: Border.all(
-                          color: sel ? Colors.white : Colors.transparent,
+                          color: sel ? context.tText : Colors.transparent,
                           width: 2.5),
                       boxShadow: sel
                           ? [BoxShadow(color: c.withValues(alpha: 0.5), blurRadius: 8)]
                           : [],
                     ),
                     child: sel
-                        ? const Icon(Icons.check, color: Colors.white, size: 16)
+                        ? Icon(Icons.check, color: context.tText, size: 16)
                         : null,
                   ),
                 );
@@ -2635,7 +2635,7 @@ class _BgTile extends StatelessWidget {
           color: bg,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-              color: selected ? accent : Colors.white.withValues(alpha: 0.12),
+              color: selected ? accent : context.tText2(0.12),
               width: selected ? 2 : 1),
         ),
         child: Row(
@@ -2648,7 +2648,7 @@ class _BgTile extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: Text(label,
-                  style: const TextStyle(color: Colors.white, fontSize: 13)),
+                  style: TextStyle(color: context.tText, fontSize: 13)),
             ),
             if (selected)
               Icon(Icons.check_circle, color: accent, size: 18),
@@ -2684,24 +2684,24 @@ class _RadiusTile extends StatelessWidget {
           decoration: BoxDecoration(
             color: selected
                 ? accent.withValues(alpha: 0.12)
-                : Colors.white.withValues(alpha: 0.05),
+                : context.tText2(0.05),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-                color: selected ? accent : Colors.white.withValues(alpha: 0.10)),
+                color: selected ? accent : context.tText2(0.10)),
           ),
           child: Column(
             children: [
               Container(
                 width: 36, height: 22,
                 decoration: BoxDecoration(
-                  color: selected ? accent.withValues(alpha: 0.3) : Colors.white24,
+                  color: selected ? accent.withValues(alpha: 0.3) : context.tText2(0.24),
                   borderRadius: BorderRadius.circular(radius),
                 ),
               ),
               const SizedBox(height: 8),
               Text(label,
                   style: TextStyle(
-                      color: selected ? accent : Colors.white54,
+                      color: selected ? accent : context.tText2(0.54),
                       fontSize: 11,
                       fontWeight: selected ? FontWeight.w600 : FontWeight.normal)),
             ],
@@ -2746,18 +2746,18 @@ class _HelpSheetState extends State<_HelpSheet>
 
   InputDecoration _deco(String hint, IconData icon) => InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.30)),
-        prefixIcon: Icon(icon, color: Colors.white38, size: 18),
+        hintStyle: TextStyle(color: context.tText2(0.30)),
+        prefixIcon: Icon(icon, color: context.tText2(0.38), size: 18),
         filled: true,
-        fillColor: Colors.white.withValues(alpha: 0.05),
+        fillColor: context.tText2(0.05),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.10)),
+          borderSide: BorderSide(color: context.tText2(0.10)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.10)),
+          borderSide: BorderSide(color: context.tText2(0.10)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -2788,7 +2788,7 @@ class _HelpSheetState extends State<_HelpSheet>
               child: Container(
                 width: 40, height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.white24,
+                  color: context.tText2(0.24),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -2798,8 +2798,8 @@ class _HelpSheetState extends State<_HelpSheet>
             // ── Title ─────────────────────────────────────────
             Text(
               s.helpTitle,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: context.tText,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
@@ -2811,7 +2811,7 @@ class _HelpSheetState extends State<_HelpSheet>
               margin: const EdgeInsets.symmetric(horizontal: 20),
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.06),
+                color: context.tText2(0.06),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: TabBar(
@@ -2821,9 +2821,9 @@ class _HelpSheetState extends State<_HelpSheet>
                   borderRadius: BorderRadius.circular(9),
                 ),
                 dividerColor: Colors.transparent,
-                labelColor: Colors.white,
-                unselectedLabelColor: Colors.white38,
-                labelStyle: const TextStyle(
+                labelColor: context.tText,
+                unselectedLabelColor: context.tText2(0.38),
+                labelStyle: TextStyle(
                     fontSize: 13, fontWeight: FontWeight.w600),
                 tabs: [
                   Tab(text: s.helpFaq),
@@ -2881,14 +2881,14 @@ class _HelpSheetState extends State<_HelpSheet>
                                     color: AppColors.primary.withValues(alpha: 0.20)),
                                 ),
                                 child: Row(children: [
-                                  const Icon(Icons.person_add_outlined,
+                                  Icon(Icons.person_add_outlined,
                                       color: AppColors.primary, size: 20),
                                   const SizedBox(width: 10),
                                   Expanded(
                                     child: Text(
                                       s.helpRegisterTitle,
-                                      style: const TextStyle(
-                                        color: Colors.white,
+                                      style: TextStyle(
+                                        color: context.tText,
                                         fontSize: 14,
                                         fontWeight: FontWeight.w600,
                                       ),
@@ -2902,8 +2902,8 @@ class _HelpSheetState extends State<_HelpSheet>
                               TextField(
                                 controller: _nameCtrl,
                                 textDirection: textDir,
-                                style: const TextStyle(
-                                    color: Colors.white, fontSize: 14),
+                                style: TextStyle(
+                                    color: context.tText, fontSize: 14),
                                 decoration: _deco(
                                     s.helpNameHint, Icons.person_outline),
                               ),
@@ -2913,8 +2913,8 @@ class _HelpSheetState extends State<_HelpSheet>
                               TextField(
                                 controller: _emailCtrl,
                                 keyboardType: TextInputType.emailAddress,
-                                style: const TextStyle(
-                                    color: Colors.white, fontSize: 14),
+                                style: TextStyle(
+                                    color: context.tText, fontSize: 14),
                                 decoration: _deco(
                                     s.helpEmailHint, Icons.email_outlined),
                               ),
@@ -2925,8 +2925,8 @@ class _HelpSheetState extends State<_HelpSheet>
                                 controller: _msgCtrl,
                                 maxLines: 3,
                                 textDirection: textDir,
-                                style: const TextStyle(
-                                    color: Colors.white, fontSize: 14),
+                                style: TextStyle(
+                                    color: context.tText, fontSize: 14),
                                 decoration: _deco(
                                     s.helpMsgHint, Icons.message_outlined),
                               ),
@@ -2937,10 +2937,10 @@ class _HelpSheetState extends State<_HelpSheet>
                                 width: double.infinity,
                                 height: 50,
                                 child: ElevatedButton.icon(
-                                  icon: const Icon(Icons.save_outlined, size: 18),
+                                  icon: Icon(Icons.save_outlined, size: 18),
                                   label: Text(
                                     s.helpSendBtn,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -2953,7 +2953,7 @@ class _HelpSheetState extends State<_HelpSheet>
                                   },
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: AppColors.primary,
-                                    foregroundColor: Colors.white,
+                                    foregroundColor: context.tText,
                                     elevation: 0,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(14),
@@ -2992,12 +2992,12 @@ class _FaqTileState extends State<_FaqTile> {
       duration: const Duration(milliseconds: 200),
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: context.tText2(0.05),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: _open
               ? AppColors.primary.withValues(alpha: 0.35)
-              : Colors.white.withValues(alpha: 0.08),
+              : context.tText2(0.08),
         ),
       ),
       child: InkWell(
@@ -3013,7 +3013,7 @@ class _FaqTileState extends State<_FaqTile> {
                   child: Text(
                     widget.question,
                     style: TextStyle(
-                      color: _open ? AppColors.primary : Colors.white,
+                      color: _open ? AppColors.primary : context.tText,
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                     ),
@@ -3021,7 +3021,7 @@ class _FaqTileState extends State<_FaqTile> {
                 ),
                 Icon(
                   _open ? Icons.expand_less : Icons.expand_more,
-                  color: Colors.white38,
+                  color: context.tText2(0.38),
                   size: 18,
                 ),
               ]),
@@ -3032,7 +3032,7 @@ class _FaqTileState extends State<_FaqTile> {
                 Text(
                   widget.answer,
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.65),
+                    color: context.tText2(0.65),
                     fontSize: 12,
                     height: 1.5,
                   ),
@@ -3063,15 +3063,15 @@ class _SentSuccess extends StatelessWidget {
               color: AppColors.secured.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.check_circle_outline,
+            child: Icon(Icons.check_circle_outline,
                 color: AppColors.secured, size: 36),
           ),
           const SizedBox(height: 16),
           Text(
             message,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: context.tText,
               fontSize: 14,
               fontWeight: FontWeight.w500,
               height: 1.5,
@@ -3127,9 +3127,9 @@ class _HomeStylePicker extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.04),
+        color: context.tText2(0.04),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: context.tText2(0.08)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -3180,7 +3180,7 @@ class _HomeStylePicker extends StatelessWidget {
           Text(
             'סוג הבית',
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.45),
+              color: context.tText2(0.45),
               fontSize: 11,
               fontWeight: FontWeight.w700,
               letterSpacing: 0.8,
@@ -3205,12 +3205,12 @@ class _HomeStylePicker extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: isSel
                           ? selColor.withValues(alpha: 0.15)
-                          : Colors.white.withValues(alpha: 0.04),
+                          : context.tText2(0.04),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
                         color: isSel
                             ? selColor.withValues(alpha: 0.60)
-                            : Colors.white.withValues(alpha: 0.10),
+                            : context.tText2(0.10),
                         width: isSel ? 1.5 : 1,
                       ),
                     ),
@@ -3219,7 +3219,7 @@ class _HomeStylePicker extends StatelessWidget {
                       children: [
                         Icon(
                           ht.icon,
-                          color: isSel ? selColor : Colors.white38,
+                          color: isSel ? selColor : context.tText2(0.38),
                           size: 26,
                         ),
                         const SizedBox(height: 4),
@@ -3228,7 +3228,7 @@ class _HomeStylePicker extends StatelessWidget {
                           style: TextStyle(
                             color: isSel
                                 ? selColor
-                                : Colors.white.withValues(alpha: 0.35),
+                                : context.tText2(0.35),
                             fontSize: 9,
                             fontWeight: FontWeight.w600,
                           ),
@@ -3250,7 +3250,7 @@ class _HomeStylePicker extends StatelessWidget {
           Text(
             'צבע',
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.45),
+              color: context.tText2(0.45),
               fontSize: 11,
               fontWeight: FontWeight.w700,
               letterSpacing: 0.8,
@@ -3275,7 +3275,7 @@ class _HomeStylePicker extends StatelessWidget {
                       color: c,
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: isSel ? Colors.white : Colors.transparent,
+                        color: isSel ? context.tText : Colors.transparent,
                         width: 2.5,
                       ),
                       boxShadow: isSel
@@ -3284,7 +3284,7 @@ class _HomeStylePicker extends StatelessWidget {
                           : null,
                     ),
                     child: isSel
-                        ? const Icon(Icons.check, color: Colors.white, size: 16)
+                        ? Icon(Icons.check, color: context.tText, size: 16)
                         : null,
                   ),
                 ),
@@ -3356,7 +3356,7 @@ class _ExitOption extends StatelessWidget {
                           fontSize: 14)),
                   Text(subtitle,
                       style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.38),
+                          color: context.tText2(0.38),
                           fontSize: 11)),
                 ],
               ),
@@ -3381,7 +3381,7 @@ class _SettingsRow extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(label,
-            style: const TextStyle(color: Colors.white, fontSize: 15)),
+            style: TextStyle(color: context.tText, fontSize: 15)),
         child,
       ],
     );

@@ -95,7 +95,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   onPressed: widget.onDone,
                   child: Text(s.onbSkip,
                       style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.55))),
+                          color: context.tText2(0.55))),
                 ),
               ),
             ),
@@ -122,8 +122,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   height: 7,
                   decoration: BoxDecoration(
                     color: i == _page
-                        ? Colors.white
-                        : Colors.white.withValues(alpha: 0.3),
+                        ? context.tText
+                        : context.tText2(0.3),
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
@@ -169,8 +169,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           )
                         : Text(
                             isLast ? s.onbAllow : s.onbNext,
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: context.tText,
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                             ),
@@ -188,7 +188,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   onPressed: widget.onDone,
                   child: Text(s.onbLater,
                       style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.5))),
+                          color: context.tText2(0.5))),
                 ),
               ),
           ],
@@ -233,8 +233,8 @@ class _OnbPage extends StatelessWidget {
           Text(
             title,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: context.tText,
               fontSize: 24,
               fontWeight: FontWeight.bold,
             ),
@@ -244,7 +244,7 @@ class _OnbPage extends StatelessWidget {
             body,
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.62),
+              color: context.tText2(0.62),
               fontSize: 15,
               height: 1.6,
             ),
@@ -276,9 +276,9 @@ class _PermChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.08),
+        color: context.tText2(0.08),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+        border: Border.all(color: context.tText2(0.15)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -286,7 +286,7 @@ class _PermChip extends StatelessWidget {
           Icon(icon, color: AppColors.primary, size: 16),
           const SizedBox(width: 6),
           Text(label,
-              style: const TextStyle(color: Colors.white, fontSize: 12)),
+              style: TextStyle(color: context.tText, fontSize: 12)),
         ],
       ),
     );

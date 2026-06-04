@@ -69,18 +69,18 @@ class _MediaScreenState extends State<MediaScreen> {
     final devices = state.mediaDevices;
 
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: context.tBg,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new,
-              color: Colors.white70, size: 18),
+          icon: Icon(Icons.arrow_back_ios_new,
+              color: context.tText2(0.7), size: 18),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(s.mediaTitle,
-            style: const TextStyle(
-                color: Colors.white,
+            style: TextStyle(
+                color: context.tText,
                 fontSize: 18,
                 fontWeight: FontWeight.bold)),
         centerTitle: true,
@@ -160,8 +160,8 @@ class _MediaScreenState extends State<MediaScreen> {
             Row(
               children: [
                 Text(s.mediaSpeakers,
-                    style: const TextStyle(
-                        color: Colors.white,
+                    style: TextStyle(
+                        color: context.tText,
                         fontSize: 16,
                         fontWeight: FontWeight.bold)),
                 const Spacer(),
@@ -174,10 +174,10 @@ class _MediaScreenState extends State<MediaScreen> {
                           child: CircularProgressIndicator(
                               strokeWidth: 2, color: AppColors.primary),
                         )
-                      : const Icon(Icons.wifi_find_outlined,
+                      : Icon(Icons.wifi_find_outlined,
                           color: AppColors.primary, size: 18),
                   label: Text(s.mediaScan,
-                      style: const TextStyle(
+                      style: TextStyle(
                           color: AppColors.primary, fontSize: 13)),
                 ),
               ],
@@ -197,13 +197,13 @@ class _MediaScreenState extends State<MediaScreen> {
                   child: Column(
                     children: [
                       Icon(Icons.speaker_outlined,
-                          color: Colors.white.withValues(alpha: 0.2),
+                          color: context.tText2(0.2),
                           size: 44),
                       const SizedBox(height: 12),
                       Text(s.mediaNoDevices,
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.4),
+                              color: context.tText2(0.4),
                               fontSize: 13)),
                     ],
                   ),
@@ -229,26 +229,26 @@ class _GroupCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.darkCard,
+        color: context.tCard,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
+        border: Border.all(color: context.tText2(0.07)),
       ),
       child: Column(
         children: [
           // Master volume
           Row(
             children: [
-              const Icon(Icons.tune, color: AppColors.primary, size: 20),
+              Icon(Icons.tune, color: AppColors.primary, size: 20),
               const SizedBox(width: 8),
               Text(s.mediaMaster,
-                  style: const TextStyle(color: Colors.white, fontSize: 13)),
+                  style: TextStyle(color: context.tText, fontSize: 13)),
               Expanded(
                 child: Slider(
                   value: state.masterMediaVolume.toDouble().clamp(0, 100),
                   min: 0,
                   max: 100,
                   activeColor: AppColors.primary,
-                  inactiveColor: Colors.white.withValues(alpha: 0.12),
+                  inactiveColor: context.tText2(0.12),
                   onChanged: (v) => state.setAllMediaVolume(v.round()),
                 ),
               ),
@@ -257,7 +257,7 @@ class _GroupCard extends StatelessWidget {
                 child: Text('${state.masterMediaVolume}%',
                     textAlign: TextAlign.end,
                     style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.6),
+                        color: context.tText2(0.6),
                         fontSize: 11)),
               ),
             ],
@@ -282,21 +282,21 @@ class _GroupCard extends StatelessWidget {
                       ? null
                       : const LinearGradient(
                           colors: [Color(0xFF7B2FFF), Color(0xFF1A73E8)]),
-                  color: party ? Colors.white.withValues(alpha: 0.08) : null,
+                  color: party ? context.tText2(0.08) : null,
                   borderRadius: BorderRadius.circular(12),
                   border: party
-                      ? Border.all(color: Colors.white.withValues(alpha: 0.2))
+                      ? Border.all(color: context.tText2(0.2))
                       : null,
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(party ? Icons.stop_circle_outlined : Icons.groups,
-                        color: Colors.white, size: 18),
+                        color: context.tText, size: 18),
                     const SizedBox(width: 8),
                     Text(party ? s.mediaStopAll : s.mediaParty,
-                        style: const TextStyle(
-                            color: Colors.white,
+                        style: TextStyle(
+                            color: context.tText,
                             fontSize: 13,
                             fontWeight: FontWeight.w600)),
                   ],
@@ -347,11 +347,11 @@ class _NowPlayingCard extends StatelessWidget {
                 width: 64,
                 height: 64,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.18),
+                  color: context.tText2(0.18),
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: const Icon(Icons.music_note,
-                    color: Colors.white, size: 30),
+                child: Icon(Icons.music_note,
+                    color: context.tText, size: 30),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -359,8 +359,8 @@ class _NowPlayingCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(track,
-                        style: const TextStyle(
-                            color: Colors.white,
+                        style: TextStyle(
+                            color: context.tText,
                             fontSize: 16,
                             fontWeight: FontWeight.bold),
                         maxLines: 1,
@@ -368,7 +368,7 @@ class _NowPlayingCard extends StatelessWidget {
                     const SizedBox(height: 3),
                     Text(artist,
                         style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.75),
+                            color: context.tText2(0.75),
                             fontSize: 13),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis),
@@ -378,12 +378,12 @@ class _NowPlayingCard extends StatelessWidget {
                           device.kind == MediaDeviceKind.tv
                               ? Icons.tv
                               : Icons.speaker,
-                          color: Colors.white.withValues(alpha: 0.6),
+                          color: context.tText2(0.6),
                           size: 12),
                       const SizedBox(width: 4),
                       Text(device.name,
                           style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.6),
+                              color: context.tText2(0.6),
                               fontSize: 11),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis),
@@ -406,8 +406,8 @@ class _NowPlayingCard extends StatelessWidget {
               value: device.progress.toDouble().clamp(0, 100),
               min: 0,
               max: 100,
-              activeColor: Colors.white,
-              inactiveColor: Colors.white.withValues(alpha: 0.25),
+              activeColor: context.tText,
+              inactiveColor: context.tText2(0.25),
               onChanged: (v) => state.setMediaProgress(device.id, v.round()),
             ),
           ),
@@ -429,8 +429,8 @@ class _NowPlayingCard extends StatelessWidget {
                 child: Container(
                   width: 60,
                   height: 60,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
+                  decoration: BoxDecoration(
+                    color: context.tText,
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -494,8 +494,8 @@ class _ServiceCard extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                  color: Colors.white,
+              style: TextStyle(
+                  color: context.tText,
                   fontSize: 10.5,
                   fontWeight: FontWeight.w600)),
         ],
@@ -529,9 +529,9 @@ class _SpeakerTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.darkCard,
+        color: context.tCard,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
+        border: Border.all(color: context.tText2(0.07)),
       ),
       child: Column(
         children: [
@@ -552,8 +552,8 @@ class _SpeakerTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(device.name,
-                        style: const TextStyle(
-                            color: Colors.white,
+                        style: TextStyle(
+                            color: context.tText,
                             fontSize: 14,
                             fontWeight: FontWeight.w600),
                         maxLines: 1,
@@ -561,7 +561,7 @@ class _SpeakerTile extends StatelessWidget {
                     Text(
                       device.manufacturer ?? device.protocol.name,
                       style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.4),
+                          color: context.tText2(0.4),
                           fontSize: 11),
                     ),
                   ],
@@ -579,7 +579,7 @@ class _SpeakerTile extends StatelessWidget {
                       color: color.withValues(alpha: 0.15),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.settings_remote,
+                    child: Icon(Icons.settings_remote,
                         color: color, size: 20),
                   ),
                 ),
@@ -597,7 +597,7 @@ class _SpeakerTile extends StatelessWidget {
                   ),
                   child: Icon(
                     device.isPlaying ? Icons.pause : Icons.play_arrow,
-                    color: device.isPlaying ? Colors.white : color,
+                    color: device.isPlaying ? context.tText : color,
                     size: 22,
                   ),
                 ),
@@ -607,20 +607,20 @@ class _SpeakerTile extends StatelessWidget {
           // Volume
           Row(
             children: [
-              const Icon(Icons.volume_down,
-                  color: Colors.white38, size: 18),
+              Icon(Icons.volume_down,
+                  color: context.tText2(0.38), size: 18),
               Expanded(
                 child: Slider(
                   value: device.volume.toDouble(),
                   min: 0,
                   max: 100,
                   activeColor: color,
-                  inactiveColor: Colors.white.withValues(alpha: 0.12),
+                  inactiveColor: context.tText2(0.12),
                   onChanged: (v) =>
                       state.setMediaVolume(device.id, v.round()),
                 ),
               ),
-              const Icon(Icons.volume_up, color: Colors.white38, size: 18),
+              Icon(Icons.volume_up, color: context.tText2(0.38), size: 18),
             ],
           ),
         ],
@@ -672,16 +672,16 @@ class _TvRemoteSheetState extends State<_TvRemoteSheet> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-                color: Colors.white24, borderRadius: BorderRadius.circular(2)),
+                color: context.tText2(0.24), borderRadius: BorderRadius.circular(2)),
           ),
           const SizedBox(height: 18),
           Row(children: [
-            const Icon(Icons.tv, color: AppColors.primary, size: 22),
+            Icon(Icons.tv, color: AppColors.primary, size: 22),
             const SizedBox(width: 10),
             Expanded(
               child: Text('${s.tvRemote} · ${d.name}',
-                  style: const TextStyle(
-                      color: Colors.white,
+                  style: TextStyle(
+                      color: context.tText,
                       fontSize: 16,
                       fontWeight: FontWeight.bold),
                   maxLines: 1,
@@ -712,7 +712,7 @@ class _TvRemoteSheetState extends State<_TvRemoteSheet> {
             alignment: AlignmentDirectional.centerStart,
             child: Text(s.tvSource,
                 style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.5), fontSize: 12)),
+                    color: context.tText2(0.5), fontSize: 12)),
           ),
           const SizedBox(height: 8),
           Wrap(
@@ -731,16 +731,16 @@ class _TvRemoteSheetState extends State<_TvRemoteSheet> {
                   decoration: BoxDecoration(
                     color: sel
                         ? AppColors.primary.withValues(alpha: 0.2)
-                        : Colors.white.withValues(alpha: 0.05),
+                        : context.tText2(0.05),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
                         color: sel
                             ? AppColors.primary
-                            : Colors.white.withValues(alpha: 0.1)),
+                            : context.tText2(0.1)),
                   ),
                   child: Text(src,
                       style: TextStyle(
-                          color: sel ? Colors.white : Colors.white60,
+                          color: sel ? context.tText : context.tText2(0.6),
                           fontSize: 12,
                           fontWeight: FontWeight.w600)),
                 ),
@@ -775,13 +775,13 @@ class _TvRemoteSheetState extends State<_TvRemoteSheet> {
                   width: 56,
                   height: 56,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.06),
+                    color: context.tText2(0.06),
                     shape: BoxShape.circle,
                     border:
-                        Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                        Border.all(color: context.tText2(0.1)),
                   ),
-                  child: const Icon(Icons.volume_off,
-                      color: Colors.white70, size: 22),
+                  child: Icon(Icons.volume_off,
+                      color: context.tText2(0.7), size: 22),
                 ),
               ),
               const SizedBox(width: 14),
@@ -803,7 +803,7 @@ class _TvRemoteSheetState extends State<_TvRemoteSheet> {
           const SizedBox(height: 10),
           Text('${s.tvChannel} $_channel · $_source',
               style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.4), fontSize: 12)),
+                  color: context.tText2(0.4), fontSize: 12)),
         ],
       ),
     );
@@ -814,7 +814,7 @@ class _DPad extends StatelessWidget {
   Widget _arrow(IconData icon, Alignment a) => Align(
         alignment: a,
         child: IconButton(
-          icon: Icon(icon, color: Colors.white70, size: 26),
+          icon: Icon(icon, color: Colors.white.withValues(alpha: 0.7), size: 26),
           onPressed: () => Haptics.select(),
         ),
       );
@@ -825,9 +825,9 @@ class _DPad extends StatelessWidget {
       width: 200,
       height: 200,
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.04),
+        color: context.tText2(0.04),
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: context.tText2(0.08)),
       ),
       child: Stack(
         alignment: Alignment.center,
@@ -841,7 +841,7 @@ class _DPad extends StatelessWidget {
             child: Container(
               width: 72,
               height: 72,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
                     colors: [Color(0xFF7B2FFF), Color(0xFF1A73E8)]),
                 shape: BoxShape.circle,
@@ -872,23 +872,23 @@ class _Rocker extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: context.tText2(0.05),
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        border: Border.all(color: context.tText2(0.1)),
       ),
       child: Column(
         children: [
           IconButton(
-            icon: const Icon(Icons.add, color: Colors.white, size: 24),
+            icon: Icon(Icons.add, color: context.tText, size: 24),
             onPressed: onUp,
           ),
           Text(label,
               style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.5),
+                  color: context.tText2(0.5),
                   fontSize: 10,
                   fontWeight: FontWeight.w700)),
           IconButton(
-            icon: const Icon(Icons.remove, color: Colors.white, size: 24),
+            icon: Icon(Icons.remove, color: context.tText, size: 24),
             onPressed: onDown,
           ),
         ],

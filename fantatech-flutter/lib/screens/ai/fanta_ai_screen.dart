@@ -213,7 +213,7 @@ class _FantaAIScreenState extends State<FantaAIScreen>
     final showChat = _messages.isNotEmpty;
 
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: context.tBg,
       resizeToAvoidBottomInset: true,
       body: SafeArea(
         child: Column(
@@ -253,8 +253,8 @@ class _FantaAIScreenState extends State<FantaAIScreen>
           // Greeting
           Text(
             '${state.userFirstName}! 👋',
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: context.tText,
               fontSize: 26,
               fontWeight: FontWeight.bold,
             ),
@@ -264,7 +264,7 @@ class _FantaAIScreenState extends State<FantaAIScreen>
             s.aiSubtitle,
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.45),
+              color: context.tText2(0.45),
               fontSize: 13.5,
               height: 1.5,
             ),
@@ -309,10 +309,10 @@ class _FantaAIScreenState extends State<FantaAIScreen>
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
       decoration: BoxDecoration(
-        color: AppColors.darkCard,
+        color: context.tCard,
         border: Border(
           top: BorderSide(
-            color: Colors.white.withValues(alpha: 0.08),
+            color: context.tText2(0.08),
             width: 1,
           ),
         ),
@@ -343,7 +343,7 @@ class _FantaAIScreenState extends State<FantaAIScreen>
               ),
               child: Icon(
                 _isListening ? Icons.mic : Icons.mic_outlined,
-                color: _isListening ? Colors.white : AppColors.primary,
+                color: _isListening ? context.tText : AppColors.primary,
                 size: 22,
               ),
             ),
@@ -356,10 +356,10 @@ class _FantaAIScreenState extends State<FantaAIScreen>
             child: Container(
               height: 46,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.07),
+                color: context.tText2(0.07),
                 borderRadius: BorderRadius.circular(23),
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.1),
+                  color: context.tText2(0.1),
                 ),
               ),
               child: TextField(
@@ -367,11 +367,11 @@ class _FantaAIScreenState extends State<FantaAIScreen>
                 focusNode: _inputFocus,
                 textDirection: textDir,
                 textInputAction: TextInputAction.send,
-                style: const TextStyle(color: Colors.white, fontSize: 14),
+                style: TextStyle(color: context.tText, fontSize: 14),
                 decoration: InputDecoration(
                   hintText: s.aiInputHint,
                   hintStyle: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.3),
+                    color: context.tText2(0.3),
                     fontSize: 13,
                   ),
                   border: InputBorder.none,
@@ -402,8 +402,8 @@ class _FantaAIScreenState extends State<FantaAIScreen>
                 child: Icon(
                   Icons.send_rounded,
                   color: _isThinking
-                      ? Colors.white.withValues(alpha: 0.4)
-                      : Colors.white,
+                      ? context.tText2(0.4)
+                      : context.tText,
                   size: 20,
                 ),
               ),
@@ -550,10 +550,10 @@ class _SuggestionChip extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.05),
+          color: context.tText2(0.05),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: Colors.white.withValues(alpha: 0.10),
+            color: context.tText2(0.10),
           ),
         ),
         child: Row(
@@ -561,15 +561,15 @@ class _SuggestionChip extends StatelessWidget {
           children: [
             Text(
               text,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: context.tText,
                 fontSize: 14,
                 fontWeight: FontWeight.w400,
               ),
             ),
             Icon(
               Icons.chevron_left,
-              color: Colors.white.withValues(alpha: 0.3),
+              color: context.tText2(0.3),
               size: 18,
             ),
           ],
@@ -632,7 +632,7 @@ class _MessageBubble extends StatelessWidget {
         decoration: BoxDecoration(
           color: message.isUser
               ? AppColors.primary
-              : Colors.white.withValues(alpha: 0.08),
+              : context.tText2(0.08),
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(16),
             topRight: const Radius.circular(16),
@@ -644,8 +644,8 @@ class _MessageBubble extends StatelessWidget {
           message.resolve(s),
           style: TextStyle(
             color: message.isUser
-                ? Colors.white
-                : Colors.white.withValues(alpha: 0.9),
+                ? context.tText
+                : context.tText2(0.9),
             fontSize: 14,
             height: 1.5,
           ),
@@ -692,7 +692,7 @@ class _ThinkingBubbleState extends State<_ThinkingBubble>
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.08),
+          color: context.tText2(0.08),
           borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(16),
             topRight: Radius.circular(16),
@@ -741,12 +741,12 @@ class _TopBar extends StatelessWidget {
               width: 38,
               height: 38,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.07),
+                color: context.tText2(0.07),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.chevron_right,
-                color: Colors.white,
+                color: context.tText,
                 size: 22,
               ),
             ),

@@ -46,7 +46,7 @@ class _CyberScreenState extends State<CyberScreen>
     const score   = 94; // mock cyber score
 
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: context.tBg,
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
@@ -58,8 +58,8 @@ class _CyberScreenState extends State<CyberScreen>
                   Expanded(
                     child: Text(
                       s.cyberTitle,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: context.tText,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 0.3,
@@ -281,13 +281,13 @@ class _CyberScoreCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.darkCard,
+        color: context.tCard,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: _cyan.withValues(alpha: 0.18)),
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [_cyan.withValues(alpha: 0.07), AppColors.darkCard],
+          colors: [_cyan.withValues(alpha: 0.07), context.tCard],
         ),
       ),
       child: Row(
@@ -315,7 +315,7 @@ class _CyberScoreCard extends StatelessWidget {
                               height: 1)),
                       Text(s.cyberScore,
                           style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.4),
+                              color: context.tText2(0.4),
                               fontSize: 11)),
                     ],
                   ),
@@ -342,7 +342,7 @@ class _CyberScoreCard extends StatelessWidget {
                       ? s.cyberNoThreats
                       : '$threats ${s.cyberActiveThreats}',
                   style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.5), fontSize: 12),
+                      color: context.tText2(0.5), fontSize: 12),
                 ),
                 const SizedBox(height: 12),
                 ClipRRect(
@@ -350,14 +350,14 @@ class _CyberScoreCard extends StatelessWidget {
                   child: LinearProgressIndicator(
                     value: score / 100,
                     minHeight: 6,
-                    backgroundColor: Colors.white.withValues(alpha: 0.08),
+                    backgroundColor: context.tText2(0.08),
                     valueColor: AlwaysStoppedAnimation(color),
                   ),
                 ),
                 const SizedBox(height: 6),
                 Text(s.cyberLastScan,
                     style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.28),
+                        color: context.tText2(0.28),
                         fontSize: 10)),
               ],
             ),
@@ -454,8 +454,8 @@ class _SectionLabel extends StatelessWidget {
         ),
         Text(
           title.toUpperCase(),
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: context.tText,
             fontSize: 11,
             fontWeight: FontWeight.w800,
             letterSpacing: 1.2,
@@ -484,7 +484,7 @@ class _MetricCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       decoration: BoxDecoration(
-        color: AppColors.darkCard,
+        color: context.tCard,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: iconColor.withValues(alpha: 0.18)),
       ),
@@ -493,16 +493,16 @@ class _MetricCard extends StatelessWidget {
         const SizedBox(height: 8),
         Text(value,
             style: TextStyle(
-                color: valueColor ?? Colors.white,
+                color: valueColor ?? context.tText,
                 fontSize: 16,
                 fontWeight: FontWeight.bold)),
         const SizedBox(height: 2),
         Text(title,
-            style: const TextStyle(
-                color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600)),
+            style: TextStyle(
+                color: context.tText, fontSize: 10, fontWeight: FontWeight.w600)),
         Text(subtitle,
             style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.4), fontSize: 9)),
+                color: context.tText2(0.4), fontSize: 9)),
       ]),
     );
   }
@@ -527,9 +527,9 @@ class _ProtectionRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: AppColors.darkCard,
+        color: context.tCard,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
+        border: Border.all(color: context.tText2(0.07)),
       ),
       child: Row(children: [
         Container(
@@ -544,11 +544,11 @@ class _ProtectionRow extends StatelessWidget {
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(title,
-                style: const TextStyle(
-                    color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+                style: TextStyle(
+                    color: context.tText, fontSize: 13, fontWeight: FontWeight.w600)),
             Text(subtitle,
                 style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.4), fontSize: 11)),
+                    color: context.tText2(0.4), fontSize: 11)),
           ]),
         ),
         Container(
@@ -581,9 +581,9 @@ class _AuditRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
       decoration: BoxDecoration(
-        color: AppColors.darkCard,
+        color: context.tCard,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
+        border: Border.all(color: context.tText2(0.07)),
       ),
       child: Row(children: [
         Icon(icon, color: color, size: 18),
@@ -591,11 +591,11 @@ class _AuditRow extends StatelessWidget {
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(title,
-                style: const TextStyle(
-                    color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500)),
+                style: TextStyle(
+                    color: context.tText, fontSize: 13, fontWeight: FontWeight.w500)),
             Text(detail,
                 style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.4), fontSize: 11)),
+                    color: context.tText2(0.4), fontSize: 11)),
           ]),
         ),
         Container(
@@ -637,11 +637,11 @@ class _EventRow extends StatelessWidget {
       Expanded(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(text,
-              style: const TextStyle(
-                  color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500)),
+              style: TextStyle(
+                  color: context.tText, fontSize: 12, fontWeight: FontWeight.w500)),
           Text(time,
               style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.35), fontSize: 10)),
+                  color: context.tText2(0.35), fontSize: 10)),
         ]),
       ),
     ]);

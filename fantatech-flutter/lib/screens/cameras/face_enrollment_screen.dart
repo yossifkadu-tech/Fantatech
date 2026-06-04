@@ -29,7 +29,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
     final persons = state.knownPersons;
 
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: context.tBg,
       body: SafeArea(
         child: Column(
           children: [
@@ -56,13 +56,13 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
                             width: 16, height: 16,
                             child: CircularProgressIndicator(
                                 strokeWidth: 2, color: Colors.white))
-                        : const Icon(Icons.model_training, size: 18),
+                        : Icon(Icons.model_training, size: 18),
                     label: Text(_trainingInProgress
                         ? 'מאמן מודל...'
                         : 'אמן מודל זיהוי (${persons.where((p) => p.isEnrolledInAzure).length}/${persons.length} רשומים)'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF7B2FFF),
-                      foregroundColor: Colors.white,
+                      foregroundColor: context.tText,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                       padding: const EdgeInsets.symmetric(vertical: 14),
@@ -77,12 +77,12 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.06),
+                    color: context.tText2(0.06),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(_statusMsg!,
-                      style: const TextStyle(
-                          color: Colors.white70, fontSize: 12)),
+                      style: TextStyle(
+                          color: context.tText2(0.7), fontSize: 12)),
                 ),
               ),
 
@@ -221,7 +221,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
 
   void _showSnack(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: AppColors.darkCard),
+      SnackBar(content: Text(msg), backgroundColor: context.tCard),
     );
   }
 }
@@ -243,11 +243,11 @@ class _TopBar extends StatelessWidget {
             child: Container(
               width: 38, height: 38,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.07),
+                color: context.tText2(0.07),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.chevron_right,
-                  color: Colors.white, size: 22),
+              child: Icon(Icons.chevron_right,
+                  color: context.tText, size: 22),
             ),
           ),
           const SizedBox(width: 12),
@@ -275,7 +275,7 @@ class _TopBar extends StatelessWidget {
                 border: Border.all(
                     color: AppColors.primary.withValues(alpha: 0.4)),
               ),
-              child: const Icon(Icons.person_add_outlined,
+              child: Icon(Icons.person_add_outlined,
                   color: AppColors.primary, size: 20),
             ),
           ),
@@ -320,12 +320,12 @@ class _AzureSettingsCardState extends State<_AzureSettingsCard> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.darkCard,
+          color: context.tCard,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: hasConfig
                 ? const Color(0xFF00B4D8).withValues(alpha: 0.4)
-                : Colors.white.withValues(alpha: 0.10),
+                : context.tText2(0.10),
           ),
         ),
         child: Column(
@@ -343,7 +343,7 @@ class _AzureSettingsCardState extends State<_AzureSettingsCard> {
                         color: const Color(0xFF0078D4).withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(Icons.cloud_outlined,
+                      child: Icon(Icons.cloud_outlined,
                           color: Color(0xFF0078D4), size: 20),
                     ),
                     const SizedBox(width: 10),
@@ -351,9 +351,9 @@ class _AzureSettingsCardState extends State<_AzureSettingsCard> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Azure Face API',
+                          Text('Azure Face API',
                               style: TextStyle(
-                                  color: Colors.white,
+                                  color: context.tText,
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600)),
                           Text(
@@ -361,7 +361,7 @@ class _AzureSettingsCardState extends State<_AzureSettingsCard> {
                             style: TextStyle(
                               color: hasConfig
                                   ? const Color(0xFF00C896)
-                                  : Colors.white38,
+                                  : context.tText2(0.38),
                               fontSize: 11,
                             ),
                           ),
@@ -372,7 +372,7 @@ class _AzureSettingsCardState extends State<_AzureSettingsCard> {
                       _expanded
                           ? Icons.keyboard_arrow_up_rounded
                           : Icons.keyboard_arrow_down_rounded,
-                      color: Colors.white38,
+                      color: context.tText2(0.38),
                     ),
                   ],
                 ),
@@ -411,8 +411,8 @@ class _AzureSettingsCardState extends State<_AzureSettingsCard> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(_testResult!,
-                            style: const TextStyle(
-                                color: Colors.white70, fontSize: 12)),
+                            style: TextStyle(
+                                color: context.tText2(0.7), fontSize: 12)),
                       ),
                     Row(children: [
                       Expanded(
@@ -431,7 +431,7 @@ class _AzureSettingsCardState extends State<_AzureSettingsCard> {
                                   child: CircularProgressIndicator(
                                       strokeWidth: 2,
                                       color: Color(0xFF0078D4)))
-                              : const Text('בדוק חיבור'),
+                              : Text('בדוק חיבור'),
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -440,11 +440,11 @@ class _AzureSettingsCardState extends State<_AzureSettingsCard> {
                           onPressed: _save,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF0078D4),
-                            foregroundColor: Colors.white,
+                            foregroundColor: context.tText,
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10)),
                           ),
-                          child: const Text('שמור'),
+                          child: Text('שמור'),
                         ),
                       ),
                     ]),
@@ -452,7 +452,7 @@ class _AzureSettingsCardState extends State<_AzureSettingsCard> {
                     Text(
                       'קבל API Key חינם בـ portal.azure.com → Cognitive Services',
                       style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.25),
+                          color: context.tText2(0.25),
                           fontSize: 10),
                       textAlign: TextAlign.center,
                     ),
@@ -514,25 +514,25 @@ class _AzureTF extends StatelessWidget {
     return TextField(
       controller: ctrl,
       obscureText: obscure,
-      style: const TextStyle(color: Colors.white, fontSize: 13),
+      style: TextStyle(color: context.tText, fontSize: 13),
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
         labelStyle:
-            TextStyle(color: Colors.white.withValues(alpha: 0.45), fontSize: 12),
+            TextStyle(color: context.tText2(0.45), fontSize: 12),
         hintStyle:
-            TextStyle(color: Colors.white.withValues(alpha: 0.20), fontSize: 11),
-        prefixIcon: Icon(icon, color: Colors.white38, size: 16),
+            TextStyle(color: context.tText2(0.20), fontSize: 11),
+        prefixIcon: Icon(icon, color: context.tText2(0.38), size: 16),
         filled: true,
-        fillColor: Colors.white.withValues(alpha: 0.05),
+        fillColor: context.tText2(0.05),
         border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
             borderSide:
-                BorderSide(color: Colors.white.withValues(alpha: 0.12))),
+                BorderSide(color: context.tText2(0.12))),
         enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
             borderSide:
-                BorderSide(color: Colors.white.withValues(alpha: 0.12))),
+                BorderSide(color: context.tText2(0.12))),
         focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
             borderSide: const BorderSide(
@@ -561,12 +561,12 @@ class _PersonCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.darkCard,
+        color: context.tCard,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: person.isEnrolledInAzure
               ? const Color(0xFF00C896).withValues(alpha: 0.3)
-              : Colors.white.withValues(alpha: 0.08),
+              : context.tText2(0.08),
         ),
       ),
       child: Row(
@@ -589,7 +589,7 @@ class _PersonCard extends StatelessWidget {
                         fit: BoxFit.cover,
                       ),
                     )
-                  : const Icon(Icons.person_outline,
+                  : Icon(Icons.person_outline,
                       color: AppColors.primary, size: 26),
             ),
           ),
@@ -601,8 +601,8 @@ class _PersonCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(person.name,
-                    style: const TextStyle(
-                        color: Colors.white,
+                    style: TextStyle(
+                        color: context.tText,
                         fontSize: 14,
                         fontWeight: FontWeight.w600)),
                 const SizedBox(height: 3),
@@ -642,13 +642,13 @@ class _PersonCard extends StatelessWidget {
               width: 34, height: 34,
               margin: const EdgeInsets.only(right: 6),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.05),
+                color: context.tText2(0.05),
                 borderRadius: BorderRadius.circular(9),
                 border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.12)),
+                    color: context.tText2(0.12)),
               ),
-              child: const Icon(Icons.add_a_photo_outlined,
-                  color: Colors.white54, size: 16),
+              child: Icon(Icons.add_a_photo_outlined,
+                  color: context.tText2(0.54), size: 16),
             ),
           ),
 
@@ -663,7 +663,7 @@ class _PersonCard extends StatelessWidget {
                 border: Border.all(
                     color: Colors.red.withValues(alpha: 0.2)),
               ),
-              child: const Icon(Icons.delete_outline,
+              child: Icon(Icons.delete_outline,
                   color: Colors.redAccent, size: 16),
             ),
           ),
@@ -697,7 +697,7 @@ class _AddPersonSheetState extends State<_AddPersonSheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: Color(0xFF12121E),
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
@@ -711,7 +711,7 @@ class _AddPersonSheetState extends State<_AddPersonSheet> {
             child: Container(
               width: 40, height: 4,
               decoration: BoxDecoration(
-                  color: Colors.white24,
+                  color: context.tText2(0.24),
                   borderRadius: BorderRadius.circular(2)),
             ),
           ),
@@ -729,27 +729,27 @@ class _AddPersonSheetState extends State<_AddPersonSheet> {
           const SizedBox(height: 16),
           TextField(
             controller: _nameCtrl,
-            style: const TextStyle(color: Colors.white),
+            style: TextStyle(color: context.tText),
             decoration: InputDecoration(
               labelText: 'שם מלא',
               hintText: 'לדוגמה: יוסי לוי',
               labelStyle: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.45)),
+                  color: context.tText2(0.45)),
               hintStyle: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.25),
+                  color: context.tText2(0.25),
                   fontSize: 12),
-              prefixIcon: const Icon(Icons.badge_outlined,
-                  color: Colors.white38, size: 18),
+              prefixIcon: Icon(Icons.badge_outlined,
+                  color: context.tText2(0.38), size: 18),
               filled: true,
-              fillColor: Colors.white.withValues(alpha: 0.06),
+              fillColor: context.tText2(0.06),
               border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(
-                      color: Colors.white.withValues(alpha: 0.12))),
+                      color: context.tText2(0.12))),
               enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(
-                      color: Colors.white.withValues(alpha: 0.12))),
+                      color: context.tText2(0.12))),
               focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: const BorderSide(
@@ -760,8 +760,8 @@ class _AddPersonSheetState extends State<_AddPersonSheet> {
             Padding(
               padding: const EdgeInsets.only(top: 10),
               child: Text(_msg!,
-                  style: const TextStyle(
-                      color: Colors.white60, fontSize: 12)),
+                  style: TextStyle(
+                      color: context.tText2(0.6), fontSize: 12)),
             ),
           const SizedBox(height: 16),
           SizedBox(
@@ -770,7 +770,7 @@ class _AddPersonSheetState extends State<_AddPersonSheet> {
               onPressed: _loading ? null : _add,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
+                foregroundColor: context.tText,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
                 padding: const EdgeInsets.symmetric(vertical: 14),
@@ -780,7 +780,7 @@ class _AddPersonSheetState extends State<_AddPersonSheet> {
                       width: 18, height: 18,
                       child: CircularProgressIndicator(
                           strokeWidth: 2, color: Colors.white))
-                  : const Text('הוסף'),
+                  : Text('הוסף'),
             ),
           ),
         ],
@@ -836,29 +836,29 @@ class _EmptyPersons extends StatelessWidget {
               border: Border.all(
                   color: AppColors.primary.withValues(alpha: 0.2)),
             ),
-            child: const Icon(Icons.group_outlined,
+            child: Icon(Icons.group_outlined,
                 color: AppColors.primary, size: 38),
           ),
           const SizedBox(height: 16),
-          const Text('אין אנשים רשומים',
+          Text('אין אנשים רשומים',
               style: TextStyle(
-                  color: Colors.white60,
+                  color: context.tText2(0.6),
                   fontSize: 16,
                   fontWeight: FontWeight.w600)),
           const SizedBox(height: 6),
-          const Text(
+          Text(
             'הוסף אנשים כדי שהמצלמות\nיזהו אותם בשם',
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white30, fontSize: 13),
+            style: TextStyle(color: context.tText2(0.3), fontSize: 13),
           ),
           const SizedBox(height: 20),
           ElevatedButton.icon(
             onPressed: onAdd,
-            icon: const Icon(Icons.person_add_outlined, size: 16),
-            label: const Text('הוסף אדם'),
+            icon: Icon(Icons.person_add_outlined, size: 16),
+            label: Text('הוסף אדם'),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
+              foregroundColor: context.tText,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12)),
             ),

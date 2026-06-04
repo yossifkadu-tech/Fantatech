@@ -128,15 +128,15 @@ class _RegisterScreenState extends State<RegisterScreen>
                             width: 38,
                             height: 38,
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.07),
+                              color: context.tText2(0.07),
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.10),
+                                color: context.tText2(0.10),
                               ),
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.arrow_back_ios_new_rounded,
-                              color: Colors.white54,
+                              color: context.tText2(0.54),
                               size: 16,
                             ),
                           ),
@@ -155,7 +155,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                     Text(
                       s.registerTitle,
                       style: TextStyle(
-                        color: Colors.white,
+                        color: context.tText,
                         fontSize: 26,
                         fontWeight: FontWeight.bold,
                       ),
@@ -165,7 +165,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                     Text(
                       s.registerSubtitle,
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.55),
+                        color: context.tText2(0.55),
                         fontSize: 14,
                       ),
                       textAlign: TextAlign.center,
@@ -206,7 +206,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                           _obscurePassword
                               ? Icons.visibility_off_outlined
                               : Icons.visibility_outlined,
-                          color: Colors.white38,
+                          color: context.tText2(0.38),
                           size: 20,
                         ),
                       ),
@@ -227,7 +227,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                           _obscureConfirm
                               ? Icons.visibility_off_outlined
                               : Icons.visibility_outlined,
-                          color: Colors.white38,
+                          color: context.tText2(0.38),
                           size: 20,
                         ),
                       ),
@@ -249,13 +249,13 @@ class _RegisterScreenState extends State<RegisterScreen>
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.error_outline,
+                            Icon(Icons.error_outline,
                                 color: Colors.red, size: 16),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 _errorMsg!,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: Colors.red,
                                   fontSize: 13,
                                 ),
@@ -275,14 +275,14 @@ class _RegisterScreenState extends State<RegisterScreen>
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : _handleRegister,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
+                          backgroundColor: context.tText,
                           foregroundColor: const Color(0xFF3C4043),
                           elevation: 0,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
                           ),
                           disabledBackgroundColor:
-                              Colors.white.withValues(alpha: 0.6),
+                              context.tText2(0.6),
                         ),
                         child: _isLoading
                             ? const SizedBox(
@@ -312,7 +312,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                         Text(
                           s.haveAccount,
                           style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.45),
+                            color: context.tText2(0.45),
                             fontSize: 14,
                           ),
                         ),
@@ -359,7 +359,7 @@ class _RegisterLogo extends StatelessWidget {
           width: 1.5,
         ),
       ),
-      child: const Icon(
+      child: Icon(
         Icons.person_add_outlined,
         color: AppColors.primary,
         size: 28,
@@ -389,10 +389,10 @@ class _InputField extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.07),
+        color: context.tText2(0.07),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.10),
+          color: context.tText2(0.10),
           width: 1,
         ),
       ),
@@ -401,14 +401,14 @@ class _InputField extends StatelessWidget {
         obscureText: obscureText,
         keyboardType: keyboardType,
         textDirection: TextDirection.rtl,
-        style: const TextStyle(color: Colors.white, fontSize: 15),
+        style: TextStyle(color: context.tText, fontSize: 15),
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: TextStyle(
-            color: Colors.white.withValues(alpha: 0.35),
+            color: context.tText2(0.35),
             fontSize: 14,
           ),
-          prefixIcon: Icon(icon, color: Colors.white38, size: 20),
+          prefixIcon: Icon(icon, color: context.tText2(0.38), size: 20),
           suffixIcon: suffixIcon,
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(

@@ -156,7 +156,7 @@ class _CalendarScreenState extends State<CalendarScreen>
     final s = context.watch<AppState>().strings;
 
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: context.tBg,
       body: SafeArea(
         child: Column(
           children: [
@@ -167,7 +167,7 @@ class _CalendarScreenState extends State<CalendarScreen>
               child: Container(
                 height: 42,
                 decoration: BoxDecoration(
-                  color: AppColors.darkCard,
+                  color: context.tCard,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: TabBar(
@@ -177,9 +177,9 @@ class _CalendarScreenState extends State<CalendarScreen>
                     borderRadius: BorderRadius.circular(10),
                   ),
                   indicatorSize: TabBarIndicatorSize.tab,
-                  labelColor: Colors.white,
-                  unselectedLabelColor: Colors.white38,
-                  labelStyle: const TextStyle(
+                  labelColor: context.tText,
+                  unselectedLabelColor: context.tText2(0.38),
+                  labelStyle: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                   ),
@@ -488,9 +488,9 @@ class _CalendarGrid extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.darkCard,
+        color: context.tCard,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
+        border: Border.all(color: context.tText2(0.07)),
       ),
       child: Column(
         children: [
@@ -499,7 +499,7 @@ class _CalendarGrid extends StatelessWidget {
             children: [
               IconButton(
                 onPressed: onPrevMonth,
-                icon: const Icon(Icons.chevron_left, color: Colors.white70),
+                icon: Icon(Icons.chevron_left, color: context.tText2(0.7)),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
               ),
@@ -507,8 +507,8 @@ class _CalendarGrid extends StatelessWidget {
                 child: Text(
                   monthLabel,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: context.tText,
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
                   ),
@@ -516,7 +516,7 @@ class _CalendarGrid extends StatelessWidget {
               ),
               IconButton(
                 onPressed: onNextMonth,
-                icon: const Icon(Icons.chevron_right, color: Colors.white70),
+                icon: Icon(Icons.chevron_right, color: context.tText2(0.7)),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
               ),
@@ -532,7 +532,7 @@ class _CalendarGrid extends StatelessWidget {
                   d,
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.35),
+                    color: context.tText2(0.35),
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                   ),
@@ -608,7 +608,7 @@ class _CalendarGrid extends StatelessWidget {
                         '${day.day}',
                         style: TextStyle(
                           color: isSelected
-                              ? Colors.white
+                              ? context.tText
                               : hasHoliday
                                   ? const Color(0xFFFFD700)
                                   : isToday
@@ -617,7 +617,7 @@ class _CalendarGrid extends StatelessWidget {
                                           ? shabbatFriColor
                                           : isSaturday
                                               ? shabbatSatColor
-                                              : Colors.white.withValues(alpha: 0.8),
+                                              : context.tText2(0.8),
                           fontSize: 12,
                           fontWeight: isSelected || isToday
                               ? FontWeight.bold
@@ -627,13 +627,13 @@ class _CalendarGrid extends StatelessWidget {
                       if (hasHoliday)
                         Container(
                           width: 4, height: 4,
-                          decoration: const BoxDecoration(
+                          decoration: BoxDecoration(
                             color: Color(0xFFFFD700),
                             shape: BoxShape.circle,
                           ),
                         )
                       else if (isFriday)
-                        const Text('🕯', style: TextStyle(fontSize: 6))
+                        Text('🕯', style: TextStyle(fontSize: 6))
                       else if (isSaturday)
                         Container(
                           width: 4, height: 4,
@@ -762,9 +762,9 @@ class _ShabbatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.darkCard,
+        color: context.tCard,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
+        border: Border.all(color: context.tText2(0.07)),
       ),
       child: Row(
         children: [
@@ -781,7 +781,7 @@ class _ShabbatCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(children: [
-                    const Text('🕯', style: TextStyle(fontSize: 14)),
+                    Text('🕯', style: TextStyle(fontSize: 14)),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
@@ -799,8 +799,8 @@ class _ShabbatCard extends StatelessWidget {
                   const SizedBox(height: 6),
                   Text(
                     candlesTime,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: context.tText,
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 0.5,
@@ -810,7 +810,7 @@ class _ShabbatCard extends StatelessWidget {
                   Text(
                     '${friday.day}/${friday.month}',
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.35),
+                      color: context.tText2(0.35),
                       fontSize: 11,
                     ),
                   ),
@@ -852,8 +852,8 @@ class _ShabbatCard extends StatelessWidget {
                   const SizedBox(height: 6),
                   Text(
                     havdalahTime,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: context.tText,
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 0.5,
@@ -863,7 +863,7 @@ class _ShabbatCard extends StatelessWidget {
                   Text(
                     '${saturday.day}/${saturday.month}',
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.35),
+                      color: context.tText2(0.35),
                       fontSize: 11,
                     ),
                   ),
@@ -918,8 +918,8 @@ class _HolidayList extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 title,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: context.tText,
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
@@ -933,11 +933,11 @@ class _HolidayList extends StatelessWidget {
             margin: const EdgeInsets.only(bottom: 8),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
-              color: AppColors.darkCard,
+              color: context.tCard,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: h.isMinor
-                    ? Colors.white.withValues(alpha: 0.07)
+                    ? context.tText2(0.07)
                     : const Color(0xFFFFD700).withValues(alpha: 0.25),
               ),
             ),
@@ -949,7 +949,7 @@ class _HolidayList extends StatelessWidget {
                   height: 44,
                   decoration: BoxDecoration(
                     color: h.isMinor
-                        ? Colors.white.withValues(alpha: 0.06)
+                        ? context.tText2(0.06)
                         : const Color(0xFFFFD700).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -960,7 +960,7 @@ class _HolidayList extends StatelessWidget {
                         '${d.day}',
                         style: TextStyle(
                           color: h.isMinor
-                              ? Colors.white70
+                              ? context.tText2(0.7)
                               : const Color(0xFFFFD700),
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -971,7 +971,7 @@ class _HolidayList extends StatelessWidget {
                         _monthNames[d.month],
                         style: TextStyle(
                           color: h.isMinor
-                              ? Colors.white38
+                              ? context.tText2(0.38)
                               : const Color(0xFFFFD700).withValues(alpha: 0.7),
                           fontSize: 9,
                         ),
@@ -987,7 +987,7 @@ class _HolidayList extends StatelessWidget {
                       Text(
                         h.name(strings),
                         style: TextStyle(
-                          color: h.isMinor ? Colors.white70 : Colors.white,
+                          color: h.isMinor ? context.tText2(0.7) : context.tText,
                           fontSize: 14,
                           fontWeight: h.isMinor
                               ? FontWeight.normal
@@ -998,7 +998,7 @@ class _HolidayList extends StatelessWidget {
                       Text(
                         '${d.day}/${d.month}/${d.year}',
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.3),
+                          color: context.tText2(0.3),
                           fontSize: 11,
                         ),
                       ),
@@ -1006,7 +1006,7 @@ class _HolidayList extends StatelessWidget {
                   ),
                 ),
                 if (!h.isMinor)
-                  const Icon(Icons.star_rounded,
+                  Icon(Icons.star_rounded,
                       color: Color(0xFFFFD700), size: 16),
               ],
             ),
@@ -1036,19 +1036,19 @@ class _TopBar extends StatelessWidget {
               width: 38,
               height: 38,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.07),
+                color: context.tText2(0.07),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.chevron_right,
-                  color: Colors.white, size: 22),
+              child: Icon(Icons.chevron_right,
+                  color: context.tText, size: 22),
             ),
           ),
           Expanded(
             child: Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: context.tText,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),

@@ -334,8 +334,8 @@ class _CameraPlayerScreenState extends State<CameraPlayerScreen> {
                     const SizedBox(height: 12),
                     Text(
                       'מתחבר ל-${cam.ip ?? cam.name}...',
-                      style: const TextStyle(
-                          color: Colors.white60, fontSize: 12),
+                      style: TextStyle(
+                          color: context.tText2(0.6), fontSize: 12),
                     ),
                   ],
                 ),
@@ -394,8 +394,8 @@ class _CameraPlayerScreenState extends State<CameraPlayerScreen> {
                         context.watch<AppState>().hasAzureConfig
                             ? 'מזהה פנים וזהות...'
                             : 'מזהה פנים...',
-                        style: const TextStyle(
-                            color: Colors.white, fontSize: 13),
+                        style: TextStyle(
+                            color: context.tText, fontSize: 13),
                       ),
                     ],
                   ),
@@ -446,8 +446,8 @@ class _CameraPlayerScreenState extends State<CameraPlayerScreen> {
                     ),
                     child: Text(
                       _toastMsg!,
-                      style: const TextStyle(
-                          color: Colors.white, fontSize: 13),
+                      style: TextStyle(
+                          color: context.tText, fontSize: 13),
                     ),
                   ),
                 ),
@@ -470,7 +470,7 @@ class _TopOverlay extends StatelessWidget {
     return Positioned(
       top: 0, left: 0, right: 0,
       child: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
@@ -484,9 +484,9 @@ class _TopOverlay extends StatelessWidget {
             child: Row(
               children: [
                 IconButton(
-                  icon: const Icon(
+                  icon: Icon(
                       Icons.arrow_back_ios_new_rounded,
-                      color: Colors.white,
+                      color: context.tText,
                       size: 20),
                   onPressed: () => Navigator.pop(context),
                 ),
@@ -496,18 +496,18 @@ class _TopOverlay extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(camera.name,
-                          style: const TextStyle(
-                              color: Colors.white,
+                          style: TextStyle(
+                              color: context.tText,
                               fontSize: 16,
                               fontWeight: FontWeight.w600)),
                       if (camera.manufacturer != null)
                         Text(camera.manufacturer!,
-                            style: const TextStyle(
-                                color: Colors.white60, fontSize: 12)),
+                            style: TextStyle(
+                                color: context.tText2(0.6), fontSize: 12)),
                       if (camera.ip != null)
                         Text(camera.ip!,
-                            style: const TextStyle(
-                                color: Colors.white38, fontSize: 11)),
+                            style: TextStyle(
+                                color: context.tText2(0.38), fontSize: 11)),
                     ],
                   ),
                 ),
@@ -616,13 +616,13 @@ class _BottomControls extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.12),
+                  color: context.tText2(0.12),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   camera.streamType.name.toUpperCase(),
-                  style: const TextStyle(
-                      color: Colors.white70,
+                  style: TextStyle(
+                      color: context.tText2(0.7),
                       fontSize: 10,
                       fontWeight: FontWeight.w700),
                 ),
@@ -704,7 +704,7 @@ class _CtrlBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = active ? activeColor : Colors.white;
+    final color = active ? activeColor : context.tText;
     return GestureDetector(
       onTap: onTap,
       child: Column(
@@ -715,7 +715,7 @@ class _CtrlBtn extends StatelessWidget {
             decoration: BoxDecoration(
               color: active
                   ? activeColor.withValues(alpha: 0.18)
-                  : Colors.white.withValues(alpha: 0.10),
+                  : context.tText2(0.10),
               shape: BoxShape.circle,
               border: Border.all(
                   color: color.withValues(alpha: 0.3), width: 1.2),
@@ -776,7 +776,7 @@ class _PtzJoystick extends StatelessWidget {
         color: Colors.black.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-            color: Colors.white.withValues(alpha: 0.15), width: 1),
+            color: context.tText2(0.15), width: 1),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -784,7 +784,7 @@ class _PtzJoystick extends StatelessWidget {
           // Label
           Text('PTZ',
               style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.5),
+                  color: context.tText2(0.5),
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1)),
@@ -816,7 +816,7 @@ class _PtzJoystick extends StatelessWidget {
                 width: 12, height: 12,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: 0.25),
+                  color: context.tText2(0.25),
                 ),
               ),
               const SizedBox(width: 6),
@@ -857,7 +857,7 @@ class _PtzJoystick extends StatelessWidget {
               const SizedBox(width: 10),
               Text('ZOOM',
                   style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.35),
+                      color: context.tText2(0.35),
                       fontSize: 9)),
               const SizedBox(width: 10),
               _PtzBtn(
@@ -915,12 +915,12 @@ class _PtzBtnState extends State<_PtzBtn> {
         decoration: BoxDecoration(
           color: _pressed
               ? widget.color.withValues(alpha: 0.25)
-              : Colors.white.withValues(alpha: 0.08),
+              : context.tText2(0.08),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
               color: _pressed
                   ? widget.color.withValues(alpha: 0.6)
-                  : Colors.white.withValues(alpha: 0.15),
+                  : context.tText2(0.15),
               width: 1.2),
         ),
         child: Icon(widget.icon, color: widget.color, size: 22),
@@ -1031,8 +1031,8 @@ class _FaceOverlay extends StatelessWidget {
                           ),
                           child: Text(
                             face.gazeDirection,
-                            style: const TextStyle(
-                                color: Colors.white70,
+                            style: TextStyle(
+                                color: context.tText2(0.7),
                                 fontSize: 8),
                           ),
                         ),
@@ -1058,28 +1058,28 @@ class _ErrorPlaceholder extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.videocam_off_outlined,
-              color: Colors.white24, size: 56),
+          Icon(Icons.videocam_off_outlined,
+              color: context.tText2(0.24), size: 56),
           const SizedBox(height: 12),
           Text(camera.name,
               style:
-                  const TextStyle(color: Colors.white60, fontSize: 16)),
+                  TextStyle(color: context.tText2(0.6), fontSize: 16)),
           const SizedBox(height: 6),
-          const Text('לא ניתן להתחבר לסטרים',
-              style: TextStyle(color: Colors.white38, fontSize: 13)),
+          Text('לא ניתן להתחבר לסטרים',
+              style: TextStyle(color: context.tText2(0.38), fontSize: 13)),
           if (camera.effectiveRtspUrl != null) ...[
             const SizedBox(height: 8),
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 40),
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.07),
+                color: context.tText2(0.07),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
                 camera.effectiveRtspUrl!,
-                style: const TextStyle(
-                    color: Colors.white54,
+                style: TextStyle(
+                    color: context.tText2(0.54),
                     fontSize: 10,
                     fontFamily: 'monospace'),
                 textAlign: TextAlign.center,

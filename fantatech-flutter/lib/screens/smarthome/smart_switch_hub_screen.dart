@@ -114,7 +114,7 @@ class _SmartSwitchHubViewState extends State<_SmartSwitchHubView> {
         .toList();
 
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: context.tBg,
       body: SafeArea(
         child: Column(
           children: [
@@ -180,8 +180,8 @@ class _Header extends StatelessWidget {
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                color: Colors.white70, size: 20),
+            icon: Icon(Icons.arrow_back_ios_new_rounded,
+                color: context.tText2(0.7), size: 20),
             onPressed: () => Navigator.pop(context),
           ),
           const SizedBox(width: 4),
@@ -189,9 +189,9 @@ class _Header extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('מפסקים חכמים',
+                Text('מפסקים חכמים',
                     style: TextStyle(
-                        color: Colors.white,
+                        color: context.tText,
                         fontSize: 18,
                         fontWeight: FontWeight.w700)),
                 Text(
@@ -200,8 +200,8 @@ class _Header extends StatelessWidget {
                       : foundCount == 0
                           ? 'לא נמצאו מכשירים'
                           : '$foundCount מכשירים נמצאו',
-                  style: const TextStyle(
-                      color: Colors.white54, fontSize: 12),
+                  style: TextStyle(
+                      color: context.tText2(0.54), fontSize: 12),
                 ),
               ],
             ),
@@ -215,8 +215,8 @@ class _Header extends StatelessWidget {
           else
             TextButton.icon(
               onPressed: onScan,
-              icon: const Icon(Icons.radar_rounded, size: 16),
-              label: const Text('סרוק', style: TextStyle(fontSize: 13)),
+              icon: Icon(Icons.radar_rounded, size: 16),
+              label: Text('סרוק', style: TextStyle(fontSize: 13)),
               style: TextButton.styleFrom(
                   foregroundColor: AppColors.primary,
                   padding: const EdgeInsets.symmetric(
@@ -281,12 +281,12 @@ class _ProtocolChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: hasFound
             ? color.withValues(alpha: 0.15)
-            : Colors.white.withValues(alpha: 0.05),
+            : context.tText2(0.05),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
             color: hasFound
                 ? color.withValues(alpha: 0.45)
-                : Colors.white.withValues(alpha: 0.10),
+                : context.tText2(0.10),
             width: 1.2),
       ),
       child: Row(
@@ -305,7 +305,7 @@ class _ProtocolChip extends StatelessWidget {
           const SizedBox(width: 5),
           Text(p.brand,
               style: TextStyle(
-                  color: hasFound ? color : Colors.white38,
+                  color: hasFound ? color : context.tText2(0.38),
                   fontSize: 10,
                   fontWeight: FontWeight.w700)),
           if (hasFound) ...[
@@ -317,7 +317,7 @@ class _ProtocolChip extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text('${state.found}',
-                  style: const TextStyle(
+                  style: TextStyle(
                       color: Colors.black,
                       fontSize: 9,
                       fontWeight: FontWeight.w800)),
@@ -399,12 +399,12 @@ class _FilterChip extends StatelessWidget {
           border: Border.all(
               color: active
                   ? color.withValues(alpha: 0.55)
-                  : Colors.white.withValues(alpha: 0.15),
+                  : context.tText2(0.15),
               width: 1.2),
         ),
         child: Text(label,
             style: TextStyle(
-                color: active ? color : Colors.white54,
+                color: active ? color : context.tText2(0.54),
                 fontSize: 12,
                 fontWeight: active ? FontWeight.w700 : FontWeight.w400)),
       ),
@@ -523,9 +523,9 @@ class _SwitchCardState extends State<_SwitchCard> {
             Icon(Icons.electrical_services_outlined,
                 color: SwitchProtocol.tuyaLocal.color, size: 20),
             const SizedBox(width: 10),
-            const Text('Tuya Local Key',
+            Text('Tuya Local Key',
                 style: TextStyle(
-                    color: Colors.white,
+                    color: context.tText,
                     fontSize: 15,
                     fontWeight: FontWeight.w700)),
           ],
@@ -534,10 +534,10 @@ class _SwitchCardState extends State<_SwitchCard> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'קבל את הפרטים מ-platform.tuya.com\n'
               '(Cloud → Devices → Device Details)',
-              style: TextStyle(color: Colors.white54, fontSize: 12),
+              style: TextStyle(color: context.tText2(0.54), fontSize: 12),
             ),
             const SizedBox(height: 16),
             // Device ID field
@@ -560,15 +560,15 @@ class _SwitchCardState extends State<_SwitchCard> {
             Text(
               'המפתח נשמר רק במכשיר שלך.',
               style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.3), fontSize: 10),
+                  color: context.tText2(0.3), fontSize: 10),
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('ביטול',
-                style: TextStyle(color: Colors.white38)),
+            child: Text('ביטול',
+                style: TextStyle(color: context.tText2(0.38))),
           ),
           ElevatedButton(
             onPressed: () {
@@ -593,7 +593,7 @@ class _SwitchCardState extends State<_SwitchCard> {
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10)),
             ),
-            child: const Text('שמור ושלוט',
+            child: Text('שמור ושלוט',
                 style: TextStyle(fontWeight: FontWeight.w700)),
           ),
         ],
@@ -618,9 +618,9 @@ class _SwitchCardState extends State<_SwitchCard> {
           Icon(Icons.outlet_outlined,
               color: SwitchProtocol.tapoLocal.color, size: 20),
           const SizedBox(width: 10),
-          const Text('Tapo — כניסה',
+          Text('Tapo — כניסה',
               style: TextStyle(
-                  color: Colors.white,
+                  color: context.tText,
                   fontSize: 15,
                   fontWeight: FontWeight.w700)),
         ]),
@@ -628,9 +628,9 @@ class _SwitchCardState extends State<_SwitchCard> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'אותם פרטי חשבון שבאפליקציית TP-Link Tapo.',
-              style: TextStyle(color: Colors.white54, fontSize: 12),
+              style: TextStyle(color: context.tText2(0.54), fontSize: 12),
             ),
             const SizedBox(height: 16),
             _TuyaField(
@@ -653,15 +653,15 @@ class _SwitchCardState extends State<_SwitchCard> {
             Text(
               'הפרטים נשמרים רק במכשיר שלך.',
               style:
-                  TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 10),
+                  TextStyle(color: context.tText2(0.3), fontSize: 10),
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('ביטול',
-                style: TextStyle(color: Colors.white38)),
+            child: Text('ביטול',
+                style: TextStyle(color: context.tText2(0.38))),
           ),
           ElevatedButton(
             onPressed: () {
@@ -685,7 +685,7 @@ class _SwitchCardState extends State<_SwitchCard> {
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10)),
             ),
-            child: const Text('התחבר ושלוט',
+            child: Text('התחבר ושלוט',
                 style: TextStyle(fontWeight: FontWeight.w700)),
           ),
         ],
@@ -710,12 +710,12 @@ class _SwitchCardState extends State<_SwitchCard> {
       decoration: BoxDecoration(
         color: dev.isRegistered
             ? brandColor.withValues(alpha: 0.07)
-            : Colors.white.withValues(alpha: 0.04),
+            : context.tText2(0.04),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: dev.isRegistered
               ? brandColor.withValues(alpha: 0.35)
-              : Colors.white.withValues(alpha: 0.07),
+              : context.tText2(0.07),
           width: 1.2,
         ),
       ),
@@ -743,8 +743,8 @@ class _SwitchCardState extends State<_SwitchCard> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(dev.name,
-                          style: const TextStyle(
-                              color: Colors.white,
+                          style: TextStyle(
+                              color: context.tText,
                               fontSize: 14,
                               fontWeight: FontWeight.w600)),
                       Text(
@@ -752,8 +752,8 @@ class _SwitchCardState extends State<_SwitchCard> {
                           if (dev.ip != null) dev.ip!,
                           if (dev.model != null) dev.model!,
                         ].join(' · '),
-                        style: const TextStyle(
-                            color: Colors.white54, fontSize: 11),
+                        style: TextStyle(
+                            color: context.tText2(0.54), fontSize: 11),
                       ),
                     ],
                   ),
@@ -792,14 +792,14 @@ class _SwitchCardState extends State<_SwitchCard> {
               children: [
                 _Tag(dev.protocol.displayName, brandColor),
                 if (dev.channels.length > 1)
-                  _Tag('${dev.channels.length}ch', Colors.white54),
+                  _Tag('${dev.channels.length}ch', context.tText2(0.54)),
                 if (dev.hasPowerMonitor)
                   _Tag(
                     '⚡ ${dev.totalPowerWatts.toStringAsFixed(1)} W',
                     Colors.amber,
                   ),
                 if (dev.firmwareVersion != null)
-                  _Tag('fw ${dev.firmwareVersion}', Colors.white30),
+                  _Tag('fw ${dev.firmwareVersion}', context.tText2(0.3)),
                 // Show setup hint when credentials not yet supplied
                 if (dev.protocol == SwitchProtocol.tuyaLocal &&
                     (dev.connectionData['localKey'] as String?)?.isEmpty != false)
@@ -866,12 +866,12 @@ class _ChannelToggle extends StatelessWidget {
         decoration: BoxDecoration(
           color: isOn
               ? color.withValues(alpha: 0.18)
-              : Colors.white.withValues(alpha: 0.06),
+              : context.tText2(0.06),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: isOn
                 ? color.withValues(alpha: 0.55)
-                : Colors.white.withValues(alpha: 0.12),
+                : context.tText2(0.12),
             width: 1.2,
           ),
         ),
@@ -889,7 +889,7 @@ class _ChannelToggle extends StatelessWidget {
                 isOn
                     ? Icons.toggle_on_rounded
                     : Icons.toggle_off_rounded,
-                color: isOn ? color : Colors.white38,
+                color: isOn ? color : context.tText2(0.38),
                 size: 18,
               ),
             const SizedBox(width: 6),
@@ -899,7 +899,7 @@ class _ChannelToggle extends StatelessWidget {
               children: [
                 Text(channel.name,
                     style: TextStyle(
-                        color: isOn ? Colors.white : Colors.white54,
+                        color: isOn ? context.tText : context.tText2(0.54),
                         fontSize: 12,
                         fontWeight: FontWeight.w600)),
                 if (channel.powerWatts != null)
@@ -915,7 +915,7 @@ class _ChannelToggle extends StatelessWidget {
                     style: TextStyle(
                         color: isOn
                             ? color.withValues(alpha: 0.8)
-                            : Colors.white30,
+                            : context.tText2(0.3),
                         fontSize: 10),
                   ),
               ],
@@ -959,11 +959,11 @@ class _EmptyState extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(Icons.search_off_rounded,
-              color: Colors.white.withValues(alpha: 0.15), size: 52),
+              color: context.tText2(0.15), size: 52),
           const SizedBox(height: 16),
-          const Text('לא נמצאו מפסקים חכמים',
+          Text('לא נמצאו מפסקים חכמים',
               style: TextStyle(
-                  color: Colors.white38,
+                  color: context.tText2(0.38),
                   fontSize: 15,
                   fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
@@ -981,8 +981,8 @@ class _EmptyState extends StatelessWidget {
           const SizedBox(height: 20),
           ElevatedButton.icon(
             onPressed: onScan,
-            icon: const Icon(Icons.radar_rounded, size: 16),
-            label: const Text('סרוק שוב'),
+            icon: Icon(Icons.radar_rounded, size: 16),
+            label: Text('סרוק שוב'),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.black,
@@ -1027,13 +1027,13 @@ class _TuyaFieldState extends State<_TuyaField> {
     return TextField(
       controller: widget.controller,
       obscureText: widget.isKey && _obscure,
-      style: const TextStyle(
-          color: Colors.white, fontSize: 13, fontFamily: 'monospace'),
+      style: TextStyle(
+          color: context.tText, fontSize: 13, fontFamily: 'monospace'),
       decoration: InputDecoration(
         labelText: widget.label,
-        labelStyle: const TextStyle(color: Colors.white54, fontSize: 12),
+        labelStyle: TextStyle(color: context.tText2(0.54), fontSize: 12),
         hintText: widget.hint,
-        hintStyle: const TextStyle(color: Colors.white24, fontSize: 11),
+        hintStyle: TextStyle(color: context.tText2(0.24), fontSize: 11),
         prefixIcon: Icon(widget.icon, color: accent, size: 18),
         suffixIcon: widget.isKey
             ? IconButton(
@@ -1041,7 +1041,7 @@ class _TuyaFieldState extends State<_TuyaField> {
                     _obscure
                         ? Icons.visibility_outlined
                         : Icons.visibility_off_outlined,
-                    color: Colors.white38,
+                    color: context.tText2(0.38),
                     size: 18),
                 onPressed: () => setState(() => _obscure = !_obscure),
               )
@@ -1055,7 +1055,7 @@ class _TuyaFieldState extends State<_TuyaField> {
           borderSide: BorderSide(color: accent),
         ),
         filled: true,
-        fillColor: Colors.white.withValues(alpha: 0.04),
+        fillColor: context.tText2(0.04),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       ),

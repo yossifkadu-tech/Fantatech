@@ -143,7 +143,7 @@ class _SmartSwitchScanSheetState extends State<SmartSwitchScanSheet> {
       minChildSize: 0.4,
       maxChildSize: 0.92,
       builder: (_, ctrl) => Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: Color(0xFF12121E),
           borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
         ),
@@ -155,7 +155,7 @@ class _SmartSwitchScanSheetState extends State<SmartSwitchScanSheet> {
               child: Center(child: Container(
                 width: 40, height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.white24,
+                  color: context.tText2(0.24),
                   borderRadius: BorderRadius.circular(2)),
               )),
             ),
@@ -174,8 +174,8 @@ class _SmartSwitchScanSheetState extends State<SmartSwitchScanSheet> {
                   const Spacer(),
                   if (_done)
                     Text('${_found.length} נמצאו',
-                        style: const TextStyle(
-                            color: Colors.white54, fontSize: 12)),
+                        style: TextStyle(
+                            color: context.tText2(0.54), fontSize: 12)),
                 ],
               ),
             ),
@@ -189,7 +189,7 @@ class _SmartSwitchScanSheetState extends State<SmartSwitchScanSheet> {
                   children: [
                     LinearProgressIndicator(
                       value: _progress,
-                      backgroundColor: Colors.white12,
+                      backgroundColor: context.tText2(0.12),
                       valueColor: const AlwaysStoppedAnimation(Color(0xFF00B4D8)),
                       borderRadius: BorderRadius.circular(4),
                     ),
@@ -201,7 +201,7 @@ class _SmartSwitchScanSheetState extends State<SmartSwitchScanSheet> {
                               ? 'לא נמצאו מכשירים. ודא שהמכשירים מחוברים לאותה רשת WiFi'
                               : 'סריקה הסתיימה — ${_found.length} מכשירים',
                       style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.40),
+                          color: context.tText2(0.40),
                           fontSize: 11),
                     ),
                     const SizedBox(height: 12),
@@ -218,12 +218,12 @@ class _SmartSwitchScanSheetState extends State<SmartSwitchScanSheet> {
                   height: 46,
                   child: ElevatedButton.icon(
                     onPressed: _startScan,
-                    icon: const Icon(Icons.radar, size: 18),
-                    label: const Text('סרוק רשת WiFi',
+                    icon: Icon(Icons.radar, size: 18),
+                    label: Text('סרוק רשת WiFi',
                         style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF00B4D8),
-                      foregroundColor: Colors.white,
+                      foregroundColor: context.tText,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14)),
                     ),
@@ -236,8 +236,8 @@ class _SmartSwitchScanSheetState extends State<SmartSwitchScanSheet> {
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
                 child: OutlinedButton.icon(
                   onPressed: _startScan,
-                  icon: const Icon(Icons.refresh, size: 16),
-                  label: const Text('סרוק שוב'),
+                  icon: Icon(Icons.refresh, size: 16),
+                  label: Text('סרוק שוב'),
                   style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFF00B4D8),
                       side: const BorderSide(color: Color(0xFF00B4D8)),
@@ -308,7 +308,7 @@ class _SwitchTile extends StatelessWidget {
     SwitchBrand.shelly  => const Color(0xFF00B4D8),
     SwitchBrand.sonoff  => const Color(0xFFFF6B00),
     SwitchBrand.tuya    => const Color(0xFF00C896),
-    SwitchBrand.unknown => Colors.white38,
+    SwitchBrand.unknown => Colors.white.withValues(alpha: 0.38),
   };
 
   IconData get _brandIcon => switch (sw.brand) {
@@ -325,12 +325,12 @@ class _SwitchTile extends StatelessWidget {
       decoration: BoxDecoration(
         color: added
             ? _brandColor.withValues(alpha: 0.08)
-            : Colors.white.withValues(alpha: 0.04),
+            : context.tText2(0.04),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: added
               ? _brandColor.withValues(alpha: 0.40)
-              : Colors.white.withValues(alpha: 0.07),
+              : context.tText2(0.07),
           width: 1.2,
         ),
       ),
@@ -348,7 +348,7 @@ class _SwitchTile extends StatelessWidget {
         title: Text(
           sw.name,
           style: TextStyle(
-              color: added ? Colors.white : Colors.white.withValues(alpha: 0.9),
+              color: added ? context.tText : context.tText2(0.9),
               fontSize: 14,
               fontWeight: FontWeight.w600),
         ),
@@ -357,7 +357,7 @@ class _SwitchTile extends StatelessWidget {
           children: [
             Text(
               '${sw.ip}${sw.model != null ? " · ${sw.model}" : ""}',
-              style: const TextStyle(color: Colors.white54, fontSize: 11),
+              style: TextStyle(color: context.tText2(0.54), fontSize: 11),
             ),
             Row(
               children: [
@@ -414,10 +414,10 @@ class _EmptyState extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(Icons.search_off_rounded,
-              color: Colors.white.withValues(alpha: 0.15), size: 48),
+              color: context.tText2(0.15), size: 48),
           const SizedBox(height: 12),
-          const Text('לא נמצאו מפסקים חכמים',
-              style: TextStyle(color: Colors.white38, fontSize: 14)),
+          Text('לא נמצאו מפסקים חכמים',
+              style: TextStyle(color: context.tText2(0.38), fontSize: 14)),
           const SizedBox(height: 8),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -426,7 +426,7 @@ class _EmptyState extends StatelessWidget {
               'Shelly: ברירת המחדל הוא נקודת גישה בשם "shelly…"\n'
               'Sonoff: חייב להיות ב-LAN mode (firmware 3.6+)\n'
               'Tuya: חייב להיות מופעל',
-              style: const TextStyle(color: Colors.white24, fontSize: 11),
+              style: TextStyle(color: context.tText2(0.24), fontSize: 11),
               textAlign: TextAlign.center,
             ),
           ),

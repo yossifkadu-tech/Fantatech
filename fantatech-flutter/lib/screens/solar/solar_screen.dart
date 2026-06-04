@@ -68,7 +68,7 @@ class _SolarScreenState extends State<SolarScreen>
     final s = context.watch<AppState>().strings;
 
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: context.tBg,
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
@@ -82,17 +82,17 @@ class _SolarScreenState extends State<SolarScreen>
                     child: Container(
                       width: 38, height: 38,
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.07),
+                        color: context.tText2(0.07),
                         borderRadius: BorderRadius.circular(10)),
-                      child: const Icon(Icons.chevron_left,
-                          color: Colors.white, size: 22),
+                      child: Icon(Icons.chevron_left,
+                          color: context.tText, size: 22),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(s.solarTitle,
-                        style: const TextStyle(
-                            color: Colors.white,
+                        style: TextStyle(
+                            color: context.tText,
                             fontSize: 18,
                             fontWeight: FontWeight.bold)),
                   ),
@@ -101,11 +101,11 @@ class _SolarScreenState extends State<SolarScreen>
                     padding: const EdgeInsets.symmetric(
                         horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
-                      color: (_isConnected ? _kSolarGreen : Colors.white24)
+                      color: (_isConnected ? _kSolarGreen : context.tText2(0.24))
                           .withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
-                        color: (_isConnected ? _kSolarGreen : Colors.white24)
+                        color: (_isConnected ? _kSolarGreen : context.tText2(0.24))
                             .withValues(alpha: 0.35)),
                     ),
                     child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -113,13 +113,13 @@ class _SolarScreenState extends State<SolarScreen>
                         width: 6, height: 6,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: _isConnected ? _kSolarGreen : Colors.white38),
+                          color: _isConnected ? _kSolarGreen : context.tText2(0.38)),
                       ),
                       const SizedBox(width: 5),
                       Text(
                         _isConnected ? s.solarStatus : s.solarConnect,
                         style: TextStyle(
-                          color: _isConnected ? _kSolarGreen : Colors.white54,
+                          color: _isConnected ? _kSolarGreen : context.tText2(0.54),
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                         ),
@@ -169,7 +169,7 @@ class _SolarScreenState extends State<SolarScreen>
                           children: [
                             Text(s.solarProduction,
                                 style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.55),
+                                  color: context.tText2(0.55),
                                   fontSize: 13,
                                 )),
                             const SizedBox(height: 6),
@@ -178,7 +178,7 @@ class _SolarScreenState extends State<SolarScreen>
                               children: [
                                 Text(
                                   _productionKw.toStringAsFixed(1),
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     color: _kSolarYellow,
                                     fontSize: 52,
                                     fontWeight: FontWeight.bold,
@@ -190,7 +190,7 @@ class _SolarScreenState extends State<SolarScreen>
                                   padding: const EdgeInsets.only(bottom: 8),
                                   child: Text('kW',
                                       style: TextStyle(
-                                        color: Colors.white
+                                        color: context.tText
                                             .withValues(alpha: 0.50),
                                         fontSize: 18,
                                         fontWeight: FontWeight.w500,
@@ -294,17 +294,17 @@ class _SolarScreenState extends State<SolarScreen>
                 child: Container(
                   padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
-                    color: AppColors.darkCard,
+                    color: context.tCard,
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.07)),
+                        color: context.tText2(0.07)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(s.solarToday,
-                          style: const TextStyle(
-                              color: Colors.white,
+                          style: TextStyle(
+                              color: context.tText,
                               fontSize: 14,
                               fontWeight: FontWeight.w600)),
                       const SizedBox(height: 14),
@@ -323,7 +323,7 @@ class _SolarScreenState extends State<SolarScreen>
                         children: ['00', '06', '12', '18', '24']
                             .map((h) => Text(h,
                                 style: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.30),
+                                    color: context.tText2(0.30),
                                     fontSize: 10)))
                             .toList(),
                       ),
@@ -343,17 +343,17 @@ class _SolarScreenState extends State<SolarScreen>
                 child: Container(
                   padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
-                    color: AppColors.darkCard,
+                    color: context.tCard,
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.07)),
+                        color: context.tText2(0.07)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(s.solarConnect,
-                          style: const TextStyle(
-                              color: Colors.white,
+                          style: TextStyle(
+                              color: context.tText,
                               fontSize: 14,
                               fontWeight: FontWeight.w600)),
                       const SizedBox(height: 14),
@@ -398,7 +398,7 @@ class _SolarScreenState extends State<SolarScreen>
                             _isConnected
                                 ? s.solarStatus
                                 : '${s.solarConnect} · $_selectedProtocol',
-                            style: const TextStyle(
+                            style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600),
                           ),
@@ -465,7 +465,7 @@ class _MetricCard extends StatelessWidget {
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: AppColors.darkCard,
+          color: context.tCard,
           borderRadius: BorderRadius.circular(14),
           border:
               Border.all(color: color.withValues(alpha: 0.20)),
@@ -479,7 +479,7 @@ class _MetricCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(label,
               style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.40), fontSize: 10),
+                  color: context.tText2(0.40), fontSize: 10),
               textAlign: TextAlign.center),
           const SizedBox(height: 6),
           ClipRRect(
@@ -487,7 +487,7 @@ class _MetricCard extends StatelessWidget {
             child: LinearProgressIndicator(
               value: progress.clamp(0.0, 1.0),
               minHeight: 3,
-              backgroundColor: Colors.white.withValues(alpha: 0.08),
+              backgroundColor: context.tText2(0.08),
               valueColor: AlwaysStoppedAnimation(color),
             ),
           ),
@@ -513,22 +513,22 @@ class _ProtoChip extends StatelessWidget {
           decoration: BoxDecoration(
             color: selected
                 ? _kSolarYellow.withValues(alpha: 0.15)
-                : Colors.white.withValues(alpha: 0.05),
+                : context.tText2(0.05),
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
               color: selected
                   ? _kSolarYellow.withValues(alpha: 0.50)
-                  : Colors.white.withValues(alpha: 0.10),
+                  : context.tText2(0.10),
               width: 1.2,
             ),
           ),
           child: Row(mainAxisSize: MainAxisSize.min, children: [
             Icon(icon,
-                color: selected ? _kSolarYellow : Colors.white38, size: 14),
+                color: selected ? _kSolarYellow : context.tText2(0.38), size: 14),
             const SizedBox(width: 5),
             Text(label,
                 style: TextStyle(
-                  color: selected ? _kSolarYellow : Colors.white38,
+                  color: selected ? _kSolarYellow : context.tText2(0.38),
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                 )),
@@ -551,10 +551,10 @@ class _PowerFlowCard extends StatelessWidget {
         height: 160,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.darkCard,
+          color: context.tCard,
           borderRadius: BorderRadius.circular(18),
           border:
-              Border.all(color: Colors.white.withValues(alpha: 0.07)),
+              Border.all(color: context.tText2(0.07)),
         ),
         child: CustomPaint(
           painter: _FlowPainter(
