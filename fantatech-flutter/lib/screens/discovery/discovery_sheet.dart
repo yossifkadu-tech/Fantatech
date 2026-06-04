@@ -87,6 +87,41 @@ class _DiscoverySheetState extends State<DiscoverySheet> {
     );
   }
 
+  /// Explains how to bring a Matter device into the app (via a Matter hub).
+  void _showMatterHelp(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: context.tCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: Row(children: [
+          const Icon(Icons.hexagon_outlined, color: Color(0xFF7B6FCD), size: 22),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text('מכשיר Matter',
+                style: TextStyle(
+                    color: context.tText, fontWeight: FontWeight.bold)),
+          ),
+        ]),
+        content: Text(
+          'מכשירי Matter (כמו מנורת IKEA) מצורפים דרך רכזת Matter — לא ישירות '
+          'מהאפליקציה.\n\n'
+          'הדרך הפשוטה:\n'
+          '1. צרף את המנורה ל-DIRIGERA דרך אפליקציית IKEA Home smart.\n'
+          '2. כאן: גשרים → DIRIGERA → "ייבא מכשירים".\n'
+          'המנורה תופיע עם שליטה מלאה.',
+          style: TextStyle(color: context.tText2(0.7), fontSize: 13, height: 1.5),
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('הבנתי'),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// Add one discovered device to AppState and mark it as registered.
   void _addDevice(
     BuildContext context,
@@ -99,6 +134,14 @@ class _DiscoverySheetState extends State<DiscoverySheet> {
     final gw = _pairableGateway(d);
     if (gw != null) {
       _connectGateway(context, gw, d);
+      return;
+    }
+
+    // Matter devices can't be commissioned in-app — guide the user to pair
+    // them through a Matter hub (DIRIGERA / Apple / Google) and import.
+    final svc = (d.metadata['serviceType'] ?? '').toString().toLowerCase();
+    if (d.protocol == DiscoveryProtocol.matter || svc.contains('matter')) {
+      _showMatterHelp(context);
       return;
     }
 
