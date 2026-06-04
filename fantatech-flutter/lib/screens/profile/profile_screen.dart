@@ -220,24 +220,25 @@ class ProfileScreen extends StatelessWidget {
                 style: TextStyle(color: context.tText2(0.38), fontSize: 13)),
           ),
           const SizedBox(height: 8),
-          // Option 1 — Return to main (no sign out)
+          // Option 1 — Sign out, return to login screen (app stays open)
           _ExitOption(
-            icon: Icons.home_outlined,
+            icon: Icons.logout,
             color: AppColors.primary,
-            label: 'חזור לתפריט הראשי',
-            subtitle: 'נשאר מחובר, לא נדרשת כניסה מחדש',
-            onTap: () {
+            label: 'התנתק וחזור למסך הכניסה',
+            subtitle: 'מנתק את החשבון — כניסה מחדש תידרש',
+            onTap: () async {
               Navigator.pop(ctx); // close dialog
-              onSignOut(); // show login screen (session kept, no sign-out)
+              await UserService.signOut(); // clear session
+              onSignOut();        // → back to login screen (real auth required)
             },
           ),
           const SizedBox(height: 10),
           // Option 2 — Full exit (sign out + close app)
           _ExitOption(
-            icon: Icons.logout,
+            icon: Icons.power_settings_new,
             color: AppColors.unsecured,
             label: 'יציאה מלאה',
-            subtitle: 'מנתק חשבון — כניסה מחדש תידרש',
+            subtitle: 'מנתק וסוגר את האפליקציה',
             onTap: () async {
               Navigator.pop(ctx); // close dialog
               await UserService.signOut();
