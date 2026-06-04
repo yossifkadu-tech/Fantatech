@@ -49,6 +49,7 @@ const accentPresets = <Color>[
   Color(0xFFFF6B35), // Orange
   Color(0xFFE91E8C), // Pink
   Color(0xFF00B4D8), // Teal
+  Color(0xFFFFFFFF), // White
 ];
 
 // ─── AppThemePrefs ────────────────────────────────────────────────────────────

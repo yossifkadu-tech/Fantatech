@@ -2491,33 +2491,46 @@ class _AppearanceSheetState extends State<_AppearanceSheet> {
 
             // ── Accent Color ──────────────────────────────────────
             _sectionTitle(s.themeAccent.toUpperCase()),
-            Row(
-              children: accentPresets.map((c) {
-                final sel = _prefs.accent == c;
-                return GestureDetector(
-                  onTap: () => setState(() {
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                ...accentPresets.map((c) {
+                  final sel = _prefs.accent == c;
+                  final checkColor =
+                      c.computeLuminance() > 0.6 ? Colors.black : Colors.white;
+                  return GestureDetector(
+                    onTap: () => setState(() {
+                      _prefs = _prefs.copyWith(accent: c);
+                      _apply();
+                    }),
+                    child: Container(
+                      width: 36, height: 36,
+                      decoration: BoxDecoration(
+                        color: c,
+                        shape: BoxShape.circle,
+                        // Always show a hairline so white is visible on light bg.
+                        border: Border.all(
+                            color: sel ? context.tText : context.tText2(0.2),
+                            width: sel ? 2.5 : 1),
+                        boxShadow: sel
+                            ? [BoxShadow(color: c.withValues(alpha: 0.5), blurRadius: 8)]
+                            : [],
+                      ),
+                      child: sel ? Icon(Icons.check, color: checkColor, size: 16) : null,
+                    ),
+                  );
+                }),
+                // Custom color mixer
+                _ColorMixTile(
+                  selected: !accentPresets.contains(_prefs.accent),
+                  current: _prefs.accent,
+                  onPick: (c) => setState(() {
                     _prefs = _prefs.copyWith(accent: c);
                     _apply();
                   }),
-                  child: Container(
-                    margin: const EdgeInsets.only(right: 10),
-                    width: 36, height: 36,
-                    decoration: BoxDecoration(
-                      color: c,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                          color: sel ? context.tText : Colors.transparent,
-                          width: 2.5),
-                      boxShadow: sel
-                          ? [BoxShadow(color: c.withValues(alpha: 0.5), blurRadius: 8)]
-                          : [],
-                    ),
-                    child: sel
-                        ? Icon(Icons.check, color: context.tText, size: 16)
-                        : null,
-                  ),
-                );
-              }).toList(),
+                ),
+              ],
             ),
             const SizedBox(height: 22),
 
@@ -3386,5 +3399,146 @@ class _SettingsRow extends StatelessWidget {
         child,
       ],
     );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Custom accent color mixer
+// ─────────────────────────────────────────────────────────────
+class _ColorMixTile extends StatelessWidget {
+  final bool selected;
+  final Color current;
+  final ValueChanged<Color> onPick;
+  const _ColorMixTile({
+    required this.selected,
+    required this.current,
+    required this.onPick,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () async {
+        final picked = await showDialog<Color>(
+          context: context,
+          builder: (_) => _ColorMixerDialog(initial: current),
+        );
+        if (picked != null) onPick(picked);
+      },
+      child: Container(
+        width: 36, height: 36,
+        decoration: BoxDecoration(
+          gradient: const SweepGradient(colors: [
+            Color(0xFFFF0000), Color(0xFFFFFF00), Color(0xFF00FF00),
+            Color(0xFF00FFFF), Color(0xFF0000FF), Color(0xFFFF00FF),
+            Color(0xFFFF0000),
+          ]),
+          shape: BoxShape.circle,
+          border: Border.all(
+              color: selected ? context.tText : context.tText2(0.2),
+              width: selected ? 2.5 : 1),
+        ),
+        child: Icon(Icons.tune,
+            color: Colors.white,
+            size: 16,
+            shadows: const [Shadow(color: Colors.black54, blurRadius: 2)]),
+      ),
+    );
+  }
+}
+
+class _ColorMixerDialog extends StatefulWidget {
+  final Color initial;
+  const _ColorMixerDialog({required this.initial});
+
+  @override
+  State<_ColorMixerDialog> createState() => _ColorMixerDialogState();
+}
+
+class _ColorMixerDialogState extends State<_ColorMixerDialog> {
+  late double _r, _g, _b;
+
+  @override
+  void initState() {
+    super.initState();
+    _r = (widget.initial.r * 255.0).roundToDouble();
+    _g = (widget.initial.g * 255.0).roundToDouble();
+    _b = (widget.initial.b * 255.0).roundToDouble();
+  }
+
+  Color get _color => Color.fromARGB(255, _r.round(), _g.round(), _b.round());
+
+  @override
+  Widget build(BuildContext context) {
+    String hex = '#${_color.toARGB32().toRadixString(16).substring(2).toUpperCase()}';
+    return AlertDialog(
+      backgroundColor: context.tCard,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      title: Text('ערבוב צבע',
+          style: TextStyle(color: context.tText, fontWeight: FontWeight.bold),
+          textAlign: TextAlign.center),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Preview
+          Container(
+            width: double.infinity,
+            height: 56,
+            decoration: BoxDecoration(
+              color: _color,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: context.tText2(0.2)),
+            ),
+            alignment: Alignment.center,
+            child: Text(hex,
+                style: TextStyle(
+                    color: _color.computeLuminance() > 0.6
+                        ? Colors.black
+                        : Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'monospace')),
+          ),
+          const SizedBox(height: 12),
+          _slider('R', _r, const Color(0xFFE53935), (v) => setState(() => _r = v)),
+          _slider('G', _g, const Color(0xFF43A047), (v) => setState(() => _g = v)),
+          _slider('B', _b, const Color(0xFF1E88E5), (v) => setState(() => _b = v)),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text('ביטול', style: TextStyle(color: context.tText2(0.5))),
+        ),
+        ElevatedButton(
+          onPressed: () => Navigator.pop(context, _color),
+          style: ElevatedButton.styleFrom(backgroundColor: _color),
+          child: Text('בחר',
+              style: TextStyle(
+                  color: _color.computeLuminance() > 0.6
+                      ? Colors.black
+                      : Colors.white,
+                  fontWeight: FontWeight.w600)),
+        ),
+      ],
+    );
+  }
+
+  Widget _slider(String label, double value, Color color, ValueChanged<double> onCh) {
+    return Row(children: [
+      SizedBox(width: 16,
+          child: Text(label,
+              style: TextStyle(color: context.tText, fontWeight: FontWeight.bold))),
+      Expanded(
+        child: Slider(
+          value: value, min: 0, max: 255,
+          activeColor: color,
+          onChanged: onCh,
+        ),
+      ),
+      SizedBox(width: 30,
+          child: Text('${value.round()}',
+              textAlign: TextAlign.end,
+              style: TextStyle(color: context.tText2(0.7), fontSize: 12))),
+    ]);
   }
 }

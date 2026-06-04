@@ -35,6 +35,10 @@ class _LoginScreenState extends State<LoginScreen>
   @override
   void initState() {
     super.initState();
+    // Remember the last email used so re-login is one tap away.
+    if (UserService.lastEmail != null) {
+      _emailCtrl.text = UserService.lastEmail!;
+    }
     _animCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 700),

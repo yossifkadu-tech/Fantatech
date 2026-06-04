@@ -42,6 +42,9 @@ class UserService {
   static final List<AppUser> _users = [];
   static AppUser? _currentUser;
 
+  /// Last email used to sign in / register — prefilled on the login screen.
+  static String? lastEmail;
+
   static AppUser?  get currentUser  => _currentUser;
   static bool      get isLoggedIn   => _currentUser != null;
   static AppUser?  get homeManager  =>
@@ -57,10 +60,17 @@ class UserService {
     await _loadCsv();
     await _seedDefaultsIfEmpty();
     final prefs = await SharedPreferences.getInstance();
+    lastEmail = prefs.getString('last_email');
     final savedId = prefs.getString(_prefCurrentUserId);
     if (savedId != null) {
       _currentUser = _users.where((u) => u.id == savedId).firstOrNull;
     }
+  }
+
+  static Future<void> _rememberEmail(String email) async {
+    lastEmail = email;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('last_email', email);
   }
 
   /// Creates the default manager account on first run (empty store).
@@ -150,6 +160,7 @@ class UserService {
     }
     _currentUser = user;
     await _persistSession(user.id);
+    await _rememberEmail(e);
     return user;
   }
 
@@ -186,6 +197,7 @@ class UserService {
     await _saveCsv();
     _currentUser = user;
     await _persistSession(user.id);
+    await _rememberEmail(e);
     return user;
   }
 
