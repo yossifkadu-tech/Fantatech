@@ -403,7 +403,7 @@ class _StoreScreenState extends State<StoreScreen> {
                     height: 175,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [context.tCard, Color(0xFF16213E)],
+                        colors: [context.tCard, context.tCardAlt],
                         begin: Alignment.centerLeft,
                         end: Alignment.centerRight,
                       ),
@@ -483,8 +483,8 @@ class _StoreScreenState extends State<StoreScreen> {
                                           BorderRadius.circular(20),
                                     ),
                                     child: Text(s.storeNotifyMe,
-                                        style: TextStyle(
-                                            color: context.tText,
+                                        style: const TextStyle(
+                                            color: Colors.white,
                                             fontSize: 12,
                                             fontWeight: FontWeight.w600)),
                                   ),
