@@ -16,6 +16,7 @@ import '../../models/app_state.dart';
 import '../../services/gateways/gateway_manager.dart';
 import '../../services/gateways/gateway_model.dart';
 import '../../services/gateways/gateway_types.dart';
+import '../../services/gateways/clients/dirigera_client.dart';
 import '../../theme/app_theme.dart';
 import 'gateway_connect_sheet.dart';
 
@@ -196,6 +197,31 @@ class GatewayHubScreen extends StatelessWidget {
       backgroundColor: added > 0 ? AppColors.secured : context.tText2(0.24),
       duration: const Duration(seconds: 3),
     ));
+
+    // Diagnostic: show exactly what the DIRIGERA reported (helps identify
+    // sensors that aren't mapped / aren't paired to the hub).
+    if (conn.type == GatewayType.dirigera &&
+        DIRIGERAGatewayClient.lastRawSummary.isNotEmpty) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: context.tCard,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text('מכשירים שהרכזת מדווחת',
+              style: TextStyle(color: context.tText, fontSize: 16, fontWeight: FontWeight.bold)),
+          content: SingleChildScrollView(
+            child: Text(DIRIGERAGatewayClient.lastRawSummary,
+                style: TextStyle(color: context.tText2(0.8), fontSize: 13, height: 1.5)),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('סגור'),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   void _confirmDisconnect(

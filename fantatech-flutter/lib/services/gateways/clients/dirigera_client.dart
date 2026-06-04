@@ -166,6 +166,7 @@ class DIRIGERAGatewayClient {
       }
 
       final devices = <Device>[];
+      final rawSummary = <String>[];
       for (final item in list) {
         final d = item as Map<String, dynamic>;
         final attrs = (d['attributes'] as Map?)?.cast<String, dynamic>() ?? {};
@@ -173,6 +174,8 @@ class DIRIGERAGatewayClient {
             ?? attrs['model'] as String?
             ?? 'IKEA Device';
         final dType = d['deviceType'] as String? ?? '';
+        // Diagnostic: record every raw device the hub reports.
+        rawSummary.add('• $dType — $name');
         final appType = _mapType(dType, attrs);
         if (appType == null) continue;
 
@@ -198,11 +201,17 @@ class DIRIGERAGatewayClient {
         ));
       }
 
+      lastRawSummary = rawSummary.isEmpty
+          ? 'הרכזת לא החזירה מכשירים כלל'
+          : rawSummary.join('\n');
       return GatewayImportResult.success(devices);
     } catch (e) {
       return GatewayImportResult.failure('שגיאת DIRIGERA: $e');
     }
   }
+
+  /// Raw deviceType+name list from the last fetchDevices() — for diagnostics.
+  static String lastRawSummary = '';
 
   // ── Device control ─────────────────────────────────────────────────────────
   //
