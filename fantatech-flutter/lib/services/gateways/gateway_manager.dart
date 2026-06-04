@@ -309,6 +309,19 @@ class GatewayManager extends ChangeNotifier {
 
   // ── Import devices ─────────────────────────────────────────────────────────
 
+  /// Quietly re-fetches devices from every connected gateway (no UI status
+  /// changes). Used by the background leak/state monitor.
+  Future<List<Device>> fetchAllCurrentDevices() async {
+    final all = <Device>[];
+    for (final conn in connections.where((c) => c.isConnected)) {
+      try {
+        final result = await _doImport(conn);
+        if (result.isSuccess) all.addAll(result.devices);
+      } catch (_) {/* ignore — best-effort poll */}
+    }
+    return all;
+  }
+
   Future<List<Device>> importDevices(String gatewayId) async {
     final conn = connections.firstWhere((c) => c.id == gatewayId,
         orElse: () => throw StateError('Gateway not found'));

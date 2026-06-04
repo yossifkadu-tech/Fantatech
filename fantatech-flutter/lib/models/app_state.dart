@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -112,7 +113,83 @@ class AppState extends ChangeNotifier {
   AppThemePrefs _themePrefs = const AppThemePrefs();
   bool _gridLayout = false; // home screen layout: false = classic, true = grid
   GatewayManager? _gateways;
-  void attachGateways(GatewayManager m) => _gateways = m;
+  void attachGateways(GatewayManager m) {
+    _gateways = m;
+    _startDeviceMonitor();
+  }
+
+  // ── Live device monitor (leak / sensor alerts) ───────────────────────────
+  Timer? _monitorTimer;
+
+  @override
+  void dispose() {
+    _monitorTimer?.cancel();
+    super.dispose();
+  }
+
+  /// Polls connected gateways every 60s and merges fresh device state so
+  /// sensors (e.g. water-leak) raise an alert the moment they trigger.
+  void _startDeviceMonitor() {
+    _monitorTimer?.cancel();
+    _monitorTimer = Timer.periodic(const Duration(seconds: 60), (_) async {
+      final gw = _gateways;
+      if (gw == null || gw.connections.where((c) => c.isConnected).isEmpty) {
+        return;
+      }
+      final fresh = await gw.fetchAllCurrentDevices();
+      _mergeFreshDevices(fresh);
+    });
+  }
+
+  void _mergeFreshDevices(List<Device> fresh) {
+    var changed = false;
+    for (final f in fresh) {
+      final idx = _devices.indexWhere((d) => d.id == f.id);
+      if (idx == -1) continue;
+      final cur = _devices[idx];
+      final wasDetected = cur.attributes['detected'] == true;
+      final nowDetected = f.attributes['detected'] == true;
+
+      cur.status     = f.status;
+      cur.isOn       = f.isOn;
+      cur.attributes = {...cur.attributes, ...f.attributes};
+      changed = true;
+
+      // Rising edge on a sensor → raise an alert.
+      if (!wasDetected && nowDetected) {
+        _raiseSensorAlert(cur);
+      }
+    }
+    if (changed) notifyListeners();
+  }
+
+  /// True for ~30s after a leak is detected, so the UI can show a banner.
+  bool _leakAlertActive = false;
+  String _leakAlertName = '';
+  bool   get leakAlertActive => _leakAlertActive;
+  String get leakAlertName   => _leakAlertName;
+  void dismissLeakAlert() {
+    _leakAlertActive = false;
+    notifyListeners();
+  }
+
+  void _raiseSensorAlert(Device d) {
+    final isLeak = d.type == DeviceType.waterLeakSensor;
+    final title = isLeak
+        ? '⚠️ זוהתה נזילת מים — ${d.name}'
+        : '⚠️ התראה — ${d.name}';
+    _appNotifications.insert(0, AppNotification(
+      id: 'alert_${d.id}_${DateTime.now().millisecondsSinceEpoch}',
+      title: title,
+      deviceId: d.id,
+      deviceType: d.type,
+      timestamp: DateTime.now(),
+    ));
+    if (isLeak) {
+      _leakAlertActive = true;
+      _leakAlertName = d.name;
+    }
+  }
   AppLocale _locale = AppLocale.hebrew;
   UserPlan _userPlan = UserPlan.advancedPlus; // default for demo
   AdTrack _adTrack = AdTrack.featured;

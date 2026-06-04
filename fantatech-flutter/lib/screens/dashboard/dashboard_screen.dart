@@ -484,6 +484,10 @@ class DashboardScreen extends StatelessWidget {
             // ── Top bar ──────────────────────────────────────
             SliverToBoxAdapter(child: _TopBar()),
 
+            // ── Water-leak alert banner (urgent) ─────────────
+            if (state.leakAlertActive)
+              SliverToBoxAdapter(child: _LeakBanner(name: state.leakAlertName)),
+
             // ── Welcome + security status ────────────────────
             SliverToBoxAdapter(
               child: _WelcomeCard(
@@ -589,6 +593,53 @@ class DashboardScreen extends StatelessWidget {
             const SliverToBoxAdapter(child: SizedBox(height: 90)),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ──────────────────────────────────────────────────────────────
+//  Water-leak alert banner — urgent, dismissable
+// ──────────────────────────────────────────────────────────────
+class _LeakBanner extends StatelessWidget {
+  final String name;
+  const _LeakBanner({required this.name});
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.read<AppState>();
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.unsecured.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.unsecured, width: 1.5),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.water_damage, color: AppColors.unsecured, size: 26),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('זוהתה נזילת מים!',
+                    style: TextStyle(
+                        color: AppColors.unsecured,
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold)),
+                Text(name,
+                    style: TextStyle(
+                        color: context.tText2(0.7), fontSize: 12)),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: Icon(Icons.close, color: context.tText2(0.6), size: 20),
+            onPressed: state.dismissLeakAlert,
+          ),
+        ],
       ),
     );
   }
@@ -711,6 +762,8 @@ class _GridHome extends StatelessWidget {
         child: CustomScrollView(
           slivers: [
             SliverToBoxAdapter(child: _TopBar()),
+            if (state.leakAlertActive)
+              SliverToBoxAdapter(child: _LeakBanner(name: state.leakAlertName)),
             SliverToBoxAdapter(
               child: _WelcomeCard(
                 isSecured: state.isSecured,
