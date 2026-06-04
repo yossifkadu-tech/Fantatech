@@ -29,7 +29,7 @@ class RoomsScreen extends StatelessWidget {
     final s = state.strings;
 
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: context.tBg,
       body: SafeArea(
         child: Column(
           children: [
@@ -43,14 +43,14 @@ class RoomsScreen extends StatelessWidget {
                     child: Container(
                       width: 38, height: 38,
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.07),
+                        color: context.tText2(0.07),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(
                         state.isRtl
                             ? Icons.chevron_right
                             : Icons.chevron_left,
-                        color: Colors.white,
+                        color: context.tText,
                         size: 22,
                       ),
                     ),
@@ -59,8 +59,8 @@ class RoomsScreen extends StatelessWidget {
                   Expanded(
                     child: Text(
                       s.roomManagement,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: context.tText,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
@@ -77,7 +77,7 @@ class RoomsScreen extends StatelessWidget {
                         border: Border.all(
                           color: AppColors.primary.withValues(alpha: 0.35)),
                       ),
-                      child: const Icon(Icons.add,
+                      child: Icon(Icons.add,
                           color: AppColors.primary, size: 20),
                     ),
                   ),
@@ -92,7 +92,7 @@ class RoomsScreen extends StatelessWidget {
                 Text(
                   '${state.rooms.length} ${s.roomsUnit}',
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.40),
+                    color: context.tText2(0.40),
                     fontSize: 12,
                   ),
                 ),
@@ -156,7 +156,7 @@ class RoomsScreen extends StatelessWidget {
   ) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.darkCard,
+      backgroundColor: context.tCard,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
@@ -178,7 +178,7 @@ class RoomsScreen extends StatelessWidget {
   }) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.darkCard,
+      backgroundColor: context.tCard,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
@@ -211,7 +211,7 @@ class RoomsScreen extends StatelessWidget {
       int index, String name) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.darkCard,
+      backgroundColor: context.tCard,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => Padding(
@@ -222,14 +222,14 @@ class RoomsScreen extends StatelessWidget {
             Container(
               width: 36, height: 4,
               decoration: BoxDecoration(
-                color: Colors.white24,
+                color: context.tText2(0.24),
                 borderRadius: BorderRadius.circular(2)),
             ),
             const SizedBox(height: 20),
             Text(
               '${s.deleteRoom} "$name"?',
-              style: const TextStyle(
-                color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                color: context.tText, fontSize: 16, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
@@ -240,12 +240,12 @@ class RoomsScreen extends StatelessWidget {
                   child: Container(
                     height: 46,
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.07),
+                      color: context.tText2(0.07),
                       borderRadius: BorderRadius.circular(12)),
                     child: Center(
                         child: Text(s.cancel,
                             style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.7)))),
+                                color: context.tText2(0.7)))),
                   ),
                 ),
               ),
@@ -273,7 +273,7 @@ class RoomsScreen extends StatelessWidget {
                           color: AppColors.unsecured.withValues(alpha: 0.35))),
                     child: Center(
                         child: Text(s.delete,
-                            style: const TextStyle(
+                            style: TextStyle(
                                 color: AppColors.unsecured,
                                 fontWeight: FontWeight.w600))),
                   ),
@@ -320,9 +320,9 @@ class _RoomTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: AppColors.darkCard,
+        color: context.tCard,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
+        border: Border.all(color: context.tText2(0.07)),
       ),
       child: Row(
         children: [
@@ -343,14 +343,14 @@ class _RoomTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(name,
-                    style: const TextStyle(
-                        color: Colors.white,
+                    style: TextStyle(
+                        color: context.tText,
                         fontSize: 15,
                         fontWeight: FontWeight.w600)),
                 Text(
                   '$deviceCount ${s.devicesTitle}',
                   style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.38),
+                      color: context.tText2(0.38),
                       fontSize: 12),
                 ),
               ],
@@ -364,11 +364,11 @@ class _RoomTile extends StatelessWidget {
               width: 34, height: 34,
               margin: const EdgeInsets.only(right: 8),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.06),
+                color: context.tText2(0.06),
                 borderRadius: BorderRadius.circular(9),
               ),
-              child: const Icon(Icons.edit_outlined,
-                  color: Colors.white54, size: 16),
+              child: Icon(Icons.edit_outlined,
+                  color: context.tText2(0.54), size: 16),
             ),
           ),
 
@@ -381,15 +381,15 @@ class _RoomTile extends StatelessWidget {
                 color: AppColors.unsecured.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(9),
               ),
-              child: const Icon(Icons.delete_outline,
+              child: Icon(Icons.delete_outline,
                   color: AppColors.unsecured, size: 16),
             ),
           ),
 
           // Drag handle
           const SizedBox(width: 8),
-          const Icon(Icons.drag_handle_rounded,
-              color: Colors.white24, size: 18),
+          Icon(Icons.drag_handle_rounded,
+              color: context.tText2(0.24), size: 18),
         ],
       ),
     ),
@@ -431,7 +431,7 @@ class _RoomDevicesSheet extends StatelessWidget {
               child: Container(
                 width: 40, height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.white24,
+                  color: context.tText2(0.24),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -454,14 +454,14 @@ class _RoomDevicesSheet extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(roomName,
-                        style: const TextStyle(
-                            color: Colors.white,
+                        style: TextStyle(
+                            color: context.tText,
                             fontSize: 17,
                             fontWeight: FontWeight.bold)),
                     Text(
                       '${devices.length} ${s.devicesTitle}',
                       style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.4),
+                          color: context.tText2(0.4),
                           fontSize: 12),
                     ),
                   ],
@@ -480,17 +480,17 @@ class _RoomDevicesSheet extends StatelessWidget {
                           Container(
                             width: 56, height: 56,
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.04),
+                              color: context.tText2(0.04),
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(Icons.devices_outlined,
-                                color: Colors.white24, size: 28),
+                            child: Icon(Icons.devices_outlined,
+                                color: context.tText2(0.24), size: 28),
                           ),
                           const SizedBox(height: 10),
                           Text(
                             s.noDevicesInRoom,
                             style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.35),
+                              color: context.tText2(0.35),
                               fontSize: 13,
                             ),
                           ),
@@ -507,10 +507,10 @@ class _RoomDevicesSheet extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 14, vertical: 12),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.04),
+                            color: context.tText2(0.04),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.07)),
+                                color: context.tText2(0.07)),
                           ),
                           child: Row(children: [
                             Container(
@@ -518,7 +518,7 @@ class _RoomDevicesSheet extends StatelessWidget {
                               decoration: BoxDecoration(
                                 color: (d.isOn
                                         ? AppColors.primary
-                                        : Colors.white38)
+                                        : context.tText2(0.38))
                                     .withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(10),
                               ),
@@ -526,15 +526,15 @@ class _RoomDevicesSheet extends StatelessWidget {
                                 _iconForType(d.type),
                                 color: d.isOn
                                     ? AppColors.primary
-                                    : Colors.white38,
+                                    : context.tText2(0.38),
                                 size: 18,
                               ),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(d.name,
-                                  style: const TextStyle(
-                                      color: Colors.white,
+                                  style: TextStyle(
+                                      color: context.tText,
                                       fontWeight: FontWeight.w500)),
                             ),
                             Container(
@@ -542,7 +542,7 @@ class _RoomDevicesSheet extends StatelessWidget {
                               decoration: BoxDecoration(
                                 color: d.isOn
                                     ? AppColors.secured
-                                    : Colors.white24,
+                                    : context.tText2(0.24),
                                 shape: BoxShape.circle,
                               ),
                             ),
@@ -631,7 +631,7 @@ class _RoomEditSheetState extends State<_RoomEditSheet> {
             child: Container(
               width: 40, height: 4,
               decoration: BoxDecoration(
-                color: Colors.white24,
+                color: context.tText2(0.24),
                 borderRadius: BorderRadius.circular(2)),
             ),
           ),
@@ -640,31 +640,31 @@ class _RoomEditSheetState extends State<_RoomEditSheet> {
           // Title
           Text(
             widget.isEdit ? s.editRoom : s.addRoom,
-            style: const TextStyle(
-              color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              color: context.tText, fontSize: 17, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
 
           // Name input
           TextField(
             controller: _nameCtrl,
-            style: const TextStyle(color: Colors.white, fontSize: 14),
+            style: TextStyle(color: context.tText, fontSize: 14),
             decoration: InputDecoration(
               hintText: s.roomNameHint,
-              hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.30)),
-              prefixIcon: const Icon(Icons.drive_file_rename_outline,
-                  color: Colors.white38, size: 18),
+              hintStyle: TextStyle(color: context.tText2(0.30)),
+              prefixIcon: Icon(Icons.drive_file_rename_outline,
+                  color: context.tText2(0.38), size: 18),
               filled: true,
-              fillColor: Colors.white.withValues(alpha: 0.05),
+              fillColor: context.tText2(0.05),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide:
-                    BorderSide(color: Colors.white.withValues(alpha: 0.10)),
+                    BorderSide(color: context.tText2(0.10)),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide:
-                    BorderSide(color: Colors.white.withValues(alpha: 0.10)),
+                    BorderSide(color: context.tText2(0.10)),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -679,7 +679,7 @@ class _RoomEditSheetState extends State<_RoomEditSheet> {
           Text(
             s.roomIconLabel,
             style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.55),
+                color: context.tText2(0.55),
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.8),
@@ -699,18 +699,18 @@ class _RoomEditSheetState extends State<_RoomEditSheet> {
                   decoration: BoxDecoration(
                     color: selected
                         ? AppColors.primary.withValues(alpha: 0.20)
-                        : Colors.white.withValues(alpha: 0.06),
+                        : context.tText2(0.06),
                     borderRadius: BorderRadius.circular(11),
                     border: Border.all(
                       color: selected
                           ? AppColors.primary
-                          : Colors.white.withValues(alpha: 0.08),
+                          : context.tText2(0.08),
                       width: selected ? 1.8 : 1.0,
                     ),
                   ),
                   child: Icon(
                     iconData,
-                    color: selected ? AppColors.primary : Colors.white38,
+                    color: selected ? AppColors.primary : context.tText2(0.38),
                     size: 20,
                   ),
                 ),
@@ -732,14 +732,14 @@ class _RoomEditSheetState extends State<_RoomEditSheet> {
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
+                foregroundColor: context.tText,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14)),
               ),
               child: Text(
                 s.save,
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 15, fontWeight: FontWeight.w600),
               ),
             ),
@@ -768,17 +768,17 @@ class _EmptyRooms extends StatelessWidget {
           Container(
             width: 70, height: 70,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.04),
+              color: context.tText2(0.04),
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
+              border: Border.all(color: context.tText2(0.07)),
             ),
-            child: const Icon(Icons.meeting_room_outlined,
-                color: Colors.white24, size: 34),
+            child: Icon(Icons.meeting_room_outlined,
+                color: context.tText2(0.24), size: 34),
           ),
           const SizedBox(height: 16),
           Text(s.roomManagement,
-              style: const TextStyle(
-                  color: Colors.white,
+              style: TextStyle(
+                  color: context.tText,
                   fontSize: 16,
                   fontWeight: FontWeight.bold)),
           const SizedBox(height: 24),
@@ -791,11 +791,11 @@ class _EmptyRooms extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
-                const Icon(Icons.add, color: Colors.white, size: 18),
+                Icon(Icons.add, color: context.tText, size: 18),
                 const SizedBox(width: 8),
                 Text(s.addRoom,
-                    style: const TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.w600)),
+                    style: TextStyle(
+                        color: context.tText, fontWeight: FontWeight.w600)),
               ]),
             ),
           ),

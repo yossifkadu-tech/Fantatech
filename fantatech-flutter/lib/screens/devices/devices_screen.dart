@@ -30,7 +30,7 @@ class _DevicesScreenState extends State<DevicesScreen> {
 
   List<_CategoryMeta> _buildCategories(S s, List<Device> devices) {
     final cats = <_CategoryMeta>[
-      _CategoryMeta(null, s.allDevices, Icons.grid_view_outlined, Colors.white70),
+      _CategoryMeta(null, s.allDevices, Icons.grid_view_outlined, context.tText2(0.7)),
     ];
     if (devices.any((d) => d.type == DeviceType.light))
       cats.add(_CategoryMeta(DeviceType.light, s.lightsCategory, Icons.lightbulb_outlined, AppColors.lightColor));
@@ -90,7 +90,7 @@ class _DevicesScreenState extends State<DevicesScreen> {
     final onCount = filtered.where((d) => d.isOn).length;
 
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: context.tBg,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -101,8 +101,8 @@ class _DevicesScreenState extends State<DevicesScreen> {
               child: Row(
                 children: [
                   Text(s.devicesTitle,
-                    style: const TextStyle(
-                      color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+                    style: TextStyle(
+                      color: context.tText, fontSize: 22, fontWeight: FontWeight.bold)),
                   const Spacer(),
                   // Gateway hub button
                   GestureDetector(
@@ -115,7 +115,7 @@ class _DevicesScreenState extends State<DevicesScreen> {
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(color: const Color(0xFF18BCEC).withValues(alpha: 0.28)),
                       ),
-                      child: const Icon(Icons.hub_outlined,
+                      child: Icon(Icons.hub_outlined,
                           color: Color(0xFF18BCEC), size: 19),
                     ),
                   ),
@@ -130,7 +130,7 @@ class _DevicesScreenState extends State<DevicesScreen> {
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
                       ),
-                      child: const Icon(Icons.radar, color: AppColors.primary, size: 20),
+                      child: Icon(Icons.radar, color: AppColors.primary, size: 20),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -144,7 +144,7 @@ class _DevicesScreenState extends State<DevicesScreen> {
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(color: AppColors.primary.withValues(alpha: 0.35)),
                       ),
-                      child: const Icon(Icons.add, color: AppColors.primary, size: 22),
+                      child: Icon(Icons.add, color: AppColors.primary, size: 22),
                     ),
                   ),
                 ],
@@ -178,12 +178,12 @@ class _DevicesScreenState extends State<DevicesScreen> {
                           decoration: BoxDecoration(
                             color: selected
                                 ? cat.color.withValues(alpha: 0.18)
-                                : AppColors.darkCard,
+                                : context.tCard,
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(
                               color: selected
                                   ? cat.color.withValues(alpha: 0.55)
-                                  : Colors.white.withValues(alpha: 0.09),
+                                  : context.tText2(0.09),
                               width: 1.2,
                             ),
                           ),
@@ -191,16 +191,16 @@ class _DevicesScreenState extends State<DevicesScreen> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(cat.icon, color: selected ? cat.color : Colors.white38, size: 18),
+                              Icon(cat.icon, color: selected ? cat.color : context.tText2(0.38), size: 18),
                               const SizedBox(height: 3),
                               Text(cat.label,
                                 style: TextStyle(
-                                  color: selected ? cat.color : Colors.white38,
+                                  color: selected ? cat.color : context.tText2(0.38),
                                   fontSize: 10, fontWeight: FontWeight.w600),
                                 maxLines: 1, overflow: TextOverflow.ellipsis),
                               Text('$count',
                                 style: TextStyle(
-                                  color: selected ? cat.color.withValues(alpha: 0.75) : Colors.white24,
+                                  color: selected ? cat.color.withValues(alpha: 0.75) : context.tText2(0.24),
                                   fontSize: 10)),
                             ],
                           ),
@@ -230,15 +230,15 @@ class _DevicesScreenState extends State<DevicesScreen> {
                           duration: const Duration(milliseconds: 180),
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                           decoration: BoxDecoration(
-                            color: selected ? AppColors.primary : AppColors.darkCard,
+                            color: selected ? AppColors.primary : context.tCard,
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
                               color: selected
                                   ? AppColors.primary
-                                  : Colors.white.withValues(alpha: 0.09)),
+                                  : context.tText2(0.09)),
                           ),
                           child: Text(label, style: TextStyle(
-                            color: selected ? Colors.white : Colors.white.withValues(alpha: 0.5),
+                            color: selected ? context.tText : context.tText2(0.5),
                             fontSize: 12, fontWeight: selected ? FontWeight.w600 : FontWeight.normal)),
                         ),
                       );
@@ -253,12 +253,12 @@ class _DevicesScreenState extends State<DevicesScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(children: [
                   Text('${filtered.length} ${s.devicesTitle}',
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.4),
+                    style: TextStyle(color: context.tText2(0.4),
                         fontSize: 12, fontWeight: FontWeight.w500)),
                   if (onCount > 0) ...[
                     const SizedBox(width: 10),
                     Container(width: 4, height: 4,
-                        decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white24)),
+                        decoration: BoxDecoration(shape: BoxShape.circle, color: context.tText2(0.24))),
                     const SizedBox(width: 10),
                     Text('$onCount ${s.devicesOn}',
                       style: TextStyle(color: AppColors.secured.withValues(alpha: 0.8),
@@ -273,7 +273,7 @@ class _DevicesScreenState extends State<DevicesScreen> {
                 child: filtered.isEmpty
                     ? Center(
                         child: Text(s.noResults,
-                          style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 14)))
+                          style: TextStyle(color: context.tText2(0.3), fontSize: 14)))
                     : GridView.builder(
                         padding: const EdgeInsets.fromLTRB(16, 0, 16, 30),
                         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -302,7 +302,7 @@ class _DevicesScreenState extends State<DevicesScreen> {
   void _showDetail(BuildContext context, Device d, AppState state, S s) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.darkCard,
+      backgroundColor: context.tCard,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
@@ -331,22 +331,22 @@ class _EmptyState extends StatelessWidget {
             Container(
               width: 80, height: 80,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.04),
+                color: context.tText2(0.04),
                 shape: BoxShape.circle,
-                border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                border: Border.all(color: context.tText2(0.08)),
               ),
-              child: const Icon(Icons.devices_outlined, color: Colors.white24, size: 38),
+              child: Icon(Icons.devices_outlined, color: context.tText2(0.24), size: 38),
             ),
             const SizedBox(height: 20),
             Text(
               s.noDevicesConnected,
-              style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
+              style: TextStyle(color: context.tText, fontSize: 17, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
               s.scanToDiscover,
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 13, height: 1.55),
+              style: TextStyle(color: context.tText2(0.4), fontSize: 13, height: 1.55),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 28),
@@ -360,10 +360,10 @@ class _EmptyState extends StatelessWidget {
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  const Icon(Icons.radar, color: Colors.white, size: 18),
+                  Icon(Icons.radar, color: context.tText, size: 18),
                   const SizedBox(width: 10),
                   Text(s.scanFindDevices,
-                    style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                    style: TextStyle(color: context.tText, fontSize: 14, fontWeight: FontWeight.bold)),
                 ]),
               ),
             ),
@@ -374,10 +374,10 @@ class _EmptyState extends StatelessWidget {
               child: Text(
                 s.addDeviceBtn,
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.4),
+                  color: context.tText2(0.4),
                   fontSize: 13,
                   decoration: TextDecoration.underline,
-                  decorationColor: Colors.white.withValues(alpha: 0.25),
+                  decorationColor: context.tText2(0.25),
                 ),
               ),
             ),
@@ -463,12 +463,12 @@ class _DeviceCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: AppColors.darkCard,
+          color: context.tCard,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
             color: isOn
                 ? color.withValues(alpha: 0.35)
-                : Colors.white.withValues(alpha: 0.07),
+                : context.tText2(0.07),
             width: 1.2,
           ),
         ),
@@ -486,12 +486,12 @@ class _DeviceCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: isOn
                         ? color.withValues(alpha: 0.18)
-                        : Colors.white.withValues(alpha: 0.07),
+                        : context.tText2(0.07),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Center(
                     child: Icon(_icon,
-                      color: isOn ? color : Colors.white54,
+                      color: isOn ? color : context.tText2(0.54),
                       size: 22),
                   ),
                 ),
@@ -501,7 +501,7 @@ class _DeviceCard extends StatelessWidget {
                     shape: BoxShape.circle,
                     color: device.status == DeviceStatus.online
                         ? (isOn ? color : AppColors.secured.withValues(alpha: 0.60))
-                        : Colors.white24,
+                        : context.tText2(0.24),
                   ),
                 ),
               ],
@@ -511,8 +511,8 @@ class _DeviceCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(device.name,
-                  style: const TextStyle(
-                    color: Colors.white, fontSize: 12.5,
+                  style: TextStyle(
+                    color: context.tText, fontSize: 12.5,
                     fontWeight: FontWeight.w600, height: 1.3),
                   maxLines: 2, overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 3),
@@ -521,7 +521,7 @@ class _DeviceCard extends StatelessWidget {
                   style: TextStyle(
                     color: isOn
                         ? color.withValues(alpha: 0.85)
-                        : Colors.white.withValues(alpha: 0.30),
+                        : context.tText2(0.30),
                     fontSize: 11,
                   ),
                 ),
@@ -537,21 +537,21 @@ class _DeviceCard extends StatelessWidget {
     final s = context.read<AppState>().strings;
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.darkCard,
+      backgroundColor: context.tCard,
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => Padding(
         padding: const EdgeInsets.all(24),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Container(width: 36, height: 4,
-              decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2))),
+              decoration: BoxDecoration(color: context.tText2(0.24), borderRadius: BorderRadius.circular(2))),
           const SizedBox(height: 20),
           Text('${s.remove} "${device.name}"?',
-            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+            style: TextStyle(color: context.tText, fontSize: 16, fontWeight: FontWeight.bold),
             textAlign: TextAlign.center),
           const SizedBox(height: 8),
           Text(s.deviceWillBeRemoved,
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 13)),
+            style: TextStyle(color: context.tText2(0.4), fontSize: 13)),
           const SizedBox(height: 24),
           Row(children: [
             Expanded(
@@ -560,10 +560,10 @@ class _DeviceCard extends StatelessWidget {
                 child: Container(
                   height: 46,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.07),
+                    color: context.tText2(0.07),
                     borderRadius: BorderRadius.circular(12)),
                   child: Center(child: Text(s.cancel,
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 14))),
+                    style: TextStyle(color: context.tText2(0.7), fontSize: 14))),
                 ),
               ),
             ),
@@ -691,7 +691,7 @@ class _DeviceDetailSheetState extends State<_DeviceDetailSheet> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(width: 40, height: 4,
-              decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2))),
+              decoration: BoxDecoration(color: context.tText2(0.24), borderRadius: BorderRadius.circular(2))),
           const SizedBox(height: 20),
           Row(
             children: [
@@ -712,12 +712,12 @@ class _DeviceDetailSheetState extends State<_DeviceDetailSheet> {
                             child: TextField(
                               controller: _nameCtrl,
                               autofocus: true,
-                              style: const TextStyle(
-                                  color: Colors.white, fontSize: 16),
+                              style: TextStyle(
+                                  color: context.tText, fontSize: 16),
                               decoration: InputDecoration(
                                 hintText: s.deviceRename,
                                 hintStyle: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.3)),
+                                    color: context.tText2(0.3)),
                                 isDense: true,
                                 contentPadding: const EdgeInsets.symmetric(
                                     vertical: 8, horizontal: 0),
@@ -734,7 +734,7 @@ class _DeviceDetailSheetState extends State<_DeviceDetailSheet> {
                                 color: AppColors.secured.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: const Icon(Icons.check,
+                              child: Icon(Icons.check,
                                   color: AppColors.secured, size: 16),
                             ),
                           ),
@@ -747,11 +747,11 @@ class _DeviceDetailSheetState extends State<_DeviceDetailSheet> {
                             child: Container(
                               padding: const EdgeInsets.all(6),
                               decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.07),
+                                color: context.tText2(0.07),
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: const Icon(Icons.close,
-                                  color: Colors.white54, size: 16),
+                              child: Icon(Icons.close,
+                                  color: context.tText2(0.54), size: 16),
                             ),
                           ),
                         ],
@@ -762,11 +762,11 @@ class _DeviceDetailSheetState extends State<_DeviceDetailSheet> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(d.name, style: const TextStyle(
-                                    color: Colors.white, fontSize: 17,
+                                Text(d.name, style: TextStyle(
+                                    color: context.tText, fontSize: 17,
                                     fontWeight: FontWeight.bold)),
                                 Text(d.room, style: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.4),
+                                    color: context.tText2(0.4),
                                     fontSize: 13)),
                               ],
                             ),
@@ -777,11 +777,11 @@ class _DeviceDetailSheetState extends State<_DeviceDetailSheet> {
                             child: Container(
                               padding: const EdgeInsets.all(7),
                               decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.07),
+                                color: context.tText2(0.07),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Icon(Icons.edit_outlined,
-                                  color: Colors.white.withValues(alpha: 0.45),
+                                  color: context.tText2(0.45),
                                   size: 15),
                             ),
                           ),
@@ -799,9 +799,9 @@ class _DeviceDetailSheetState extends State<_DeviceDetailSheet> {
                   ),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
                     Container(width: 6, height: 6,
-                        decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.secured)),
+                        decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.secured)),
                     const SizedBox(width: 6),
-                    Text(s.connectedStatus, style: const TextStyle(color: AppColors.secured, fontSize: 12)),
+                    Text(s.connectedStatus, style: TextStyle(color: AppColors.secured, fontSize: 12)),
                   ]),
                 )
               else
@@ -811,7 +811,7 @@ class _DeviceDetailSheetState extends State<_DeviceDetailSheet> {
                     duration: const Duration(milliseconds: 250),
                     width: 52, height: 30,
                     decoration: BoxDecoration(
-                      color: d.isOn ? color : Colors.white.withValues(alpha: 0.12),
+                      color: d.isOn ? color : context.tText2(0.12),
                       borderRadius: BorderRadius.circular(15),
                     ),
                     child: AnimatedAlign(
@@ -820,7 +820,7 @@ class _DeviceDetailSheetState extends State<_DeviceDetailSheet> {
                       child: Container(
                         width: 24, height: 24,
                         margin: const EdgeInsets.symmetric(horizontal: 3),
-                        decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white),
+                        decoration: BoxDecoration(shape: BoxShape.circle, color: context.tText),
                       ),
                     ),
                   ),
@@ -840,9 +840,9 @@ class _DeviceDetailSheetState extends State<_DeviceDetailSheet> {
               width: double.infinity,
               height: 48,
               child: ElevatedButton.icon(
-                icon: const Icon(Icons.radar, size: 18),
+                icon: Icon(Icons.radar, size: 18),
                 label: Text(s.discoverDevices,
-                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                 onPressed: () {
                   Navigator.pop(context);
                   Navigator.push(
@@ -854,7 +854,7 @@ class _DeviceDetailSheetState extends State<_DeviceDetailSheet> {
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
+                  foregroundColor: context.tText,
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14)),
                   elevation: 0,
@@ -883,7 +883,7 @@ class _DeviceDetailSheetState extends State<_DeviceDetailSheet> {
                       Icon(Icons.thermostat_outlined, color: color, size: 20),
                       const SizedBox(width: 8),
                       Text(s.deviceTemp,
-                        style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13)),
+                        style: TextStyle(color: context.tText2(0.6), fontSize: 13)),
                     ]),
                     Text(
                       '${d.attributes['currentTemp'] ?? d.attributes['temperature']}°C',
@@ -906,7 +906,7 @@ class _DeviceDetailSheetState extends State<_DeviceDetailSheet> {
                 child: Row(children: [
                   Text(s.acMethod,
                       style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.6),
+                          color: context.tText2(0.6),
                           fontSize: 13)),
                   const Spacer(),
                   ...['WIFI', 'IR', 'RF'].map((m) {
@@ -923,12 +923,12 @@ class _DeviceDetailSheetState extends State<_DeviceDetailSheet> {
                         decoration: BoxDecoration(
                           color: sel
                               ? color.withValues(alpha: 0.20)
-                              : Colors.white.withValues(alpha: 0.05),
+                              : context.tText2(0.05),
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
                               color: sel
                                   ? color
-                                  : Colors.white.withValues(alpha: 0.1)),
+                                  : context.tText2(0.1)),
                         ),
                         child: Row(children: [
                           Icon(
@@ -937,12 +937,12 @@ class _DeviceDetailSheetState extends State<_DeviceDetailSheet> {
                                   : m == 'IR'
                                       ? Icons.settings_remote
                                       : Icons.sensors,
-                              color: sel ? color : Colors.white38,
+                              color: sel ? color : context.tText2(0.38),
                               size: 13),
                           const SizedBox(width: 4),
                           Text(m == 'WIFI' ? 'WiFi' : m,
                               style: TextStyle(
-                                  color: sel ? Colors.white : Colors.white54,
+                                  color: sel ? context.tText : context.tText2(0.54),
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600)),
                         ]),
@@ -994,19 +994,19 @@ class _DeviceDetailSheetState extends State<_DeviceDetailSheet> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.04),
+                color: context.tText2(0.04),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                border: Border.all(color: context.tText2(0.08)),
               ),
               child: Row(children: [
                 Icon(Icons.swap_vert, color: color, size: 20),
                 const SizedBox(width: 8),
                 Text(s.acSwing,
-                    style: const TextStyle(color: Colors.white, fontSize: 14)),
+                    style: TextStyle(color: context.tText, fontSize: 14)),
                 const Spacer(),
                 Switch(
                   value: d.attributes['swing'] as bool? ?? false,
-                  activeThumbColor: Colors.white,
+                  activeThumbColor: context.tText,
                   activeTrackColor: color,
                   onChanged: (v) {
                     widget.state.setDeviceAttribute(d.id, 'swing', v);
@@ -1047,21 +1047,21 @@ class _DeviceDetailSheetState extends State<_DeviceDetailSheet> {
                       decoration: BoxDecoration(
                         color: d.isOn
                             ? color.withValues(alpha: 0.18)
-                            : Colors.white.withValues(alpha: 0.06),
+                            : context.tText2(0.06),
                         borderRadius: BorderRadius.circular(13),
                         border: Border.all(
                           color: d.isOn
                               ? color.withValues(alpha: 0.5)
-                              : Colors.white.withValues(alpha: 0.10),
+                              : context.tText2(0.10),
                           width: 1.5,
                         ),
                       ),
                       child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                        Icon(Icons.lightbulb, color: d.isOn ? color : Colors.white38, size: 18),
+                        Icon(Icons.lightbulb, color: d.isOn ? color : context.tText2(0.38), size: 18),
                         const SizedBox(width: 8),
                         Text('הדלק',
                           style: TextStyle(
-                            color: d.isOn ? color : Colors.white38,
+                            color: d.isOn ? color : context.tText2(0.38),
                             fontSize: 14, fontWeight: FontWeight.w600)),
                       ]),
                     ),
@@ -1081,22 +1081,22 @@ class _DeviceDetailSheetState extends State<_DeviceDetailSheet> {
                       height: 48,
                       decoration: BoxDecoration(
                         color: !d.isOn
-                            ? Colors.white.withValues(alpha: 0.10)
-                            : Colors.white.withValues(alpha: 0.04),
+                            ? context.tText2(0.10)
+                            : context.tText2(0.04),
                         borderRadius: BorderRadius.circular(13),
                         border: Border.all(
                           color: !d.isOn
-                              ? Colors.white.withValues(alpha: 0.35)
-                              : Colors.white.withValues(alpha: 0.08),
+                              ? context.tText2(0.35)
+                              : context.tText2(0.08),
                           width: 1.5,
                         ),
                       ),
                       child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                        Icon(Icons.lightbulb_outline, color: !d.isOn ? Colors.white70 : Colors.white24, size: 18),
+                        Icon(Icons.lightbulb_outline, color: !d.isOn ? context.tText2(0.7) : context.tText2(0.24), size: 18),
                         const SizedBox(width: 8),
                         Text('כבה',
                           style: TextStyle(
-                            color: !d.isOn ? Colors.white70 : Colors.white24,
+                            color: !d.isOn ? context.tText2(0.7) : context.tText2(0.24),
                             fontSize: 14, fontWeight: FontWeight.w600)),
                       ]),
                     ),
@@ -1140,7 +1140,7 @@ class _DeviceDetailSheetState extends State<_DeviceDetailSheet> {
             const SizedBox(height: 6),
             Row(children: [
               Text(s.boilerMode, style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.5), fontSize: 12)),
+                  color: context.tText2(0.5), fontSize: 12)),
               const SizedBox(width: 10),
               _ModeToggle(
                 selected: d.attributes['mode'] as String? ?? 'eco',
@@ -1159,15 +1159,15 @@ class _DeviceDetailSheetState extends State<_DeviceDetailSheet> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.05),
+                color: context.tText2(0.05),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Row(children: [
-                const Icon(Icons.bolt, color: AppColors.lightColor, size: 16),
+                Icon(Icons.bolt, color: AppColors.lightColor, size: 16),
                 const SizedBox(width: 8),
                 Text('${d.attributes['power'] ?? 0}W',
-                    style: const TextStyle(
-                        color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+                    style: TextStyle(
+                        color: context.tText, fontSize: 15, fontWeight: FontWeight.bold)),
               ]),
             ),
           ],
@@ -1180,14 +1180,14 @@ class _DeviceDetailSheetState extends State<_DeviceDetailSheet> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.06),
+                  color: context.tText2(0.06),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  const Icon(Icons.battery_full, color: AppColors.secured, size: 14),
+                  Icon(Icons.battery_full, color: AppColors.secured, size: 14),
                   const SizedBox(width: 5),
                   Text('${d.attributes['battery'] ?? 100}%',
-                      style: const TextStyle(color: AppColors.secured, fontSize: 12,
+                      style: TextStyle(color: AppColors.secured, fontSize: 12,
                           fontWeight: FontWeight.w600)),
                 ]),
               ),
@@ -1195,7 +1195,7 @@ class _DeviceDetailSheetState extends State<_DeviceDetailSheet> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.06),
+                  color: context.tText2(0.06),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -1208,7 +1208,7 @@ class _DeviceDetailSheetState extends State<_DeviceDetailSheet> {
                     color: (d.attributes['detected'] == true ||
                             d.attributes['open'] == true)
                         ? AppColors.unsecured
-                        : Colors.white38,
+                        : context.tText2(0.38),
                     size: 14,
                   ),
                   const SizedBox(width: 5),
@@ -1221,7 +1221,7 @@ class _DeviceDetailSheetState extends State<_DeviceDetailSheet> {
                       color: (d.attributes['detected'] == true ||
                               d.attributes['open'] == true)
                           ? AppColors.unsecured
-                          : Colors.white54,
+                          : context.tText2(0.54),
                       fontSize: 12,
                     ),
                   ),
@@ -1247,8 +1247,8 @@ class _InfoRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(children: [
-        Text('$label: ', style: TextStyle(color: Colors.white.withValues(alpha: 0.45), fontSize: 13)),
-        Text(value, style: const TextStyle(color: Colors.white, fontSize: 13, fontFamily: 'monospace')),
+        Text('$label: ', style: TextStyle(color: context.tText2(0.45), fontSize: 13)),
+        Text(value, style: TextStyle(color: context.tText, fontSize: 13, fontFamily: 'monospace')),
       ]),
     );
   }
@@ -1269,12 +1269,12 @@ class _SliderRow extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.7),
+        Text(label, style: TextStyle(color: context.tText2(0.7),
             fontSize: 13, fontWeight: FontWeight.w500)),
         Slider(
           value: value, min: min, max: max, divisions: divisions,
           activeColor: color,
-          inactiveColor: Colors.white.withValues(alpha: 0.12),
+          inactiveColor: context.tText2(0.12),
           onChanged: onChanged,
         ),
         const SizedBox(height: 4),
@@ -1338,17 +1338,17 @@ class _ModeBtn extends StatelessWidget {
         decoration: BoxDecoration(
           color: selected
               ? color.withValues(alpha: 0.15)
-              : Colors.white.withValues(alpha: 0.06),
+              : context.tText2(0.06),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: selected ? color.withValues(alpha: 0.4) : Colors.white.withValues(alpha: 0.08),
+            color: selected ? color.withValues(alpha: 0.4) : context.tText2(0.08),
           ),
         ),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(icon, color: selected ? color : Colors.white38, size: 12),
+          Icon(icon, color: selected ? color : context.tText2(0.38), size: 12),
           const SizedBox(width: 4),
           Text(label, style: TextStyle(
-              color: selected ? color : Colors.white38,
+              color: selected ? color : context.tText2(0.38),
               fontSize: 11, fontWeight: FontWeight.w500)),
         ]),
       ),
@@ -1388,7 +1388,7 @@ class _AcChoiceRow extends StatelessWidget {
       children: [
         Text(label,
             style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.6), fontSize: 13)),
+                color: context.tText2(0.6), fontSize: 13)),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
@@ -1403,23 +1403,23 @@ class _AcChoiceRow extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: sel
                       ? color.withValues(alpha: 0.18)
-                      : Colors.white.withValues(alpha: 0.05),
+                      : context.tText2(0.05),
                   borderRadius: BorderRadius.circular(11),
                   border: Border.all(
                       color: sel
                           ? color.withValues(alpha: 0.6)
-                          : Colors.white.withValues(alpha: 0.1),
+                          : context.tText2(0.1),
                       width: 1.3),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(opt.$3,
-                        color: sel ? color : Colors.white54, size: 16),
+                        color: sel ? color : context.tText2(0.54), size: 16),
                     const SizedBox(width: 6),
                     Text(opt.$2,
                         style: TextStyle(
-                            color: sel ? Colors.white : Colors.white60,
+                            color: sel ? context.tText : context.tText2(0.6),
                             fontSize: 12,
                             fontWeight: FontWeight.w600)),
                   ],
