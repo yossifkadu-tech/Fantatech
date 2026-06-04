@@ -89,20 +89,19 @@ class GatewayHubScreen extends StatelessWidget {
                 ),
               ),
               SliverToBoxAdapter(
-                child: SizedBox(
-                  height: 110,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    padding:         const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount:       manager.connections.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 10),
-                    itemBuilder: (ctx, i) => _ConnectedCard(
-                      conn:     manager.connections[i],
-                      onImport: () => _importDevices(ctx, manager, state,
-                                         manager.connections[i]),
-                      onRemove: () => _confirmDisconnect(ctx, manager,
-                                         manager.connections[i]),
-                    ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    children: [
+                      for (final conn in manager.connections) ...[
+                        _ConnectedCard(
+                          conn:     conn,
+                          onImport: () => _importDevices(context, manager, state, conn),
+                          onRemove: () => _confirmDisconnect(context, manager, conn),
+                        ),
+                        const SizedBox(height: 10),
+                      ],
+                    ],
                   ),
                 ),
               ),
@@ -317,7 +316,7 @@ class _ConnectedCard extends StatelessWidget {
     final color = meta.color;
 
     return Container(
-      width: 200,
+      width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color:        context.tCard,
@@ -333,61 +332,66 @@ class _ConnectedCard extends StatelessWidget {
         children: [
           Row(children: [
             Container(
-              width: 30, height: 30,
+              width: 38, height: 38,
               decoration: BoxDecoration(
                 color:        color.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(meta.icon, color: color, size: 16),
+              child: Icon(meta.icon, color: color, size: 20),
             ),
-            const Spacer(),
-            // Status dot
-            Container(
-              width: 7, height: 7,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: conn.isConnected ? AppColors.secured : context.tText2(0.24),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(conn.displayName,
+                    style: TextStyle(
+                      color:      context.tText,
+                      fontSize:   14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    maxLines: 1, overflow: TextOverflow.ellipsis),
+                  Row(children: [
+                    Container(
+                      width: 7, height: 7,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: conn.isConnected
+                            ? AppColors.secured
+                            : context.tText2(0.24),
+                      ),
+                    ),
+                    const SizedBox(width: 5),
+                    Text('${conn.deviceCount} מכשירים',
+                      style: TextStyle(
+                        color: context.tText2(0.5), fontSize: 11)),
+                  ]),
+                ],
               ),
             ),
-            const SizedBox(width: 4),
-            GestureDetector(
-              onTap: onRemove,
-              child: Icon(Icons.close,
-                  color: context.tText2(0.25), size: 14),
+            // Remove — proper 40px tap target
+            IconButton(
+              onPressed: onRemove,
+              icon: Icon(Icons.close, color: context.tText2(0.4), size: 20),
+              tooltip: 'נתק',
             ),
           ]),
-          const SizedBox(height: 8),
-          Text(conn.displayName,
-            style: TextStyle(
-              color:      context.tText,
-              fontSize:   12,
-              fontWeight: FontWeight.w600,
-            ),
-            maxLines:  1,
-            overflow:  TextOverflow.ellipsis),
-          Text('${conn.deviceCount} מכשירים',
-            style: TextStyle(
-              color:    context.tText2(0.35),
-              fontSize: 10,
-            )),
-          const Spacer(),
-          GestureDetector(
-            onTap: onImport,
-            child: Container(
-              height: 26,
-              decoration: BoxDecoration(
-                color:        color.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(6),
-                border:       Border.all(
-                    color: color.withValues(alpha: 0.3)),
-              ),
-              child: Center(
-                child: Text('ייבא מכשירים',
-                  style: TextStyle(
-                    color:      color,
-                    fontSize:   10,
-                    fontWeight: FontWeight.w600,
-                  )),
+          const SizedBox(height: 12),
+          // Prominent, full-width import button (44px tap target)
+          SizedBox(
+            width: double.infinity,
+            height: 46,
+            child: ElevatedButton.icon(
+              onPressed: onImport,
+              icon: const Icon(Icons.download_rounded, size: 18),
+              label: const Text('ייבא מכשירים',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: color,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
               ),
             ),
           ),
