@@ -2,7 +2,7 @@ name: fantatech
 description: FantaTech Smart Home Hub
 
 publish_to: 'none'
-version: 2.14.22+21422
+version: 2.14.23+21423
 
 environment:
   sdk: '>=3.3.0 <4.0.0'

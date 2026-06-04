@@ -17,11 +17,27 @@ class HouseholdLoginScreen extends StatelessWidget {
   final void Function(AppUser user) onLogin;
   const HouseholdLoginScreen({super.key, required this.onLogin});
 
+  // Bridge a household HomeUser (profile → home management) to an AppUser the
+  // login flow understands.
+  static AppUser _toAppUser(HomeUser h) => AppUser(
+        id:           h.id,
+        name:         h.name,
+        email:        '',
+        role:         h.isManager ? UserRole.homeManager : UserRole.member,
+        authProvider: AuthProvider.member,
+        photoUrl:     h.imagePath,
+        registeredAt: DateTime.now(),
+        isApproved:   true,
+      );
+
   @override
   Widget build(BuildContext context) {
-    final manager = UserService.homeManager;
-    final members = UserService.members;
-    final s = context.watch<AppState>().strings;
+    final state = context.watch<AppState>();
+    final s = state.strings;
+    // Read from the household list the user actually manages in the app.
+    final homeUsers = state.homeUsers;
+    final manager = homeUsers.where((u) => u.isManager).map(_toAppUser).firstOrNull;
+    final members = homeUsers.where((u) => !u.isManager).map(_toAppUser).toList();
 
     return Scaffold(
       backgroundColor: const Color(0xFF1D75BD),
