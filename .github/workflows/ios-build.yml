@@ -1,0 +1,44 @@
+name: iOS build (cloud Mac)
+
+# Builds the FantaTech iOS app on a GitHub-hosted macOS runner, so an iOS
+# build can be produced without owning a Mac.
+#
+# This produces an UNSIGNED build (verifies it compiles + bundles). To install
+# on a real iPhone / TestFlight you must add Apple signing:
+#   1. An Apple Developer account ($99/yr).
+#   2. Add a signing certificate + provisioning profile as repo secrets and
+#      switch the build step to `flutter build ipa --export-options-plist=...`.
+
+on:
+  workflow_dispatch:        # run manually from the Actions tab
+  push:
+    branches: [ main ]
+    paths: [ 'fantatech-flutter/**' ]
+
+jobs:
+  build-ios:
+    runs-on: macos-14
+    defaults:
+      run:
+        working-directory: fantatech-flutter
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - run: flutter pub get
+
+      - name: Build iOS (unsigned)
+        run: flutter build ios --release --no-codesign --no-tree-shake-icons
+
+      - name: Package .app artifact
+        run: |
+          cd build/ios/iphoneos
+          zip -r Runner-unsigned.zip Runner.app
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fantatech-ios-unsigned
+          path: fantatech-flutter/build/ios/iphoneos/Runner-unsigned.zip

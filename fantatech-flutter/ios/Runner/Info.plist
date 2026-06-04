@@ -66,5 +66,31 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<!-- ── Privacy usage descriptions (required by iOS / App Store) ── -->
+	<key>NSCameraUsageDescription</key>
+	<string>נדרש כדי לצפות במצלמות אבטחה ולסרוק קודים.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>נדרש לפקודות קוליות ול-FantaAI.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>נדרש לזיהוי דיבור עבור פקודות קוליות.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>נדרש לבחירת תמונת פרופיל.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>נדרש לכניסה מאובטחת באמצעות Face ID.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>נדרש לגילוי ושליטה במכשירי בית חכם ברשת המקומית (DIRIGERA, מצלמות, גשרים).</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_ihsp._tcp</string>
+		<string>_dirigera._tcp</string>
+		<string>_hue._tcp</string>
+		<string>_hap._tcp</string>
+		<string>_matter._tcp</string>
+		<string>_shelly._tcp</string>
+		<string>_esphomelib._tcp</string>
+		<string>_home-assistant._tcp</string>
+		<string>_mqtt._tcp</string>
+		<string>_googlecast._tcp</string>
+	</array>
 </dict>
 </plist>
