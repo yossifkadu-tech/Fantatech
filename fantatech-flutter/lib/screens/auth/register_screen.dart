@@ -78,15 +78,16 @@ class _RegisterScreenState extends State<RegisterScreen>
 
     setState(() => _isLoading = true);
     try {
-      final user = await UserService.signInWithEmail(
-        _nameCtrl.text.trim(),
-        _emailCtrl.text.trim(),
+      final user = await UserService.registerWithEmail(
+        name:     _nameCtrl.text.trim(),
+        email:    _emailCtrl.text.trim(),
+        password: _passCtrl.text,
       );
       if (mounted) widget.onRegister(user);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(e.toString()),
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
           backgroundColor: Colors.red.shade800,
         ));
       }

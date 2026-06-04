@@ -59,16 +59,21 @@ class _LoginScreenState extends State<LoginScreen>
 
   Future<void> _handleLogin() async {
     final email = _emailCtrl.text.trim();
-    if (email.isEmpty) {
-      _showError(context.read<AppState>().strings.errEnterEmail);
+    final pass  = _passCtrl.text;
+    if (!UserService.isValidEmail(email)) {
+      _showError('כתובת אימייל לא תקינה');
+      return;
+    }
+    if (!UserService.isValidPassword(pass)) {
+      _showError('סיסמה לא תקינה (לפחות 6 תווים)');
       return;
     }
     setState(() => _isLoading = true);
     try {
-      final user = await UserService.signInWithEmail('', email);
+      final user = await UserService.signInWithEmail(email, pass);
       if (mounted) widget.onLogin(user);
     } catch (e) {
-      _showError(e.toString());
+      _showError(e.toString().replaceFirst('Exception: ', ''));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

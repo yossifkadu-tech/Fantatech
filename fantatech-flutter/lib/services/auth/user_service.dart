@@ -25,8 +25,14 @@ class UserService {
   UserService._();
 
   static const _prefCurrentUserId = 'current_user_id';
-  static const _csvFileName = 'fantatech_users.csv';
-  static const _csvHeader = 'id,name,email,phone,role,authProvider,photoUrl,registeredAt,invitedBy,isApproved';
+  static const _csvFileName = 'yossiini.csv';
+  static const _csvHeader = 'id,name,email,phone,role,authProvider,photoUrl,registeredAt,invitedBy,isApproved,password';
+
+  // Default seed account(s) — created on first run so there is a user to start
+  // from. Email login validates against these (and any later registrations).
+  static const _seedManagerEmail    = 'yossi@gmail.com';
+  static const _seedManagerName     = 'יוסי';
+  static const _seedManagerPassword = '123456';
 
   static final _googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
   static const _uuid = Uuid();
@@ -49,11 +55,31 @@ class UserService {
   /// Call once at app startup (before showing any screen).
   static Future<void> init() async {
     await _loadCsv();
+    await _seedDefaultsIfEmpty();
     final prefs = await SharedPreferences.getInstance();
     final savedId = prefs.getString(_prefCurrentUserId);
     if (savedId != null) {
       _currentUser = _users.where((u) => u.id == savedId).firstOrNull;
     }
+  }
+
+  /// Creates the default manager account on first run (empty store).
+  static Future<void> _seedDefaultsIfEmpty() async {
+    if (_users.isNotEmpty) return;
+    _users.add(AppUser(
+      id:           _uuid.v4(),
+      name:         _seedManagerName,
+      email:        _seedManagerEmail,
+      phone:        '',
+      role:         UserRole.homeManager,
+      authProvider: AuthProvider.member,
+      photoUrl:     null,
+      registeredAt: DateTime.now(),
+      invitedBy:    null,
+      isApproved:   true,
+      password:     _seedManagerPassword,
+    ));
+    await _saveCsv();
   }
 
   static Future<File?> _csvFile() async {
@@ -95,15 +121,72 @@ class UserService {
 
   // ── Email / Password (local auth) ────────────────────────────────────────
 
-  /// Simple local login: finds user by email or creates one.
-  /// No server-side verification — suitable for offline / demo use.
-  static Future<AppUser> signInWithEmail(String name, String email) async {
-    return _resolveOrCreateManager(
-      email:    email.trim().toLowerCase(),
-      name:     name.trim().isNotEmpty ? name.trim() : email.split('@').first,
-      photoUrl: null,
-      provider: AuthProvider.google, // treated as generic local user
+  static final _emailRegex =
+      RegExp(r'^[\w.+\-]+@[\w\-]+\.[\w.\-]+$');
+
+  /// Returns true if [email] is a syntactically valid address.
+  static bool isValidEmail(String email) =>
+      _emailRegex.hasMatch(email.trim());
+
+  /// Returns true if [password] meets the minimum policy (≥ 6 chars).
+  static bool isValidPassword(String password) => password.length >= 6;
+
+  /// Email + password login. Requires a valid email and a valid password that
+  /// matches an existing account. Throws a Hebrew message on any failure.
+  static Future<AppUser> signInWithEmail(String email, String password) async {
+    final e = email.trim().toLowerCase();
+    if (!isValidEmail(e)) {
+      throw Exception('כתובת אימייל לא תקינה');
+    }
+    if (!isValidPassword(password)) {
+      throw Exception('סיסמה לא תקינה (לפחות 6 תווים)');
+    }
+    final user = _users.where((u) => u.email.toLowerCase() == e).firstOrNull;
+    if (user == null) {
+      throw Exception('לא נמצא משתמש עם אימייל זה — הירשם תחילה');
+    }
+    if (user.password != password) {
+      throw Exception('סיסמה שגויה');
+    }
+    _currentUser = user;
+    await _persistSession(user.id);
+    return user;
+  }
+
+  /// Registers a new email/password account (used by the register screen).
+  /// The first account created becomes the home manager.
+  static Future<AppUser> registerWithEmail({
+    required String name,
+    required String email,
+    required String password,
+  }) async {
+    final e = email.trim().toLowerCase();
+    if (!isValidEmail(e)) throw Exception('כתובת אימייל לא תקינה');
+    if (!isValidPassword(password)) {
+      throw Exception('סיסמה לא תקינה (לפחות 6 תווים)');
+    }
+    if (_users.any((u) => u.email.toLowerCase() == e)) {
+      throw Exception('כבר קיים משתמש עם אימייל זה');
+    }
+    final isFirstUser = _users.isEmpty || homeManager == null;
+    final user = AppUser(
+      id:           _uuid.v4(),
+      name:         name.trim().isNotEmpty ? name.trim() : e.split('@').first,
+      email:        e,
+      phone:        '',
+      role:         isFirstUser ? UserRole.homeManager : UserRole.member,
+      authProvider: AuthProvider.member,
+      photoUrl:     null,
+      registeredAt: DateTime.now(),
+      invitedBy:    isFirstUser ? null : homeManager?.id,
+      isApproved:   true,
+      password:     password,
     );
+    _users.add(user);
+    await _saveCsv();
+    _currentUser = user;
+    await _persistSession(user.id);
+    return user;
   }
 
   // ── Google Sign-In ────────────────────────────────────────────────────────

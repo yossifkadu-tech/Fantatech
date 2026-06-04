@@ -17,6 +17,7 @@ class AppUser {
   final DateTime registeredAt;
   final String? invitedBy; // id of home manager who added this member
   final bool isApproved;
+  final String password; // local-auth password (empty for SSO/member accounts)
 
   const AppUser({
     required this.id,
@@ -29,6 +30,7 @@ class AppUser {
     required this.registeredAt,
     this.invitedBy,
     this.isApproved = true,
+    this.password = '',
   });
 
   bool get isManager => role == UserRole.homeManager;
@@ -40,6 +42,7 @@ class AppUser {
     UserRole? role,
     String? photoUrl,
     bool? isApproved,
+    String? password,
   }) {
     return AppUser(
       id: id,
@@ -52,6 +55,7 @@ class AppUser {
       registeredAt: registeredAt,
       invitedBy: invitedBy,
       isApproved: isApproved ?? this.isApproved,
+      password: password ?? this.password,
     );
   }
 
@@ -70,6 +74,7 @@ class AppUser {
       _q(registeredAt.toIso8601String()),
       _q(invitedBy ?? ''),
       _q(isApproved ? '1' : '0'),
+      _q(password),
     ].join(',');
   }
 
@@ -93,6 +98,7 @@ class AppUser {
         registeredAt: DateTime.tryParse(fields[7]) ?? DateTime.now(),
         invitedBy:    fields[8].isEmpty ? null : fields[8],
         isApproved:   fields[9] == '1',
+        password:     fields.length > 10 ? fields[10] : '',
       );
     } catch (_) {
       return null;
