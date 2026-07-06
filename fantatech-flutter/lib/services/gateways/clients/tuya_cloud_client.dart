@@ -1,4 +1,4 @@
-// ─────────────────────────────────────────────────────────────────────────────
+﻿// ─────────────────────────────────────────────────────────────────────────────
 // TuyaCloudClient — Tuya OpenAPI v1.0 cloud client (covers Moes / Tuya hubs).
 //
 // Auth flow (HMAC-SHA256 signed):
@@ -87,18 +87,18 @@ class TuyaCloudClient {
       final token = await c._getToken();
       if (token == null) {
         return const GatewayImportResult.failure(
-            'אימות Tuya נכשל — בדוק Access ID/Secret והאזור');
+            'Tuya authentication failed — check Access ID/Secret and region');
       }
 
       final resp = await c._signedGet(
           '/v1.0/iot-01/associated-users/devices', token);
       if (resp == null) {
-        return const GatewayImportResult.failure('אין תגובה מ-Tuya');
+        return const GatewayImportResult.failure('No response from Tuya');
       }
       final body = jsonDecode(resp) as Map<String, dynamic>;
       if (body['success'] != true) {
         return GatewayImportResult.failure(
-            'Tuya: ${body['msg'] ?? 'שגיאה'}');
+            'Tuya: ${body['msg'] ?? 'error'}');
       }
 
       final result = body['result'] as Map<String, dynamic>? ?? {};
@@ -121,6 +121,7 @@ class TuyaCloudClient {
           type: type,
           isOn: false,
           status: online ? DeviceStatus.online : DeviceStatus.offline,
+          source: 'gateway',
           attributes: {
             'manufacturer': 'Tuya/Moes',
             'model': d['product_name'] as String? ?? category,
@@ -133,7 +134,7 @@ class TuyaCloudClient {
 
       return GatewayImportResult.success(devices);
     } catch (e) {
-      return GatewayImportResult.failure('שגיאת Tuya: $e');
+      return GatewayImportResult.failure('Tuya error: $e');
     }
   }
 
@@ -223,6 +224,48 @@ class TuyaCloudClient {
     });
   }
 
+  // ── Public: send commands to a device ────────────────────────────────────
+  /// Send one or more [commands] to [tuyaDeviceId].
+  /// [commands] is a list of `{"code": "...", "value": ...}` maps.
+  /// Returns true on success.
+  Future<bool> sendCommands({
+    required String token,
+    required String tuyaDeviceId,
+    required List<Map<String, dynamic>> commands,
+  }) async {
+    final path = '/v1.0/devices/$tuyaDeviceId/commands';
+    final body = jsonEncode({'commands': commands});
+    final resp = await _signedPost(path, token, body);
+    if (resp == null) return false;
+    try {
+      final parsed = jsonDecode(resp) as Map<String, dynamic>;
+      return parsed['success'] == true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  // ── Fetch token (public for repository use) ───────────────────────────────
+  Future<String?> getToken() => _getToken();
+
+  // ── Signed POST (business request) ───────────────────────────────────────
+  Future<String?> _signedPost(String path, String token, String body) async {
+    final t        = DateTime.now().millisecondsSinceEpoch.toString();
+    final bodySha  = sha256.convert(utf8.encode(body)).toString();
+    final stringToSign = 'POST\n$bodySha\n\n$path';
+    final sign     = _hmac('$clientId$token$t$stringToSign');
+
+    return _request('POST', path,
+        headers: {
+          'client_id':    clientId,
+          'access_token': token,
+          'sign':         sign,
+          't':            t,
+          'sign_method':  'HMAC-SHA256',
+        },
+        body: body);
+  }
+
   // ── HMAC-SHA256 → upper-case hex ───────────────────────────────────────────
   String _hmac(String message) {
     final h = Hmac(sha256, utf8.encode(clientSecret));
@@ -231,16 +274,17 @@ class TuyaCloudClient {
 
   // ── Raw HTTPS request ──────────────────────────────────────────────────────
   Future<String?> _request(String method, String path,
-      {required Map<String, String> headers}) async {
+      {required Map<String, String> headers, String? body}) async {
     try {
-      final client = HttpClient()..connectionTimeout = _timeout;
-      final uri = Uri.parse('https://$_host$path');
-      final req = await client.openUrl(method, uri);
+      final http = HttpClient()..connectionTimeout = _timeout;
+      final uri  = Uri.parse('https://$_host$path');
+      final req  = await http.openUrl(method, uri);
       headers.forEach(req.headers.set);
       req.headers.set(HttpHeaders.contentTypeHeader, 'application/json');
-      final resp = await req.close().timeout(_timeout);
+      if (body != null) req.write(body);
+      final resp  = await req.close().timeout(_timeout);
       final bytes = await resp.fold<List<int>>([], (a, b) => a..addAll(b));
-      client.close();
+      http.close();
       return utf8.decode(bytes, allowMalformed: true);
     } catch (_) {
       return null;

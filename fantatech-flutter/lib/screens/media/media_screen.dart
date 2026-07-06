@@ -1,3 +1,4 @@
+import 'package:material_symbols_icons/symbols.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 // MediaScreen — smart-media hub.
 //   • Discovered speakers / cast targets (play-pause + volume)
@@ -74,7 +75,7 @@ class _MediaScreenState extends State<MediaScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new,
+          icon: Icon(Symbols.arrow_back_ios_new,
               color: context.tText2(0.7), size: 18),
           onPressed: () => Navigator.pop(context),
         ),
@@ -106,49 +107,49 @@ class _MediaScreenState extends State<MediaScreen> {
               children: [
                 _ServiceCard(
                   label: 'YT Music',
-                  icon: Icons.play_circle_fill,
+                  icon: Symbols.play_circle,
                   color: const Color(0xFFFF0000),
                   onTap: () => _open('https://music.youtube.com'),
                 ),
                 _ServiceCard(
                   label: 'Spotify',
-                  icon: Icons.music_note,
+                  icon: Symbols.music_note,
                   color: const Color(0xFF1DB954),
                   onTap: () => _open('https://open.spotify.com'),
                 ),
                 _ServiceCard(
                   label: 'Apple Music',
-                  icon: Icons.library_music,
+                  icon: Symbols.library_music,
                   color: const Color(0xFFFA2D48),
                   onTap: () => _open('https://music.apple.com'),
                 ),
                 _ServiceCard(
                   label: 'YouTube',
-                  icon: Icons.smart_display,
+                  icon: Symbols.smart_display,
                   color: const Color(0xFFFF0000),
                   onTap: () => _open('https://www.youtube.com'),
                 ),
                 _ServiceCard(
                   label: 'Netflix',
-                  icon: Icons.movie_outlined,
+                  icon: Symbols.movie,
                   color: const Color(0xFFE50914),
                   onTap: () => _open('https://www.netflix.com'),
                 ),
                 _ServiceCard(
                   label: 'Deezer',
-                  icon: Icons.graphic_eq,
+                  icon: Symbols.graphic_eq,
                   color: const Color(0xFFA238FF),
                   onTap: () => _open('https://www.deezer.com'),
                 ),
                 _ServiceCard(
                   label: 'Radio',
-                  icon: Icons.radio,
+                  icon: Symbols.radio,
                   color: const Color(0xFF00B4D8),
                   onTap: () => _open('https://tunein.com'),
                 ),
                 _ServiceCard(
                   label: 'Podcasts',
-                  icon: Icons.podcasts,
+                  icon: Symbols.podcasts,
                   color: const Color(0xFF9C7AFF),
                   onTap: () => _open('https://podcasts.google.com'),
                 ),
@@ -174,7 +175,7 @@ class _MediaScreenState extends State<MediaScreen> {
                           child: CircularProgressIndicator(
                               strokeWidth: 2, color: AppColors.primary),
                         )
-                      : Icon(Icons.wifi_find_outlined,
+                      : Icon(Symbols.wifi_find,
                           color: AppColors.primary, size: 18),
                   label: Text(s.mediaScan,
                       style: TextStyle(
@@ -196,7 +197,7 @@ class _MediaScreenState extends State<MediaScreen> {
                 child: Center(
                   child: Column(
                     children: [
-                      Icon(Icons.speaker_outlined,
+                      Icon(Symbols.speaker,
                           color: context.tText2(0.2),
                           size: 44),
                       const SizedBox(height: 12),
@@ -238,7 +239,7 @@ class _GroupCard extends StatelessWidget {
           // Master volume
           Row(
             children: [
-              Icon(Icons.tune, color: AppColors.primary, size: 20),
+              Icon(Symbols.tune, color: AppColors.primary, size: 20),
               const SizedBox(width: 8),
               Text(s.mediaMaster,
                   style: TextStyle(color: context.tText, fontSize: 13)),
@@ -291,7 +292,7 @@ class _GroupCard extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(party ? Icons.stop_circle_outlined : Icons.groups,
+                    Icon(party ? Symbols.stop_circle : Symbols.groups,
                         color: context.tText, size: 18),
                     const SizedBox(width: 8),
                     Text(party ? s.mediaStopAll : s.mediaParty,
@@ -350,7 +351,7 @@ class _NowPlayingCard extends StatelessWidget {
                   color: context.tText2(0.18),
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(Icons.music_note,
+                child: Icon(Symbols.music_note,
                     color: context.tText, size: 30),
               ),
               const SizedBox(width: 14),
@@ -376,8 +377,8 @@ class _NowPlayingCard extends StatelessWidget {
                     Row(children: [
                       Icon(
                           device.kind == MediaDeviceKind.tv
-                              ? Icons.tv
-                              : Icons.speaker,
+                              ? Symbols.tv
+                              : Symbols.speaker,
                           color: context.tText2(0.6),
                           size: 12),
                       const SizedBox(width: 4),
@@ -416,7 +417,7 @@ class _NowPlayingCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _ctrlBtn(Icons.skip_previous, 32, () {
+              _ctrlBtn(Symbols.skip_previous, 32, () {
                 Haptics.light();
                 state.mediaPrev(device.id);
               }),
@@ -434,14 +435,14 @@ class _NowPlayingCard extends StatelessWidget {
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
-                    device.isPlaying ? Icons.pause : Icons.play_arrow,
+                    device.isPlaying ? Symbols.pause : Symbols.play_arrow,
                     color: const Color(0xFF7B2FFF),
                     size: 32,
                   ),
                 ),
               ),
               const SizedBox(width: 20),
-              _ctrlBtn(Icons.skip_next, 32, () {
+              _ctrlBtn(Symbols.skip_next, 32, () {
                 Haptics.light();
                 state.mediaNext(device.id);
               }),
@@ -511,13 +512,13 @@ class _SpeakerTile extends StatelessWidget {
   IconData get _icon {
     switch (device.kind) {
       case MediaDeviceKind.tv:
-        return Icons.tv_outlined;
+        return Symbols.tv;
       case MediaDeviceKind.soundbar:
-        return Icons.speaker_group_outlined;
+        return Symbols.speaker_group;
       case MediaDeviceKind.speaker:
-        return Icons.speaker_outlined;
+        return Symbols.speaker;
       default:
-        return Icons.cast_outlined;
+        return Symbols.cast;
     }
   }
 
@@ -574,12 +575,12 @@ class _SpeakerTile extends StatelessWidget {
                   child: Container(
                     width: 40,
                     height: 40,
-                    margin: const EdgeInsets.only(right: 8),
+                    margin: const EdgeInsetsDirectional.only(end: 8),
                     decoration: BoxDecoration(
                       color: color.withValues(alpha: 0.15),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(Icons.settings_remote,
+                    child: Icon(Symbols.settings_remote,
                         color: color, size: 20),
                   ),
                 ),
@@ -596,7 +597,7 @@ class _SpeakerTile extends StatelessWidget {
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
-                    device.isPlaying ? Icons.pause : Icons.play_arrow,
+                    device.isPlaying ? Symbols.pause : Symbols.play_arrow,
                     color: device.isPlaying ? context.tText : color,
                     size: 22,
                   ),
@@ -607,7 +608,7 @@ class _SpeakerTile extends StatelessWidget {
           // Volume
           Row(
             children: [
-              Icon(Icons.volume_down,
+              Icon(Symbols.volume_down,
                   color: context.tText2(0.38), size: 18),
               Expanded(
                 child: Slider(
@@ -620,7 +621,7 @@ class _SpeakerTile extends StatelessWidget {
                       state.setMediaVolume(device.id, v.round()),
                 ),
               ),
-              Icon(Icons.volume_up, color: context.tText2(0.38), size: 18),
+              Icon(Symbols.volume_up, color: context.tText2(0.38), size: 18),
             ],
           ),
         ],
@@ -676,7 +677,7 @@ class _TvRemoteSheetState extends State<_TvRemoteSheet> {
           ),
           const SizedBox(height: 18),
           Row(children: [
-            Icon(Icons.tv, color: AppColors.primary, size: 22),
+            Icon(Symbols.tv, color: AppColors.primary, size: 22),
             const SizedBox(width: 10),
             Expanded(
               child: Text('${s.tvRemote} · ${d.name}',
@@ -700,7 +701,7 @@ class _TvRemoteSheetState extends State<_TvRemoteSheet> {
                       .withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.power_settings_new,
+                child: Icon(Symbols.power_settings_new,
                     color:
                         d.isPlaying ? AppColors.unsecured : AppColors.secured,
                     size: 22),
@@ -780,7 +781,7 @@ class _TvRemoteSheetState extends State<_TvRemoteSheet> {
                     border:
                         Border.all(color: context.tText2(0.1)),
                   ),
-                  child: Icon(Icons.volume_off,
+                  child: Icon(Symbols.volume_off,
                       color: context.tText2(0.7), size: 22),
                 ),
               ),
@@ -832,10 +833,10 @@ class _DPad extends StatelessWidget {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          _arrow(Icons.keyboard_arrow_up, Alignment.topCenter),
-          _arrow(Icons.keyboard_arrow_down, Alignment.bottomCenter),
-          _arrow(Icons.keyboard_arrow_left, Alignment.centerLeft),
-          _arrow(Icons.keyboard_arrow_right, Alignment.centerRight),
+          _arrow(Symbols.keyboard_arrow_up, Alignment.topCenter),
+          _arrow(Symbols.keyboard_arrow_down, Alignment.bottomCenter),
+          _arrow(Symbols.keyboard_arrow_left, Alignment.centerLeft),
+          _arrow(Symbols.keyboard_arrow_right, Alignment.centerRight),
           GestureDetector(
             onTap: () => Haptics.medium(),
             child: Container(
@@ -879,7 +880,7 @@ class _Rocker extends StatelessWidget {
       child: Column(
         children: [
           IconButton(
-            icon: Icon(Icons.add, color: context.tText, size: 24),
+            icon: Icon(Symbols.add, color: context.tText, size: 24),
             onPressed: onUp,
           ),
           Text(label,
@@ -888,7 +889,7 @@ class _Rocker extends StatelessWidget {
                   fontSize: 10,
                   fontWeight: FontWeight.w700)),
           IconButton(
-            icon: Icon(Icons.remove, color: context.tText, size: 24),
+            icon: Icon(Symbols.remove, color: context.tText, size: 24),
             onPressed: onDown,
           ),
         ],

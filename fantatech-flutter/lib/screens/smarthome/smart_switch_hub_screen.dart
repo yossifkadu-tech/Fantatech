@@ -1,3 +1,4 @@
+import 'package:material_symbols_icons/symbols.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 // SmartSwitchHubScreen
 //
@@ -97,8 +98,6 @@ class _SmartSwitchHubViewState extends State<_SmartSwitchHubView> {
   @override
   Widget build(BuildContext context) {
     final engine = context.watch<SwitchScanEngine>();
-    final theme  = Theme.of(context);
-
     // Build filtered list
     final allDevices  = engine.devices;
     final filtered    = _filter == null
@@ -175,12 +174,13 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.select((AppState st) => st.strings);
     return Container(
       padding: const EdgeInsets.fromLTRB(8, 8, 16, 0),
       child: Row(
         children: [
           IconButton(
-            icon: Icon(Icons.arrow_back_ios_new_rounded,
+            icon: Icon(Symbols.arrow_back_ios_new,
                 color: context.tText2(0.7), size: 20),
             onPressed: () => Navigator.pop(context),
           ),
@@ -189,17 +189,17 @@ class _Header extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('מפסקים חכמים',
+                Text(s.switchesCategory,
                     style: TextStyle(
                         color: context.tText,
                         fontSize: 18,
                         fontWeight: FontWeight.w700)),
                 Text(
                   isScanning
-                      ? 'סורק את כל הפרוטוקולים…'
+                      ? s.switchScanningAll
                       : foundCount == 0
-                          ? 'לא נמצאו מכשירים'
-                          : '$foundCount מכשירים נמצאו',
+                          ? s.noDevicesOnNetwork
+                          : s.scanFoundFmt.replaceAll('{n}', '$foundCount'),
                   style: TextStyle(
                       color: context.tText2(0.54), fontSize: 12),
                 ),
@@ -215,8 +215,8 @@ class _Header extends StatelessWidget {
           else
             TextButton.icon(
               onPressed: onScan,
-              icon: Icon(Icons.radar_rounded, size: 16),
-              label: Text('סרוק', style: TextStyle(fontSize: 13)),
+              icon: const Icon(Symbols.radar, size: 16),
+              label: Text(s.rescan, style: const TextStyle(fontSize: 13)),
               style: TextButton.styleFrom(
                   foregroundColor: AppColors.primary,
                   padding: const EdgeInsets.symmetric(
@@ -271,12 +271,11 @@ class _ProtocolChip extends StatelessWidget {
     final p     = state.protocol;
     final color = p.color;
     final scanning = state.status == ProtocolScanStatus.scanning;
-    final done     = state.status == ProtocolScanStatus.done;
     final error    = state.status == ProtocolScanStatus.error;
     final hasFound = state.found > 0;
 
     return Container(
-      margin: const EdgeInsets.only(right: 8),
+      margin: const EdgeInsetsDirectional.only(end: 8),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: hasFound
@@ -299,7 +298,7 @@ class _ProtocolChip extends StatelessWidget {
                   strokeWidth: 1.5, color: color),
             )
           else if (error)
-            Icon(Icons.error_outline, color: Colors.red.shade300, size: 11)
+            Icon(Symbols.error, color: Colors.red.shade300, size: 11)
           else
             Icon(p.icon, color: color, size: 11),
           const SizedBox(width: 5),
@@ -344,6 +343,7 @@ class _FilterChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.select((AppState st) => st.strings);
     return SizedBox(
       height: 40,
       child: ListView(
@@ -351,7 +351,7 @@ class _FilterChips extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14),
         children: [
           _FilterChip(
-            label: 'הכל',
+            label: s.allDevices,
             active: selected == null,
             color: AppColors.primary,
             onTap: () => onSelect(''),
@@ -391,7 +391,7 @@ class _FilterChip extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: const EdgeInsets.only(right: 8),
+        margin: const EdgeInsetsDirectional.only(end: 8),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         decoration: BoxDecoration(
           color: active ? color.withValues(alpha: 0.18) : Colors.transparent,
@@ -468,6 +468,7 @@ class _SwitchCardState extends State<_SwitchCard> {
 
   void _addToHome() {
     final appState = context.read<AppState>();
+    final s = appState.strings;
 
     for (int i = 0; i < dev.channels.length; i++) {
       final ch = dev.channels[i];
@@ -497,7 +498,7 @@ class _SwitchCardState extends State<_SwitchCard> {
     widget.onAdded();
 
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text('✓ ${dev.name} נוסף לבית'),
+      content: Text(s.switchAddedFmt.replaceAll('{name}', dev.name)),
       backgroundColor: AppColors.secured,
       behavior: SnackBarBehavior.floating,
       duration: const Duration(seconds: 2),
@@ -508,6 +509,7 @@ class _SwitchCardState extends State<_SwitchCard> {
   // ── Tuya Local Key dialog ─────────────────────────────────────────────────
 
   void _showTuyaKeyDialog() {
+    final s = context.read<AppState>().strings;
     final keyCtrl   = TextEditingController(
         text: dev.connectionData['localKey'] as String? ?? '');
     final devIdCtrl = TextEditingController(
@@ -520,7 +522,7 @@ class _SwitchCardState extends State<_SwitchCard> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         title: Row(
           children: [
-            Icon(Icons.electrical_services_outlined,
+            Icon(Symbols.electrical_services,
                 color: SwitchProtocol.tuyaLocal.color, size: 20),
             const SizedBox(width: 10),
             Text('Tuya Local Key',
@@ -535,8 +537,7 @@ class _SwitchCardState extends State<_SwitchCard> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'קבל את הפרטים מ-platform.tuya.com\n'
-              '(Cloud → Devices → Device Details)',
+              'platform.tuya.com → Cloud → Devices → Device Details',
               style: TextStyle(color: context.tText2(0.54), fontSize: 12),
             ),
             const SizedBox(height: 16),
@@ -545,7 +546,7 @@ class _SwitchCardState extends State<_SwitchCard> {
               controller: devIdCtrl,
               label: 'Device ID',
               hint: 'bfa123abc456def789...',
-              icon: Icons.badge_outlined,
+              icon: Symbols.badge,
             ),
             const SizedBox(height: 10),
             // Local Key field
@@ -553,12 +554,12 @@ class _SwitchCardState extends State<_SwitchCard> {
               controller: keyCtrl,
               label: 'Local Key',
               hint: 'abc123def456...',
-              icon: Icons.key_outlined,
+              icon: Symbols.key,
               isKey: true,
             ),
             const SizedBox(height: 8),
             Text(
-              'המפתח נשמר רק במכשיר שלך.',
+              s.keyStoredLocal,
               style: TextStyle(
                   color: context.tText2(0.3), fontSize: 10),
             ),
@@ -567,7 +568,7 @@ class _SwitchCardState extends State<_SwitchCard> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('ביטול',
+            child: Text(s.cancel,
                 style: TextStyle(color: context.tText2(0.38))),
           ),
           ElevatedButton(
@@ -593,8 +594,8 @@ class _SwitchCardState extends State<_SwitchCard> {
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10)),
             ),
-            child: Text('שמור ושלוט',
-                style: TextStyle(fontWeight: FontWeight.w700)),
+            child: Text(s.saveAndControl,
+                style: const TextStyle(fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -604,6 +605,7 @@ class _SwitchCardState extends State<_SwitchCard> {
   // ── Tapo credentials dialog ───────────────────────────────────────────────
 
   void _showTapoCredentialsDialog() {
+    final s = context.read<AppState>().strings;
     final emailCtrl = TextEditingController(
         text: dev.connectionData['tapoEmail'] as String? ?? '');
     final passCtrl  = TextEditingController(
@@ -615,10 +617,10 @@ class _SwitchCardState extends State<_SwitchCard> {
         backgroundColor: context.tCard,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         title: Row(children: [
-          Icon(Icons.outlet_outlined,
+          Icon(Symbols.outlet,
               color: SwitchProtocol.tapoLocal.color, size: 20),
           const SizedBox(width: 10),
-          Text('Tapo — כניסה',
+          Text(s.tapoLogin,
               style: TextStyle(
                   color: context.tText,
                   fontSize: 15,
@@ -629,29 +631,29 @@ class _SwitchCardState extends State<_SwitchCard> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'אותם פרטי חשבון שבאפליקציית TP-Link Tapo.',
+              s.tapoCredHint,
               style: TextStyle(color: context.tText2(0.54), fontSize: 12),
             ),
             const SizedBox(height: 16),
             _TuyaField(
               controller: emailCtrl,
-              label: 'אימייל',
+              label: s.authEmailHint,
               hint: 'user@example.com',
-              icon: Icons.email_outlined,
+              icon: Symbols.email,
               color: SwitchProtocol.tapoLocal.color,
             ),
             const SizedBox(height: 10),
             _TuyaField(
               controller: passCtrl,
-              label: 'סיסמה',
+              label: s.authPassHint,
               hint: '••••••••',
-              icon: Icons.lock_outline_rounded,
+              icon: Symbols.lock,
               color: SwitchProtocol.tapoLocal.color,
               isKey: true,
             ),
             const SizedBox(height: 8),
             Text(
-              'הפרטים נשמרים רק במכשיר שלך.',
+              s.keyStoredLocal,
               style:
                   TextStyle(color: context.tText2(0.3), fontSize: 10),
             ),
@@ -660,7 +662,7 @@ class _SwitchCardState extends State<_SwitchCard> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('ביטול',
+            child: Text(s.cancel,
                 style: TextStyle(color: context.tText2(0.38))),
           ),
           ElevatedButton(
@@ -685,8 +687,8 @@ class _SwitchCardState extends State<_SwitchCard> {
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10)),
             ),
-            child: Text('התחבר ושלוט',
-                style: TextStyle(fontWeight: FontWeight.w700)),
+            child: Text(s.connectAndControl,
+                style: const TextStyle(fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -694,8 +696,9 @@ class _SwitchCardState extends State<_SwitchCard> {
   }
 
   void _showError() {
+    final s = context.read<AppState>().strings;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text('שגיאה בשליטה על ${dev.name}'),
+      content: Text(s.errControlFmt.replaceAll('{name}', dev.name)),
       backgroundColor: Colors.red.shade700,
       behavior: SnackBarBehavior.floating,
       duration: const Duration(seconds: 2),
@@ -705,6 +708,7 @@ class _SwitchCardState extends State<_SwitchCard> {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.select((AppState st) => st.strings);
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -760,7 +764,7 @@ class _SwitchCardState extends State<_SwitchCard> {
                 ),
                 // Add / registered button
                 if (dev.isRegistered)
-                  Icon(Icons.check_circle_rounded,
+                  Icon(Symbols.check_circle,
                       color: brandColor, size: 22)
                 else
                   GestureDetector(
@@ -774,7 +778,7 @@ class _SwitchCardState extends State<_SwitchCard> {
                         border: Border.all(
                             color: brandColor.withValues(alpha: 0.40)),
                       ),
-                      child: Text('הוסף',
+                      child: Text(s.add,
                           style: TextStyle(
                               color: brandColor,
                               fontSize: 11,
@@ -856,6 +860,7 @@ class _ChannelToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.select((AppState st) => st.strings);
     final isOn = channel.isOn;
 
     return GestureDetector(
@@ -887,8 +892,8 @@ class _ChannelToggle extends StatelessWidget {
             else
               Icon(
                 isOn
-                    ? Icons.toggle_on_rounded
-                    : Icons.toggle_off_rounded,
+                    ? Symbols.toggle_on
+                    : Symbols.toggle_off,
                 color: isOn ? color : context.tText2(0.38),
                 size: 18,
               ),
@@ -911,7 +916,7 @@ class _ChannelToggle extends StatelessWidget {
                   )
                 else
                   Text(
-                    isOn ? 'פועל' : 'כבוי',
+                    isOn ? s.breakerOn : s.breakerOff,
                     style: TextStyle(
                         color: isOn
                             ? color.withValues(alpha: 0.8)
@@ -922,7 +927,7 @@ class _ChannelToggle extends StatelessWidget {
             ),
             if (!canControl) ...[
               const SizedBox(width: 4),
-              Icon(Icons.lock_outline_rounded,
+              Icon(Symbols.lock,
                   color: Colors.orange.withValues(alpha: 0.6), size: 12),
             ],
           ],
@@ -941,15 +946,16 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.select((AppState st) => st.strings);
     if (isScanning) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2),
-            SizedBox(height: 16),
-            Text('מחפש מפסקים חכמים בכל הפרוטוקולים…',
-                style: TextStyle(color: Colors.white54, fontSize: 13)),
+            const CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2),
+            const SizedBox(height: 16),
+            Text(s.switchSearchingAll,
+                style: const TextStyle(color: Colors.white54, fontSize: 13)),
           ],
         ),
       );
@@ -958,31 +964,28 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.search_off_rounded,
+          Icon(Symbols.search_off,
               color: context.tText2(0.15), size: 52),
           const SizedBox(height: 16),
-          Text('לא נמצאו מפסקים חכמים',
+          Text(s.switchNoFound,
               style: TextStyle(
                   color: context.tText2(0.38),
                   fontSize: 15,
                   fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 48),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 48),
             child: Text(
-              'ודא שהמפסקים מחוברים לאותה רשת WiFi.\n'
-              'Shelly/ESPHome — ב-STA mode\n'
-              'Sonoff — ב-DIY mode (firmware 3.6+)\n'
-              'Home Assistant / Zigbee2MQTT — חבר בהגדרות',
-              style: TextStyle(color: Colors.white24, fontSize: 11),
+              s.switchHint,
+              style: const TextStyle(color: Colors.white24, fontSize: 11),
               textAlign: TextAlign.center,
             ),
           ),
           const SizedBox(height: 20),
           ElevatedButton.icon(
             onPressed: onScan,
-            icon: Icon(Icons.radar_rounded, size: 16),
-            label: Text('סרוק שוב'),
+            icon: const Icon(Symbols.radar, size: 16),
+            label: Text(s.rescan),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.black,
@@ -1039,8 +1042,8 @@ class _TuyaFieldState extends State<_TuyaField> {
             ? IconButton(
                 icon: Icon(
                     _obscure
-                        ? Icons.visibility_outlined
-                        : Icons.visibility_off_outlined,
+                        ? Symbols.visibility
+                        : Symbols.visibility_off,
                     color: context.tText2(0.38),
                     size: 18),
                 onPressed: () => setState(() => _obscure = !_obscure),

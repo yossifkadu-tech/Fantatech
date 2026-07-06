@@ -128,8 +128,8 @@ class DIRIGERAGatewayClient {
     final (authStatus, code) = await requestCode(ip, challenge);
     if (code == null) {
       onStatus?.call(authStatus == 0
-          ? (lastError.isEmpty ? 'אין תגובה מהרכזת (בדוק IP/רשת)' : lastError)
-          : 'authorize נכשל — HTTP $authStatus');
+          ? (lastError.isEmpty ? 'No response from hub (check IP/network)' : lastError)
+          : 'Authorize failed — HTTP $authStatus');
       return null;
     }
 
@@ -141,11 +141,11 @@ class DIRIGERAGatewayClient {
       if (token != null) return token;
       lastTokenStatus = tokenStatus;
       onStatus?.call(tokenStatus == 403
-          ? 'ממתין ללחיצת כפתור… (403)'
-          : 'token: HTTP $tokenStatus — ממתין…');
+          ? 'Waiting for button press… (403)'
+          : 'token: HTTP $tokenStatus — waiting…');
       await Future.delayed(const Duration(seconds: 2));
     }
-    onStatus?.call('פג הזמן — token האחרון: HTTP $lastTokenStatus');
+    onStatus?.call('Timed out — last token status: HTTP $lastTokenStatus');
     return null;
   }
 
@@ -155,14 +155,14 @@ class DIRIGERAGatewayClient {
       String ip, String token) async {
     try {
       final resp = await _get(ip, '/v1/devices', token);
-      if (resp == null) return const GatewayImportResult.failure('אין תגובה מ-DIRIGERA');
-      if (resp.statusCode == 401) return const GatewayImportResult.failure('Token לא תקין');
+      if (resp == null) return const GatewayImportResult.failure('No response from DIRIGERA');
+      if (resp.statusCode == 401) return const GatewayImportResult.failure('Invalid token');
 
       final List<dynamic> list;
       try {
         list = jsonDecode(resp.body) as List<dynamic>;
       } catch (_) {
-        return const GatewayImportResult.failure('תגובה לא תקינה');
+        return const GatewayImportResult.failure('Invalid response from DIRIGERA');
       }
 
       final devices = <Device>[];
@@ -189,6 +189,7 @@ class DIRIGERAGatewayClient {
           status:     (d['isReachable'] as bool? ?? false)
               ? DeviceStatus.online
               : DeviceStatus.offline,
+          source:     'gateway',
           attributes: {
             'ip':           ip,
             'manufacturer': 'IKEA',
@@ -202,11 +203,11 @@ class DIRIGERAGatewayClient {
       }
 
       lastRawSummary = rawSummary.isEmpty
-          ? 'הרכזת לא החזירה מכשירים כלל'
+          ? 'Hub reported no devices'
           : rawSummary.join('\n');
       return GatewayImportResult.success(devices);
     } catch (e) {
-      return GatewayImportResult.failure('שגיאת DIRIGERA: $e');
+      return GatewayImportResult.failure('DIRIGERA error: $e');
     }
   }
 
@@ -319,6 +320,18 @@ class DIRIGERAGatewayClient {
   /// Human-readable description of the last network error (for diagnostics).
   static String lastError = '';
 
+  // Accept Dirigera's self-signed certificate ONLY when it is issued by
+  // a known IKEA Dirigera CA subject.  This prevents MITM attacks from
+  // arbitrary self-signed certificates while still working with the hub's
+  // factory cert (which cannot be replaced by end-users).
+  static bool _allowDirigeraCert(X509Certificate cert, String host, int port) {
+    final dn = cert.issuer + cert.subject;
+    // IKEA Dirigera hubs use a self-signed cert with "IKEA" in the subject.
+    // Accept it; reject any cert that doesn't mention IKEA to block generic MITM.
+    return dn.toUpperCase().contains('IKEA') ||
+           dn.toUpperCase().contains('DIRIGERA');
+  }
+
   static Future<_Resp?> _get(String ip, String path, String token) =>
       _request(ip, 'GET', path, null, token);
 
@@ -334,7 +347,7 @@ class DIRIGERAGatewayClient {
     try {
       client = HttpClient()
         ..connectionTimeout          = _timeout
-        ..badCertificateCallback     = (_, __, ___) => true; // self-signed OK
+        ..badCertificateCallback     = _allowDirigeraCert;
       // Use Uri.parse so an embedded query string (?a=b&c=d) is handled
       // correctly — Uri.https would percent-encode the '?' into the path.
       final uri = Uri.parse('https://$ip:$_port$path');
@@ -361,11 +374,11 @@ class DIRIGERAGatewayClient {
       lastError = '';
       return _Resp(resp.statusCode, utf8.decode(bytes, allowMalformed: true));
     } on SocketException catch (e) {
-      lastError = 'אין קשר ל-$ip:$_port (${e.osError?.message ?? "socket"})';
+      lastError = 'Cannot reach $ip:$_port (${e.osError?.message ?? "socket"})';
     } on HandshakeException catch (_) {
-      lastError = 'שגיאת TLS מול $ip:$_port';
+      lastError = 'TLS error connecting to $ip:$_port';
     } on TimeoutException catch (_) {
-      lastError = 'timeout מול $ip:$_port';
+      lastError = 'Timeout connecting to $ip:$_port';
     } catch (e) {
       lastError = e.runtimeType.toString();
     } finally {

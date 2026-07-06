@@ -125,32 +125,51 @@ class WiFiScanner {
 
     // Try to grab an HTTP banner for fingerprinting.
     String? banner;
+    String? shellyInfo;
     if (openPorts.contains(80) || openPorts.contains(8080)) {
-      banner = await _httpBanner(ip, openPorts.contains(80) ? 80 : 8080);
+      final httpPort = openPorts.contains(80) ? 80 : 8080;
+      banner = await _httpBanner(ip, httpPort);
+      // Probe Shelly Gen1 /shelly endpoint → {"type":"SHSW-1",...}
+      shellyInfo = await _httpBanner(ip, httpPort, path: '/shelly');
+      // Probe Shelly Gen2 /rpc/Shelly.GetDeviceInfo
+      shellyInfo ??= await _httpBanner(ip, httpPort, path: '/rpc/Shelly.GetDeviceInfo');
+    }
+
+    // Derive display name from Shelly info, then banner, then IP
+    String displayName = ip;
+    if (shellyInfo != null && shellyInfo.contains('"type"')) {
+      final m = RegExp(r'"type"\s*:\s*"([^"]+)"').firstMatch(shellyInfo);
+      if (m != null) displayName = 'Shelly ${m.group(1)}';
+    } else if (shellyInfo != null && shellyInfo.contains('"model"')) {
+      final m = RegExp(r'"model"\s*:\s*"([^"]+)"').firstMatch(shellyInfo);
+      if (m != null) displayName = 'Shelly ${m.group(1)}';
+    } else if (banner != null) {
+      displayName = _extractTitle(banner);
     }
 
     return DiscoveredDevice(
       id: 'wifi_$ip',
-      displayName: banner != null ? _extractTitle(banner) : ip,
+      displayName: displayName,
       ip: ip,
       type: DiscoveredDeviceType.unknown, // identifier refines this
       protocol: DiscoveryProtocol.wifi,
       openPorts: openPorts,
       metadata: {
         if (banner != null) 'httpBanner': banner,
+        if (shellyInfo != null) 'shellyInfo': shellyInfo,
       },
     );
   }
 
   /// Grab the first 512 bytes of HTTP response from an IP:port.
-  Future<String?> _httpBanner(String ip, int port) async {
+  Future<String?> _httpBanner(String ip, int port, {String path = '/'}) async {
     try {
       final sock = await Socket.connect(
         ip,
         port,
         timeout: const Duration(milliseconds: _timeoutMs),
       );
-      sock.write('GET / HTTP/1.0\r\nHost: $ip\r\n\r\n');
+      sock.write('GET $path HTTP/1.0\r\nHost: $ip\r\n\r\n');
       await sock.flush();
 
       final bytes = <int>[];

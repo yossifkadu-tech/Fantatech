@@ -1,4 +1,4 @@
-// ─────────────────────────────────────────────────────────────────────────────
+﻿// ─────────────────────────────────────────────────────────────────────────────
 // DeCONZGatewayClient  (deCONZ / Phoscon — Dresden Elektronik)
 //
 // API identical to Philips Hue v1:
@@ -67,6 +67,7 @@ class DeCONZGatewayClient {
           type:       DeviceType.light,
           isOn:       state['on'] as bool? ?? false,
           status:     DeviceStatus.online,
+          source:     'gateway',
           attributes: {
             'ip':           ip,
             'apiKey':       apiKey,
@@ -92,6 +93,7 @@ class DeCONZGatewayClient {
           type:       dt,
           isOn:       config['on'] as bool? ?? true,
           status:     DeviceStatus.online,
+          source:     'gateway',
           attributes: {
             'ip':       ip,
             'apiKey':   apiKey,
@@ -103,7 +105,7 @@ class DeCONZGatewayClient {
 
       return GatewayImportResult.success(devices);
     } catch (e) {
-      return GatewayImportResult.failure('שגיאת deCONZ: $e');
+      return GatewayImportResult.failure('deCONZ error: $e');
     }
   }
 

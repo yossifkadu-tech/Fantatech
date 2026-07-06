@@ -22,41 +22,26 @@
 // Entities that are intentionally skipped (too verbose / not physical devices):
 //   automation.*, script.*, scene.*, input_*, zone.*, person.*, sun.*
 // ─────────────────────────────────────────────────────────────────────────────
-import 'dart:io';
 import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 import 'discovery_models.dart';
 import 'device_classifier.dart';
+import '../storage/secure_cred_service.dart';
 
 class HaClient {
-  static const _prefsKeyToken = 'ha_token';
-  static const _prefsKeyIp    = 'ha_ip';
-  static const _port          = 8123;
-  static const _timeout       = Duration(seconds: 8);
+  static const _port    = 8123;
+  static const _timeout = Duration(seconds: 8);
 
-  // ── Persistence ──────────────────────────────────────────────────────────────
+  // ── Persistence (encrypted) ───────────────────────────────────────────────
 
-  static Future<String?> savedToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_prefsKeyToken);
-  }
+  static Future<String?> savedToken() => SecureCredService.readHaToken();
+  static Future<String?> savedIp()    => SecureCredService.readHaIp();
 
-  static Future<String?> savedIp() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_prefsKeyIp);
-  }
+  static Future<void> saveCredentials(String ip, String token) =>
+      SecureCredService.saveHaCredentials(ip, token);
 
-  static Future<void> saveCredentials(String ip, String token) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_prefsKeyIp, ip);
-    await prefs.setString(_prefsKeyToken, token);
-  }
-
-  static Future<void> clearCredentials() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_prefsKeyToken);
-    await prefs.remove(_prefsKeyIp);
-  }
+  static Future<void> clearCredentials() =>
+      SecureCredService.clearHaCredentials();
 
   // ── Detection (no auth) ───────────────────────────────────────────────────────
 
@@ -77,17 +62,16 @@ class HaClient {
   static Future<HaImportResult> fetchDevices(String ip, String token) async {
     try {
       final raw = await _getAuth(ip, '/api/states', token);
-      if (raw == null) return HaImportResult.error('Geen reactie van HA');
+      if (raw == null) return HaImportResult.error('No response from Home Assistant — check IP and network');
 
       final List<dynamic> states;
       try {
         states = jsonDecode(raw) as List<dynamic>;
       } catch (_) {
-        // Not JSON — likely 401 Unauthorized
         if (raw.contains('401') || raw.contains('Unauthorized')) {
-          return HaImportResult.error('Token ongeldig — controleer het');
+          return HaImportResult.error('Invalid token — create a Long-Lived Access Token in HA');
         }
-        return HaImportResult.error('Onverwacht antwoord van HA');
+        return HaImportResult.error('Unexpected response from Home Assistant');
       }
 
       final devices = <DiscoveredDevice>[];
@@ -120,6 +104,18 @@ class HaClient {
         if (type == DiscoveredDeviceType.sensor &&
             domain != 'sensor') continue;
 
+        // Skip sensor entities that are system/virtual (Sun, Backup, timestamps)
+        if (domain == 'sensor') {
+          const physicalClasses = {
+            'temperature', 'humidity', 'pressure', 'energy', 'power',
+            'voltage', 'current', 'battery', 'illuminance', 'gas',
+            'moisture', 'co2', 'pm25', 'pm10', 'carbon_dioxide',
+            'carbon_monoxide', 'motion', 'door', 'window', 'smoke',
+            'sound', 'vibration', 'water', 'weight',
+          };
+          if (deviceClass == null || !physicalClasses.contains(deviceClass)) continue;
+        }
+
         devices.add(DiscoveredDevice(
           id:           'ha_$entityId',
           displayName:  friendlyName,
@@ -131,8 +127,17 @@ class HaClient {
             'entityId':    entityId,
             'domain':      domain,
             'state':       stateVal,
+            'isOn':        _stateIsOn(stateVal),
             'deviceClass': deviceClass,
             'haIp':        ip,
+            // Preserve useful HA attributes
+            if (attrs['brightness'] != null)
+              'brightness': ((attrs['brightness'] as num) / 2.55).round(),
+            if (attrs['color_temp_kelvin'] != null)
+              'colorTempKelvin': attrs['color_temp_kelvin'],
+            if (attrs['battery'] != null) 'battery': attrs['battery'],
+            if (attrs['current_position'] != null)
+              'blindLevel': attrs['current_position'],
           },
         ));
       }
@@ -140,50 +145,52 @@ class HaClient {
       await saveCredentials(ip, token);
       return HaImportResult.success(devices);
     } catch (e) {
-      return HaImportResult.error('שגיאת רשת: $e');
+      return HaImportResult.error('Network error: $e');
+    }
+  }
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+
+  static bool _stateIsOn(String state) {
+    switch (state.toLowerCase()) {
+      case 'on':
+      case 'open':
+      case 'unlocked':
+      case 'heat':
+      case 'cool':
+      case 'auto':
+      case 'home':
+        return true;
+      default:
+        final n = double.tryParse(state);
+        return n != null && n > 0;
     }
   }
 
   // ── HTTP helpers ──────────────────────────────────────────────────────────────
 
+  static Map<String, String> _headers([String? token]) => {
+        'Accept':       'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+      };
+
   static Future<String?> _get(String ip, String path) async {
-    return _request(ip, path, null);
+    try {
+      final uri = Uri.parse('http://$ip:$_port$path');
+      final res = await http.get(uri, headers: _headers())
+          .timeout(_timeout);
+      return res.statusCode >= 200 && res.statusCode < 300 ? res.body : null;
+    } catch (_) {
+      return null;
+    }
   }
 
   static Future<String?> _getAuth(String ip, String path, String token) async {
-    return _request(ip, path, token);
-  }
-
-  static Future<String?> _request(String ip, String path, String? token) async {
     try {
-      final sock = await Socket.connect(ip, _port, timeout: _timeout);
-
-      final headers = StringBuffer()
-        ..write('GET $path HTTP/1.0\r\n')
-        ..write('Host: $ip:$_port\r\n')
-        ..write('Accept: application/json\r\n');
-      if (token != null) {
-        headers.write('Authorization: Bearer $token\r\n');
-      }
-      headers.write('\r\n');
-
-      sock.write(headers.toString());
-      await sock.flush();
-
-      final bytes = <int>[];
-      await for (final chunk in sock.timeout(
-        _timeout,
-        onTimeout: (sink) => sink.close(),
-      )) {
-        bytes.addAll(chunk);
-        if (bytes.length > 2 * 1024 * 1024) break; // 2 MB cap
-      }
-      await sock.close();
-
-      final raw = utf8.decode(bytes, allowMalformed: true);
-      // Return body only (after \r\n\r\n)
-      final sep = raw.indexOf('\r\n\r\n');
-      return sep >= 0 ? raw.substring(sep + 4) : raw;
+      final uri = Uri.parse('http://$ip:$_port$path');
+      final res = await http.get(uri, headers: _headers(token))
+          .timeout(_timeout);
+      return res.statusCode >= 200 && res.statusCode < 300 ? res.body : null;
     } catch (_) {
       return null;
     }

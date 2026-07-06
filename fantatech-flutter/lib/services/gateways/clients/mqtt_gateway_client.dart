@@ -1,4 +1,4 @@
-// ─────────────────────────────────────────────────────────────────────────────
+﻿// ─────────────────────────────────────────────────────────────────────────────
 // MQTTGatewayClient
 //
 // Discovers smart home devices via Home Assistant MQTT Auto-Discovery:
@@ -48,11 +48,11 @@ class MQTTGatewayClient {
     try {
       await client.connect();
     } catch (e) {
-      return GatewayImportResult.failure('שגיאת חיבור MQTT: $e');
+      return GatewayImportResult.failure('MQTT connection error: $e');
     }
 
     if (client.connectionStatus?.state != MqttConnectionState.connected) {
-      return const GatewayImportResult.failure('לא ניתן להתחבר לברוקר');
+      return const GatewayImportResult.failure('Cannot connect to broker');
     }
 
     // Subscribe to discovery topic
@@ -120,6 +120,7 @@ class MQTTGatewayClient {
         type:       type,
         isOn:       false,
         status:     DeviceStatus.online,
+        source:     'gateway',
         attributes: {
           'protocol':     'mqtt',
           'manufacturer': mfr,

@@ -184,7 +184,7 @@ class DiscoveryManager extends ChangeNotifier {
     } catch (e, st) {
       _lastError = e.toString();
       _addLog('FATAL: $e');
-      debugPrint('DiscoveryManager error: $e\n$st');
+      if (kDebugMode) debugPrint('DiscoveryManager error: $e\n$st');
       _setStatus(DiscoveryStatus.error);
     } finally {
       _wifiRunning = false;
@@ -300,7 +300,7 @@ class DiscoveryManager extends ChangeNotifier {
     final line =
         '[${ts.hour.toString().padLeft(2, '0')}:${ts.minute.toString().padLeft(2, '0')}:${ts.second.toString().padLeft(2, '0')}] $message';
     _log.add(line);
-    debugPrint(line);
+    if (kDebugMode) debugPrint(line);
   }
 
   @override

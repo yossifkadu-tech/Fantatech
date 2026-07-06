@@ -1,4 +1,4 @@
-// ─────────────────────────────────────────────────────────────────────────────
+﻿// ─────────────────────────────────────────────────────────────────────────────
 // Zigbee2MQTTClient  — REST API (port 8080 by default)
 //
 // Enable REST API in Z2M config:  frontend: {port: 8080}
@@ -38,16 +38,16 @@ class Z2MGatewayClient {
       String ip, int port, {String? token}) async {
     try {
       final raw = await _get(ip, port, '/api/devices', token);
-      if (raw == null) return const GatewayImportResult.failure('אין תגובה מ-Zigbee2MQTT');
+      if (raw == null) return const GatewayImportResult.failure('No response from Zigbee2MQTT');
 
       final List<dynamic> list;
       try {
         list = jsonDecode(raw) as List<dynamic>;
       } catch (_) {
         if (raw.contains('Unauthorized') || raw.contains('401')) {
-          return const GatewayImportResult.failure('API Token שגוי');
+          return const GatewayImportResult.failure('Invalid API Token');
         }
-        return const GatewayImportResult.failure('תגובה לא תקינה מ-Z2M');
+        return const GatewayImportResult.failure('Invalid response from Z2M');
       }
 
       final devices = <Device>[];
@@ -82,6 +82,7 @@ class Z2MGatewayClient {
           status:     (d['interview_completed'] as bool? ?? false)
               ? DeviceStatus.online
               : DeviceStatus.offline,
+          source:     'gateway',
           attributes: {
             'ip':            ip,
             'ieee':          ieee,
@@ -96,7 +97,7 @@ class Z2MGatewayClient {
 
       return GatewayImportResult.success(devices);
     } catch (e) {
-      return GatewayImportResult.failure('שגיאת Z2M: $e');
+      return GatewayImportResult.failure('Z2M error: $e');
     }
   }
 

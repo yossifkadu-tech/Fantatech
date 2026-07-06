@@ -218,6 +218,12 @@ class SwitchScanEngine extends ChangeNotifier {
       return _makeTuyaDevice(ip);
     }
 
+    // ── Tuya/MOES via HTTP banner (port 80 but no Shelly/ESPHome/Tapo match) ─
+    if (port80) {
+      final tuyaHttp = await _probeTuyaHttp(ip);
+      if (tuyaHttp != null) return tuyaHttp;
+    }
+
     return null;
   }
 
@@ -565,6 +571,53 @@ class SwitchScanEngine extends ChangeNotifier {
     }
   }
 
+  // ── Tuya / MOES via HTTP banner ───────────────────────────────────────────
+
+  static const _tuyaBannerKeywords = [
+    'tuya', 'ty_iot', 'smartlife', 'smart life',
+    'bk7231', 'wifiiot', 'realtek ameba',
+    // MOES and white-label Tuya brands
+    'moes', 'moeshouse', 'neo coolcam', 'neo smart',
+    'treatlife', 'martin jerry', 'kauf', 'zemismart',
+    'aubess', 'girier', 'lonsonho', 'oittm', 'maxcio',
+    'smatrul', 'avatto', 'nous', 'athom',
+  ];
+
+  Future<SmartSwitchDevice?> _probeTuyaHttp(String ip) async {
+    try {
+      final resp = await http.get(
+        Uri.parse('http://$ip/'),
+        headers: {'User-Agent': 'FantaTech/1.0'},
+      ).timeout(_httpTimeout);
+      final body = resp.body.toLowerCase();
+      final matched = _tuyaBannerKeywords.firstWhere(
+        (k) => body.contains(k),
+        orElse: () => '',
+      );
+      if (matched.isEmpty) return null;
+
+      // Determine friendly brand name
+      String brand = 'Tuya';
+      if (body.contains('moes')) brand = 'MOES';
+      else if (body.contains('neo coolcam') || body.contains('neo smart')) brand = 'NEO';
+      else if (body.contains('zemismart')) brand = 'Zemismart';
+      else if (body.contains('treatlife')) brand = 'Treatlife';
+
+      _setProtocolFound(SwitchProtocol.tuyaLocal);
+      return SmartSwitchDevice(
+        id:       '${brand.toLowerCase()}_$ip',
+        name:     '$brand Smart Switch @ $ip',
+        ip:       ip,
+        protocol: SwitchProtocol.tuyaLocal,
+        model:    brand,
+        channels: [SwitchChannel(index: 0, name: 'Switch', isOn: false)],
+        connectionData: {'note': 'needs_local_key'},
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
   // ── Tuya (TCP 6668 detected only) ─────────────────────────────────────────
 
   SmartSwitchDevice _makeTuyaDevice(String ip) {
@@ -738,7 +791,7 @@ class SwitchScanEngine extends ChangeNotifier {
       await client.connect();
       if (client.connectionStatus?.state != MqttConnectionState.connected) {
         _setProtocol(SwitchProtocol.z2mMqtt, ProtocolScanStatus.error,
-            message: 'לא ניתן להתחבר');
+            message: 'Cannot connect');
         return;
       }
 
@@ -749,11 +802,11 @@ class SwitchScanEngine extends ChangeNotifier {
       }
 
       _setProtocol(SwitchProtocol.z2mMqtt, ProtocolScanStatus.done,
-          message: '${devices.length} מכשירים');
+          message: '${devices.length} devices');
       notifyListeners();
     } catch (e) {
       _setProtocol(SwitchProtocol.z2mMqtt, ProtocolScanStatus.error,
-          message: 'שגיאה: $e');
+          message: 'Error: $e');
     } finally {
       try { client.disconnect(); } catch (_) {}
     }

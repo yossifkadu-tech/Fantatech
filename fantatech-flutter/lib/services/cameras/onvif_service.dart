@@ -121,14 +121,10 @@ class OnvifService {
         if (event == RawSocketEvent.read) {
           final datagram = socket.receive();
           if (datagram == null) return;
-          final body = utf8.decode(datagram.data, allowMalformed: true);
           final ip = datagram.address.address;
           if (seen.contains(ip)) return;
           seen.add(ip);
 
-          final xAddrs = _extractXml(body, 'XAddrs') ??
-              _extractXml(body, 'd:XAddrs') ??
-              _extractXml(body, 'wsd:XAddrs');
           cameras.add(DiscoveredCamera(
             id: ip.replaceAll('.', '_'),
             ip: ip,

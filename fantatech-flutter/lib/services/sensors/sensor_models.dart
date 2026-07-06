@@ -1,3 +1,4 @@
+import 'package:material_symbols_icons/symbols.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 // Sensor & Cover Models
 // Unified data layer for motion sensors, door/window contacts, and smart covers.
@@ -22,27 +23,27 @@ enum SensorType {
 
 extension SensorTypeX on SensorType {
   String get displayName => switch (this) {
-        SensorType.motion      => 'תנועה',
-        SensorType.contact     => 'חלון/דלת',
-        SensorType.temperature => 'טמפרטורה',
-        SensorType.humidity    => 'לחות',
-        SensorType.smoke       => 'עשן',
-        SensorType.water       => 'מים',
-        SensorType.vibration   => 'רטט',
-        SensorType.button      => 'כפתור',
-        SensorType.unknown     => 'חיישן',
+        SensorType.motion      => 'Motion',
+        SensorType.contact     => 'Window/Door',
+        SensorType.temperature => 'Temperature',
+        SensorType.humidity    => 'Humidity',
+        SensorType.smoke       => 'Smoke',
+        SensorType.water       => 'Water',
+        SensorType.vibration   => 'Vibration',
+        SensorType.button      => 'Button',
+        SensorType.unknown     => 'Sensor',
       };
 
   IconData get icon => switch (this) {
-        SensorType.motion      => Icons.sensors_rounded,
-        SensorType.contact     => Icons.door_front_door_outlined,
-        SensorType.temperature => Icons.thermostat_outlined,
-        SensorType.humidity    => Icons.water_drop_outlined,
-        SensorType.smoke       => Icons.local_fire_department_outlined,
-        SensorType.water       => Icons.water_damage_outlined,
-        SensorType.vibration   => Icons.vibration_rounded,
-        SensorType.button      => Icons.radio_button_checked,
-        SensorType.unknown     => Icons.device_unknown_outlined,
+        SensorType.motion      => Symbols.sensors,
+        SensorType.contact     => Symbols.door_front,
+        SensorType.temperature => Symbols.thermostat,
+        SensorType.humidity    => Symbols.water_drop,
+        SensorType.smoke       => Symbols.local_fire_department,
+        SensorType.water       => Symbols.water_damage,
+        SensorType.vibration   => Symbols.vibration,
+        SensorType.button      => Symbols.radio_button_checked,
+        SensorType.unknown     => Symbols.device_unknown,
       };
 
   Color get color => switch (this) {
@@ -61,11 +62,11 @@ extension SensorTypeX on SensorType {
   String triggeredLabel(bool? v) {
     if (v == null) return '—';
     return switch (this) {
-      SensorType.motion  => v ? 'זוהתה תנועה' : 'נקי',
-      SensorType.contact => v ? 'פתוח' : 'סגור',
-      SensorType.smoke   => v ? 'עשן!' : 'תקין',
-      SensorType.water   => v ? 'הצפה!' : 'יבש',
-      _                  => v ? 'פעיל' : 'לא פעיל',
+      SensorType.motion  => v ? 'Motion detected' : 'Clear',
+      SensorType.contact => v ? 'Open' : 'Closed',
+      SensorType.smoke   => v ? 'Smoke!' : 'OK',
+      SensorType.water   => v ? 'Flood!' : 'Dry',
+      _                  => v ? 'Active' : 'Inactive',
     };
   }
 }
@@ -78,6 +79,7 @@ enum SensorProtocol {
   esphome,     // binary_sensor.<id>
   haRest,      // binary_sensor.* via HA REST API
   z2mMqtt,     // Zigbee device via Zigbee2MQTT
+  aqaraHub,    // Aqara Hub local API (M2, E1, M1S Gen2)
   unknown,
 }
 
@@ -88,6 +90,7 @@ extension SensorProtocolX on SensorProtocol {
         SensorProtocol.esphome    => 'ESPHome',
         SensorProtocol.haRest     => 'Home Assistant',
         SensorProtocol.z2mMqtt    => 'Zigbee2MQTT',
+        SensorProtocol.aqaraHub   => 'Aqara Hub',
         SensorProtocol.unknown    => 'Unknown',
       };
 
@@ -98,6 +101,7 @@ extension SensorProtocolX on SensorProtocol {
         SensorProtocol.esphome    => 'ESPHome',
         SensorProtocol.haRest     => 'Home Assistant',
         SensorProtocol.z2mMqtt    => 'Zigbee',
+        SensorProtocol.aqaraHub   => 'Aqara',
         SensorProtocol.unknown    => 'Unknown',
       };
 
@@ -108,17 +112,19 @@ extension SensorProtocolX on SensorProtocol {
         SensorProtocol.esphome    => const Color(0xFF4895EF),
         SensorProtocol.haRest     => const Color(0xFF18BFFF),
         SensorProtocol.z2mMqtt    => const Color(0xFFBA68C8),
+        SensorProtocol.aqaraHub   => const Color(0xFF1565C0),
         SensorProtocol.unknown    => Colors.white38,
       };
 
   IconData get icon => switch (this) {
         SensorProtocol.shellyGen1 ||
         SensorProtocol.shellyGen2 =>
-          Icons.sensors_rounded,
-        SensorProtocol.esphome    => Icons.memory_outlined,
-        SensorProtocol.haRest     => Icons.home_outlined,
-        SensorProtocol.z2mMqtt    => Icons.hub_outlined,
-        SensorProtocol.unknown    => Icons.device_unknown_outlined,
+          Symbols.sensors,
+        SensorProtocol.esphome    => Symbols.memory,
+        SensorProtocol.haRest     => Symbols.home,
+        SensorProtocol.z2mMqtt    => Symbols.hub,
+        SensorProtocol.aqaraHub   => Symbols.hub,
+        SensorProtocol.unknown    => Symbols.device_unknown,
       };
 }
 
@@ -213,11 +219,11 @@ extension CoverProtocolX on CoverProtocol {
         CoverProtocol.shellyGen1Roller ||
         CoverProtocol.shellyGen2Cover  ||
         CoverProtocol.shellyGen3Cover  =>
-          Icons.window_outlined,
-        CoverProtocol.esphome          => Icons.memory_outlined,
-        CoverProtocol.haRest           => Icons.home_outlined,
-        CoverProtocol.z2mMqtt          => Icons.hub_outlined,
-        CoverProtocol.unknown          => Icons.device_unknown_outlined,
+          Symbols.window,
+        CoverProtocol.esphome          => Symbols.memory,
+        CoverProtocol.haRest           => Symbols.home,
+        CoverProtocol.z2mMqtt          => Symbols.hub,
+        CoverProtocol.unknown          => Symbols.device_unknown,
       };
 }
 
@@ -231,12 +237,12 @@ enum CoverState {
   closing,
   unknown;
 
-  String get heLabel => switch (this) {
-        CoverState.open    => 'פתוח',
-        CoverState.closed  => 'סגור',
-        CoverState.stopped => 'עצור',
-        CoverState.opening => 'נפתח…',
-        CoverState.closing => 'נסגר…',
+  String get label => switch (this) {
+        CoverState.open    => 'Open',
+        CoverState.closed  => 'Closed',
+        CoverState.stopped => 'Stopped',
+        CoverState.opening => 'Opening…',
+        CoverState.closing => 'Closing…',
         CoverState.unknown => '—',
       };
 

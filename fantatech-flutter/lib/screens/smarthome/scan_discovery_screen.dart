@@ -1,3 +1,4 @@
+import 'package:material_symbols_icons/symbols.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 // ScanDiscoveryScreen
 //
@@ -14,10 +15,12 @@ import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 
+import '../../l10n/strings.dart';
 import '../../models/app_state.dart';
 import '../../models/device.dart';
 import '../../services/discovery/device_classifier.dart';
 import '../../services/discovery/discovery_manager.dart';
+import '../../services/discovery/discovery_models.dart';
 import '../../theme/app_theme.dart';
 import 'sensor_hub_screen.dart';
 import 'smart_switch_hub_screen.dart';
@@ -29,7 +32,7 @@ enum _Protocol { all, wifi, ble, matter, zigbee }
 
 extension _ProtocolX on _Protocol {
   String get label => switch (this) {
-    _Protocol.all    => 'הכל',
+    _Protocol.all    => 'All',
     _Protocol.wifi   => 'WiFi',
     _Protocol.ble    => 'BLE',
     _Protocol.matter => 'Matter',
@@ -45,11 +48,11 @@ extension _ProtocolX on _Protocol {
   };
 
   IconData get icon => switch (this) {
-    _Protocol.all    => Icons.all_inclusive,
-    _Protocol.wifi   => Icons.wifi_rounded,
-    _Protocol.ble    => Icons.bluetooth_rounded,
-    _Protocol.matter => Icons.hub_outlined,
-    _Protocol.zigbee => Icons.settings_input_antenna,
+    _Protocol.all    => Symbols.all_inclusive,
+    _Protocol.wifi   => Symbols.wifi,
+    _Protocol.ble    => Symbols.bluetooth,
+    _Protocol.matter => Symbols.hub,
+    _Protocol.zigbee => Symbols.settings_input_antenna,
   };
 
   bool matches(DiscoveryProtocol p) => switch (this) {
@@ -65,7 +68,17 @@ extension _ProtocolX on _Protocol {
 // Screen
 // ─────────────────────────────────────────────────────────────────────────────
 class ScanDiscoveryScreen extends StatefulWidget {
-  const ScanDiscoveryScreen({super.key});
+  /// When true, only camera devices are shown (used from the Cameras action).
+  final bool cameraOnly;
+
+  /// When true, camera devices are hidden (used from the global product search).
+  final bool excludeCameras;
+
+  const ScanDiscoveryScreen({
+    super.key,
+    this.cameraOnly = false,
+    this.excludeCameras = false,
+  });
 
   @override
   State<ScanDiscoveryScreen> createState() => _ScanDiscoveryScreenState();
@@ -162,18 +175,25 @@ class _ScanDiscoveryScreenState extends State<ScanDiscoveryScreen>
 
   // ── Filtered list ─────────────────────────────────────────────────────────
   List<DiscoveredDevice> get _filtered =>
-      _manager.devices.where((d) => _filter.matches(d.protocol)).toList();
+      _manager.devices.where((d) {
+        if (!_filter.matches(d.protocol)) return false;
+        final isCam = d.type == DiscoveredDeviceType.camera;
+        if (widget.cameraOnly && !isCam) return false;
+        if (widget.excludeCameras && isCam) return false;
+        return true;
+      }).toList();
 
   // ── Build ─────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     final filtered = _filtered;
     final isScanning = _manager.isScanning;
+    final s = context.select((AppState st) => st.strings);
 
     return Scaffold(
       backgroundColor: context.tBg,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: Padding(
+      floatingActionButton: widget.cameraOnly ? null : Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -186,8 +206,8 @@ class _ScanDiscoveryScreenState extends State<ScanDiscoveryScreen>
                     MaterialPageRoute(
                         builder: (_) => const SmartSwitchHubScreen())),
                 backgroundColor: const Color(0xFF00B4D8),
-                icon: Icon(Icons.power_settings_new, size: 18),
-                label: Text('מפסקים',
+                icon: Icon(Symbols.power_settings_new, size: 18),
+                label: Text(s.switchesCategory,
                     style: TextStyle(
                         fontSize: 12, fontWeight: FontWeight.w700)),
               ),
@@ -201,8 +221,8 @@ class _ScanDiscoveryScreenState extends State<ScanDiscoveryScreen>
                     MaterialPageRoute(
                         builder: (_) => const SensorHubScreen())),
                 backgroundColor: const Color(0xFFFF6B35),
-                icon: Icon(Icons.sensors_rounded, size: 18),
-                label: Text('חיישנים · תריסים',
+                icon: Icon(Symbols.sensors, size: 18),
+                label: Text(s.scanSensorsShutters,
                     style: TextStyle(
                         fontSize: 12, fontWeight: FontWeight.w700)),
               ),
@@ -216,6 +236,7 @@ class _ScanDiscoveryScreenState extends State<ScanDiscoveryScreen>
             // ── Top bar ────────────────────────────────────────
             _TopBar(
               isScanning: isScanning,
+              s: s,
               onStop:  isScanning ? _manager.cancelScan : null,
               onRescan: (!isScanning && _manager.status == DiscoveryStatus.done)
                   ? _startScan
@@ -227,6 +248,7 @@ class _ScanDiscoveryScreenState extends State<ScanDiscoveryScreen>
               manager: _manager,
               radarCtrl: _radarCtrl,
               pulseCtrl: _pulseCtrl,
+              s: s,
             ),
 
             // ── Protocol filter chips ──────────────────────────
@@ -242,11 +264,12 @@ class _ScanDiscoveryScreenState extends State<ScanDiscoveryScreen>
                       : _manager.devices
                           .where((d) => p.matches(d.protocol))
                           .length;
+                  final chipLabel = p == _Protocol.all ? s.allDevices : p.label;
                   return GestureDetector(
                     onTap: () => setState(() => _filter = p),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 180),
-                      margin: const EdgeInsets.only(left: 8),
+                      margin: const EdgeInsetsDirectional.only(start: 8),
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
@@ -269,7 +292,7 @@ class _ScanDiscoveryScreenState extends State<ScanDiscoveryScreen>
                                   ? p.color
                                   : context.tText2(0.45)),
                           const SizedBox(width: 5),
-                          Text(p.label,
+                          Text(chipLabel,
                               style: TextStyle(
                                 color: active
                                     ? p.color
@@ -308,7 +331,7 @@ class _ScanDiscoveryScreenState extends State<ScanDiscoveryScreen>
             // ── Results ────────────────────────────────────────
             Expanded(
               child: filtered.isEmpty
-                  ? _EmptyState(isScanning: isScanning, filter: _filter)
+                  ? _EmptyState(isScanning: isScanning, filter: _filter, s: s)
                   : ListView.builder(
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                       itemCount: filtered.length,
@@ -336,11 +359,13 @@ class _ScanDiscoveryScreenState extends State<ScanDiscoveryScreen>
 // ─────────────────────────────────────────────────────────────────────────────
 class _TopBar extends StatelessWidget {
   final bool isScanning;
+  final S s;
   final VoidCallback? onStop;
   final VoidCallback? onRescan;
 
   const _TopBar({
     required this.isScanning,
+    required this.s,
     this.onStop,
     this.onRescan,
   });
@@ -359,7 +384,7 @@ class _TopBar extends StatelessWidget {
                 color: context.tText2(0.07),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(Icons.arrow_back_ios_new,
+              child: Icon(Symbols.arrow_back_ios_new,
                   color: context.tText, size: 16),
             ),
           ),
@@ -368,13 +393,13 @@ class _TopBar extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('סריקת רשת',
+                Text(s.scanNetworkTitle,
                     style: TextStyle(
                         color: context.tText,
                         fontSize: 18,
                         fontWeight: FontWeight.bold)),
                 Text(
-                  isScanning ? 'מחפש מכשירים...' : 'בחר מכשיר להוספה',
+                  isScanning ? s.searching : s.scanSelectDevice,
                   style: TextStyle(
                       color: context.tText2(0.45),
                       fontSize: 12),
@@ -394,14 +419,14 @@ class _TopBar extends StatelessWidget {
                   border: Border.all(
                       color: AppColors.primary.withValues(alpha: 0.4)),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.refresh_rounded,
+                    const Icon(Symbols.refresh,
                         color: AppColors.primary, size: 16),
-                    SizedBox(width: 5),
-                    Text('סרוק שוב',
-                        style: TextStyle(
+                    const SizedBox(width: 5),
+                    Text(s.rescan,
+                        style: const TextStyle(
                             color: AppColors.primary,
                             fontSize: 12,
                             fontWeight: FontWeight.w600)),
@@ -421,14 +446,14 @@ class _TopBar extends StatelessWidget {
                   border: Border.all(
                       color: AppColors.unsecured.withValues(alpha: 0.35)),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.stop_rounded,
+                    const Icon(Symbols.stop,
                         color: AppColors.unsecured, size: 16),
-                    SizedBox(width: 5),
-                    Text('עצור',
-                        style: TextStyle(
+                    const SizedBox(width: 5),
+                    Text(s.stop,
+                        style: const TextStyle(
                             color: AppColors.unsecured,
                             fontSize: 12,
                             fontWeight: FontWeight.w600)),
@@ -449,11 +474,13 @@ class _ScanProgress extends StatelessWidget {
   final DiscoveryManager manager;
   final AnimationController radarCtrl;
   final AnimationController pulseCtrl;
+  final S s;
 
   const _ScanProgress({
     required this.manager,
     required this.radarCtrl,
     required this.pulseCtrl,
+    required this.s,
   });
 
   @override
@@ -504,8 +531,8 @@ class _ScanProgress extends StatelessWidget {
                           ),
                           child: Icon(
                             found > 0
-                                ? Icons.check_rounded
-                                : Icons.wifi_find_outlined,
+                                ? Symbols.check
+                                : Symbols.wifi_find,
                             color: found > 0
                                 ? AppColors.secured
                                 : context.tText2(0.38),
@@ -526,10 +553,10 @@ class _ScanProgress extends StatelessWidget {
                       isScanning
                           ? (manager.progressMessage.isNotEmpty
                               ? manager.progressMessage
-                              : 'סורק...')
+                              : s.camScanning)
                           : (found > 0
-                              ? '$found מכשירים נמצאו'
-                              : 'לא נמצאו מכשירים'),
+                              ? s.scanFoundFmt.replaceAll('{n}', '$found')
+                              : s.noDevicesOnNetwork),
                       style: TextStyle(
                           color: context.tText,
                           fontSize: 13,
@@ -563,25 +590,25 @@ class _ScanProgress extends StatelessWidget {
             children: [
               _ProtoChip(
                   label: 'WiFi',
-                  icon: Icons.wifi_rounded,
+                  icon: Symbols.wifi,
                   color: const Color(0xFF18BCEC),
                   active: manager.wifiRunning),
               const SizedBox(width: 6),
               _ProtoChip(
                   label: 'BLE',
-                  icon: Icons.bluetooth_rounded,
+                  icon: Symbols.bluetooth,
                   color: const Color(0xFF7B68EE),
                   active: manager.bleRunning),
               const SizedBox(width: 6),
               _ProtoChip(
                   label: 'Matter',
-                  icon: Icons.hub_outlined,
+                  icon: Symbols.hub,
                   color: const Color(0xFF00C896),
                   active: manager.matterRunning),
               const SizedBox(width: 6),
               _ProtoChip(
                   label: 'Zigbee',
-                  icon: Icons.settings_input_antenna,
+                  icon: Symbols.settings_input_antenna,
                   color: const Color(0xFFFF9D00),
                   active: manager.gatewayRunning),
             ],
@@ -759,24 +786,24 @@ class _DeviceResultCard extends StatelessWidget {
   });
 
   static IconData _icon(DiscoveredDeviceType t) => switch (t) {
-    DiscoveredDeviceType.light         => Icons.lightbulb_outlined,
-    DiscoveredDeviceType.socket        => Icons.power_outlined,
-    DiscoveredDeviceType.smartSwitch   => Icons.toggle_on_outlined,
-    DiscoveredDeviceType.thermostat    => Icons.thermostat_outlined,
-    DiscoveredDeviceType.camera        => Icons.videocam_outlined,
-    DiscoveredDeviceType.gateway       => Icons.hub_outlined,
-    DiscoveredDeviceType.boiler        => Icons.water_drop_outlined,
-    DiscoveredDeviceType.solar         => Icons.wb_sunny_outlined,
-    DiscoveredDeviceType.circuitBreaker=> Icons.electrical_services,
-    DiscoveredDeviceType.energyMeter   => Icons.bolt_outlined,
-    DiscoveredDeviceType.smokeSensor   => Icons.local_fire_department_outlined,
-    DiscoveredDeviceType.motionSensor  => Icons.sensors_outlined,
-    DiscoveredDeviceType.windowSensor  => Icons.window_outlined,
-    DiscoveredDeviceType.doorSensor    => Icons.sensor_door_outlined,
-    DiscoveredDeviceType.router        => Icons.router_outlined,
-    DiscoveredDeviceType.speaker       => Icons.speaker_outlined,
-    DiscoveredDeviceType.tv            => Icons.tv_outlined,
-    _                                  => Icons.devices_outlined,
+    DiscoveredDeviceType.light         => Symbols.lightbulb,
+    DiscoveredDeviceType.socket        => Symbols.power,
+    DiscoveredDeviceType.smartSwitch   => Symbols.toggle_on,
+    DiscoveredDeviceType.thermostat    => Symbols.thermostat,
+    DiscoveredDeviceType.camera        => Symbols.videocam,
+    DiscoveredDeviceType.gateway       => Symbols.hub,
+    DiscoveredDeviceType.boiler        => Symbols.water_drop,
+    DiscoveredDeviceType.solar         => Symbols.wb_sunny,
+    DiscoveredDeviceType.circuitBreaker=> Symbols.electrical_services,
+    DiscoveredDeviceType.energyMeter   => Symbols.bolt,
+    DiscoveredDeviceType.smokeSensor   => Symbols.local_fire_department,
+    DiscoveredDeviceType.motionSensor  => Symbols.sensors,
+    DiscoveredDeviceType.windowSensor  => Symbols.window,
+    DiscoveredDeviceType.doorSensor    => Symbols.sensor_door,
+    DiscoveredDeviceType.router        => Symbols.router,
+    DiscoveredDeviceType.speaker       => Symbols.speaker,
+    DiscoveredDeviceType.tv            => Symbols.tv,
+    _                                  => Symbols.devices,
   };
 
   static Color _color(DiscoveredDeviceType t) => switch (t) {
@@ -944,7 +971,7 @@ class _DeviceResultCard extends StatelessWidget {
                 ),
               ),
               child: Icon(
-                added ? Icons.check_rounded : Icons.add_rounded,
+                added ? Symbols.check : Symbols.add,
                 color: added ? AppColors.secured : AppColors.primary,
                 size: 18,
               ),
@@ -962,8 +989,9 @@ class _DeviceResultCard extends StatelessWidget {
 class _EmptyState extends StatelessWidget {
   final bool isScanning;
   final _Protocol filter;
+  final S s;
 
-  const _EmptyState({required this.isScanning, required this.filter});
+  const _EmptyState({required this.isScanning, required this.filter, required this.s});
 
   @override
   Widget build(BuildContext context) {
@@ -972,15 +1000,15 @@ class _EmptyState extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            isScanning ? Icons.radar : Icons.wifi_find_outlined,
+            isScanning ? Symbols.radar : Symbols.wifi_find,
             size: 56,
             color: context.tText2(0.15),
           ),
           const SizedBox(height: 14),
           Text(
             isScanning
-                ? 'מחפש מכשירים ${filter == _Protocol.all ? "" : "(${filter.label})"}'
-                : 'לא נמצאו מכשירים',
+                ? '${s.searching} ${filter == _Protocol.all ? "" : "(${filter.label})"}'
+                : s.noDevicesOnNetwork,
             style: TextStyle(
               color: context.tText2(0.35),
               fontSize: 15,
@@ -989,7 +1017,7 @@ class _EmptyState extends StatelessWidget {
           if (!isScanning) ...[
             const SizedBox(height: 6),
             Text(
-              'ודא שהמכשיר מחובר לאותה רשת WiFi',
+              s.sameWifiHint,
               style: TextStyle(
                 color: context.tText2(0.22),
                 fontSize: 12,

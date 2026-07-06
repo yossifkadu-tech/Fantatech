@@ -1,8 +1,208 @@
+import 'package:material_symbols_icons/symbols.dart';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/app_state.dart';
+import '../../models/device.dart';
 import '../../theme/app_theme.dart';
+
+void _showRateDialog(BuildContext context) {
+  final state = context.read<AppState>();
+  final s = state.strings;
+  final ctrl = TextEditingController(
+      text: state.kwhRate.toStringAsFixed(2));
+  showDialog(
+    context: context,
+    builder: (_) => AlertDialog(
+      backgroundColor: const Color(0xFF1A1D2E),
+      shape:
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      title: Text(s.energyRateEdit,
+          style: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold)),
+      content: TextField(
+        controller: ctrl,
+        keyboardType:
+            const TextInputType.numberWithOptions(decimal: true),
+        style: const TextStyle(color: Colors.white),
+        decoration: InputDecoration(
+          suffixText: s.energyRateUnit,
+          suffixStyle:
+              const TextStyle(color: Colors.white54, fontSize: 13),
+          filled: true,
+          fillColor: Colors.white.withValues(alpha: 0.06),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide.none,
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(s.cancel,
+              style: const TextStyle(color: Colors.white54)),
+        ),
+        TextButton(
+          onPressed: () {
+            final val = double.tryParse(ctrl.text);
+            if (val != null && val > 0) {
+              context.read<AppState>().setKwhRate(val);
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Text(s.energyRateSaved),
+                backgroundColor: AppColors.secured,
+                duration: const Duration(seconds: 2),
+              ));
+            }
+          },
+          child: Text(s.okButton,
+              style: const TextStyle(color: AppColors.primary)),
+        ),
+      ],
+    ),
+  );
+}
+
+void _showFullReport(BuildContext context) {
+  final state = context.read<AppState>();
+  final s = state.strings;
+
+  // Aggregate live socket data or fall back to static _devices sample
+  final liveDevices = state.devices.where((d) => d.isOn).toList();
+  final totalActive = liveDevices.length;
+  final monthKwh = _monthData.fold(0.0, (sum, p) => sum + p.consumption);
+  final solarKwh  = _monthData.fold(0.0, (sum, p) => sum + p.solar);
+  final netKwh    = monthKwh - solarKwh;
+  final rate = state.kwhRate;
+
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (_) => DraggableScrollableSheet(
+      initialChildSize: 0.7,
+      minChildSize: 0.45,
+      maxChildSize: 0.92,
+      builder: (_, sc) => Container(
+        decoration: BoxDecoration(
+          color: context.tCard,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          children: [
+            const SizedBox(height: 8),
+            Container(width: 40, height: 4,
+                decoration: BoxDecoration(color: Colors.white24,
+                    borderRadius: BorderRadius.circular(2))),
+            const SizedBox(height: 14),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Text(s.fullReport,
+                  style: TextStyle(color: context.tText,
+                      fontSize: 18, fontWeight: FontWeight.bold)),
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: ListView(
+                controller: sc,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                children: [
+                  // ── Monthly summary card ──────────────────────
+                  _ReportCard(
+                    title: s.monthlyConsumption,
+                    rows: [
+                      _ReportRow(label: 'Grid used',   value: '${monthKwh.toStringAsFixed(1)} kWh'),
+                      _ReportRow(label: 'Solar offset', value: '${solarKwh.toStringAsFixed(1)} kWh',
+                          color: const Color(0xFF4CAF50)),
+                      _ReportRow(label: 'Net consumption', value: '${netKwh.toStringAsFixed(1)} kWh',
+                          isBold: true),
+                      _ReportRow(label: 'Est. cost',
+                          value: '₪${(netKwh * rate).toStringAsFixed(0)}',
+                          isBold: true),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  // ── Active devices breakdown ──────────────────
+                  _ReportCard(
+                    title: s.activeDevices,
+                    rows: [
+                      _ReportRow(label: 'Active now', value: '$totalActive'),
+                      ..._devices.map((d) =>
+                          _ReportRow(label: d.name, value: '${d.watts} W',
+                              color: d.color)),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  // ── Weekly breakdown ──────────────────────────
+                  _ReportCard(
+                    title: 'Weekly breakdown',
+                    rows: _weekData.map((p) =>
+                        _ReportRow(label: p.label,
+                            value: '${p.consumption.toStringAsFixed(1)} kWh')).toList(),
+                  ),
+                  const SizedBox(height: 24),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+class _ReportCard extends StatelessWidget {
+  final String title;
+  final List<_ReportRow> rows;
+  const _ReportCard({required this.title, required this.rows});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: context.tText2(0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: context.tText2(0.08)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: TextStyle(color: context.tText2(0.5),
+              fontSize: 12, fontWeight: FontWeight.w600,
+              letterSpacing: 0.8)),
+          const SizedBox(height: 10),
+          ...rows.map((r) => Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(r.label, style: TextStyle(
+                    color: context.tText2(0.75), fontSize: 13)),
+                Text(r.value, style: TextStyle(
+                    color: r.color ?? context.tText,
+                    fontSize: 13,
+                    fontWeight: r.isBold ? FontWeight.bold : FontWeight.normal)),
+              ],
+            ),
+          )),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReportRow {
+  final String label;
+  final String value;
+  final Color? color;
+  final bool isBold;
+  const _ReportRow({required this.label, required this.value,
+      this.color, this.isBold = false});
+}
 
 // ─────────────────────────────────────────────────────────────
 // Data models
@@ -78,20 +278,20 @@ const _monthData = [
 
 const _devices = [
   _DeviceRow(
-    icon: Icons.power_outlined,
-    name: 'סלון',
+    icon: Symbols.power,
+    name: 'Living Room',
     watts: 1200,
     color: AppColors.secured,
   ),
   _DeviceRow(
-    icon: Icons.microwave_outlined,
-    name: 'תנור',
+    icon: Symbols.microwave,
+    name: 'Oven',
     watts: 850,
     color: Colors.white70,
   ),
   _DeviceRow(
-    icon: Icons.local_laundry_service_outlined,
-    name: 'מכונת כביסה',
+    icon: Symbols.local_laundry_service,
+    name: 'Washing Machine',
     watts: 480,
     color: AppColors.acColor,
   ),
@@ -100,29 +300,20 @@ const _devices = [
 // ─────────────────────────────────────────────────────────────
 // Screen
 // ─────────────────────────────────────────────────────────────
-List<_SocketEntry> _buildDemoSockets() => [
-      _SocketEntry(
-          id: 's1',
-          name: 'מטען סלון',
-          room: 'סלון',
-          protocol: 'wifi',
-          isOn: true,
-          watts: 65),
-      _SocketEntry(
-          id: 's2',
-          name: 'טלוויזיה',
-          room: 'סלון',
-          protocol: 'wifi',
-          isOn: true,
-          watts: 120),
-      _SocketEntry(
-          id: 's3',
-          name: 'מדיח כלים',
-          room: 'מטבח',
-          protocol: 'zigbee',
-          isOn: false,
-          watts: 0),
-];
+List<_SocketEntry> _socketsFromState(AppState state) =>
+    state.devices
+        .where((d) =>
+            d.type == DeviceType.smartPlug ||
+            d.type == DeviceType.smartSwitch)
+        .map((d) => _SocketEntry(
+              id:       d.id,
+              name:     d.name,
+              room:     d.room,
+              protocol: d.attributes['protocol'] as String? ?? 'wifi',
+              isOn:     d.isOn,
+              watts:    (d.attributes['watts'] as num?)?.toInt() ?? 0,
+            ))
+        .toList();
 
 class EnergyScreen extends StatefulWidget {
   const EnergyScreen({super.key});
@@ -162,7 +353,6 @@ class _EnergyScreenState extends State<EnergyScreen>
   @override
   void initState() {
     super.initState();
-    _sockets = _buildDemoSockets();
     _selectedPoint = _dayData.length - 1;
     _animCtrl = AnimationController(
       vsync: this,
@@ -180,7 +370,9 @@ class _EnergyScreenState extends State<EnergyScreen>
 
   @override
   Widget build(BuildContext context) {
-    final s = context.watch<AppState>().strings;
+    final appState = context.watch<AppState>();
+    final s        = appState.strings;
+    _sockets       = _socketsFromState(appState);
 
     final tabs = [s.energyDay, s.energyWeek, s.energyMonth];
 
@@ -293,11 +485,74 @@ class _EnergyScreenState extends State<EnergyScreen>
 
                     const SizedBox(height: 20),
 
+                    // ── Energy rate tile ──────────────────────────
+                    GestureDetector(
+                      onTap: () => _showRateDialog(context),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 14),
+                        decoration: BoxDecoration(
+                          color: context.tCard,
+                          borderRadius: BorderRadius.circular(14),
+                          border:
+                              Border.all(color: context.tText2(0.07)),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: AppColors.plugColor
+                                    .withValues(alpha: 0.12),
+                                borderRadius:
+                                    BorderRadius.circular(10),
+                              ),
+                              child: const Icon(Symbols.bolt,
+                                  color: AppColors.plugColor,
+                                  size: 18),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    s.energyRateLabel,
+                                    style: TextStyle(
+                                      color: context.tText2(0.5),
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '${appState.kwhRate.toStringAsFixed(2)} ${s.energyRateUnit}',
+                                    style: TextStyle(
+                                      color: context.tText,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Icon(Symbols.edit,
+                                color: context.tText2(0.3),
+                                size: 17),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
                     SizedBox(
                       width: double.infinity,
                       height: 50,
                       child: OutlinedButton(
-                        onPressed: () {},
+                        onPressed: () => _showFullReport(context),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: context.tText,
                           side: BorderSide(
@@ -440,7 +695,7 @@ class _ChartCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(Icons.arrow_downward,
+                      Icon(Symbols.arrow_downward,
                           color: AppColors.secured, size: 12),
                       const SizedBox(width: 3),
                       Text(
@@ -798,7 +1053,7 @@ class _SummaryRow extends StatelessWidget {
       children: [
         Expanded(
           child: _SummaryCard(
-            icon: Icons.bolt,
+            icon: Symbols.bolt,
             value: totalKwh.toStringAsFixed(1),
             unit: 'kWh',
             label: 'Total',
@@ -808,7 +1063,7 @@ class _SummaryRow extends StatelessWidget {
         const SizedBox(width: 10),
         Expanded(
           child: _SummaryCard(
-            icon: Icons.wb_sunny,
+            icon: Symbols.wb_sunny,
             value: solarKwh.toStringAsFixed(1),
             unit: 'kWh',
             label: 'Solar',
@@ -818,7 +1073,7 @@ class _SummaryRow extends StatelessWidget {
         const SizedBox(width: 10),
         Expanded(
           child: _SummaryCard(
-            icon: Icons.savings_outlined,
+            icon: Symbols.savings,
             value: savingPct.toStringAsFixed(0),
             unit: '%',
             label: 'Saved',
@@ -916,7 +1171,7 @@ class _TopBar extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
-                  Icons.chevron_right, color: context.tText, size: 22),
+                  Symbols.chevron_right, color: context.tText, size: 22),
             ),
           ),
           Expanded(
@@ -1009,7 +1264,7 @@ class _SmartSocketsSection extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.add, color: AppColors.primary, size: 13),
+                    Icon(Symbols.add, color: AppColors.primary, size: 13),
                     const SizedBox(width: 4),
                     Text(
                       s.socketRegister,
@@ -1040,7 +1295,7 @@ class _SmartSocketsSection extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Icon(Icons.bolt,
+                Icon(Symbols.bolt,
                     color: AppColors.plugColor, size: 15),
                 const SizedBox(width: 6),
                 Text(
@@ -1110,7 +1365,7 @@ class _SocketTile extends StatelessWidget {
       : const Color(0xFF7BB8FF);
 
   IconData get _protoIcon =>
-      entry.protocol == 'zigbee' ? Icons.hub_outlined : Icons.wifi;
+      entry.protocol == 'zigbee' ? Symbols.hub : Symbols.wifi;
 
   @override
   Widget build(BuildContext context) {
@@ -1129,7 +1384,7 @@ class _SocketTile extends StatelessWidget {
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
-              Icons.power_outlined,
+              Symbols.power,
               color: entry.isOn ? AppColors.plugColor : context.tText2(0.24),
               size: 19,
             ),
@@ -1175,7 +1430,7 @@ class _SocketTile extends StatelessWidget {
           // Watts
           if (entry.isOn && entry.watts > 0)
             Padding(
-              padding: const EdgeInsets.only(right: 10),
+              padding: const EdgeInsetsDirectional.only(end: 10),
               child: Text(
                 '${entry.watts}W',
                 style: TextStyle(
@@ -1288,7 +1543,7 @@ class _RegisterSocketSheetState extends State<_RegisterSocketSheet> {
           _SheetField(
             ctrl: _nameCtrl,
             label: s.socketName,
-            icon: Icons.power_outlined,
+            icon: Symbols.power,
           ),
           const SizedBox(height: 12),
 
@@ -1296,7 +1551,7 @@ class _RegisterSocketSheetState extends State<_RegisterSocketSheet> {
           _SheetField(
             ctrl: _roomCtrl,
             label: s.socketRoom,
-            icon: Icons.meeting_room_outlined,
+            icon: Symbols.meeting_room,
           ),
           const SizedBox(height: 16),
 
@@ -1313,7 +1568,7 @@ class _RegisterSocketSheetState extends State<_RegisterSocketSheet> {
             children: [
               _ProtoOption(
                 label: 'WiFi',
-                icon: Icons.wifi,
+                icon: Symbols.wifi,
                 selected: _protocol == 'wifi',
                 color: const Color(0xFF7BB8FF),
                 onTap: () => setState(() => _protocol = 'wifi'),
@@ -1321,7 +1576,7 @@ class _RegisterSocketSheetState extends State<_RegisterSocketSheet> {
               const SizedBox(width: 10),
               _ProtoOption(
                 label: 'Zigbee',
-                icon: Icons.hub_outlined,
+                icon: Symbols.hub,
                 selected: _protocol == 'zigbee',
                 color: const Color(0xFFFFB300),
                 onTap: () => setState(() => _protocol = 'zigbee'),

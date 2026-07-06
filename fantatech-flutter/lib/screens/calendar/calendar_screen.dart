@@ -1,3 +1,4 @@
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/app_state.dart';
@@ -61,6 +62,104 @@ final _holidays5786 = <_JewishHoliday>[
   _JewishHoliday(date: DateTime(2026, 8, 12), name: (s) => s.holidayTishaBeav, isMinor: true),
 ];
 
+// ─────────────────────────────────────────────────────────────
+// Hebrew calendar conversion (Dershowitz-Reingold algorithm)
+// ─────────────────────────────────────────────────────────────
+
+class _HDate {
+  final int day, month, year;
+  const _HDate(this.day, this.month, this.year);
+
+  // Nisan=1 ordering month names
+  static const _names = [
+    '', 'ניסן', 'אייר', 'סיוון', 'תמוז', 'אב', 'אלול',
+    'תשרי', 'חשוון', 'כסלו', 'טבת', 'שבט', 'אדר', 'אדר ב׳',
+  ];
+  String get monthName => _names[month < _names.length ? month : 0];
+}
+
+int _toJDN(int y, int m, int d) {
+  final a = (14 - m) ~/ 12;
+  final yr = y + 4800 - a;
+  final mo = m + 12 * a - 3;
+  return d + (153 * mo + 2) ~/ 5 + 365 * yr + yr ~/ 4 - yr ~/ 100 + yr ~/ 400 - 32045;
+}
+
+bool _hLeap(int y) => (7 * y + 1) % 19 < 7;
+
+int _hElapsedDays(int y) {
+  final m = (235 * y - 234) ~/ 19;
+  final p = 12084 + 13753 * m;
+  var d = m * 29 + p ~/ 25920;
+  if ((3 * (d + 1)) % 7 < 3) d++;
+  return d;
+}
+
+int _hNewYear(int y) {
+  const kEpoch = 347997;
+  final d0 = _hElapsedDays(y - 1);
+  final d1 = _hElapsedDays(y);
+  final d2 = _hElapsedDays(y + 1);
+  var jdn = kEpoch + d1;
+  if (d2 - d1 == 356) jdn += 2;
+  else if (d1 - d0 == 382) jdn++;
+  return jdn;
+}
+
+int _hMonthDays(int m, int y) {
+  final yLen = _hNewYear(y + 1) - _hNewYear(y);
+  if (m == 2 || m == 4 || m == 6 || m == 10 || m == 13) return 29;
+  if (m == 12) return _hLeap(y) ? 30 : 29;
+  if (m == 8) return yLen % 10 == 5 ? 30 : 29; // Cheshvan
+  if (m == 9) return yLen % 10 == 3 ? 29 : 30; // Kislev
+  return 30;
+}
+
+_HDate _hFromJDN(int jdn) {
+  var y = ((jdn - 347997) * 98496.0 / 35975351.0).floor() + 1;
+  while (_hNewYear(y) <= jdn) y++;
+  y--;
+  final monthOrder = _hLeap(y)
+      ? [7, 8, 9, 10, 11, 12, 13, 1, 2, 3, 4, 5, 6]
+      : [7, 8, 9, 10, 11, 12, 1, 2, 3, 4, 5, 6];
+  var jdnStart = _hNewYear(y);
+  for (final m in monthOrder) {
+    final mDays = _hMonthDays(m, y);
+    if (jdn < jdnStart + mDays) return _HDate(jdn - jdnStart + 1, m, y);
+    jdnStart += mDays;
+  }
+  return _HDate(1, 7, y + 1);
+}
+
+_HDate hebrewDate(DateTime date) =>
+    _hFromJDN(_toJDN(date.year, date.month, date.day));
+
+String _hDayLabel(int d) {
+  const ones = ['', 'א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט'];
+  const tens = ['', 'י', 'כ', 'ל'];
+  if (d == 15) return 'ט״ו';
+  if (d == 16) return 'ט״ז';
+  final t = d ~/ 10, o = d % 10;
+  final letters = '${tens[t]}${ones[o]}';
+  if (letters.isEmpty) return '';
+  if (letters.length == 1) return '$letters׳';
+  return '${letters.substring(0, letters.length - 1)}״${letters.substring(letters.length - 1)}';
+}
+
+String _hYearLabel(int y) {
+  var n = y % 1000;
+  const vals =  [400, 300, 200, 100, 90, 80, 70, 60, 50, 40, 30, 20, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
+  const chars = ['ת',  'ש',  'ר',  'ק',  'צ', 'פ', 'ע', 'ס', 'נ', 'מ', 'ל', 'כ', 'י','ט','ח','ז','ו','ה','ד','ג','ב','א'];
+  var s = '';
+  for (var i = 0; i < vals.length; i++) {
+    while (n >= vals[i]) { s += chars[i]; n -= vals[i]; }
+  }
+  if (s.isEmpty) return '';
+  if (s.length == 1) return '$s׳';
+  return '${s.substring(0, s.length - 1)}״${s.substring(s.length - 1)}';
+}
+
+// ─────────────────────────────────────────────────────────────
 // Shabbat candle lighting times for Israel (approximate, 18 min before sunset)
 String _candleLightingTime(DateTime friday) {
   final m = friday.month;
@@ -96,9 +195,7 @@ class CalendarScreen extends StatefulWidget {
   State<CalendarScreen> createState() => _CalendarScreenState();
 }
 
-class _CalendarScreenState extends State<CalendarScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabCtrl;
+class _CalendarScreenState extends State<CalendarScreen> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
 
@@ -106,31 +203,6 @@ class _CalendarScreenState extends State<CalendarScreen>
   void initState() {
     super.initState();
     _selectedDay = DateTime.now();
-    _tabCtrl = TabController(length: 2, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabCtrl.dispose();
-    super.dispose();
-  }
-
-  bool _isHoliday(DateTime day) {
-    return _holidays5786.any((h) =>
-        h.date.year == day.year &&
-        h.date.month == day.month &&
-        h.date.day == day.day);
-  }
-
-  _JewishHoliday? _getHoliday(DateTime day) {
-    try {
-      return _holidays5786.firstWhere((h) =>
-          h.date.year == day.year &&
-          h.date.month == day.month &&
-          h.date.day == day.day);
-    } catch (_) {
-      return null;
-    }
   }
 
   bool _isSameDay(DateTime a, DateTime b) =>
@@ -153,7 +225,27 @@ class _CalendarScreenState extends State<CalendarScreen>
 
   @override
   Widget build(BuildContext context) {
-    final s = context.watch<AppState>().strings;
+    final appState = context.watch<AppState>();
+    final s = appState.strings;
+    final isHebrew     = appState.locale == AppLocale.hebrew;
+    final shabbatOn    = appState.keepShabbat;
+    final activeHolidays = shabbatOn ? _holidays5786 : const <_JewishHoliday>[];
+
+    bool isHolidayFor(DateTime day) => activeHolidays.any((h) =>
+        h.date.year == day.year &&
+        h.date.month == day.month &&
+        h.date.day == day.day);
+
+    _JewishHoliday? getHolidayFor(DateTime day) {
+      try {
+        return activeHolidays.firstWhere((h) =>
+            h.date.year == day.year &&
+            h.date.month == day.month &&
+            h.date.day == day.day);
+      } catch (_) {
+        return null;
+      }
+    }
 
     return Scaffold(
       backgroundColor: context.tBg,
@@ -162,71 +254,36 @@ class _CalendarScreenState extends State<CalendarScreen>
           children: [
             _TopBar(title: s.calendarTitle),
             // Tab bar
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-              child: Container(
-                height: 42,
-                decoration: BoxDecoration(
-                  color: context.tCard,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: TabBar(
-                  controller: _tabCtrl,
-                  indicator: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  indicatorSize: TabBarIndicatorSize.tab,
-                  labelColor: context.tText,
-                  unselectedLabelColor: context.tText2(0.38),
-                  labelStyle: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  tabs: [
-                    Tab(text: s.calendarHebrew),
-                    Tab(text: s.calendarGregorian),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
             Expanded(
-              child: TabBarView(
-                controller: _tabCtrl,
-                children: [
-                  // Hebrew calendar tab
-                  _HebrewCalendarTab(
-                    focusedDay: _focusedDay,
-                    selectedDay: _selectedDay,
-                    holidays: _holidays5786,
-                    onDaySelected: (d) => setState(() => _selectedDay = d),
-                    onPrevMonth: _prevMonth,
-                    onNextMonth: _nextMonth,
-                    isHoliday: _isHoliday,
-                    getHoliday: _getHoliday,
-                    isSameDay: _isSameDay,
-                    isShabbatStart: _isShabbatStart,
-                    isShabbatEnd: _isShabbatEnd,
-                    strings: s,
-                  ),
-                  // Gregorian calendar tab
-                  _GregorianCalendarTab(
-                    focusedDay: _focusedDay,
-                    selectedDay: _selectedDay,
-                    holidays: _holidays5786,
-                    onDaySelected: (d) => setState(() => _selectedDay = d),
-                    onPrevMonth: _prevMonth,
-                    onNextMonth: _nextMonth,
-                    isHoliday: _isHoliday,
-                    getHoliday: _getHoliday,
-                    isSameDay: _isSameDay,
-                    isShabbatStart: _isShabbatStart,
-                    isShabbatEnd: _isShabbatEnd,
-                    strings: s,
-                  ),
-                ],
-              ),
+              child: (isHebrew && shabbatOn)
+                  ? _HebrewCalendarTab(
+                      focusedDay: _focusedDay,
+                      selectedDay: _selectedDay,
+                      holidays: activeHolidays,
+                      onDaySelected: (d) => setState(() => _selectedDay = d),
+                      onPrevMonth: _prevMonth,
+                      onNextMonth: _nextMonth,
+                      isHoliday: isHolidayFor,
+                      getHoliday: getHolidayFor,
+                      isSameDay: _isSameDay,
+                      isShabbatStart: _isShabbatStart,
+                      isShabbatEnd: _isShabbatEnd,
+                      strings: s,
+                    )
+                  : _GregorianCalendarTab(
+                      focusedDay: _focusedDay,
+                      selectedDay: _selectedDay,
+                      holidays: shabbatOn ? activeHolidays : const [],
+                      onDaySelected: (d) => setState(() => _selectedDay = d),
+                      onPrevMonth: _prevMonth,
+                      onNextMonth: _nextMonth,
+                      isHoliday: (_) => false,
+                      getHoliday: (_) => null,
+                      isSameDay: _isSameDay,
+                      isShabbatStart: (_) => false,
+                      isShabbatEnd: (_) => false,
+                      strings: s,
+                    ),
             ),
           ],
         ),
@@ -267,21 +324,11 @@ class _HebrewCalendarTab extends StatelessWidget {
     required this.strings,
   });
 
-  // Very rough Hebrew month approximation for display
+  // Accurate Hebrew month/year from mid-month of the focused Gregorian month
   String _hebrewMonthYear(DateTime dt) {
-    // Map Gregorian months to approximate Hebrew months for display
-    const hebrewMonths = [
-      'שבט', 'אדר', 'ניסן', 'אייר', 'סיון', 'תמוז',
-      'אב', 'אלול', 'תשרי', 'חשוון', 'כסלו', 'טבת',
-    ];
-    final idx = (dt.month - 1) % 12;
-    final hebrewYear = dt.month >= 9 ? dt.year + 3761 : dt.year + 3760;
-    return '${hebrewMonths[idx]} ${_toHebrewYear(hebrewYear)}';
-  }
-
-  String _toHebrewYear(int year) {
-    // Return as "תשפ״ו" style — simplified: just show numeric
-    return "תשפ״ו"; // 5786 hardcoded for this version
+    final mid = DateTime(dt.year, dt.month, 15);
+    final hd = hebrewDate(mid);
+    return '${hd.monthName} ${_hYearLabel(hd.year)}';
   }
 
   @override
@@ -320,6 +367,7 @@ class _HebrewCalendarTab extends StatelessWidget {
             shabbatCandlesLabel: strings.shabbatCandles,
             shabbatHavdalahLabel: strings.shabbatHavdalah,
             rtlDayLabels: true,
+            showHebrewDates: true,
           ),
           const SizedBox(height: 16),
 
@@ -443,6 +491,7 @@ class _CalendarGrid extends StatelessWidget {
   final String shabbatCandlesLabel;
   final String shabbatHavdalahLabel;
   final bool rtlDayLabels;
+  final bool showHebrewDates;
 
   const _CalendarGrid({
     required this.focusedDay,
@@ -460,6 +509,7 @@ class _CalendarGrid extends StatelessWidget {
     required this.shabbatCandlesLabel,
     required this.shabbatHavdalahLabel,
     required this.rtlDayLabels,
+    this.showHebrewDates = false,
   });
 
   List<DateTime?> _buildDays() {
@@ -499,7 +549,7 @@ class _CalendarGrid extends StatelessWidget {
             children: [
               IconButton(
                 onPressed: onPrevMonth,
-                icon: Icon(Icons.chevron_left, color: context.tText2(0.7)),
+                icon: Icon(Symbols.chevron_left, color: context.tText2(0.7)),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
               ),
@@ -516,7 +566,7 @@ class _CalendarGrid extends StatelessWidget {
               ),
               IconButton(
                 onPressed: onNextMonth,
-                icon: Icon(Icons.chevron_right, color: context.tText2(0.7)),
+                icon: Icon(Symbols.chevron_right, color: context.tText2(0.7)),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
               ),
@@ -547,11 +597,11 @@ class _CalendarGrid extends StatelessWidget {
             physics: const NeverScrollableScrollPhysics(),
             shrinkWrap: true,
             itemCount: days.length + (7 - days.length % 7) % 7,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 7,
               mainAxisSpacing: 4,
               crossAxisSpacing: 0,
-              childAspectRatio: 1.0,
+              childAspectRatio: showHebrewDates ? 0.72 : 1.0,
             ),
             itemBuilder: (ctx, i) {
               if (i >= days.length || days[i] == null) {
@@ -565,9 +615,21 @@ class _CalendarGrid extends StatelessWidget {
               final hasHoliday = holiday != null;
               final isFriday   = isShabbatStart(day);
               final isSaturday = isShabbatEnd(day);
-              // Shabbat color: warm amber for Friday, soft purple for Saturday
               const shabbatFriColor  = Color(0xFFF5A623);
               const shabbatSatColor  = Color(0xFF9B8CF5);
+              final hDate = showHebrewDates ? hebrewDate(day) : null;
+
+              final dayColor = isSelected
+                  ? context.tText
+                  : hasHoliday
+                      ? const Color(0xFFFFD700)
+                      : isToday
+                          ? AppColors.primary
+                          : isFriday
+                              ? shabbatFriColor
+                              : isSaturday
+                                  ? shabbatSatColor
+                                  : context.tText2(0.8);
 
               return GestureDetector(
                 onTap: () => onDaySelected(day),
@@ -607,33 +669,35 @@ class _CalendarGrid extends StatelessWidget {
                       Text(
                         '${day.day}',
                         style: TextStyle(
-                          color: isSelected
-                              ? context.tText
-                              : hasHoliday
-                                  ? const Color(0xFFFFD700)
-                                  : isToday
-                                      ? AppColors.primary
-                                      : isFriday
-                                          ? shabbatFriColor
-                                          : isSaturday
-                                              ? shabbatSatColor
-                                              : context.tText2(0.8),
-                          fontSize: 12,
+                          color: dayColor,
+                          fontSize: showHebrewDates ? 11 : 12,
                           fontWeight: isSelected || isToday
                               ? FontWeight.bold
                               : FontWeight.normal,
                         ),
                       ),
+                      if (hDate != null)
+                        Text(
+                          _hDayLabel(hDate.day),
+                          style: TextStyle(
+                            color: isSelected
+                                ? context.tText.withValues(alpha: 0.75)
+                                : context.tText2(0.38),
+                            fontSize: 7.5,
+                            fontWeight: FontWeight.w500,
+                            height: 1.1,
+                          ),
+                        ),
                       if (hasHoliday)
                         Container(
                           width: 4, height: 4,
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             color: Color(0xFFFFD700),
                             shape: BoxShape.circle,
                           ),
                         )
                       else if (isFriday)
-                        Text('🕯', style: TextStyle(fontSize: 6))
+                        const Text('🕯', style: TextStyle(fontSize: 6))
                       else if (isSaturday)
                         Container(
                           width: 4, height: 4,
@@ -661,7 +725,7 @@ class _CalendarGrid extends StatelessWidget {
                   return _SelectedDayBadge(
                     label: '$shabbatCandlesLabel  $timeStr',
                     color: const Color(0xFFF5A623),
-                    icon: Icons.local_fire_department_outlined,
+                    icon: Symbols.local_fire_department,
                   );
                 }
                 // Havdalah (Saturday)
@@ -670,7 +734,7 @@ class _CalendarGrid extends StatelessWidget {
                   return _SelectedDayBadge(
                     label: '$shabbatHavdalahLabel  $timeStr',
                     color: const Color(0xFF9B8CF5),
-                    icon: Icons.nights_stay_outlined,
+                    icon: Symbols.nights_stay,
                   );
                 }
                 // Today badge
@@ -678,16 +742,16 @@ class _CalendarGrid extends StatelessWidget {
                   return _SelectedDayBadge(
                     label: todayLabel,
                     color: AppColors.primary,
-                    icon: Icons.today,
+                    icon: Symbols.today,
                   );
                 }
                 return const SizedBox.shrink();
               }
               return _SelectedDayBadge(
                 label: h.name(
-                    context.watch<AppState>().strings),
+                    context.select((AppState st) => st.strings)),
                 color: const Color(0xFFFFD700),
-                icon: Icons.star_rounded,
+                icon: Symbols.star,
               );
             }),
           ],
@@ -834,7 +898,7 @@ class _ShabbatCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(children: [
-                    Icon(Icons.nights_stay_outlined, color: satColor, size: 14),
+                    Icon(Symbols.nights_stay, color: satColor, size: 14),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
@@ -1006,7 +1070,7 @@ class _HolidayList extends StatelessWidget {
                   ),
                 ),
                 if (!h.isMinor)
-                  Icon(Icons.star_rounded,
+                  Icon(Symbols.star,
                       color: Color(0xFFFFD700), size: 16),
               ],
             ),
@@ -1039,7 +1103,7 @@ class _TopBar extends StatelessWidget {
                 color: context.tText2(0.07),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(Icons.chevron_right,
+              child: Icon(Symbols.chevron_right,
                   color: context.tText, size: 22),
             ),
           ),

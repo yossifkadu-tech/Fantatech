@@ -55,7 +55,7 @@ class _LargeLogo extends StatelessWidget {
             Text(
               'Fanta',
               style: GoogleFonts.outfit(
-                fontSize: 48,
+                fontSize: 36,
                 fontWeight: FontWeight.w300,
                 color: Colors.white,
                 letterSpacing: -1,
@@ -71,13 +71,13 @@ class _LargeLogo extends StatelessWidget {
             ),
             // Accent dot
             Padding(
-              padding: const EdgeInsets.only(bottom: 18, left: 3, right: 2),
+              padding: const EdgeInsets.only(bottom: 14, left: 3, right: 2),
               child: ShaderMask(
                 shaderCallback: (b) => _kAccentGradient.createShader(b),
                 blendMode: BlendMode.srcIn,
                 child: Container(
-                  width: 7,
-                  height: 7,
+                  width: 6,
+                  height: 6,
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     color: Colors.white,
@@ -92,7 +92,7 @@ class _LargeLogo extends StatelessWidget {
               child: Text(
                 'Tech',
                 style: GoogleFonts.outfit(
-                  fontSize: 48,
+                  fontSize: 36,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
                   letterSpacing: -1,
@@ -103,30 +103,10 @@ class _LargeLogo extends StatelessWidget {
           ],
         ),
 
-        const SizedBox(height: 6),
+        const SizedBox(height: 4),
 
         // Thin gradient divider
-        _AccentRule(width: 220),
-
-        const SizedBox(height: 8),
-
-        // Subtitle
-        Text(
-          'SMART HOME & SECURITY',
-          style: GoogleFonts.outfit(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-            color: Colors.white,
-            letterSpacing: 3.5,
-            shadows: [
-              Shadow(
-                color: Colors.black.withValues(alpha: 0.4),
-                blurRadius: 6,
-                offset: const Offset(0, 1),
-              ),
-            ],
-          ),
-        ),
+        _AccentRule(width: 165),
       ],
     );
   }
@@ -145,11 +125,12 @@ class _MediumLogo extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.center,
       textDirection: TextDirection.ltr,
       children: [
+        // "Fanta" — w300 ultra-light, same as splash
         Text(
           'Fanta',
           style: GoogleFonts.outfit(
             fontSize: 19,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w300,
             color: fantaColor,
             letterSpacing: -0.5,
             height: 1.0,

@@ -2,7 +2,7 @@ name: fantatech
 description: FantaTech Smart Home Hub
 
 publish_to: 'none'
-version: 2.14.29+21429
+version: 1.0.0+10000
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
@@ -18,16 +18,22 @@ dependencies:
 
   # State management
   provider: ^6.1.2
+  flutter_riverpod: ^2.5.1     # monetization / marketplace feature module
+
+  # Backend (auth + Postgres + realtime + storage)
+  supabase_flutter: ^2.5.6
 
   # UI
   google_fonts: ^6.2.1
 
   # Icons
   cupertino_icons: ^1.0.8
+  material_symbols_icons: ^4.2951.0
 
   # Utils
   intl: ^0.20.2
   shared_preferences: ^2.3.0
+  flutter_secure_storage: ^9.2.2   # encrypted credential vault (Keychain / Keystore)
   uuid: ^4.4.0
   image_picker: ^1.1.2
 
@@ -42,11 +48,18 @@ dependencies:
   # MQTT (for later)
   mqtt_client: ^10.2.1
 
+  # Location + weather
+  geolocator: ^13.0.1             # GPS coordinates
+  geocoding: ^4.0.0               # reverse-geocode coords → city name
+
   # Discovery
   flutter_blue_plus: ^1.35.5      # BLE scanning
   multicast_dns: ^0.3.2+3         # mDNS / Matter discovery
   network_info_plus: ^6.0.1       # local IP + subnet info
   permission_handler: ^12.0.1
+
+  # Sensors (ambient light for auto-theme — Android TYPE_LIGHT)
+  light: ^5.0.0
 
   # Camera / Video
   media_kit: ^1.1.11
@@ -54,12 +67,20 @@ dependencies:
   media_kit_libs_video: ^1.0.7
   path_provider: ^2.1.4
 
+  # Firebase / Push notifications
+  firebase_core: ^3.8.0
+  firebase_messaging: ^15.2.0
+  flutter_local_notifications: ^18.0.1
+
   # AI / Face detection
   google_mlkit_face_detection: ^0.11.0
   http: ^1.2.2
 
   # Voice / speech-to-text (on-device — no cloud, no cost)
   speech_to_text: ^7.0.0
+
+  # Barcode / QR scanner
+  mobile_scanner: ^5.2.3
 
   # Encryption (Tuya Local Protocol 3.3 — AES-128-ECB)
   encrypt: ^5.0.3
@@ -69,8 +90,11 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  integration_test:
+    sdk: flutter
   flutter_lints: ^4.0.0
   flutter_launcher_icons: ^0.14.1
+  mocktail: ^1.0.4
 
 flutter_launcher_icons:
   android: true
@@ -88,8 +112,21 @@ flutter_launcher_icons:
 
 flutter:
   uses-material-design: true
-  generate: true
 
   assets:
-    - assets/images/
+    - assets/images/main.jpg
+
+  fonts:
+    # Bundled Noto fallbacks — guarantee Amharic (Ge'ez) + Arabic glyphs
+    # render offline, without depending on a runtime Google Fonts download.
+    - family: NotoSansEthiopic
+      fonts:
+        - asset: assets/fonts/NotoSansEthiopic-Regular.ttf
+        - asset: assets/fonts/NotoSansEthiopic-Bold.ttf
+          weight: 700
+    - family: NotoSansArabic
+      fonts:
+        - asset: assets/fonts/NotoSansArabic-Regular.ttf
+        - asset: assets/fonts/NotoSansArabic-Bold.ttf
+          weight: 700
 

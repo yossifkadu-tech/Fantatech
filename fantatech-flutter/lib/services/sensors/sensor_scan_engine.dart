@@ -1,3 +1,4 @@
+import 'package:material_symbols_icons/symbols.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 // SensorScanEngine  ChangeNotifier
 //
@@ -19,6 +20,7 @@ import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 import 'package:network_info_plus/network_info_plus.dart';
 
+import '../gateways/clients/aqara_hub_client.dart';
 import 'sensor_models.dart';
 
 class SensorScanEngine extends ChangeNotifier {
@@ -33,17 +35,22 @@ class SensorScanEngine extends ChangeNotifier {
     'wifi': SensorScanState(
       key:   'WiFi',
       color: const Color(0xFF18BCEC),
-      icon:  Icons.wifi_rounded,
+      icon:  Symbols.wifi,
     ),
     'ha': SensorScanState(
       key:   'Home Assistant',
       color: const Color(0xFF18BFFF),
-      icon:  Icons.home_outlined,
+      icon:  Symbols.home,
     ),
     'z2m': SensorScanState(
       key:   'Zigbee2MQTT',
       color: const Color(0xFFBA68C8),
-      icon:  Icons.hub_outlined,
+      icon:  Symbols.hub,
+    ),
+    'aqara': SensorScanState(
+      key:   'Aqara Hub',
+      color: const Color(0xFF1565C0),
+      icon:  Symbols.hub,
     ),
   };
 
@@ -56,6 +63,8 @@ class SensorScanEngine extends ChangeNotifier {
     int     mqttPort = 1883,
     String? mqttUser,
     String? mqttPass,
+    String? aqaraIp,
+    String? aqaraToken,
   }) async {
     if (isScanning) return;
     sensors.clear();
@@ -73,6 +82,7 @@ class SensorScanEngine extends ChangeNotifier {
       _runWifiScan(),
       _runHaScan(haIp, haToken),
       _runZ2mScan(mqttHost, mqttPort, mqttUser, mqttPass),
+      _runAqaraScan(aqaraIp, aqaraToken),
     ]);
 
     overallProgress = 1.0;
@@ -83,7 +93,8 @@ class SensorScanEngine extends ChangeNotifier {
   // ── WiFi scan ─────────────────────────────────────────────────────────────
 
   Future<void> _runWifiScan() async {
-    final state = scanStates['wifi']!;
+    final state = scanStates['wifi'];
+    if (state == null) return;
     try {
       final localIp = await NetworkInfo().getWifiIP();
       if (localIp == null) {
@@ -338,7 +349,8 @@ class SensorScanEngine extends ChangeNotifier {
   // ── Home Assistant scan ───────────────────────────────────────────────────
 
   Future<void> _runHaScan(String? haIp, String? haToken) async {
-    final state = scanStates['ha']!;
+    final state = scanStates['ha'];
+    if (state == null) return;
     if (haIp == null || haToken == null) {
       state.status = SensorScanStatus.done;
       notifyListeners();
@@ -429,7 +441,8 @@ class SensorScanEngine extends ChangeNotifier {
 
   Future<void> _runZ2mScan(
     String? mqttHost, int mqttPort, String? mqttUser, String? mqttPass) async {
-    final state = scanStates['z2m']!;
+    final state = scanStates['z2m'];
+    if (state == null) return;
     if (mqttHost == null) {
       state.status = SensorScanStatus.done;
       notifyListeners();
@@ -492,7 +505,8 @@ class SensorScanEngine extends ChangeNotifier {
 
   void _parseZ2mDevices(
     List devices, String host, int port, String? user, String? pass) {
-    final state = scanStates['z2m']!;
+    final state = scanStates['z2m'];
+    if (state == null) return;
     for (final d in devices) {
       final device  = d as Map<String, dynamic>;
       final ieee    = device['ieee_address'] as String? ?? '';
@@ -560,6 +574,86 @@ class SensorScanEngine extends ChangeNotifier {
     final features = e['features'] as List?;
     if (features == null) return false;
     return features.any((f) => _propSearch(f as Map?, p));
+  }
+
+  // ── Aqara Hub scan ────────────────────────────────────────────────────────
+
+  Future<void> _runAqaraScan(String? aqaraIp, String? aqaraToken) async {
+    final state = scanStates['aqara'];
+    if (state == null) return;
+    if (aqaraIp == null || aqaraToken == null || aqaraToken.isEmpty) {
+      state.status = SensorScanStatus.done;
+      notifyListeners();
+      return;
+    }
+    try {
+      final client = AqaraHubClient(ip: aqaraIp, accessToken: aqaraToken);
+      final devices = await client.getDevices();
+      for (final d in devices) {
+        final did   = d['did']   as String? ?? '';
+        final model = (d['model'] as String? ?? '').toLowerCase();
+        final name  = d['name']  as String? ?? d['friendlyName'] as String? ?? model;
+        if (did.isEmpty) continue;
+
+        final id   = 'aqara-$did';
+        final conn = <String, dynamic>{'aqaraIp': aqaraIp, 'aqaraToken': aqaraToken, 'did': did};
+
+        // Infer sensor type from model string
+        final type = _aqaraInferType(model, d);
+        if (type == null) continue;
+
+        if (!sensors.any((s) => s.id == id)) {
+          sensors.add(SmartSensor(
+            id: id, name: name,
+            protocol: SensorProtocol.aqaraHub,
+            type: type,
+            connectionData: conn,
+          ));
+          state.foundSensors++;
+          notifyListeners();
+        }
+      }
+      state.status = SensorScanStatus.done;
+    } catch (e) {
+      state.status  = SensorScanStatus.error;
+      state.message = e.toString();
+    }
+    notifyListeners();
+  }
+
+  SensorType? _aqaraInferType(String model, Map<String, dynamic> d) {
+    // Motion sensors: lumi.motion.*, rtcgq*, rtczcgq*
+    if (model.contains('motion') || model.contains('rtcgq') || model.contains('rtczcgq')) {
+      return SensorType.motion;
+    }
+    // Door/window sensors: lumi.sensor_magnet.*, lumi.contact.*
+    if (model.contains('magnet') || model.contains('contact') ||
+        model.contains('sensor_door') || model.contains('opple.sensor')) {
+      return SensorType.contact;
+    }
+    // Smoke detectors: lumi.sensor_smoke.*
+    if (model.contains('smoke')) return SensorType.smoke;
+    // Water/flood sensors: lumi.sensor_wleak.*
+    if (model.contains('wleak') || model.contains('water') || model.contains('flood')) {
+      return SensorType.water;
+    }
+    // Gas sensors
+    if (model.contains('gas') || model.contains('natgas')) return SensorType.smoke;
+    // Temperature/humidity: lumi.sensor_ht.*, lumi.weather.*
+    if (model.contains('sensor_ht') || model.contains('weather') ||
+        model.contains('temp') || model.contains('humidity')) {
+      return SensorType.temperature;
+    }
+    // Check attrs map for device_class hints
+    final attrs = d['attrs'] as Map<String, dynamic>?;
+    if (attrs != null) {
+      final dc = (attrs['deviceClass'] ?? attrs['device_class'] ?? '').toString().toLowerCase();
+      if (dc == 'motion' || dc == 'occupancy') return SensorType.motion;
+      if (dc == 'door'   || dc == 'window'  || dc == 'opening') return SensorType.contact;
+      if (dc == 'smoke')    return SensorType.smoke;
+      if (dc == 'moisture') return SensorType.water;
+    }
+    return null;
   }
 
   // ── TCP probe ─────────────────────────────────────────────────────────────

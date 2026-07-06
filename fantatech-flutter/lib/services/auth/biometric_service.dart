@@ -13,12 +13,10 @@ class BiometricService {
   static const _enabledKey = 'biometric_enabled';
   static const _askedKey = 'biometric_asked';
 
-  /// True if the device has biometric hardware the app can use.
+  /// True if the device supports biometric or PIN authentication.
   static Future<bool> isAvailable() async {
     try {
-      final supported = await _auth.isDeviceSupported();
-      final canCheck = await _auth.canCheckBiometrics;
-      return supported && canCheck;
+      return await _auth.isDeviceSupported();
     } catch (_) {
       return false;
     }

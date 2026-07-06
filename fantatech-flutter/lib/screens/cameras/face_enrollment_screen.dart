@@ -1,3 +1,4 @@
+import 'package:material_symbols_icons/symbols.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 // FaceEnrollmentScreen — manage known persons + Azure Face API settings
 // ─────────────────────────────────────────────────────────────────────────────
@@ -8,6 +9,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../l10n/strings.dart';
 import '../../models/app_state.dart';
 import '../../models/known_person.dart';
 import '../../theme/app_theme.dart';
@@ -26,6 +28,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
   @override
   Widget build(BuildContext context) {
     final state   = context.watch<AppState>();
+    final s       = state.strings;
     final persons = state.knownPersons;
 
     return Scaffold(
@@ -50,16 +53,18 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
                 child: SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    onPressed: _trainingInProgress ? null : () => _train(state),
+                    onPressed: _trainingInProgress ? null : () => _train(state, s),
                     icon: _trainingInProgress
                         ? const SizedBox(
                             width: 16, height: 16,
                             child: CircularProgressIndicator(
                                 strokeWidth: 2, color: Colors.white))
-                        : Icon(Icons.model_training, size: 18),
+                        : Icon(Symbols.model_training, size: 18),
                     label: Text(_trainingInProgress
-                        ? 'מאמן מודל...'
-                        : 'אמן מודל זיהוי (${persons.where((p) => p.isEnrolledInAzure).length}/${persons.length} רשומים)'),
+                        ? s.faceTraining
+                        : s.faceTrainModelFmt
+                            .replaceAll('{enrolled}', '${persons.where((p) => p.isEnrolledInAzure).length}')
+                            .replaceAll('{total}', '${persons.length}')),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF7B2FFF),
                       foregroundColor: context.tText,
@@ -103,7 +108,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
                         person: persons[i],
                         onDelete: () => _deletePerson(state, persons[i]),
                         onAddPhoto: () =>
-                            _addPhotoToPerson(state, persons[i]),
+                            _addPhotoToPerson(state, persons[i], s),
                       ),
                     ),
             ),
@@ -113,13 +118,13 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
     );
   }
 
-  Future<void> _train(AppState state) async {
+  Future<void> _train(AppState state, S s) async {
     final svc = state.azureFaceService;
     if (svc == null) return;
 
     setState(() {
       _trainingInProgress = true;
-      _statusMsg = 'מכין קבוצה...';
+      _statusMsg = s.facePrepGroup;
     });
 
     await svc.ensurePersonGroup();
@@ -128,12 +133,12 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
     if (!started) {
       setState(() {
         _trainingInProgress = false;
-        _statusMsg = '❌ לא ניתן להתחיל אימון';
+        _statusMsg = s.faceTrainStartFailed;
       });
       return;
     }
 
-    setState(() => _statusMsg = 'מאמן... (עשויה לקחת עד 60 שניות)');
+    setState(() => _statusMsg = s.faceTrainingProgress);
 
     // Poll for completion
     for (int i = 0; i < 30; i++) {
@@ -142,7 +147,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
       if (status == 'succeeded') {
         setState(() {
           _trainingInProgress = false;
-          _statusMsg = '✅ המודל אומן בהצלחה! הזיהוי פעיל.';
+          _statusMsg = s.faceTrainSuccess;
         });
         return;
       }
@@ -151,7 +156,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
 
     setState(() {
       _trainingInProgress = false;
-      _statusMsg = '❌ האימון נכשל. נסה שוב.';
+      _statusMsg = s.faceTrainFailed;
     });
   }
 
@@ -174,10 +179,10 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
   }
 
   Future<void> _addPhotoToPerson(
-      AppState state, KnownPerson person) async {
+      AppState state, KnownPerson person, S s) async {
     final svc = state.azureFaceService;
     if (svc == null) {
-      _showSnack('הגדר API Key של Azure תחילה');
+      _showSnack(s.faceSetAzureKeyFirst);
       return;
     }
 
@@ -188,7 +193,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
 
     final bytes = await xFile.readAsBytes();
 
-    setState(() => _statusMsg = 'מוסיף תמונה ל-Azure...');
+    setState(() => _statusMsg = s.faceAddingPhoto);
 
     // Ensure person exists in Azure
     String? azurePersonId = person.azurePersonId;
@@ -196,14 +201,14 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
       await svc.ensurePersonGroup();
       azurePersonId = await svc.createPerson(person.name);
       if (azurePersonId == null) {
-        setState(() => _statusMsg = '❌ שגיאה ביצירת רשומה ב-Azure');
+        setState(() => _statusMsg = s.faceCreateRecordError);
         return;
       }
     }
 
     final faceId = await svc.addFaceToPerson(azurePersonId, bytes);
     if (faceId == null) {
-      setState(() => _statusMsg = '❌ לא ניתן לזהות פנים בתמונה זו');
+      setState(() => _statusMsg = s.faceFaceNotDetected);
       return;
     }
 
@@ -216,7 +221,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
       isEnrolledInAzure:  true,
     );
     state.updateKnownPerson(updated);
-    setState(() => _statusMsg = '✅ תמונה נוספה ל-${person.name}. אמן את המודל.');
+    setState(() => _statusMsg = s.facePhotoAddedFmt.replaceAll('{name}', person.name));
   }
 
   void _showSnack(String msg) {
@@ -234,6 +239,7 @@ class _TopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.select((AppState st) => st.strings);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
       child: Row(
@@ -246,22 +252,22 @@ class _TopBar extends StatelessWidget {
                 color: context.tText2(0.07),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(Icons.chevron_right,
+              child: Icon(Symbols.chevron_right,
                   color: context.tText, size: 22),
             ),
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('זיהוי זהות',
-                    style: TextStyle(
+                Text(s.faceIdTitle,
+                    style: const TextStyle(
                         color: Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.bold)),
-                Text('רשום אנשים מוכרים לזיהוי אוטומטי',
-                    style: TextStyle(color: Colors.white38, fontSize: 12)),
+                Text(s.faceIdSubtitle,
+                    style: const TextStyle(color: Colors.white38, fontSize: 12)),
               ],
             ),
           ),
@@ -275,7 +281,7 @@ class _TopBar extends StatelessWidget {
                 border: Border.all(
                     color: AppColors.primary.withValues(alpha: 0.4)),
               ),
-              child: Icon(Icons.person_add_outlined,
+              child: Icon(Symbols.person_add,
                   color: AppColors.primary, size: 20),
             ),
           ),
@@ -314,6 +320,7 @@ class _AzureSettingsCardState extends State<_AzureSettingsCard> {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.select((AppState st) => st.strings);
     final hasConfig = widget.state.hasAzureConfig;
 
     return Padding(
@@ -343,7 +350,7 @@ class _AzureSettingsCardState extends State<_AzureSettingsCard> {
                         color: const Color(0xFF0078D4).withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Icon(Icons.cloud_outlined,
+                      child: Icon(Symbols.cloud,
                           color: Color(0xFF0078D4), size: 20),
                     ),
                     const SizedBox(width: 10),
@@ -357,7 +364,7 @@ class _AzureSettingsCardState extends State<_AzureSettingsCard> {
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600)),
                           Text(
-                            hasConfig ? '✓ מוגדר' : 'לא מוגדר — לחץ להגדרה',
+                            hasConfig ? s.faceConfigured : s.faceNotConfiguredTap,
                             style: TextStyle(
                               color: hasConfig
                                   ? const Color(0xFF00C896)
@@ -370,8 +377,8 @@ class _AzureSettingsCardState extends State<_AzureSettingsCard> {
                     ),
                     Icon(
                       _expanded
-                          ? Icons.keyboard_arrow_up_rounded
-                          : Icons.keyboard_arrow_down_rounded,
+                          ? Symbols.keyboard_arrow_up
+                          : Symbols.keyboard_arrow_down,
                       color: context.tText2(0.38),
                     ),
                   ],
@@ -389,14 +396,14 @@ class _AzureSettingsCardState extends State<_AzureSettingsCard> {
                       ctrl: _endpointCtrl,
                       label: 'Endpoint URL',
                       hint: 'https://your-resource.cognitiveservices.azure.com/',
-                      icon: Icons.link,
+                      icon: Symbols.link,
                     ),
                     const SizedBox(height: 8),
                     _AzureTF(
                       ctrl: _keyCtrl,
                       label: 'API Key',
                       hint: '32-char hex key',
-                      icon: Icons.key_outlined,
+                      icon: Symbols.key,
                       obscure: true,
                     ),
                     const SizedBox(height: 10),
@@ -407,7 +414,7 @@ class _AzureSettingsCardState extends State<_AzureSettingsCard> {
                         decoration: BoxDecoration(
                           color: _testResult!.startsWith('✅')
                               ? Colors.green.withValues(alpha: 0.10)
-                              : Colors.red.withValues(alpha: 0.10),
+                              : AppColors.statusAlarm.withValues(alpha: 0.10),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(_testResult!,
@@ -431,7 +438,7 @@ class _AzureSettingsCardState extends State<_AzureSettingsCard> {
                                   child: CircularProgressIndicator(
                                       strokeWidth: 2,
                                       color: Color(0xFF0078D4)))
-                              : Text('בדוק חיבור'),
+                              : Text(s.faceCheckConnection),
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -444,13 +451,13 @@ class _AzureSettingsCardState extends State<_AzureSettingsCard> {
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10)),
                           ),
-                          child: Text('שמור'),
+                          child: Text(s.save),
                         ),
                       ),
                     ]),
                     const SizedBox(height: 8),
                     Text(
-                      'קבל API Key חינם בـ portal.azure.com → Cognitive Services',
+                      s.faceGetFreeApiKey,
                       style: TextStyle(
                           color: context.tText2(0.25),
                           fontSize: 10),
@@ -467,23 +474,19 @@ class _AzureSettingsCardState extends State<_AzureSettingsCard> {
 
   Future<void> _test() async {
     setState(() { _testing = true; _testResult = null; });
+    final s = context.read<AppState>().strings;
     final svc = widget.state.azureFaceService;
     if (svc == null) {
-      // Use the current text fields
-      final tempSvc = _endpointCtrl.text.trim().isNotEmpty &&
-              _keyCtrl.text.trim().isNotEmpty
-          ? null // will test after save
-          : null;
       setState(() {
         _testing = false;
-        _testResult = '⚠️ שמור את ההגדרות תחילה';
+        _testResult = s.faceSaveSettingsFirst;
       });
       return;
     }
     final ok = await svc.testConnection();
     setState(() {
       _testing = false;
-      _testResult = ok ? '✅ חיבור ל-Azure הצליח!' : '❌ לא ניתן להתחבר. בדוק Endpoint + Key';
+      _testResult = ok ? s.faceAzureConnOk : s.faceAzureConnFailed;
     });
   }
 
@@ -558,6 +561,7 @@ class _PersonCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.select((AppState st) => st.strings);
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -589,7 +593,7 @@ class _PersonCard extends StatelessWidget {
                         fit: BoxFit.cover,
                       ),
                     )
-                  : Icon(Icons.person_outline,
+                  : Icon(Symbols.person,
                       color: AppColors.primary, size: 26),
             ),
           ),
@@ -619,8 +623,8 @@ class _PersonCard extends StatelessWidget {
                     ),
                     child: Text(
                       person.isEnrolledInAzure
-                          ? '✓ רשום ב-Azure'
-                          : '⚠ לא רשום — הוסף תמונה',
+                          ? s.faceEnrolledAzure
+                          : s.faceNotEnrolled,
                       style: TextStyle(
                         color: person.isEnrolledInAzure
                             ? const Color(0xFF00C896)
@@ -640,14 +644,14 @@ class _PersonCard extends StatelessWidget {
             onTap: onAddPhoto,
             child: Container(
               width: 34, height: 34,
-              margin: const EdgeInsets.only(right: 6),
+              margin: const EdgeInsetsDirectional.only(end: 6),
               decoration: BoxDecoration(
                 color: context.tText2(0.05),
                 borderRadius: BorderRadius.circular(9),
                 border: Border.all(
                     color: context.tText2(0.12)),
               ),
-              child: Icon(Icons.add_a_photo_outlined,
+              child: Icon(Symbols.add_a_photo,
                   color: context.tText2(0.54), size: 16),
             ),
           ),
@@ -658,13 +662,13 @@ class _PersonCard extends StatelessWidget {
             child: Container(
               width: 34, height: 34,
               decoration: BoxDecoration(
-                color: Colors.red.withValues(alpha: 0.08),
+                color: AppColors.statusAlarm.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(9),
                 border: Border.all(
-                    color: Colors.red.withValues(alpha: 0.2)),
+                    color: AppColors.statusAlarm.withValues(alpha: 0.2)),
               ),
-              child: Icon(Icons.delete_outline,
-                  color: Colors.redAccent, size: 16),
+              child: Icon(Symbols.delete,
+                  color: AppColors.statusAlarm, size: 16),
             ),
           ),
         ],
@@ -696,6 +700,7 @@ class _AddPersonSheetState extends State<_AddPersonSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.select((AppState st) => st.strings);
     return Container(
       decoration: BoxDecoration(
         color: context.tCard,
@@ -716,12 +721,12 @@ class _AddPersonSheetState extends State<_AddPersonSheet> {
             ),
           ),
           const SizedBox(height: 16),
-          const Row(children: [
-            Icon(Icons.person_add_outlined,
+          Row(children: [
+            const Icon(Symbols.person_add,
                 color: AppColors.primary, size: 20),
-            SizedBox(width: 8),
-            Text('הוסף אדם',
-                style: TextStyle(
+            const SizedBox(width: 8),
+            Text(s.faceAddPerson,
+                style: const TextStyle(
                     color: Colors.white,
                     fontSize: 16,
                     fontWeight: FontWeight.w700)),
@@ -731,14 +736,14 @@ class _AddPersonSheetState extends State<_AddPersonSheet> {
             controller: _nameCtrl,
             style: TextStyle(color: context.tText),
             decoration: InputDecoration(
-              labelText: 'שם מלא',
-              hintText: 'לדוגמה: יוסי לוי',
+              labelText: s.fullName,
+              hintText: s.faceFullNameHint,
               labelStyle: TextStyle(
                   color: context.tText2(0.45)),
               hintStyle: TextStyle(
                   color: context.tText2(0.25),
                   fontSize: 12),
-              prefixIcon: Icon(Icons.badge_outlined,
+              prefixIcon: Icon(Symbols.badge,
                   color: context.tText2(0.38), size: 18),
               filled: true,
               fillColor: context.tText2(0.06),
@@ -780,7 +785,7 @@ class _AddPersonSheetState extends State<_AddPersonSheet> {
                       width: 18, height: 18,
                       child: CircularProgressIndicator(
                           strokeWidth: 2, color: Colors.white))
-                  : Text('הוסף'),
+                  : Text(s.add),
             ),
           ),
         ],
@@ -789,10 +794,11 @@ class _AddPersonSheetState extends State<_AddPersonSheet> {
   }
 
   Future<void> _add() async {
+    final s = context.read<AppState>().strings;
     final name = _nameCtrl.text.trim();
-    if (name.isEmpty) { setState(() => _msg = 'הכנס שם'); return; }
+    if (name.isEmpty) { setState(() => _msg = s.faceEnterName); return; }
 
-    setState(() { _loading = true; _msg = 'יוצר רשומה...'; });
+    setState(() { _loading = true; _msg = s.faceCreatingRecord; });
 
     final person = KnownPerson(
       id:          const Uuid().v4(),
@@ -824,6 +830,7 @@ class _EmptyPersons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.select((AppState st) => st.strings);
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -836,26 +843,26 @@ class _EmptyPersons extends StatelessWidget {
               border: Border.all(
                   color: AppColors.primary.withValues(alpha: 0.2)),
             ),
-            child: Icon(Icons.group_outlined,
+            child: Icon(Symbols.group,
                 color: AppColors.primary, size: 38),
           ),
           const SizedBox(height: 16),
-          Text('אין אנשים רשומים',
+          Text(s.faceNoPeople,
               style: TextStyle(
                   color: context.tText2(0.6),
                   fontSize: 16,
                   fontWeight: FontWeight.w600)),
           const SizedBox(height: 6),
           Text(
-            'הוסף אנשים כדי שהמצלמות\nיזהו אותם בשם',
+            s.faceNoPeopleHint,
             textAlign: TextAlign.center,
             style: TextStyle(color: context.tText2(0.3), fontSize: 13),
           ),
           const SizedBox(height: 20),
           ElevatedButton.icon(
             onPressed: onAdd,
-            icon: Icon(Icons.person_add_outlined, size: 16),
-            label: Text('הוסף אדם'),
+            icon: const Icon(Symbols.person_add, size: 16),
+            label: Text(s.faceAddPerson),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               foregroundColor: context.tText,

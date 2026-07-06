@@ -1,3 +1,4 @@
+import 'package:material_symbols_icons/symbols.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 // SmartSwitchScanSheet
 // Bottom-sheet: סריקת רשת למפסקים חכמים — Shelly / Sonoff / Tuya
@@ -117,8 +118,9 @@ class _SmartSwitchScanSheetState extends State<SmartSwitchScanSheet> {
     appState.addDevice(device);
     setState(() => _added.add(sw.id));
 
+    final s = context.read<AppState>().strings;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text('✓ ${sw.name} — נוסף'),
+      content: Text(s.switchAddedFmt.replaceAll('{name}', sw.name)),
       backgroundColor: AppColors.secured,
       behavior: SnackBarBehavior.floating,
       duration: const Duration(seconds: 2),
@@ -138,6 +140,7 @@ class _SmartSwitchScanSheetState extends State<SmartSwitchScanSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.select((AppState st) => st.strings);
     return DraggableScrollableSheet(
       initialChildSize: 0.72,
       minChildSize: 0.4,
@@ -173,7 +176,7 @@ class _SmartSwitchScanSheetState extends State<SmartSwitchScanSheet> {
                   _BrandChip(brand: SwitchBrand.tuya,    label: 'Tuya',    color: const Color(0xFF00C896)),
                   const Spacer(),
                   if (_done)
-                    Text('${_found.length} נמצאו',
+                    Text(s.scanFoundFmt.replaceAll('{n}', '${_found.length}'),
                         style: TextStyle(
                             color: context.tText2(0.54), fontSize: 12)),
                 ],
@@ -196,10 +199,10 @@ class _SmartSwitchScanSheetState extends State<SmartSwitchScanSheet> {
                     const SizedBox(height: 4),
                     Text(
                       _scanning
-                          ? 'סורק... ${(_progress * 254).toInt()} / 254'
+                          ? s.switchScanProgressFmt.replaceAll('{n}', '${(_progress * 254).toInt()}')
                           : _found.isEmpty
-                              ? 'לא נמצאו מכשירים. ודא שהמכשירים מחוברים לאותה רשת WiFi'
-                              : 'סריקה הסתיימה — ${_found.length} מכשירים',
+                              ? s.switchNoDevicesHint
+                              : s.scanDoneFmt.replaceAll('{n}', '${_found.length}'),
                       style: TextStyle(
                           color: context.tText2(0.40),
                           fontSize: 11),
@@ -218,8 +221,8 @@ class _SmartSwitchScanSheetState extends State<SmartSwitchScanSheet> {
                   height: 46,
                   child: ElevatedButton.icon(
                     onPressed: _startScan,
-                    icon: Icon(Icons.radar, size: 18),
-                    label: Text('סרוק רשת WiFi',
+                    icon: Icon(Symbols.radar, size: 18),
+                    label: Text(s.scanWifi,
                         style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF00B4D8),
@@ -236,8 +239,8 @@ class _SmartSwitchScanSheetState extends State<SmartSwitchScanSheet> {
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
                 child: OutlinedButton.icon(
                   onPressed: _startScan,
-                  icon: Icon(Icons.refresh, size: 16),
-                  label: Text('סרוק שוב'),
+                  icon: Icon(Symbols.refresh, size: 16),
+                  label: Text(s.rescan),
                   style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFF00B4D8),
                       side: const BorderSide(color: Color(0xFF00B4D8)),
@@ -312,10 +315,10 @@ class _SwitchTile extends StatelessWidget {
   };
 
   IconData get _brandIcon => switch (sw.brand) {
-    SwitchBrand.shelly  => Icons.power_settings_new,
-    SwitchBrand.sonoff  => Icons.toggle_on_outlined,
-    SwitchBrand.tuya    => Icons.electrical_services,
-    SwitchBrand.unknown => Icons.device_unknown_outlined,
+    SwitchBrand.shelly  => Symbols.power_settings_new,
+    SwitchBrand.sonoff  => Symbols.toggle_on,
+    SwitchBrand.tuya    => Symbols.electrical_services,
+    SwitchBrand.unknown => Symbols.device_unknown,
   };
 
   @override
@@ -372,10 +375,10 @@ class _SwitchTile extends StatelessWidget {
           ],
         ),
         trailing: added
-            ? Icon(Icons.check_circle_rounded, color: _brandColor, size: 22)
+            ? Icon(Symbols.check_circle, color: _brandColor, size: 22)
             : TextButton(
                 onPressed: onAdd,
-                child: Text('הוסף',
+                child: Text(context.select((AppState st) => st.strings).add,
                     style: TextStyle(
                         color: _brandColor,
                         fontWeight: FontWeight.w700)),
@@ -393,7 +396,7 @@ class _Tag extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(right: 4, top: 2),
+      margin: const EdgeInsetsDirectional.only(end: 4, top: 2),
       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.15),
@@ -409,23 +412,21 @@ class _Tag extends StatelessWidget {
 class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final s = context.select((AppState st) => st.strings);
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.search_off_rounded,
+          Icon(Symbols.search_off,
               color: context.tText2(0.15), size: 48),
           const SizedBox(height: 12),
-          Text('לא נמצאו מפסקים חכמים',
+          Text(s.switchNoFound,
               style: TextStyle(color: context.tText2(0.38), fontSize: 14)),
           const SizedBox(height: 8),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 40),
             child: Text(
-              'ודא שהמפסק מחובר לאותה רשת WiFi\n'
-              'Shelly: ברירת המחדל הוא נקודת גישה בשם "shelly…"\n'
-              'Sonoff: חייב להיות ב-LAN mode (firmware 3.6+)\n'
-              'Tuya: חייב להיות מופעל',
+              s.switchHint,
               style: TextStyle(color: context.tText2(0.24), fontSize: 11),
               textAlign: TextAlign.center,
             ),

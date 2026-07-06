@@ -1,3 +1,4 @@
+import 'package:material_symbols_icons/symbols.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 // MjpegView — renders a live MJPEG stream or periodic snapshot
 //
@@ -10,8 +11,6 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-
-enum _Mode { mjpeg, snapshot }
 
 class MjpegView extends StatefulWidget {
   final String url;
@@ -144,6 +143,15 @@ class _MjpegViewState extends State<MjpegView> {
   // ── Snapshot refresh ────────────────────────────────────────────────────────
 
   Future<void> _startSnapshot() async {
+    _client = HttpClient();
+    _client!.connectionTimeout = const Duration(seconds: 4);
+    if (widget.username != null && widget.password != null) {
+      _client!.addCredentials(
+        Uri.parse(widget.url),
+        '',
+        HttpClientBasicCredentials(widget.username!, widget.password!),
+      );
+    }
     await _fetchSnapshot();
     if (!mounted) return;
     _snapshotTimer = Timer.periodic(
@@ -153,16 +161,9 @@ class _MjpegViewState extends State<MjpegView> {
   }
 
   Future<void> _fetchSnapshot() async {
+    final client = _client;
+    if (client == null) return;
     try {
-      final client = HttpClient();
-      client.connectionTimeout = const Duration(seconds: 4);
-      if (widget.username != null && widget.password != null) {
-        client.addCredentials(
-          Uri.parse(widget.url),
-          '',
-          HttpClientBasicCredentials(widget.username!, widget.password!),
-        );
-      }
       final req = await client.getUrl(Uri.parse(widget.url));
       final res = await req.close();
 
@@ -171,7 +172,6 @@ class _MjpegViewState extends State<MjpegView> {
         bytes.addAll(chunk);
         if (bytes.length > 1024 * 1024) break; // 1MB max
       }
-      client.close();
 
       if (mounted) setState(() {
         _frame = Uint8List.fromList(bytes);
@@ -202,7 +202,7 @@ class _MjpegViewState extends State<MjpegView> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.videocam_off_outlined,
+            Icon(Symbols.videocam_off,
                 color: context.tText2(0.38), size: 40),
             const SizedBox(height: 8),
             Text(
@@ -220,7 +220,7 @@ class _MjpegViewState extends State<MjpegView> {
         fit: BoxFit.cover,
         gaplessPlayback: true,
         errorBuilder: (_, __, ___) => const Center(
-          child: Icon(Icons.broken_image_outlined,
+          child: Icon(Symbols.broken_image,
               color: Colors.white38, size: 40),
         ),
       );

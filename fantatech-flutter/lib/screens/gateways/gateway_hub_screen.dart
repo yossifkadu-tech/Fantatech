@@ -1,3 +1,4 @@
+import 'package:material_symbols_icons/symbols.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 // GatewayHubScreen — main gateway management page.
 //
@@ -18,7 +19,9 @@ import '../../services/gateways/gateway_model.dart';
 import '../../services/gateways/gateway_types.dart';
 import '../../services/gateways/clients/dirigera_client.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/ft_button.dart';
 import 'gateway_connect_sheet.dart';
+import '../settings/ha_integration_screen.dart';
 
 class GatewayHubScreen extends StatelessWidget {
   const GatewayHubScreen({super.key});
@@ -27,6 +30,7 @@ class GatewayHubScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final manager = context.watch<GatewayManager>();
     final state   = context.watch<AppState>();
+    final s       = state.strings;
 
     return Scaffold(
       backgroundColor: context.tBg,
@@ -47,7 +51,7 @@ class GatewayHubScreen extends StatelessWidget {
                           color: context.tText2(0.07),
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: Icon(Icons.arrow_back_ios_new,
+                        child: Icon(Symbols.arrow_back_ios_new,
                             color: context.tText2(0.54), size: 16),
                       ),
                     ),
@@ -56,13 +60,13 @@ class GatewayHubScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('גשרים ומרכזי בקרה',
+                          Text(s.gatewayHubTitle,
                             style: TextStyle(
                               color:      context.tText,
                               fontSize:   20,
                               fontWeight: FontWeight.bold,
                             )),
-                          Text('חבר רכזות Zigbee, Z-Wave, WiFi וענן',
+                          Text(s.gatewayHubSubtitle,
                             style: TextStyle(
                               color:    context.tText2(0.4),
                               fontSize: 12,
@@ -77,11 +81,11 @@ class GatewayHubScreen extends StatelessWidget {
 
             // ── Connected gateways ─────────────────────────────────────────
             if (manager.connections.isNotEmpty) ...[
-              const SliverToBoxAdapter(
+              SliverToBoxAdapter(
                 child: Padding(
-                  padding: EdgeInsets.fromLTRB(16, 20, 16, 8),
-                  child: Text('מחובר',
-                    style: TextStyle(
+                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+                  child: Text(s.connected,
+                    style: const TextStyle(
                       color:      Colors.white,
                       fontSize:   14,
                       fontWeight: FontWeight.w600,
@@ -112,17 +116,17 @@ class GatewayHubScreen extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
                 child: Row(children: [
-                  Icon(Icons.add_circle_outline,
+                  Icon(Symbols.add_circle,
                       color: AppColors.primary, size: 16),
                   const SizedBox(width: 6),
-                  Text('הוסף גשר',
+                  Text(s.addGateway,
                     style: TextStyle(
                       color:      context.tText,
                       fontSize:   14,
                       fontWeight: FontWeight.w600,
                     )),
                   const Spacer(),
-                  Text('${GatewayRegistry.all.length} סוגים',
+                  Text(s.gatewayTypesFmt.replaceAll('{n}', '${GatewayRegistry.all.length}'),
                     style: TextStyle(
                       color:    context.tText2(0.3),
                       fontSize: 12,
@@ -164,6 +168,12 @@ class GatewayHubScreen extends StatelessWidget {
   // ── Actions ────────────────────────────────────────────────────────────────
 
   void _openConnectSheet(BuildContext context, GatewayMeta meta) {
+    // HA gets its own dedicated screen instead of the generic sheet
+    if (meta.type == GatewayType.homeAssistant) {
+      Navigator.push(context,
+          MaterialPageRoute(builder: (_) => const HaIntegrationScreen()));
+      return;
+    }
     showModalBottomSheet(
       context:          context,
       isScrollControlled: true,
@@ -189,10 +199,11 @@ class GatewayHubScreen extends StatelessWidget {
       }
     }
 
+    final s = context.read<AppState>().strings;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(added > 0
-          ? 'נוספו $added מכשירים מ-${conn.displayName}'
-          : 'כל המכשירים כבר קיימים'),
+          ? s.devicesImportedFmt.replaceAll('{n}', '$added').replaceAll('{name}', conn.displayName)
+          : s.allDevicesExist),
       backgroundColor: added > 0 ? AppColors.secured : context.tText2(0.24),
       duration: const Duration(seconds: 3),
     ));
@@ -206,7 +217,7 @@ class GatewayHubScreen extends StatelessWidget {
         builder: (ctx) => AlertDialog(
           backgroundColor: context.tCard,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text('מכשירים שהרכזת מדווחת',
+          title: Text(s.diagnosisTitle,
               style: TextStyle(color: context.tText, fontSize: 16, fontWeight: FontWeight.bold)),
           content: SingleChildScrollView(
             child: Text(DIRIGERAGatewayClient.lastRawSummary,
@@ -215,7 +226,7 @@ class GatewayHubScreen extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('סגור'),
+              child: Text(s.close),
             ),
           ],
         ),
@@ -225,6 +236,7 @@ class GatewayHubScreen extends StatelessWidget {
 
   void _confirmDisconnect(
       BuildContext context, GatewayManager manager, GatewayConnection conn) {
+    final s = context.read<AppState>().strings;
     showModalBottomSheet(
       context: context,
       backgroundColor: context.tCard,
@@ -241,51 +253,34 @@ class GatewayHubScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          Text('נתק "${conn.displayName}"?',
+          Text(s.disconnectConfirmFmt.replaceAll('{name}', conn.displayName),
             style: TextStyle(
               color: context.tText, fontSize: 16, fontWeight: FontWeight.bold),
             textAlign: TextAlign.center),
           const SizedBox(height: 8),
-          Text('המכשירים שיובאו יישארו, אך לא ניתן יהיה לייבא עוד.',
+          Text(s.importedDevicesNote,
             style: TextStyle(color: context.tText2(0.4),
                 fontSize: 13)),
           const SizedBox(height: 24),
           Row(children: [
             Expanded(
-              child: GestureDetector(
-                onTap: () => Navigator.pop(ctx),
-                child: Container(
-                  height: 46,
-                  decoration: BoxDecoration(
-                    color: context.tText2(0.07),
-                    borderRadius: BorderRadius.circular(12)),
-                  child: Center(child: Text('ביטול',
-                    style: TextStyle(
-                      color: context.tText2(0.7),
-                      fontSize: 14))),
-                ),
+              child: FtButton(
+                label:   s.cancel,
+                variant: FtButtonVariant.secondary,
+                onTap:   () => Navigator.pop(ctx),
+                expand:  true,
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: GestureDetector(
-                onTap: () {
+              child: FtButton(
+                label:   s.disconnect,
+                variant: FtButtonVariant.danger,
+                onTap:   () {
                   Navigator.pop(ctx);
                   manager.disconnect(conn.id);
                 },
-                child: Container(
-                  height: 46,
-                  decoration: BoxDecoration(
-                    color:        AppColors.unsecured.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(12),
-                    border:       Border.all(
-                        color: AppColors.unsecured.withValues(alpha: 0.35))),
-                  child: Center(child: Text('נתק',
-                    style: TextStyle(
-                      color:      AppColors.unsecured,
-                      fontSize:   14,
-                      fontWeight: FontWeight.w600))),
-                ),
+                expand:  true,
               ),
             ),
           ]),
@@ -312,6 +307,7 @@ class _ConnectedCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s     = context.select((AppState st) => st.strings);
     final meta  = GatewayRegistry.forType(conn.type);
     final color = meta.color;
 
@@ -362,7 +358,7 @@ class _ConnectedCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 5),
-                    Text('${conn.deviceCount} מכשירים',
+                    Text(s.deviceCountFmt.replaceAll('{n}', '${conn.deviceCount}'),
                       style: TextStyle(
                         color: context.tText2(0.5), fontSize: 11)),
                   ]),
@@ -372,28 +368,18 @@ class _ConnectedCard extends StatelessWidget {
             // Remove — proper 40px tap target
             IconButton(
               onPressed: onRemove,
-              icon: Icon(Icons.close, color: context.tText2(0.4), size: 20),
-              tooltip: 'נתק',
+              icon: Icon(Symbols.close, color: context.tText2(0.4), size: 20),
+              tooltip: s.disconnect,
             ),
           ]),
           const SizedBox(height: 12),
           // Prominent, full-width import button (44px tap target)
-          SizedBox(
-            width: double.infinity,
-            height: 46,
-            child: ElevatedButton.icon(
-              onPressed: onImport,
-              icon: const Icon(Icons.download_rounded, size: 18),
-              label: const Text('ייבא מכשירים',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: color,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
+          FtButton(
+            label:       s.importDevices,
+            leadingIcon: Symbols.download,
+            onTap:       onImport,
+            expand:      true,
+            color:       color,
           ),
         ],
       ),
@@ -417,6 +403,7 @@ class _GatewayTypeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s     = context.select((AppState st) => st.strings);
     final color = meta.color;
 
     return GestureDetector(
@@ -453,18 +440,18 @@ class _GatewayTypeCard extends StatelessWidget {
                     color:        AppColors.secured.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(4),
                   ),
-                  child: Text('מחובר',
-                    style: TextStyle(
+                  child: Text(s.connected,
+                    style: const TextStyle(
                       color:    AppColors.secured,
                       fontSize: 9,
                       fontWeight: FontWeight.w600,
                     )),
                 )
               else if (meta.isCloud)
-                Icon(Icons.cloud_outlined,
+                Icon(Symbols.cloud,
                     color: context.tText2(0.2), size: 14)
               else
-                Icon(Icons.wifi_outlined,
+                Icon(Symbols.wifi,
                     color: context.tText2(0.2), size: 14),
             ]),
             const SizedBox(height: 8),

@@ -176,6 +176,16 @@ class SwitchController {
         if (email == null || password == null) return false;
         return TapoLocalController.setSwitch(ip, email, password, on: on);
 
+      // ── New manufacturers — handled by DeviceCommander before reaching here ──
+      // If somehow called directly, return false (no credentials available here).
+      case SwitchProtocol.merossLan:
+      case SwitchProtocol.broadlinkIr:
+      case SwitchProtocol.goveeLan:
+      case SwitchProtocol.yeelightLan:
+      case SwitchProtocol.wizLan:
+      case SwitchProtocol.lifxCloud:
+      case SwitchProtocol.nanoleaf:
+      case SwitchProtocol.aqaraHub:
       case SwitchProtocol.unknown:
         return false;
     }

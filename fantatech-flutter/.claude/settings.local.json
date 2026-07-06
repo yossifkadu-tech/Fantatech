@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cat \"C:/Users/My laptop/Desktop/smarthome-hub/.claude/launch.json\" 2>/dev/null || echo \"not found\")",
+      "mcp__Claude_Preview__preview_start",
+      "PowerShell(Invoke-WebRequest -Uri \"http://localhost:8090/canvaskit/canvaskit.js\" -Method Head)",
+      "Bash(find \"/c/Users/My laptop/Desktop/smarthome-hub/fantatech web/FantaTech website\" -maxdepth 2 -type f | head -60)"
+    ]
+  }
+}

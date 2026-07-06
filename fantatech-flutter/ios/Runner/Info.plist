@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Fantatech</string>
+	<string>FantaTech Smart Home &amp; Security Solution</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -15,7 +15,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>fantatech</string>
+	<string>FantaTech</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -77,6 +77,8 @@
 	<string>נדרש לבחירת תמונת פרופיל.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>נדרש לכניסה מאובטחת באמצעות Face ID.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>נדרש כדי להציג מזג אוויר לפי המיקום שלך.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>נדרש לגילוי ושליטה במכשירי בית חכם ברשת המקומית (DIRIGERA, מצלמות, גשרים).</string>
 	<key>NSBonjourServices</key>

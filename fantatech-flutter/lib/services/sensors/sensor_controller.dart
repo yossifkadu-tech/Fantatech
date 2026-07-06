@@ -17,6 +17,7 @@ import 'package:http/http.dart' as http;
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 
+import '../gateways/clients/aqara_hub_client.dart';
 import 'sensor_models.dart';
 
 class SensorController {
@@ -67,6 +68,9 @@ class SensorController {
 
       case SensorProtocol.z2mMqtt:
         return _z2mState(sensor);
+
+      case SensorProtocol.aqaraHub:
+        return _aqaraState(sensor);
 
       case SensorProtocol.unknown:
         return null;
@@ -279,6 +283,50 @@ class SensorController {
       return null;
     } finally {
       try { client.disconnect(); } catch (_) {}
+    }
+  }
+
+  static Future<bool?> _aqaraState(SmartSensor sensor) async {
+    final ip    = sensor.connectionData['aqaraIp']    as String?;
+    final token = sensor.connectionData['aqaraToken'] as String?;
+    final did   = sensor.connectionData['did']        as String?;
+    if (ip == null || token == null || did == null) return null;
+    try {
+      final devices = await AqaraHubClient(ip: ip, accessToken: token).getDevices();
+      final d = devices.firstWhere(
+        (d) => (d['did'] as String?) == did,
+        orElse: () => <String, dynamic>{},
+      );
+      if (d.isEmpty) return null;
+      final attrs = d['attrs'] as Map<String, dynamic>?;
+      if (attrs == null) return null;
+      if (sensor.type == SensorType.motion) {
+        return attrs['occupancy'] as bool? ??
+               ((attrs['motionStatus'] ?? attrs['motion_status'] ?? 0) as num) > 0;
+      }
+      if (sensor.type == SensorType.contact) {
+        final open = attrs['windowState'] ?? attrs['doorState'] ??
+                     attrs['contactState'] ?? attrs['open'];
+        if (open is bool) return open;
+        if (open is int)  return open == 1;
+        if (open is String) return open == 'open' || open == '1';
+        return null;
+      }
+      if (sensor.type == SensorType.smoke) {
+        final alarm = attrs['smokeAlarm'] ?? attrs['smoke'] ?? attrs['gasAlarm'] ?? attrs['gas'];
+        if (alarm is bool) return alarm;
+        if (alarm is int)  return alarm == 1;
+        return null;
+      }
+      if (sensor.type == SensorType.water) {
+        final leak = attrs['waterImmersionState'] ?? attrs['water_leak'] ?? attrs['leak'];
+        if (leak is bool) return leak;
+        if (leak is int)  return leak == 1;
+        return null;
+      }
+      return null;
+    } catch (_) {
+      return null;
     }
   }
 }

@@ -1,13 +1,13 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// UserService — manages app users, persisted to USERS.CSV
+// UserService — manages app users, persisted locally on device.
 //
 // Roles:
-//   HomeManager — the first user to sign in with Google/Apple.
+//   HomeManager — the first user to register becomes the home manager.
 //                 Can add/remove household members.
-//   Member      — added by the manager; no auth required.
+//   Member      — added by the manager; no admin privileges.
 //
 // Storage:
-//   {documents}/fantatech_users.csv   — all users
+//   {documents}/fantatech_users.csv   — all users (local, never transmitted)
 //   SharedPreferences 'current_user_id' — active session
 // ─────────────────────────────────────────────────────────────────────────────
 import 'dart:io';
@@ -18,21 +18,21 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:uuid/uuid.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show AuthException, User;
 
 import '../../models/app_user.dart';
+import '../../backend/backend_service.dart';
+import '../../backend/auth/auth_repository.dart';
+import 'password_hasher.dart';
 
 class UserService {
   UserService._();
 
   static const _prefCurrentUserId = 'current_user_id';
-  static const _csvFileName = 'yossiini.csv';
-  static const _csvHeader = 'id,name,email,phone,role,authProvider,photoUrl,registeredAt,invitedBy,isApproved,password';
-
-  // Default seed account(s) — created on first run so there is a user to start
-  // from. Email login validates against these (and any later registrations).
-  static const _seedManagerEmail    = 'yossi@gmail.com';
-  static const _seedManagerName     = 'יוסי';
-  static const _seedManagerPassword = '123456';
+  static const _prefLastUserId    = 'last_user_id';    // survives sign-out, used for bio-login
+  static const _csvFileName    = 'fantatech_users.csv';
+  static const _csvFileNameOld = 'yossiini.csv'; // legacy name — migrated on first open
+  static const _csvHeader = 'id,name,email,phone,role,authProvider,photoUrl,registeredAt,invitedBy,isApproved,password,permissions';
 
   static final _googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
   static const _uuid = Uuid();
@@ -57,13 +57,37 @@ class UserService {
 
   /// Call once at app startup (before showing any screen).
   static Future<void> init() async {
+    await _migrateLegacyFile(); // rename yossiini.csv → fantatech_users.csv
     await _loadCsv();
-    await _seedDefaultsIfEmpty();
     final prefs = await SharedPreferences.getInstance();
     lastEmail = prefs.getString('last_email');
     final savedId = prefs.getString(_prefCurrentUserId);
     if (savedId != null) {
       _currentUser = _users.where((u) => u.id == savedId).firstOrNull;
+    }
+
+    // Restore an active cloud session (survives app restarts via Supabase's
+    // secure session store).
+    if (BackendService.isReady) {
+      final su = AuthRepository().currentUser;
+      if (su != null) {
+        await _syncCloudUser(su, su.email ?? lastEmail ?? '');
+      }
+    }
+  }
+
+  /// One-time migration: rename the old CSV file to the new standard name.
+  static Future<void> _migrateLegacyFile() async {
+    if (kIsWeb) return;
+    try {
+      final dir  = await getApplicationDocumentsDirectory();
+      final old  = File('${dir.path}/$_csvFileNameOld');
+      final next = File('${dir.path}/$_csvFileName');
+      if (await old.exists() && !await next.exists()) {
+        await old.rename(next.path);
+      }
+    } catch (_) {
+      // Migration is best-effort; failure is non-fatal.
     }
   }
 
@@ -73,23 +97,12 @@ class UserService {
     await prefs.setString('last_email', email);
   }
 
-  /// Creates the default manager account on first run (empty store).
-  static Future<void> _seedDefaultsIfEmpty() async {
-    if (_users.isNotEmpty) return;
-    _users.add(AppUser(
-      id:           _uuid.v4(),
-      name:         _seedManagerName,
-      email:        _seedManagerEmail,
-      phone:        '',
-      role:         UserRole.homeManager,
-      authProvider: AuthProvider.member,
-      photoUrl:     null,
-      registeredAt: DateTime.now(),
-      invitedBy:    null,
-      isApproved:   true,
-      password:     _seedManagerPassword,
-    ));
-    await _saveCsv();
+  /// Clears the remembered email — called when the user signs in with
+  /// "Remember me" unchecked, so the next login screen won't prefill it.
+  static Future<void> forgetEmail() async {
+    lastEmail = null;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('last_email');
   }
 
   static Future<File?> _csvFile() async {
@@ -124,8 +137,11 @@ class UserService {
     final prefs = await SharedPreferences.getInstance();
     if (userId == null) {
       await prefs.remove(_prefCurrentUserId);
+      // NOTE: _prefLastUserId is intentionally NOT cleared on sign-out
+      // so biometric login can restore the last user.
     } else {
       await prefs.setString(_prefCurrentUserId, userId);
+      await prefs.setString(_prefLastUserId, userId);   // survives sign-out
     }
   }
 
@@ -146,21 +162,97 @@ class UserService {
   static Future<AppUser> signInWithEmail(String email, String password) async {
     final e = email.trim().toLowerCase();
     if (!isValidEmail(e)) {
-      throw Exception('כתובת אימייל לא תקינה');
+      throw Exception('Invalid email address');
     }
     if (!isValidPassword(password)) {
-      throw Exception('סיסמה לא תקינה (לפחות 6 תווים)');
+      throw Exception('Invalid password (at least 6 characters)');
     }
+    // ── Cloud auth (when a Supabase backend is configured) ──────────────────
+    if (BackendService.isReady) {
+      try {
+        final res = await AuthRepository().signIn(email: e, password: password);
+        final su = res.user;
+        if (su == null) throw Exception('Sign in failed');
+        return _syncCloudUser(su, e);
+      } on AuthException catch (ex) {
+        throw Exception(_mapAuthError(ex));
+      }
+    }
+
+    // ── Local fallback ──────────────────────────────────────────────────────
     final user = _users.where((u) => u.email.toLowerCase() == e).firstOrNull;
     if (user == null) {
-      throw Exception('לא נמצא משתמש עם אימייל זה — הירשם תחילה');
+      throw Exception('No account with this email — please register first');
     }
-    if (user.password != password) {
-      throw Exception('סיסמה שגויה');
+    final stored = user.password;
+    final valid = PasswordHasher.isHashed(stored)
+        ? PasswordHasher.verify(password, stored)
+        : stored == password; // legacy plaintext account, checked as-is below
+    if (!valid) {
+      throw Exception('Incorrect password');
+    }
+    // One-time migration: upgrade a legacy plaintext password to a salted
+    // hash now that we've verified it, so it's never stored in the clear again.
+    if (!PasswordHasher.isHashed(stored)) {
+      final idx = _users.indexWhere((u) => u.id == user.id);
+      if (idx != -1) {
+        _users[idx] = user.copyWith(password: PasswordHasher.hash(password));
+        await _saveCsv();
+      }
     }
     _currentUser = user;
     await _persistSession(user.id);
     await _rememberEmail(e);
+    return user;
+  }
+
+  static String _mapAuthError(AuthException ex) {
+    final m = ex.message.toLowerCase();
+    if (m.contains('invalid login') || m.contains('credentials')) {
+      return 'Incorrect email or password';
+    }
+    if (m.contains('already registered') || m.contains('already exists')) {
+      return 'An account with this email already exists';
+    }
+    if (m.contains('email not confirmed')) {
+      return 'Please confirm your email address before signing in';
+    }
+    return ex.message;
+  }
+
+  /// Mirrors a cloud (Supabase) user into the local user list so the rest of
+  /// the app — which reads UserService.currentUser / allUsers — keeps working.
+  static Future<AppUser> _syncCloudUser(User su, String email) async {
+    final existing =
+        _users.where((u) => u.id == su.id || u.email.toLowerCase() == email)
+            .firstOrNull;
+    if (existing != null) {
+      _currentUser = existing;
+      await _persistSession(existing.id);
+      await _rememberEmail(email);
+      return existing;
+    }
+    final isFirstUser = _users.isEmpty || homeManager == null;
+    final metaName = (su.userMetadata?['full_name'] as String?)?.trim();
+    final user = AppUser(
+      id:           su.id,
+      name:         (metaName != null && metaName.isNotEmpty)
+          ? metaName
+          : email.split('@').first,
+      email:        email,
+      phone:        '',
+      role:         isFirstUser ? UserRole.homeManager : UserRole.member,
+      authProvider: AuthProvider.member,
+      photoUrl:     null,
+      registeredAt: DateTime.now(),
+      invitedBy:    isFirstUser ? null : homeManager?.id,
+      isApproved:   true,
+    );
+    _users.add(user);
+    await _saveCsv();
+    _currentUser = user;
+    await _persistSession(user.id);
+    await _rememberEmail(email);
     return user;
   }
 
@@ -172,12 +264,26 @@ class UserService {
     required String password,
   }) async {
     final e = email.trim().toLowerCase();
-    if (!isValidEmail(e)) throw Exception('כתובת אימייל לא תקינה');
+    if (!isValidEmail(e)) throw Exception('Invalid email address');
     if (!isValidPassword(password)) {
-      throw Exception('סיסמה לא תקינה (לפחות 6 תווים)');
+      throw Exception('Invalid password (at least 6 characters)');
     }
+    // ── Cloud registration (when a Supabase backend is configured) ──────────
+    if (BackendService.isReady) {
+      try {
+        final res = await AuthRepository()
+            .signUp(email: e, password: password, fullName: name.trim());
+        final su = res.user;
+        if (su == null) throw Exception('Registration failed');
+        return _syncCloudUser(su, e);
+      } on AuthException catch (ex) {
+        throw Exception(_mapAuthError(ex));
+      }
+    }
+
+    // ── Local fallback ──────────────────────────────────────────────────────
     if (_users.any((u) => u.email.toLowerCase() == e)) {
-      throw Exception('כבר קיים משתמש עם אימייל זה');
+      throw Exception('An account with this email already exists');
     }
     final isFirstUser = _users.isEmpty || homeManager == null;
     final user = AppUser(
@@ -191,7 +297,7 @@ class UserService {
       registeredAt: DateTime.now(),
       invitedBy:    isFirstUser ? null : homeManager?.id,
       isApproved:   true,
-      password:     password,
+      password:     PasswordHasher.hash(password),
     );
     _users.add(user);
     await _saveCsv();
@@ -211,7 +317,7 @@ class UserService {
       await _googleSignIn.signOut().catchError((_) => null);
 
       final account = await _googleSignIn.signIn();
-      if (account == null) throw Exception('הכניסה בוטלה');
+      if (account == null) throw Exception('Sign in cancelled');
 
       return _resolveOrCreateManager(
         email:    account.email,
@@ -221,35 +327,29 @@ class UserService {
       );
     } catch (e) {
       final msg = e.toString();
-      // ApiException 10 = DEVELOPER_ERROR → google-services.json not configured
       if (msg.contains('ApiException: 10') || msg.contains('DEVELOPER_ERROR')) {
         throw Exception(
-          'כניסה עם Google אינה מוגדרת עדיין.\n'
-          'הוסף את קובץ google-services.json מה-Firebase Console\n'
-          'לתיקייה android/app/ ובנה מחדש.',
+          'Google sign-in is not configured yet.\n'
+          'Add google-services.json from the Firebase Console\n'
+          'to android/app/ and rebuild.',
         );
       }
-      // ApiException 7 = NETWORK_ERROR
       if (msg.contains('ApiException: 7') || msg.contains('NETWORK_ERROR')) {
-        throw Exception('אין חיבור לרשת. בדוק את החיבור ונסה שוב.');
+        throw Exception('No network connection. Check your connection and try again.');
       }
-      // ApiException 12500 = sign-in required (Play Services update needed)
       if (msg.contains('12500')) {
-        throw Exception('נדרש עדכון של Google Play Services.');
+        throw Exception('Google Play Services update required.');
       }
-      // User cancelled (null account / sign_in_cancelled)
       if (msg.contains('cancelled') || msg.contains('sign_in_cancelled')) {
-        throw Exception('הכניסה בוטלה');
+        throw Exception('Sign in cancelled');
       }
       rethrow;
     }
   }
 
-  /// Creates a local account using a Google email address (offline fallback).
-  /// Used when OAuth is not configured but the user wants a Google-linked profile.
   static Future<AppUser> signInWithGoogleEmail(String email) async {
     if (email.isEmpty || !email.contains('@')) {
-      throw Exception('כתובת אימייל לא תקינה');
+      throw Exception('Invalid email address');
     }
     return _resolveOrCreateManager(
       email:    email.trim().toLowerCase(),
@@ -365,6 +465,23 @@ class UserService {
     await _saveCsv();
   }
 
+  // ── Guest sign-in ─────────────────────────────────────────────────────────
+
+  /// Signs in as an anonymous guest — no account needed.
+  static Future<AppUser> signInAsGuest() async {
+    final guest = AppUser(
+      id: 'guest',
+      name: 'Guest',
+      email: '',
+      role: UserRole.member,
+      authProvider: AuthProvider.member,
+      registeredAt: DateTime.now(),
+      isApproved: true,
+    );
+    _currentUser = guest;
+    return guest;
+  }
+
   // ── Sign-in as member (no auth) ───────────────────────────────────────────
 
   /// Sets current user to an existing member profile — no auth required.
@@ -373,12 +490,52 @@ class UserService {
     await _persistSession(member.id);
   }
 
+  // ── Biometric login ───────────────────────────────────────────────────────
+
+  /// Returns true if there is at least one registered user — meaning biometric
+  /// login makes sense (someone to sign back in as).
+  static bool get hasBiometricCandidate => _users.isNotEmpty;
+
+  /// Called after the OS biometric prompt succeeds.
+  /// Restores the last active session (or falls back to the home manager).
+  /// Returns the signed-in user, or null if no users exist.
+  static Future<AppUser?> signInWithBiometric() async {
+    if (_users.isEmpty) return null;
+
+    // 1. Try the last user who was explicitly logged in
+    final prefs  = await SharedPreferences.getInstance();
+    final lastId = prefs.getString(_prefLastUserId);
+    AppUser? user = lastId != null
+        ? _users.where((u) => u.id == lastId).firstOrNull
+        : null;
+
+    // 2. Fall back to home manager, then any first user
+    user ??= _users.where((u) => u.isManager).firstOrNull;
+    user ??= _users.first;
+
+    _currentUser = user;
+    await _persistSession(user.id);
+    return user;
+  }
+
   // ── Sign-out ──────────────────────────────────────────────────────────────
+
+  /// Sends a password reset email.
+  static Future<void> sendPasswordResetEmail(String email) async {
+    if (BackendService.isReady) {
+      await AuthRepository().sendPasswordReset(email);
+    }
+    // When backend is not configured, silently succeed — the dialog still shows
+    // the "check your inbox" confirmation so the UX flow stays consistent.
+  }
 
   /// Full sign-out: clears session, signs out from Google/Apple.
   static Future<void> signOut() async {
     _currentUser = null;
     await _persistSession(null);
+    if (BackendService.isReady) {
+      try { await AuthRepository().signOut(); } catch (_) {}
+    }
     try { await _googleSignIn.signOut(); } catch (_) {}
     // Apple sign-in has no server-side revocation in the Flutter SDK
   }

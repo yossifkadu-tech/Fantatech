@@ -20,7 +20,19 @@ typedef LanProgressCallback = void Function(int done, int total, String ip);
 
 class LanScanner {
   static const _primaryPorts   = [80, 8123, 1883];
-  static const _secondaryPorts = [443, 8080, 6668, 502, 554, 1400, 4343, 9999, 8081];
+  static const _secondaryPorts = [
+    443,  // HTTPS
+    8080, // alt HTTP
+    8081, // Sonoff eWeLink
+    8443, // IKEA DIRIGERA hub
+    5683, // CoAP — IKEA TRÅDFRI WiFi bulbs + old TRÅDFRI gateway
+    6668, // Tuya LAN API
+    502,  // Modbus (Shelly EM)
+    554,  // RTSP (cameras)
+    1400, // Sonos
+    4343, // deCONZ / Phoscon
+    9999, // TP-Link Kasa
+  ];
   static const _connectTimeout = Duration(milliseconds: 500);
   static const _httpTimeout    = Duration(milliseconds: 800);
   static const _batchSize      = 40;
@@ -130,7 +142,21 @@ class LanScanner {
       }
     }
 
-    displayName ??= _titleFromBanner(banner) ?? 'מכשיר $ip';
+    // IKEA DIRIGERA fingerprint: port 8443 = DIRIGERA hub (HTTPS)
+    // We can't do a TLS handshake with plain sockets, but the open port alone
+    // is a strong signal — no other common device uses 8443 on a home LAN.
+    if (openPorts.contains(8443)) {
+      manufacturer ??= 'IKEA';
+      displayName  ??= 'IKEA DIRIGERA';
+    }
+
+    // IKEA TRÅDFRI WiFi bulb / old TRÅDFRI gateway: CoAP port 5683
+    if (openPorts.contains(5683) && manufacturer == null) {
+      manufacturer = 'IKEA';
+      displayName  ??= 'IKEA TRÅDFRI';
+    }
+
+    displayName ??= _titleFromBanner(banner) ?? 'Device $ip';
 
     final type = DeviceClassifier.classifyFromWifi(
       name:         displayName,

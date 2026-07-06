@@ -56,7 +56,7 @@ class RealDiscoveryEngine extends ChangeNotifier {
     haIp       = null;
     haConnected = false;
     _cancelled  = false;
-    _tick(0, 'מתחיל סריקה…');
+    _tick(0, 'Starting scan…');
 
     // Check for saved HA credentials from previous session
     final savedIp    = await HaClient.savedIp();
@@ -80,8 +80,8 @@ class RealDiscoveryEngine extends ChangeNotifier {
     _debounceTimer?.cancel();
     if (!_cancelled) {
       final msg = found.isEmpty
-          ? 'לא נמצאו מכשירים זמינים ברשת'
-          : '${found.length} מכשירים נמצאו';
+          ? 'No devices found on network'
+          : '${found.length} devices found';
       _tick(1.0, msg);
     }
     isScanning = false;
@@ -91,19 +91,19 @@ class RealDiscoveryEngine extends ChangeNotifier {
   void stopScan() {
     _cancelled = true;
     isScanning  = false;
-    status      = 'הסריקה הופסקה';
+    status      = 'Scan stopped';
     notifyListeners();
   }
 
   /// Connect to Home Assistant and import all its entities.
   /// Returns an error string on failure, null on success.
   Future<String?> connectHA(String ip, String token) async {
-    _addLog('[HA] מתחבר ל-$ip…');
+    _addLog('[HA] Connecting to $ip…');
     notifyListeners();
 
     final result = await HaClient.fetchDevices(ip, token);
     if (!result.isSuccess) {
-      _addLog('[HA] שגיאה: ${result.errorMessage}');
+      _addLog('[HA] Error: ${result.errorMessage}');
       notifyListeners();
       return result.errorMessage;
     }
@@ -114,7 +114,7 @@ class RealDiscoveryEngine extends ChangeNotifier {
 
     haIp        = ip;
     haConnected = true;
-    _addLog('[HA] יובאו ${result.devices.length} מכשירים');
+    _addLog('[HA] Imported ${result.devices.length} devices');
     notifyListeners();
     return null;
   }
@@ -158,7 +158,7 @@ class RealDiscoveryEngine extends ChangeNotifier {
         }
         _mergeDevice(d);
       }
-      _addLog('[WiFi] סיים — ${devices.length} מכשירים');
+      _addLog('[WiFi] Done — ${devices.length} devices');
     } catch (e) {
       _addLog('[WiFi] error: $e');
     }
@@ -191,7 +191,7 @@ class RealDiscoveryEngine extends ChangeNotifier {
         if (_cancelled) break;
         await _queryMdns(client, '$svc.local');
       }
-      _addLog('[mDNS] סיים');
+      _addLog('[mDNS] Done');
     } catch (e) {
       _addLog('[mDNS] error: $e');
     } finally {
@@ -230,7 +230,7 @@ class RealDiscoveryEngine extends ChangeNotifier {
 
         _mergeDevice(DiscoveredDevice(
           id:           'mdns_${ptr.domainName}',
-          displayName:  name.isEmpty ? 'mDNS מכשיר' : name,
+          displayName:  name.isEmpty ? 'mDNS Device' : name,
           ip:           ip.isEmpty ? null : ip,
           type:         type,
           protocol:     serviceType.contains('matter')
@@ -305,7 +305,7 @@ class RealDiscoveryEngine extends ChangeNotifier {
       });
 
       await done.future;
-      _addLog('[SSDP] סיים');
+      _addLog('[SSDP] Done');
     } catch (e) {
       _addLog('[SSDP] error: $e');
     } finally {
@@ -345,7 +345,7 @@ class RealDiscoveryEngine extends ChangeNotifier {
   }
 
   String _betterName(String a, String b) {
-    const generic = {'WiFi Device', 'BLE Device', 'UPnP Device', 'mDNS מכשיר', 'מכשיר'};
+    const generic = {'WiFi Device', 'BLE Device', 'UPnP Device', 'mDNS Device', 'Device'};
     if (generic.any((g) => a.startsWith(g))) return b;
     if (generic.any((g) => b.startsWith(g))) return a;
     return a;
@@ -363,7 +363,7 @@ class RealDiscoveryEngine extends ChangeNotifier {
   }
 
   String _serverName(String server, String fallback) {
-    if (server.isEmpty) return 'UPnP מכשיר';
+    if (server.isEmpty) return 'UPnP Device';
     return server.split(' ').last.split('/').first.trim();
   }
 
@@ -372,11 +372,11 @@ class RealDiscoveryEngine extends ChangeNotifier {
     status     = msg;
     isScanning = true;
     notifyListeners();
-    debugPrint('[Discovery] $msg');
+    if (kDebugMode) debugPrint('[Discovery] $msg');
   }
 
   void _addLog(String msg) {
     log.add(msg);
-    debugPrint(msg);
+    if (kDebugMode) debugPrint(msg);
   }
 }

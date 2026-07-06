@@ -1,10 +1,17 @@
+import 'package:material_symbols_icons/symbols.dart';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../../models/app_state.dart';
+import '../../models/device.dart';
 import '../../l10n/strings.dart';
 import '../../theme/app_theme.dart';
+
+// Dedicated accent for the Fanta AI screen — distinct from the app's orange
+// brand color, matching the approved "Design 4" mockup.
+const _kAiBlue = Color(0xFF4F7DF3);
+const _kAiBlueDark = Color(0xFF3D63D6);
 
 class FantaAIScreen extends StatefulWidget {
   const FantaAIScreen({super.key});
@@ -131,6 +138,7 @@ class _FantaAIScreenState extends State<FantaAIScreen>
       case AppLocale.amharic: return 'am-ET';
       case AppLocale.spanish: return 'es-ES';
       case AppLocale.russian: return 'ru-RU';
+      case AppLocale.french:  return 'fr-FR';
     }
   }
 
@@ -159,14 +167,42 @@ class _FantaAIScreenState extends State<FantaAIScreen>
 
     final replyKey = _generateReply(text, sugIndex: sugIndex);
     if (!mounted) return;
+
+    // Execute the real action behind the reply so the AI actually controls
+    // the home — and the conversation stays open for the next request.
+    _runAction(replyKey);
+
     setState(() {
       _isThinking = false;
-      _messages.add(_ChatMessage(text: '', isUser: false, replyKey: replyKey));
+      if (replyKey == _ReplyKey.replyDefault) {
+        // Dynamic context-aware reply instead of the generic "coming soon"
+        _messages.add(_ChatMessage(
+            text: _buildDynamicReply(text), isUser: false));
+      } else {
+        _messages.add(_ChatMessage(text: '', isUser: false, replyKey: replyKey));
+      }
     });
 
     _scrollToBottom();
     // Re-focus the input so the user can immediately type another message.
     _inputFocus.requestFocus();
+  }
+
+  /// Perform the home action that corresponds to a canned reply.
+  void _runAction(_ReplyKey key) {
+    final state = context.read<AppState>();
+    switch (key) {
+      case _ReplyKey.reply1: // turn off all lights
+        state.setAllLights(false);
+        break;
+      case _ReplyKey.reply3: // night mode
+        state.activateGoodNight();
+        break;
+      case _ReplyKey.reply2: // status — read-only
+      case _ReplyKey.reply4: // security check — read-only
+      case _ReplyKey.replyDefault:
+        break;
+    }
   }
 
   _ReplyKey _generateReply(String input, {int sugIndex = -1}) {
@@ -196,6 +232,51 @@ class _FantaAIScreenState extends State<FantaAIScreen>
     return _ReplyKey.replyDefault;
   }
 
+  /// Build a context-aware reply for inputs that don't match a canned key.
+  String _buildDynamicReply(String input) {
+    final state = context.read<AppState>();
+    final lower = input.toLowerCase();
+    final devices = state.devices;
+    final onCount = devices.where((d) => d.isOn).length;
+    final total   = devices.length;
+
+    // Temperature / AC
+    if (lower.contains('טמפ') || lower.contains('חם') || lower.contains('קר') ||
+        lower.contains('temp') || lower.contains('hot') || lower.contains('cold') ||
+        lower.contains('ac') || lower.contains('מזג')) {
+      final acs = devices.where((d) => d.type == DeviceType.airConditioner);
+      if (acs.isEmpty) return 'לא מצאתי מזגן מחובר. אפשר להוסיף מזגן דרך + הוסף מכשיר.';
+      final active = acs.where((d) => d.isOn).length;
+      return 'יש ${acs.length} מזגן${acs.length > 1 ? "ים" : ""}, $active פעיל${active > 1 ? "ים" : ""}. לשליטה ישירה פתח מסך הבית.';
+    }
+    // Cameras
+    if (lower.contains('מצלמ') || lower.contains('camera') || lower.contains('cam') ||
+        lower.contains('ראיה') || lower.contains('שמור')) {
+      final cams = state.cameras;
+      if (cams.isEmpty) return 'אין מצלמות מחוברות. תוכל להוסיף מצלמה דרך + הוסף מכשיר.';
+      final onlineCams = cams.where((c) => c.isOnline).length;
+      return '${cams.length} מצלמות ב-FantaTech, $onlineCams מחוברות ומשדרות.';
+    }
+    // Energy
+    if (lower.contains('חשמל') || lower.contains('צריכה') || lower.contains('energy') ||
+        lower.contains('power') || lower.contains('watt') || lower.contains('kw')) {
+      return 'כרגע $onCount מכשירים פעילים מתוך $total. לניתוח צריכת חשמל מפורט פתח את מסך האנרגיה.';
+    }
+    // Devices count / summary
+    if (lower.contains('כמה') || lower.contains('how many') || lower.contains('list') ||
+        lower.contains('רשימה') || lower.contains('מכשירים')) {
+      return 'יש לך $total מכשירים חכמים. כרגע $onCount פעיל${onCount != 1 ? "ים" : ""}.';
+    }
+    // Hello / greeting
+    if (lower.contains('שלום') || lower.contains('היי') || lower.contains('hello') ||
+        lower.contains('hi ') || lower.startsWith('hi') || lower.contains('hey')) {
+      final name = state.userName.isNotEmpty ? state.userName.split(' ').first : '';
+      return 'שלום${name.isNotEmpty ? " $name" : ""}! אני פנטה, העוזר החכם שלך. יש $total מכשירים מחוברים, $onCount פעילים. במה אוכל לעזור?';
+    }
+    // Fallback — still contextual
+    return 'מבין. כרגע $onCount מכשירים פעילים מתוך $total. נסה לשאול: "כבה אורות", "מה המצב", "מצב לילה" או "בדוק אבטחה".';
+  }
+
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollCtrl.hasClients) {
@@ -206,6 +287,44 @@ class _FantaAIScreenState extends State<FantaAIScreen>
         );
       }
     });
+  }
+
+  void _showSettingsSheet() {
+    final s = context.read<AppState>().strings;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: context.tCard,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 36, height: 4,
+                margin: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  color: context.tText2(0.15),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              ListTile(
+                leading: Icon(Symbols.delete_sweep, color: AppColors.statusAlarm),
+                title: Text(s.aiClearChat,
+                    style: TextStyle(color: context.tText, fontWeight: FontWeight.w600)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  setState(() => _messages.clear());
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -219,7 +338,7 @@ class _FantaAIScreenState extends State<FantaAIScreen>
         child: Column(
           children: [
             // ── Top bar ──────────────────────────────────────
-            _TopBar(),
+            _TopBar(onSettings: _showSettingsSheet),
 
             // ── Body ─────────────────────────────────────────
             Expanded(
@@ -253,8 +372,8 @@ class _FantaAIScreenState extends State<FantaAIScreen>
           // Greeting
           Text(
             '${state.userFirstName}! 👋',
-            style: TextStyle(
-              color: context.tText,
+            style: const TextStyle(
+              color: _kAiBlue,
               fontSize: 26,
               fontWeight: FontWeight.bold,
             ),
@@ -270,14 +389,44 @@ class _FantaAIScreenState extends State<FantaAIScreen>
             ),
           ),
 
-          const SizedBox(height: 32),
+          const SizedBox(height: 28),
 
-          // Suggestion chips
-          ..._getSuggestions(s).asMap().entries.map(
-            (entry) => _SuggestionChip(
-              text: entry.value,
-              onTap: () => _sendMessage(entry.value, sugIndex: entry.key),
-            ),
+          // Suggestion cards — 2x2 grid
+          GridView.count(
+            crossAxisCount: 2,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: 0.95,
+            children: List.generate(4, (i) {
+              const icons = [Symbols.lightbulb, Symbols.shield, Symbols.bedtime, Symbols.notifications];
+              const bgColors = [_kAiBlue, AppColors.statusOnline, Color(0xFF9C6FE0), AppColors.statusWarning];
+              final descs = [s.aiSugDesc1, s.aiSugDesc2, s.aiSugDesc3, s.aiSugDesc4];
+              final titles = _getSuggestions(s);
+              return _SuggestionCard(
+                icon: icons[i],
+                accent: bgColors[i],
+                title: titles[i],
+                desc: descs[i],
+                onTap: () => _sendMessage(titles[i], sugIndex: i),
+              );
+            }),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Privacy note
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Symbols.lock, size: 13, color: context.tText2(0.35)),
+              const SizedBox(width: 5),
+              Text(
+                s.aiPrivacyNote,
+                style: TextStyle(color: context.tText2(0.35), fontSize: 11.5),
+              ),
+            ],
           ),
 
           const SizedBox(height: 20),
@@ -288,16 +437,60 @@ class _FantaAIScreenState extends State<FantaAIScreen>
 
   // ── Chat view (after first message) ────────────────────────
   Widget _ChatView() {
+    final s = context.select((AppState st) => st.strings);
+    // Show "what next?" chips after the assistant has replied (not while
+    // thinking) so it's obvious the conversation stays open for more requests.
+    final showFollowUps =
+        !_isThinking && _messages.isNotEmpty && !_messages.last.isUser;
+    final extra = (_isThinking ? 1 : 0) + (showFollowUps ? 1 : 0);
+
     return ListView.builder(
       controller: _scrollCtrl,
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      itemCount: _messages.length + (_isThinking ? 1 : 0),
+      itemCount: _messages.length + extra,
       itemBuilder: (ctx, i) {
         if (_isThinking && i == _messages.length) {
           return _ThinkingBubble();
         }
+        if (showFollowUps && i == _messages.length) {
+          return _FollowUpChips(s);
+        }
         return _MessageBubble(message: _messages[i]);
       },
+    );
+  }
+
+  // ── Follow-up suggestion chips (keep the conversation going) ──
+  Widget _FollowUpChips(S s) {
+    final sugg = _getSuggestions(s);
+    return Padding(
+      padding: const EdgeInsets.only(top: 4, bottom: 8),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: List.generate(sugg.length, (i) {
+          return GestureDetector(
+            onTap: () => _sendMessage(sugg[i], sugIndex: i),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+              decoration: BoxDecoration(
+                color: _kAiBlue.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                    color: _kAiBlue.withValues(alpha: 0.30)),
+              ),
+              child: Text(
+                sugg[i],
+                style: TextStyle(
+                  color: _kAiBlue,
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          );
+        }),
+      ),
     );
   }
 
@@ -329,12 +522,12 @@ class _FantaAIScreenState extends State<FantaAIScreen>
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: _isListening
-                    ? AppColors.primary
-                    : AppColors.primary.withValues(alpha: 0.15),
+                    ? _kAiBlue
+                    : _kAiBlue.withValues(alpha: 0.15),
                 boxShadow: _isListening
                     ? [
                         BoxShadow(
-                          color: AppColors.primary.withValues(alpha: 0.4),
+                          color: _kAiBlue.withValues(alpha: 0.4),
                           blurRadius: 12,
                           spreadRadius: 2,
                         ),
@@ -342,8 +535,8 @@ class _FantaAIScreenState extends State<FantaAIScreen>
                     : [],
               ),
               child: Icon(
-                _isListening ? Icons.mic : Icons.mic_outlined,
-                color: _isListening ? context.tText : AppColors.primary,
+                Symbols.mic,
+                color: _isListening ? Colors.white : _kAiBlue,
                 size: 22,
               ),
             ),
@@ -389,7 +582,7 @@ class _FantaAIScreenState extends State<FantaAIScreen>
 
           // Send button — proper 44px tap target
           Material(
-            color: AppColors.primary,
+            color: _kAiBlue,
             shape: const CircleBorder(),
             child: InkWell(
               customBorder: const CircleBorder(),
@@ -400,10 +593,10 @@ class _FantaAIScreenState extends State<FantaAIScreen>
                 width: 46,
                 height: 46,
                 child: Icon(
-                  Icons.send_rounded,
+                  Symbols.send,
                   color: _isThinking
-                      ? context.tText2(0.4)
-                      : context.tText,
+                      ? Colors.white.withValues(alpha: 0.5)
+                      : Colors.white,
                   size: 20,
                 ),
               ),
@@ -416,7 +609,7 @@ class _FantaAIScreenState extends State<FantaAIScreen>
 }
 
 // ─────────────────────────────────────────────────────────────
-// AI Orb
+// AI Orb — soundwave avatar (Design 4)
 // ─────────────────────────────────────────────────────────────
 class _AIOrb extends StatelessWidget {
   final Animation<double> pulseAnim;
@@ -432,72 +625,64 @@ class _AIOrb extends StatelessWidget {
         return Transform.scale(
           scale: pulseAnim.value,
           child: SizedBox(
-            width: 170,
-            height: 170,
+            width: 150,
+            height: 150,
             child: Stack(
               alignment: Alignment.center,
               children: [
-                // Outer glow ring
-                Container(
-                  width: 170,
-                  height: 170,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primary
-                            .withValues(alpha: 0.18 * glowAnim.value),
-                        blurRadius: 50,
-                        spreadRadius: 20,
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Gradient border ring
+                // Outer glow
                 Container(
                   width: 150,
                   height: 150,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: SweepGradient(
-                      colors: [
-                        AppColors.primary.withValues(alpha: 0.8),
-                        const Color(0xFF7B6FCD).withValues(alpha: 0.6),
-                        AppColors.primary.withValues(alpha: 0.2),
-                        AppColors.primary.withValues(alpha: 0.8),
-                      ],
-                    ),
-                  ),
-                ),
-
-                // Inner dark circle
-                Container(
-                  width: 136,
-                  height: 136,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: const Color(0xFF0D0F1A),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.primary
-                            .withValues(alpha: 0.12 * glowAnim.value),
-                        blurRadius: 20,
-                        spreadRadius: 2,
-                        offset: const Offset(0, 4),
+                        color: _kAiBlue.withValues(alpha: 0.20 * glowAnim.value),
+                        blurRadius: 46,
+                        spreadRadius: 16,
                       ),
                     ],
                   ),
                 ),
 
-                // Eyes
+                // Filled circle
+                Container(
+                  width: 128,
+                  height: 128,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [_kAiBlue, _kAiBlueDark],
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: _kAiBlue.withValues(alpha: 0.35),
+                        blurRadius: 24,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Soundwave bars
                 Row(
                   mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _Eye(glowAlpha: glowAnim.value),
-                    const SizedBox(width: 22),
-                    _Eye(glowAlpha: glowAnim.value),
-                  ],
+                  children: List.generate(5, (i) {
+                    const heights = [14.0, 26.0, 36.0, 26.0, 14.0];
+                    final wave = 0.85 + 0.15 * math.sin((glowAnim.value * math.pi) + i);
+                    return Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 3),
+                      width: 5,
+                      height: heights[i] * wave,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    );
+                  }),
                 ),
               ],
             ),
@@ -508,69 +693,68 @@ class _AIOrb extends StatelessWidget {
   }
 }
 
-class _Eye extends StatelessWidget {
-  final double glowAlpha;
-  const _Eye({required this.glowAlpha});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 18,
-      height: 18,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: AppColors.primary,
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.7 * glowAlpha),
-            blurRadius: 12,
-            spreadRadius: 3,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 // ─────────────────────────────────────────────────────────────
-// Suggestion chip
+// Suggestion card — 2x2 grid tile with icon, title, description
 // ─────────────────────────────────────────────────────────────
-class _SuggestionChip extends StatelessWidget {
-  final String text;
+class _SuggestionCard extends StatelessWidget {
+  final IconData icon;
+  final Color accent;
+  final String title;
+  final String desc;
   final VoidCallback onTap;
 
-  const _SuggestionChip({required this.text, required this.onTap});
+  const _SuggestionCard({
+    required this.icon,
+    required this.accent,
+    required this.title,
+    required this.desc,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: double.infinity,
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: context.tText2(0.05),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: context.tText2(0.10),
-          ),
+          color: context.tCard,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: context.tText2(0.08)),
+          boxShadow: context.isLight ? AppShadows.sm : null,
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Container(
+              width: 38, height: 38,
+              decoration: BoxDecoration(
+                color: accent.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(11),
+              ),
+              child: Icon(icon, color: accent, size: 19),
+            ),
+            const SizedBox(height: 10),
             Text(
-              text,
+              title,
               style: TextStyle(
                 color: context.tText,
-                fontSize: 14,
-                fontWeight: FontWeight.w400,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
               ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
-            Icon(
-              Icons.chevron_left,
-              color: context.tText2(0.3),
-              size: 18,
+            const SizedBox(height: 4),
+            Text(
+              desc,
+              style: TextStyle(
+                color: context.tText2(0.45),
+                fontSize: 10.5,
+                height: 1.35,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
@@ -621,8 +805,9 @@ class _MessageBubble extends StatelessWidget {
     final state = context.watch<AppState>();
     final s = state.strings;
     return Align(
-      alignment:
-          message.isUser ? Alignment.centerRight : Alignment.centerLeft,
+      alignment: message.isUser
+          ? AlignmentDirectional.centerEnd
+          : AlignmentDirectional.centerStart,
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         constraints: BoxConstraints(
@@ -631,20 +816,20 @@ class _MessageBubble extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           color: message.isUser
-              ? AppColors.primary
+              ? _kAiBlue
               : context.tText2(0.08),
-          borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(16),
-            topRight: const Radius.circular(16),
-            bottomLeft: Radius.circular(message.isUser ? 16 : 4),
-            bottomRight: Radius.circular(message.isUser ? 4 : 16),
-          ),
+          borderRadius: BorderRadiusDirectional.only(
+            topStart: const Radius.circular(16),
+            topEnd: const Radius.circular(16),
+            bottomStart: Radius.circular(message.isUser ? 16 : 4),
+            bottomEnd: Radius.circular(message.isUser ? 4 : 16),
+          ).resolve(Directionality.of(context)),
         ),
         child: Text(
           message.resolve(s),
           style: TextStyle(
             color: message.isUser
-                ? context.tText
+                ? Colors.white
                 : context.tText2(0.9),
             fontSize: 14,
             height: 1.5,
@@ -687,18 +872,18 @@ class _ThinkingBubbleState extends State<_ThinkingBubble>
   @override
   Widget build(BuildContext context) {
     return Align(
-      alignment: Alignment.centerLeft,
+      alignment: AlignmentDirectional.centerStart,
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
         decoration: BoxDecoration(
           color: context.tText2(0.08),
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(16),
-            topRight: Radius.circular(16),
-            bottomRight: Radius.circular(16),
-            bottomLeft: Radius.circular(4),
-          ),
+          borderRadius: BorderRadiusDirectional.only(
+            topStart: const Radius.circular(16),
+            topEnd: const Radius.circular(16),
+            bottomEnd: const Radius.circular(16),
+            bottomStart: const Radius.circular(4),
+          ).resolve(Directionality.of(context)),
         ),
         child: AnimatedBuilder(
           animation: _ctrl,
@@ -714,7 +899,7 @@ class _ThinkingBubbleState extends State<_ThinkingBubble>
                 height: 7,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppColors.primary.withValues(alpha: 0.4 + val * 0.6),
+                  color: _kAiBlue.withValues(alpha: 0.4 + val * 0.6),
                 ),
               );
             }),
@@ -729,11 +914,16 @@ class _ThinkingBubbleState extends State<_ThinkingBubble>
 // Top bar
 // ─────────────────────────────────────────────────────────────
 class _TopBar extends StatelessWidget {
+  final VoidCallback onSettings;
+  const _TopBar({required this.onSettings});
+
   @override
   Widget build(BuildContext context) {
+    final s = context.select((AppState st) => st.strings);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           GestureDetector(
             onTap: () => Navigator.maybePop(context),
@@ -745,24 +935,60 @@ class _TopBar extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
-                Icons.chevron_right,
+                Symbols.chevron_right,
                 color: context.tText,
                 size: 22,
               ),
             ),
           ),
-          const Expanded(
-            child: Text(
-              'Fanta AI',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+          Expanded(
+            child: Column(
+              children: [
+                Text.rich(
+                  TextSpan(children: [
+                    TextSpan(
+                      text: 'Fanta AI',
+                      style: TextStyle(
+                        color: context.tText,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    WidgetSpan(
+                      alignment: PlaceholderAlignment.top,
+                      child: Padding(
+                        padding: const EdgeInsetsDirectional.only(start: 2),
+                        child: Icon(Symbols.auto_awesome, color: _kAiBlue, size: 12),
+                      ),
+                    ),
+                  ]),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  s.aiTopSubtitle,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: context.tText2(0.45), fontSize: 11.5),
+                ),
+              ],
+            ),
+          ),
+          GestureDetector(
+            onTap: onSettings,
+            child: Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: context.tText2(0.07),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                Symbols.settings,
+                color: context.tText,
+                size: 20,
               ),
             ),
           ),
-          const SizedBox(width: 38),
         ],
       ),
     );

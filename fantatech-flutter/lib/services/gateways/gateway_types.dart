@@ -1,3 +1,4 @@
+import 'package:material_symbols_icons/symbols.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 // GatewayTypes — enum + per-type metadata + connection field descriptors.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -12,9 +13,20 @@ enum GatewayType {
   tradfri,         // IKEA Trådfri (old gateway, security code)
   zigbee2mqtt,     // Zigbee2MQTT REST API
   deconz,          // deCONZ / Phoscon (Dresden Elektronik)
+  aqara,           // Aqara Hub (M2, E1, M1S Gen2 — local API)
   smartThings,     // Samsung SmartThings (cloud PAT)
   tuyaSmart,       // Tuya Smart (cloud client creds)
   mqtt,            // Generic MQTT broker (HA discovery)
+  matter,          // Matter / Thread (local commissioner)
+  smartLife,       // Smart Life / Tuya consumer app (cloud)
+  googleAssistant, // Google Assistant / Google Home
+  alexa,           // Amazon Alexa
+  siri,            // Apple HomeKit / Siri Shortcuts
+  ajax,            // Ajax Systems alarm/security hub (Cloud API)
+  risco,           // Risco alarm panel (RiscoCloud / local IP)
+  pima,            // PIMA alarm panel (Net4Pro/Net2Pro local HTTP)
+  zwave,           // Z-Wave JS UI (local REST API)
+  ifttt,           // IFTTT Webhooks
 }
 
 // ── Connection field descriptor ────────────────────────────────────────────
@@ -98,22 +110,22 @@ class GatewayRegistry {
       type:        GatewayType.homeAssistant,
       name:        'Home Assistant',
       subtitle:    'Zigbee · Z-Wave · WiFi',
-      description: 'ייבא את כל המכשירים מ-Home Assistant שלך.',
-      icon:        Icons.home_outlined,
+      description: 'Import all devices from your Home Assistant.',
+      icon:        Symbols.home,
       color:       Color(0xFF18BCEC),
       fields: [
         GatewayFieldDef(
           key:       'ip',
-          label:     'כתובת IP',
+          label:     'IP Address',
           hint:      '192.168.1.x',
-          icon:      Icons.wifi_outlined,
+          icon:      Symbols.wifi,
           inputType: FieldInputType.ip,
         ),
         GatewayFieldDef(
           key:       'token',
           label:     'Long-Lived Access Token',
           hint:      'eyJ0eXAiOiJKV1Qi…',
-          icon:      Icons.key_outlined,
+          icon:      Symbols.key,
           inputType: FieldInputType.token,
         ),
       ],
@@ -124,18 +136,18 @@ class GatewayRegistry {
       type:        GatewayType.hue,
       name:        'Philips Hue',
       subtitle:    'Zigbee (Hue Protocol)',
-      description: 'לחץ על כפתור ה-LINK על הגשר תוך 30 שניות.',
-      icon:        Icons.lightbulb_outlined,
+      description: 'Press the LINK button on the bridge within 30 seconds.',
+      icon:        Symbols.lightbulb,
       color:       Color(0xFFFFCC00),
       requiresButtonPress: true,
       buttonInstruction:
-          'לחץ על הכפתור הגדול במרכז גשר ה-Hue ולאחר מכן לחץ "חבר".',
+          'Press the large button in the center of the Hue bridge, then tap "Connect".',
       fields: [
         GatewayFieldDef(
           key:       'ip',
-          label:     'כתובת IP של הגשר',
+          label:     'Bridge IP Address',
           hint:      '192.168.1.x',
-          icon:      Icons.wifi_outlined,
+          icon:      Symbols.wifi,
           inputType: FieldInputType.ip,
         ),
       ],
@@ -146,18 +158,18 @@ class GatewayRegistry {
       type:        GatewayType.dirigera,
       name:        'IKEA DIRIGERA',
       subtitle:    'Zigbee · Bluetooth',
-      description: 'לחץ "חבר" ואז על כפתור ההצמדה ב-DIRIGERA.',
-      icon:        Icons.hub_outlined,
+      description: 'Tap "Connect" then press the pairing button on DIRIGERA.',
+      icon:        Symbols.hub,
       color:       Color(0xFF0058A3),
       requiresButtonPress: true,
       buttonInstruction:
-          'לחץ "חבר", ותוך 60 שניות לחץ פעם אחת על כפתור ההצמדה בתחתית ה-DIRIGERA.',
+          'Tap "Connect", then within 60 seconds press the pairing button once on the bottom of the DIRIGERA.',
       fields: [
         GatewayFieldDef(
           key:       'ip',
-          label:     'כתובת IP של ה-DIRIGERA',
+          label:     'DIRIGERA IP Address',
           hint:      '192.168.1.x',
-          icon:      Icons.wifi_outlined,
+          icon:      Symbols.wifi,
           inputType: FieldInputType.ip,
         ),
       ],
@@ -168,22 +180,22 @@ class GatewayRegistry {
       type:        GatewayType.tradfri,
       name:        'IKEA Trådfri',
       subtitle:    'Zigbee (CoAP)',
-      description: 'הגשר הישן של IKEA — נדרש קוד אבטחה מהתווית.',
-      icon:        Icons.hub_outlined,
+      description: 'Older IKEA gateway — requires the security code from the label.',
+      icon:        Symbols.hub,
       color:       Color(0xFF0058A3),
       fields: [
         GatewayFieldDef(
           key:       'ip',
-          label:     'כתובת IP של הגשר',
+          label:     'Gateway IP Address',
           hint:      '192.168.1.x',
-          icon:      Icons.wifi_outlined,
+          icon:      Symbols.wifi,
           inputType: FieldInputType.ip,
         ),
         GatewayFieldDef(
           key:       'code',
-          label:     'קוד אבטחה (מתחת לגשר)',
+          label:     'Security Code (under the gateway)',
           hint:      'xxxx-xxxx-xxxx-xxxx',
-          icon:      Icons.pin_outlined,
+          icon:      Symbols.pin,
           inputType: FieldInputType.code,
         ),
       ],
@@ -194,31 +206,31 @@ class GatewayRegistry {
       type:        GatewayType.zigbee2mqtt,
       name:        'Zigbee2MQTT',
       subtitle:    'Zigbee via MQTT REST',
-      description: 'חבר ל-Zigbee2MQTT דרך ממשק ה-REST שלו.',
-      icon:        Icons.router_outlined,
+      description: 'Connect to Zigbee2MQTT via its REST interface.',
+      icon:        Symbols.router,
       color:       Color(0xFFEE0079),
       fields: [
         GatewayFieldDef(
           key:          'ip',
-          label:        'כתובת IP',
+          label:        'IP Address',
           hint:         '192.168.1.x',
-          icon:         Icons.wifi_outlined,
+          icon:         Symbols.wifi,
           inputType:    FieldInputType.ip,
         ),
         GatewayFieldDef(
           key:          'port',
-          label:        'פורט',
+          label:        'Port',
           hint:         '8080',
-          icon:         Icons.settings_ethernet_outlined,
+          icon:         Symbols.settings_ethernet,
           inputType:    FieldInputType.port,
           defaultValue: '8080',
           required:     false,
         ),
         GatewayFieldDef(
           key:          'token',
-          label:        'API Token (אופציונלי)',
-          hint:         'השאר ריק אם לא הוגדר',
-          icon:         Icons.key_outlined,
+          label:        'API Token (optional)',
+          hint:         'Leave empty if not configured',
+          icon:         Symbols.key,
           inputType:    FieldInputType.token,
           required:     false,
         ),
@@ -230,28 +242,60 @@ class GatewayRegistry {
       type:        GatewayType.deconz,
       name:        'deCONZ / Phoscon',
       subtitle:    'Zigbee (ConBee/RaspBee)',
-      description: 'אשר חיבור בממשק Phoscon (Settings → Gateway → Advanced).',
-      icon:        Icons.device_hub_outlined,
+      description: 'Authorize the connection in the Phoscon UI (Settings → Gateway → Advanced).',
+      icon:        Symbols.device_hub,
       color:       Color(0xFF5C6BC0),
       requiresButtonPress: true,
       buttonInstruction:
-          'פתח את Phoscon → Settings → Gateway → Advanced → Authenticate app, ולאחר מכן לחץ "חבר".',
+          'Open Phoscon → Settings → Gateway → Advanced → Authenticate app, then tap "Connect".',
       fields: [
         GatewayFieldDef(
           key:       'ip',
-          label:     'כתובת IP',
+          label:     'IP Address',
           hint:      '192.168.1.x',
-          icon:      Icons.wifi_outlined,
+          icon:      Symbols.wifi,
           inputType: FieldInputType.ip,
         ),
         GatewayFieldDef(
           key:          'port',
-          label:        'פורט',
+          label:        'Port',
           hint:         '80',
-          icon:         Icons.settings_ethernet_outlined,
+          icon:         Symbols.settings_ethernet,
           inputType:    FieldInputType.port,
           defaultValue: '80',
           required:     false,
+        ),
+      ],
+    ),
+
+    // ── Aqara Hub ────────────────────────────────────────────────────────────
+    GatewayMeta(
+      type:        GatewayType.aqara,
+      name:        'Aqara Hub',
+      subtitle:    'Zigbee · Local API (M2 / E1 / M1S)',
+      description: 'Connect to an Aqara Hub on your local network using a developer access token.',
+      icon:        Symbols.hub,
+      color:       Color(0xFF1565C0),
+      setupSteps: [
+        'Make sure the Aqara hub (M2 / E1 / M1S) is powered on and connected to the same WiFi as your phone.',
+        'Tap "Auto-detect Hub IP" below — the app will scan your network and fill in the IP automatically.',
+        'To get the Access Token: open developer.aqara.com → sign in with your Aqara account → Create Project → copy the Access Key.',
+        'Paste the Access Key in the Token field and tap Connect.',
+      ],
+      fields: [
+        GatewayFieldDef(
+          key:       'ip',
+          label:     'Hub IP Address',
+          hint:      '192.168.1.x',
+          icon:      Symbols.wifi,
+          inputType: FieldInputType.ip,
+        ),
+        GatewayFieldDef(
+          key:       'token',
+          label:     'Access Token',
+          hint:      'From developer.aqara.com',
+          icon:      Symbols.key,
+          inputType: FieldInputType.token,
         ),
       ],
     ),
@@ -261,8 +305,8 @@ class GatewayRegistry {
       type:        GatewayType.smartThings,
       name:        'Samsung SmartThings',
       subtitle:    'Cloud · Matter · Zigbee',
-      description: 'צור Personal Access Token בפורטל SmartThings.',
-      icon:        Icons.device_thermostat_outlined,
+      description: 'Create a Personal Access Token in the SmartThings portal.',
+      icon:        Symbols.device_thermostat,
       color:       Color(0xFF1428A0),
       isCloud:     true,
       fields: [
@@ -270,7 +314,7 @@ class GatewayRegistry {
           key:       'token',
           label:     'Personal Access Token',
           hint:      'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
-          icon:      Icons.key_outlined,
+          icon:      Symbols.key,
           inputType: FieldInputType.token,
         ),
       ],
@@ -281,38 +325,38 @@ class GatewayRegistry {
       type:        GatewayType.tuyaSmart,
       name:        'Tuya / Moes',
       subtitle:    'Cloud · WiFi · Zigbee',
-      description: 'חבר רכזת Tuya/Moes עם Access ID ו-Secret מ-Tuya IoT.',
-      icon:        Icons.cloud_outlined,
+      description: 'Connect a Tuya/Moes hub with Access ID and Secret from Tuya IoT.',
+      icon:        Symbols.cloud,
       color:       Color(0xFFFF6600),
       isCloud:     true,
       setupSteps: [
-        'ודא שהמכשירים עובדים באפליקציית Smart Life / Tuya Smart.',
-        'היכנס ל-iot.tuya.com → Cloud → Create Cloud Project (Data Center: Central Europe).',
-        'העתק את ה-Access ID וה-Access Secret מהפרויקט.',
-        'Devices → Link Tuya App Account → סרוק QR מ-Smart Life ("Me" → סריקה).',
-        'Cloud → API → ודא ש-IoT Core + Smart Home Basic Service מאופשרים.',
-        'הזן כאן Access ID, Secret ואזור (eu אם בחרת Central Europe).',
+        'Make sure your devices work in the Smart Life / Tuya Smart app.',
+        'Go to iot.tuya.com → Cloud → Create Cloud Project (Data Center: Central Europe).',
+        'Copy the Access ID and Access Secret from the project.',
+        'Devices → Link Tuya App Account → scan QR from Smart Life ("Me" → scan).',
+        'Cloud → API → ensure IoT Core + Smart Home Basic Service are enabled.',
+        'Enter Access ID, Secret and region here (eu if you chose Central Europe).',
       ],
       fields: [
         GatewayFieldDef(
           key:       'clientId',
           label:     'Access ID (Client ID)',
-          hint:      'מפורטל Tuya IoT Platform',
-          icon:      Icons.badge_outlined,
+          hint:      'From Tuya IoT Platform portal',
+          icon:      Symbols.badge,
           inputType: FieldInputType.text,
         ),
         GatewayFieldDef(
           key:       'clientSecret',
           label:     'Access Secret',
-          hint:      'מפורטל Tuya IoT Platform',
-          icon:      Icons.key_outlined,
+          hint:      'From Tuya IoT Platform portal',
+          icon:      Symbols.key,
           inputType: FieldInputType.password,
         ),
         GatewayFieldDef(
           key:          'region',
-          label:        'אזור: eu / us / cn / india',
-          hint:         'eu (אירופה — ברירת מחדל)',
-          icon:         Icons.public_outlined,
+          label:        'Region: eu / us / cn / india',
+          hint:         'eu (Europe — default)',
+          icon:         Symbols.public,
           inputType:    FieldInputType.text,
           defaultValue: 'eu',
           required:     false,
@@ -325,38 +369,38 @@ class GatewayRegistry {
       type:        GatewayType.mqtt,
       name:        'MQTT Broker',
       subtitle:    'Home Assistant Discovery',
-      description: 'התחבר לברוקר MQTT ואסוף מכשירים דרך HA-discovery.',
-      icon:        Icons.swap_horiz_outlined,
+      description: 'Connect to an MQTT broker and discover devices via HA-discovery.',
+      icon:        Symbols.swap_horiz,
       color:       Color(0xFF660066),
       fields: [
         GatewayFieldDef(
           key:       'host',
           label:     'Host / IP',
           hint:      '192.168.1.x',
-          icon:      Icons.dns_outlined,
+          icon:      Symbols.dns,
           inputType: FieldInputType.ip,
         ),
         GatewayFieldDef(
           key:          'port',
-          label:        'פורט',
+          label:        'Port',
           hint:         '1883',
-          icon:         Icons.settings_ethernet_outlined,
+          icon:         Symbols.settings_ethernet,
           inputType:    FieldInputType.port,
           defaultValue: '1883',
           required:     false,
         ),
         GatewayFieldDef(
           key:      'username',
-          label:    'שם משתמש (אופציונלי)',
+          label:    'Username (optional)',
           hint:     '',
-          icon:     Icons.person_outline,
+          icon:     Symbols.person,
           required: false,
         ),
         GatewayFieldDef(
           key:       'password',
-          label:     'סיסמה (אופציונלי)',
+          label:     'Password (optional)',
           hint:      '',
-          icon:      Icons.lock_outline,
+          icon:      Symbols.lock,
           inputType: FieldInputType.password,
           required:  false,
         ),
@@ -364,10 +408,257 @@ class GatewayRegistry {
           key:          'prefix',
           label:        'Topic Prefix',
           hint:         'homeassistant',
-          icon:         Icons.label_outline,
+          icon:         Symbols.label,
           defaultValue: 'homeassistant',
           required:     false,
         ),
+      ],
+    ),
+
+    // ── Matter ───────────────────────────────────────────────────────────────
+    GatewayMeta(
+      type:        GatewayType.matter,
+      name:        'Matter',
+      subtitle:    'Thread · WiFi · Local',
+      description: 'Connect Matter devices directly on your local network without cloud.',
+      icon:        Symbols.hub,
+      color:       Color(0xFF00BCD4),
+      setupSteps: [
+        'Make sure your device supports Matter (look for the Matter logo on the box).',
+        'Connect the Matter device to your WiFi or Thread network.',
+        'Enter the Pairing Code from the device (11 digits, usually on the back of the box).',
+        'FantaTech will connect to the device directly on the local network.',
+      ],
+      fields: [
+        GatewayFieldDef(
+          key:       'pairingCode',
+          label:     'Pairing Code',
+          hint:      'XXXXX-XXXXX',
+          icon:      Symbols.pin,
+          inputType: FieldInputType.code,
+        ),
+        GatewayFieldDef(
+          key:       'ip',
+          label:     'IP Address (optional)',
+          hint:      '192.168.1.x',
+          icon:      Symbols.wifi,
+          inputType: FieldInputType.ip,
+          required:  false,
+        ),
+      ],
+    ),
+
+    // ── Smart Life ───────────────────────────────────────────────────────────
+    GatewayMeta(
+      type:        GatewayType.smartLife,
+      name:        'Smart Life',
+      subtitle:    'Tuya Cloud · WiFi · Zigbee',
+      description: 'Import devices from the Smart Life / Tuya Smart app.',
+      icon:        Symbols.cloud_circle,
+      color:       Color(0xFF00C853),
+      isCloud:     true,
+      setupSteps: [
+        'Make sure your devices are connected and working in the Smart Life app.',
+        'Go to iot.tuya.com → Cloud → Create Cloud Project.',
+        'Devices → Link Tuya App Account → scan QR from Smart Life (Me → scan).',
+        'Copy the Access ID and Secret from the project.',
+        'Enter the credentials and your server region here.',
+      ],
+      fields: [
+        GatewayFieldDef(
+          key:       'clientId',
+          label:     'Access ID',
+          hint:      'From Tuya IoT portal',
+          icon:      Symbols.badge,
+          inputType: FieldInputType.text,
+        ),
+        GatewayFieldDef(
+          key:       'clientSecret',
+          label:     'Access Secret',
+          hint:      'From Tuya IoT portal',
+          icon:      Symbols.key,
+          inputType: FieldInputType.password,
+        ),
+        GatewayFieldDef(
+          key:          'region',
+          label:        'Region: eu / us / cn',
+          hint:         'eu',
+          icon:         Symbols.public,
+          inputType:    FieldInputType.text,
+          defaultValue: 'eu',
+          required:     false,
+        ),
+      ],
+    ),
+
+    // ── Google Assistant ─────────────────────────────────────────────────────
+    GatewayMeta(
+      type:        GatewayType.googleAssistant,
+      name:        'Google Assistant',
+      subtitle:    'Google Home · Cloud',
+      description: 'Control devices via "Hey Google" and the Google Home app.',
+      icon:        Symbols.assistant,
+      color:       Color(0xFF4285F4),
+      isCloud:     true,
+      setupSteps: [
+        'Open the Google Home app on your device.',
+        'Go to + → Set up device → Works with Google.',
+        'Search for "FantaTech" in the list and tap it.',
+        'Sign in to your FantaTech account.',
+        'Devices will appear in Google Home and become available for "Hey Google".',
+      ],
+      fields: [],
+    ),
+
+    // ── Amazon Alexa ─────────────────────────────────────────────────────────
+    GatewayMeta(
+      type:        GatewayType.alexa,
+      name:        'Amazon Alexa',
+      subtitle:    'Alexa App · Cloud',
+      description: 'Control devices via "Alexa" and the Amazon Alexa app.',
+      icon:        Symbols.mic,
+      color:       Color(0xFF00CAFF),
+      isCloud:     true,
+      setupSteps: [
+        'Open the Amazon Alexa app.',
+        'Go to More → Skills & Games.',
+        'Search for "FantaTech" and enable the Skill.',
+        'Sign in to your FantaTech account.',
+        'Say "Alexa, discover devices" to finish connecting.',
+      ],
+      fields: [],
+    ),
+
+    // ── Apple Siri / HomeKit ─────────────────────────────────────────────────
+    GatewayMeta(
+      type:        GatewayType.siri,
+      name:        'Siri / HomeKit',
+      subtitle:    'Apple Home · HomeKit',
+      description: 'Add devices to Apple Home and control them via Siri.',
+      icon:        Symbols.mic_none,
+      color:       Color(0xFFFF2D55),
+      setupSteps: [
+        'Open the Apple Home app on your iPhone or iPad.',
+        'Tap + → Add Accessory.',
+        'Scan the HomeKit code from the device (QR or 8 digits).',
+        'To connect FantaTech: My Home → Home Settings → Home Hubs & Bridges.',
+        'Say "Hey Siri, turn on [device name]" for voice control.',
+      ],
+      fields: [
+        GatewayFieldDef(
+          key:       'homekitCode',
+          label:     'HomeKit Pairing Code (optional)',
+          hint:      'XXX-XX-XXX',
+          icon:      Symbols.pin,
+          inputType: FieldInputType.code,
+          required:  false,
+        ),
+      ],
+    ),
+
+    // ── Ajax Systems ─────────────────────────────────────────────────────────
+    GatewayMeta(
+      type:        GatewayType.ajax,
+      name:        'Ajax Systems',
+      subtitle:    'Security · Cloud API',
+      description: 'Connect your Ajax alarm hub and sensors via Ajax Cloud.',
+      icon:        Symbols.security,
+      color:       Color(0xFFE53935),
+      isCloud:     true,
+      setupSteps: [
+        'Open the Ajax app → Hub settings → API.',
+        'Enable API access and copy the API key.',
+        'Enter your Ajax account email, password and the API key below.',
+        'All Ajax sensors (motion, door, smoke, flood, siren) will be imported.',
+      ],
+      fields: [
+        GatewayFieldDef(key: 'email',    label: 'Ajax Account Email',    hint: 'your@email.com',         icon: Symbols.email,      inputType: FieldInputType.text),
+        GatewayFieldDef(key: 'password', label: 'Ajax Account Password', hint: 'password',               icon: Symbols.lock,        inputType: FieldInputType.password),
+        GatewayFieldDef(key: 'apiKey',   label: 'API Key (optional)',    hint: 'From Ajax app → API',    icon: Symbols.key,        inputType: FieldInputType.token, required: false),
+      ],
+    ),
+
+    // ── Risco ─────────────────────────────────────────────────────────────────
+    GatewayMeta(
+      type:        GatewayType.risco,
+      name:        'Risco',
+      subtitle:    'Alarm Panel · LightSYS / Agility',
+      description: 'Connect a Risco alarm panel (LightSYS+, ProSYS Plus, Agility) via RiscoCloud or local IP.',
+      icon:        Symbols.shield,
+      color:       Color(0xFF1565C0),
+      setupSteps: [
+        'For RiscoCloud: log in at riscocloud.com and note your username/password.',
+        'For local IP: connect the panel to your network and note the IP address.',
+        'Enter either your RiscoCloud credentials or the panel local IP below.',
+        'The app will import all zones (sensors), partitions, and keypad status.',
+      ],
+      fields: [
+        GatewayFieldDef(key: 'username', label: 'Username / Email',       hint: 'riscocloud login',  icon: Symbols.person,     inputType: FieldInputType.text),
+        GatewayFieldDef(key: 'password', label: 'Password',               hint: 'password',         icon: Symbols.lock,       inputType: FieldInputType.password),
+        GatewayFieldDef(key: 'ip',       label: 'Panel IP (if local)',     hint: '192.168.1.x',      icon: Symbols.wifi,      inputType: FieldInputType.ip,   required: false),
+        GatewayFieldDef(key: 'pin',      label: 'Panel PIN Code',          hint: '1234',             icon: Symbols.dialpad,   inputType: FieldInputType.code),
+      ],
+    ),
+
+    // ── PIMA ─────────────────────────────────────────────────────────────────
+    GatewayMeta(
+      type:        GatewayType.pima,
+      name:        'PIMA',
+      subtitle:    'Alarm Panel · Net4Pro / Net2Pro',
+      description: 'Connect a PIMA alarm panel with network module (Net4Pro / Net2Pro) on your local network.',
+      icon:        Symbols.security_update_warning,
+      color:       Color(0xFF6A1B9A),
+      setupSteps: [
+        'Make sure the PIMA panel has a Net4Pro or Net2Pro network module installed.',
+        'Connect the module to your home network and note its IP address.',
+        'Enter the panel IP, port (default 9999), and installer code below.',
+        'All zones and outputs will be imported automatically.',
+      ],
+      fields: [
+        GatewayFieldDef(key: 'ip',   label: 'Panel IP Address',   hint: '192.168.1.x',  icon: Symbols.wifi,       inputType: FieldInputType.ip),
+        GatewayFieldDef(key: 'port', label: 'Port',               hint: '9999',         icon: Symbols.settings_ethernet, inputType: FieldInputType.port, defaultValue: '9999', required: false),
+        GatewayFieldDef(key: 'code', label: 'Installer/User Code', hint: '1234',        icon: Symbols.dialpad,    inputType: FieldInputType.code),
+      ],
+    ),
+
+    // ── Z-Wave JS UI ─────────────────────────────────────────────────────────
+    GatewayMeta(
+      type:        GatewayType.zwave,
+      name:        'Z-Wave JS UI',
+      subtitle:    'Z-Wave · Local REST API',
+      description: 'Connect to a Z-Wave JS UI server (Z-Wave to MQTT bridge) running on your home network.',
+      icon:        Symbols.router,
+      color:       Color(0xFF00796B),
+      setupSteps: [
+        'Make sure Z-Wave JS UI (zwavejs2mqtt) is running (usually port 8091).',
+        'Open Z-Wave JS UI → Settings → Home Assistant → copy the API key.',
+        'Enter the IP address, port, and optionally the API key below.',
+        'All Z-Wave devices (sensors, switches, locks, thermostats) will be imported.',
+      ],
+      fields: [
+        GatewayFieldDef(key: 'ip',     label: 'Z-Wave JS UI IP',  hint: '192.168.1.x', icon: Symbols.wifi,       inputType: FieldInputType.ip),
+        GatewayFieldDef(key: 'port',   label: 'Port',             hint: '8091',        icon: Symbols.settings_ethernet, inputType: FieldInputType.port, defaultValue: '8091', required: false),
+        GatewayFieldDef(key: 'apiKey', label: 'API Key (optional)', hint: 'leave empty if not set', icon: Symbols.key, inputType: FieldInputType.token, required: false),
+      ],
+    ),
+
+    // ── IFTTT ────────────────────────────────────────────────────────────────
+    GatewayMeta(
+      type:        GatewayType.ifttt,
+      name:        'IFTTT',
+      subtitle:    'Webhooks · Cloud',
+      description: 'Trigger IFTTT Webhooks from FantaTech automations.',
+      icon:        Symbols.bolt,
+      color:       Color(0xFF333333),
+      isCloud:     true,
+      setupSteps: [
+        'Go to ifttt.com → Create → If This → Webhooks → Receive a web request.',
+        'Name your event (e.g. "fantatech_trigger") and copy the key from your Webhooks settings.',
+        'Enter the Webhooks key below.',
+        'Use the "Trigger IFTTT" action in FantaTech automations.',
+      ],
+      fields: [
+        GatewayFieldDef(key: 'webhookKey', label: 'Webhooks Key', hint: 'From ifttt.com/maker_webhooks/settings', icon: Symbols.key, inputType: FieldInputType.token),
       ],
     ),
   ];

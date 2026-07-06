@@ -1,8 +1,10 @@
+import 'package:material_symbols_icons/symbols.dart';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/app_state.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/ft_nav.dart';
 
 // ── Solar colour palette ─────────────────────────────────────
 const _kSolarYellow  = Color(0xFFFFB800);
@@ -23,21 +25,14 @@ class _SolarScreenState extends State<SolarScreen>
   late Animation<double> _sunPulse;
   late Animation<double> _flowAnim;
 
-  // Simulated live data
-  final double _productionKw   = 4.7;
-  final double _consumptionKw  = 2.1;
-  final double _batteryPct     = 78.0;
-  final double _feedInKw       = 2.6;
-  final double _todayKwh       = 18.4;
-  final double _savingToday    = 22.1; // ₪
-
-  // 24-hour production curve (hourly kWh)
-  static const _hourly = [
-    0.0, 0.0, 0.0, 0.0, 0.0, 0.1,
-    0.3, 0.8, 1.6, 2.8, 3.9, 4.5,
-    4.7, 4.6, 4.2, 3.5, 2.6, 1.4,
-    0.6, 0.2, 0.0, 0.0, 0.0, 0.0,
-  ];
+  // Live data — populated only after successful inverter connection
+  double? _productionKw;
+  double? _consumptionKw;
+  double? _batteryPct;
+  double? _feedInKw;
+  double? _todayKwh;
+  double? _savingToday;
+  List<double>? _hourly;
 
   bool _isConnected = false;
   String _selectedProtocol = 'WiFi';
@@ -65,7 +60,7 @@ class _SolarScreenState extends State<SolarScreen>
 
   @override
   Widget build(BuildContext context) {
-    final s = context.watch<AppState>().strings;
+    final s = context.select((AppState st) => st.strings);
 
     return Scaffold(
       backgroundColor: context.tBg,
@@ -77,17 +72,7 @@ class _SolarScreenState extends State<SolarScreen>
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
                 child: Row(children: [
-                  GestureDetector(
-                    onTap: () => Navigator.maybePop(context),
-                    child: Container(
-                      width: 38, height: 38,
-                      decoration: BoxDecoration(
-                        color: context.tText2(0.07),
-                        borderRadius: BorderRadius.circular(10)),
-                      child: Icon(Icons.chevron_left,
-                          color: context.tText, size: 22),
-                    ),
-                  ),
+                  const FtBackButton(),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(s.solarTitle,
@@ -139,14 +124,13 @@ class _SolarScreenState extends State<SolarScreen>
                 child: Container(
                   height: 200,
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF1A1200), Color(0xFF1A2000)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
+                    // Theme-adaptive surface so the panel never renders as a
+                    // black box on the light theme; the sun-glow painter and
+                    // yellow border keep the solar feel.
+                    color: context.tCard,
                     borderRadius: BorderRadius.circular(22),
                     border: Border.all(
-                        color: _kSolarYellow.withValues(alpha: 0.20)),
+                        color: _kSolarYellow.withValues(alpha: 0.35)),
                   ),
                   child: Stack(
                     children: [
@@ -177,9 +161,9 @@ class _SolarScreenState extends State<SolarScreen>
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
                                 Text(
-                                  _productionKw.toStringAsFixed(1),
+                                  _productionKw != null ? _productionKw!.toStringAsFixed(1) : '--',
                                   style: TextStyle(
-                                    color: _kSolarYellow,
+                                    color: _kSolarOrange,
                                     fontSize: 52,
                                     fontWeight: FontWeight.bold,
                                     height: 1.0,
@@ -201,16 +185,16 @@ class _SolarScreenState extends State<SolarScreen>
                             const Spacer(),
                             Row(children: [
                               _LiveChip(
-                                icon: Icons.wb_sunny_outlined,
+                                icon: Symbols.wb_sunny,
                                 label:
-                                    '${s.solarToday}: ${_todayKwh.toStringAsFixed(1)} ${s.solarKw}',
+                                    '${s.solarToday}: ${_todayKwh != null ? '${_todayKwh!.toStringAsFixed(1)} ${s.solarKw}' : '--'}',
                                 color: _kSolarYellow,
                               ),
                               const SizedBox(width: 10),
                               _LiveChip(
-                                icon: Icons.savings_outlined,
+                                icon: Symbols.savings,
                                 label:
-                                    '${s.solarSaving}: ₪${_savingToday.toStringAsFixed(0)}',
+                                    '${s.solarSaving}: ${_savingToday != null ? '₪${_savingToday!.toStringAsFixed(0)}' : '--'}',
                                 color: _kSolarGreen,
                               ),
                             ]),
@@ -232,11 +216,11 @@ class _SolarScreenState extends State<SolarScreen>
                 child: AnimatedBuilder(
                   animation: _flowAnim,
                   builder: (_, __) => _PowerFlowCard(
-                    productionKw: _productionKw,
-                    consumptionKw: _consumptionKw,
-                    feedInKw: _feedInKw,
-                    batteryPct: _batteryPct,
-                    flowProgress: _flowAnim.value,
+                    productionKw: _productionKw ?? 0.0,
+                    consumptionKw: _consumptionKw ?? 0.0,
+                    feedInKw: _feedInKw ?? 0.0,
+                    batteryPct: _batteryPct ?? 0.0,
+                    flowProgress: _isConnected ? _flowAnim.value : 0.0,
                     s: s,
                   ),
                 ),
@@ -252,33 +236,31 @@ class _SolarScreenState extends State<SolarScreen>
                 child: Row(children: [
                   Expanded(
                     child: _MetricCard(
-                      icon: Icons.battery_charging_full_outlined,
+                      icon: Symbols.battery_charging_full,
                       label: s.solarBattery,
-                      value: '${_batteryPct.round()}%',
+                      value: _batteryPct != null ? '${_batteryPct!.round()}%' : '--',
                       color: _kSolarGreen,
-                      progress: _batteryPct / 100,
+                      progress: (_batteryPct ?? 0.0) / 100,
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: _MetricCard(
-                      icon: Icons.electrical_services_outlined,
+                      icon: Symbols.electrical_services,
                       label: s.solarFeedIn,
-                      value:
-                          '${_feedInKw.toStringAsFixed(1)} kW',
+                      value: _feedInKw != null ? '${_feedInKw!.toStringAsFixed(1)} kW' : '--',
                       color: _kSolarBlue,
-                      progress: _feedInKw / _productionKw,
+                      progress: (_productionKw ?? 0) > 0 ? (_feedInKw ?? 0) / _productionKw! : 0.0,
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: _MetricCard(
-                      icon: Icons.home_outlined,
+                      icon: Symbols.home,
                       label: s.solarConsumption,
-                      value:
-                          '${_consumptionKw.toStringAsFixed(1)} kW',
+                      value: _consumptionKw != null ? '${_consumptionKw!.toStringAsFixed(1)} kW' : '--',
                       color: _kSolarOrange,
-                      progress: _consumptionKw / _productionKw,
+                      progress: (_productionKw ?? 0) > 0 ? (_consumptionKw ?? 0) / _productionKw! : 0.0,
                     ),
                   ),
                 ]),
@@ -313,8 +295,8 @@ class _SolarScreenState extends State<SolarScreen>
                         child: CustomPaint(
                           size: const Size(double.infinity, 110),
                           painter: _SolarCurvePainter(
-                              data: _hourly,
-                              color: _kSolarYellow),
+                              data: _hourly ?? const [],
+                              color: _kSolarOrange),
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -361,7 +343,7 @@ class _SolarScreenState extends State<SolarScreen>
                       Row(children: [
                         _ProtoChip(
                           label: 'WiFi',
-                          icon: Icons.wifi_outlined,
+                          icon: Symbols.wifi,
                           selected: _selectedProtocol == 'WiFi',
                           onTap: () =>
                               setState(() => _selectedProtocol = 'WiFi'),
@@ -369,7 +351,7 @@ class _SolarScreenState extends State<SolarScreen>
                         const SizedBox(width: 10),
                         _ProtoChip(
                           label: 'Zigbee',
-                          icon: Icons.hub_outlined,
+                          icon: Symbols.hub,
                           selected: _selectedProtocol == 'Zigbee',
                           onTap: () =>
                               setState(() => _selectedProtocol = 'Zigbee'),
@@ -377,7 +359,7 @@ class _SolarScreenState extends State<SolarScreen>
                         const SizedBox(width: 10),
                         _ProtoChip(
                           label: 'Modbus',
-                          icon: Icons.cable_outlined,
+                          icon: Symbols.cable,
                           selected: _selectedProtocol == 'Modbus',
                           onTap: () =>
                               setState(() => _selectedProtocol = 'Modbus'),
@@ -390,8 +372,8 @@ class _SolarScreenState extends State<SolarScreen>
                         child: ElevatedButton.icon(
                           icon: Icon(
                             _isConnected
-                                ? Icons.check_circle_outline
-                                : Icons.solar_power_outlined,
+                                ? Symbols.check_circle
+                                : Symbols.solar_power,
                             size: 18,
                           ),
                           label: Text(
@@ -738,10 +720,10 @@ class _FlowPainter extends CustomPainter {
     drawFlow(solar, battery, _kSolarGreen,  batteryPct / 100 * 1.5);
     drawFlow(solar, grid,    _kSolarBlue,   feedInKw);
 
-    drawNode(solar,   labelSolar, _kSolarYellow, Icons.wb_sunny_outlined);
-    drawNode(home,    labelHome,  _kSolarOrange, Icons.home_outlined);
-    drawNode(grid,    labelGrid,  _kSolarBlue,   Icons.electrical_services);
-    drawNode(battery, labelBatt,  _kSolarGreen,  Icons.battery_charging_full);
+    drawNode(solar,   labelSolar, _kSolarYellow, Symbols.wb_sunny);
+    drawNode(home,    labelHome,  _kSolarOrange, Symbols.home);
+    drawNode(grid,    labelGrid,  _kSolarBlue,   Symbols.electrical_services);
+    drawNode(battery, labelBatt,  _kSolarGreen,  Symbols.battery_charging_full);
   }
 
   @override

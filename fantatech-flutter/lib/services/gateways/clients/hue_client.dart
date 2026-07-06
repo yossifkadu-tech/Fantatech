@@ -1,4 +1,4 @@
-// ─────────────────────────────────────────────────────────────────────────────
+﻿// ─────────────────────────────────────────────────────────────────────────────
 // HueGatewayClient
 //
 // Philips Hue Bridge v1 API (REST, HTTP, no HTTPS needed on LAN).
@@ -81,6 +81,7 @@ class HueGatewayClient {
           type:        type,
           isOn:        state['on'] as bool? ?? false,
           status:      DeviceStatus.online,
+          source:      'gateway',
           attributes: {
             'ip':           ip,
             'hueId':        id,
@@ -107,6 +108,7 @@ class HueGatewayClient {
           type:        dType,
           isOn:        config['on'] as bool? ?? true,
           status:      DeviceStatus.online,
+          source:      'gateway',
           attributes: {
             'ip':           ip,
             'hueId':        id,
@@ -119,7 +121,7 @@ class HueGatewayClient {
 
       return GatewayImportResult.success(devices);
     } catch (e) {
-      return GatewayImportResult.failure('שגיאה בייבוא Hue: $e');
+      return GatewayImportResult.failure('Hue import error: $e');
     }
   }
 

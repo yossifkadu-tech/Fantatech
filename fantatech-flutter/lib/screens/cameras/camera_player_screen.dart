@@ -1,3 +1,4 @@
+import 'package:material_symbols_icons/symbols.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 // CameraPlayerScreen — full-screen PTZ camera viewer
 //
@@ -70,6 +71,7 @@ class _CameraPlayerScreenState extends State<CameraPlayerScreen> {
   void initState() {
     super.initState();
 
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
@@ -112,7 +114,13 @@ class _CameraPlayerScreenState extends State<CameraPlayerScreen> {
 
   @override
   void dispose() {
-    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
     _player?.dispose();
     super.dispose();
   }
@@ -122,13 +130,14 @@ class _CameraPlayerScreenState extends State<CameraPlayerScreen> {
   Future<void> _analyzeFrame() async {
     if (_analyzing) return;
     setState(() { _analyzing = true; _detectedFaces = []; _faceIdentities = {}; });
+    final s = context.read<AppState>().strings; // ignore: use_build_context_synchronously
 
     try {
       // 1. Capture current frame as PNG
       final boundary = _captureKey.currentContext
           ?.findRenderObject() as RenderRepaintBoundary?;
       if (boundary == null) {
-        _toast('שגיאה בלכידת הפריים');
+        _toast(s.camFrameCaptureError);
         setState(() => _analyzing = false);
         return;
       }
@@ -228,10 +237,12 @@ class _CameraPlayerScreenState extends State<CameraPlayerScreen> {
             identities.values.where((r) => r.identified).length;
 
         final msg = faces.isEmpty
-            ? 'לא זוהו פנים'
+            ? s.camNoFaces
             : knownCount > 0
-                ? 'זוהו ${faces.length} פנים — $knownCount מזוהים 🎯'
-                : 'זוהו ${faces.length} פנים 🎯';
+                ? s.camFacesFoundFmt
+                    .replaceAll('{count}', '${faces.length}')
+                    .replaceAll('{known}', '$knownCount')
+                : s.camFacesOnlyFmt.replaceAll('{count}', '${faces.length}');
 
         setState(() {
           _analyzing      = false;
@@ -254,7 +265,7 @@ class _CameraPlayerScreenState extends State<CameraPlayerScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _analyzing = false);
-        _toast('שגיאה בניתוח: $e');
+        _toast(s.camAnalysisErrorFmt.replaceAll('{error}', '$e'));
       }
     }
   }
@@ -262,15 +273,16 @@ class _CameraPlayerScreenState extends State<CameraPlayerScreen> {
   // ── Snapshot ──────────────────────────────────────────────────────────────────
 
   Future<void> _takeSnapshot() async {
+    final s = context.read<AppState>().strings; // ignore: use_build_context_synchronously
     try {
       // Capture the video area as PNG
       final boundary = _captureKey.currentContext
           ?.findRenderObject() as RenderRepaintBoundary?;
-      if (boundary == null) { _toast('שגיאה בצילום'); return; }
+      if (boundary == null) { _toast(s.camCaptureError); return; }
 
       final image = await boundary.toImage(pixelRatio: 2.0);
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-      if (byteData == null) { _toast('שגיאה בצילום'); return; }
+      if (byteData == null) { _toast(s.camCaptureError); return; }
 
       final bytes = byteData.buffer.asUint8List();
 
@@ -280,9 +292,9 @@ class _CameraPlayerScreenState extends State<CameraPlayerScreen> {
       final file = File('${dir.path}/snapshot_$ts.png');
       await file.writeAsBytes(bytes);
 
-      _toast('📸 נשמר: snapshot_$ts.png');
+      _toast(s.camSnapshotSavedFmt.replaceAll('{ts}', '$ts'));
     } catch (_) {
-      _toast('שגיאה בשמירת הצילום');
+      _toast(s.camSaveSnapshotError);
     }
   }
 
@@ -298,10 +310,16 @@ class _CameraPlayerScreenState extends State<CameraPlayerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.select((AppState st) => st.strings);
     return Scaffold(
       backgroundColor: Colors.black,
       body: GestureDetector(
         onTap: () => setState(() => _showOverlay = !_showOverlay),
+        onVerticalDragEnd: (details) {
+          if (details.primaryVelocity != null && details.primaryVelocity! > 300) {
+            Navigator.pop(context);
+          }
+        },
         child: Stack(
           fit: StackFit.expand,
           children: [
@@ -333,7 +351,7 @@ class _CameraPlayerScreenState extends State<CameraPlayerScreen> {
                         strokeWidth: 2.5, color: Colors.white70),
                     const SizedBox(height: 12),
                     Text(
-                      'מתחבר ל-${cam.ip ?? cam.name}...',
+                      s.camConnectingFmt.replaceAll('{name}', cam.ip ?? cam.name),
                       style: TextStyle(
                           color: context.tText2(0.6), fontSize: 12),
                     ),
@@ -344,12 +362,8 @@ class _CameraPlayerScreenState extends State<CameraPlayerScreen> {
             // ── Error ────────────────────────────────────────────────────────
             if (_hasError && !_loading) _ErrorPlaceholder(camera: cam),
 
-            // ── Top bar ──────────────────────────────────────────────────────
-            AnimatedOpacity(
-              opacity: _showOverlay ? 1.0 : 0.0,
-              duration: const Duration(milliseconds: 300),
-              child: _TopOverlay(camera: cam),
-            ),
+            // ── Top bar (always visible so there is always a way back) ───────
+            _TopOverlay(camera: cam),
 
             // ── PTZ joystick ─────────────────────────────────────────────────
             if (cam.isPtz)
@@ -392,8 +406,8 @@ class _CameraPlayerScreenState extends State<CameraPlayerScreen> {
                       const SizedBox(width: 12),
                       Text(
                         context.watch<AppState>().hasAzureConfig
-                            ? 'מזהה פנים וזהות...'
-                            : 'מזהה פנים...',
+                            ? s.camIdentifyingFaces
+                            : s.camDetectingFaces,
                         style: TextStyle(
                             color: context.tText, fontSize: 13),
                       ),
@@ -485,7 +499,7 @@ class _TopOverlay extends StatelessWidget {
               children: [
                 IconButton(
                   icon: Icon(
-                      Icons.arrow_back_ios_new_rounded,
+                      Symbols.arrow_back_ios_new,
                       color: context.tText,
                       size: 20),
                   onPressed: () => Navigator.pop(context),
@@ -495,7 +509,7 @@ class _TopOverlay extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(camera.name,
+                      Text(context.select((AppState st) => st.strings).translateCameraName(camera.name),
                           style: TextStyle(
                               color: context.tText,
                               fontSize: 16,
@@ -514,7 +528,7 @@ class _TopOverlay extends StatelessWidget {
                 // PTZ badge
                 if (camera.isPtz)
                   Container(
-                    margin: const EdgeInsets.only(right: 8),
+                    margin: const EdgeInsetsDirectional.only(end: 8),
                     padding: const EdgeInsets.symmetric(
                         horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
@@ -527,7 +541,7 @@ class _TopOverlay extends StatelessWidget {
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.control_camera_outlined,
+                        Icon(Symbols.control_camera,
                             color: AppColors.primary, size: 12),
                         SizedBox(width: 4),
                         Text('PTZ',
@@ -544,16 +558,16 @@ class _TopOverlay extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Colors.red,
+                      color: AppColors.statusAlarm,
                       borderRadius: BorderRadius.circular(4),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.circle, color: Colors.white, size: 6),
-                        SizedBox(width: 4),
-                        Text('LIVE',
-                            style: TextStyle(
+                        const Icon(Symbols.circle, color: Colors.white, size: 6),
+                        const SizedBox(width: 4),
+                        Text(context.select((AppState st) => st.strings).liveLabel,
+                            style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 10,
                                 fontWeight: FontWeight.w800)),
@@ -571,7 +585,7 @@ class _TopOverlay extends StatelessWidget {
 
 // ── Bottom controls ───────────────────────────────────────────────────────────
 
-class _BottomControls extends StatelessWidget {
+class _BottomControls extends StatefulWidget {
   final Camera camera;
   final VoidCallback onSnapshot;
   final VoidCallback onAnalyze;
@@ -593,6 +607,14 @@ class _BottomControls extends StatelessWidget {
   });
 
   @override
+  State<_BottomControls> createState() => _BottomControlsState();
+}
+
+class _BottomControlsState extends State<_BottomControls> {
+  bool _isLive      = true;
+  bool _isRecording = false;
+
+  @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
@@ -600,87 +622,142 @@ class _BottomControls extends StatelessWidget {
           begin: Alignment.bottomCenter,
           end: Alignment.topCenter,
           colors: [
-            Colors.black.withValues(alpha: 0.75),
+            Colors.black.withValues(alpha: 0.85),
             Colors.transparent,
           ],
         ),
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              // Stream type chip
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: context.tText2(0.12),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  camera.streamType.name.toUpperCase(),
-                  style: TextStyle(
-                      color: context.tText2(0.7),
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700),
-                ),
+              // ── Primary 4 controls ──────────────────────────
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _CtrlBtn(
+                    icon:   _isLive
+                        ? Symbols.live_tv
+                        : Symbols.play_circle,
+                    label:  'Live Stream',
+                    active: _isLive,
+                    activeColor: AppColors.success,
+                    onTap: () => setState(() => _isLive = !_isLive),
+                  ),
+                  _CtrlBtn(
+                    icon:   _isRecording
+                        ? Symbols.stop_circle
+                        : Symbols.fiber_manual_record,
+                    label:  'Recording',
+                    active: _isRecording,
+                    activeColor: AppColors.alert,
+                    onTap: () => setState(() => _isRecording = !_isRecording),
+                  ),
+                  _CtrlBtn(
+                    icon:   Symbols.gamepad,
+                    label:  'PTZ',
+                    active: widget.ptzVisible,
+                    activeColor: AppColors.primary,
+                    onTap:  widget.onPtzToggle ?? () {},
+                    disabled: !widget.camera.isPtz,
+                  ),
+                  _CtrlBtn(
+                    icon:   Symbols.photo_camera,
+                    label:  'Snapshot',
+                    onTap:  widget.onSnapshot,
+                  ),
+                ],
               ),
 
-              const Spacer(),
+              const SizedBox(height: 10),
 
-              // Snapshot button
-              _CtrlBtn(
-                icon: Icons.photo_camera_outlined,
-                label: 'צילום',
-                onTap: onSnapshot,
+              // ── Secondary: face AI + stream type ────────────
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _SmallChip(
+                    icon:  widget.analyzing
+                        ? Symbols.hourglass_top
+                        : Symbols.face,
+                    label: widget.analyzing ? 'Analyzing…' : 'Face AI',
+                    color: const Color(0xFF00C896),
+                    onTap: widget.analyzing ? () {} : widget.onAnalyze,
+                  ),
+                  const SizedBox(width: 8),
+                  _SmallChip(
+                    icon:  Symbols.history,
+                    label: 'History',
+                    color: Colors.white70,
+                    onTap: widget.onHistory,
+                  ),
+                  const SizedBox(width: 8),
+                  _SmallChip(
+                    icon:  Symbols.person_search,
+                    label: 'Enroll',
+                    color: Colors.white70,
+                    onTap: widget.onEnroll,
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      widget.camera.streamType.name.toUpperCase(),
+                      style: const TextStyle(
+                          color: Colors.white54,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ],
               ),
-
-              const SizedBox(width: 12),
-
-              // Face analysis button
-              _CtrlBtn(
-                icon: analyzing
-                    ? Icons.hourglass_top_rounded
-                    : Icons.face_outlined,
-                label: 'נתח',
-                onTap: analyzing ? () {} : onAnalyze,
-                active: analyzing,
-                activeColor: const Color(0xFF00C896),
-              ),
-
-              const SizedBox(width: 12),
-
-              // Analysis history button
-              _CtrlBtn(
-                icon: Icons.history_outlined,
-                label: 'היסטוריה',
-                onTap: onHistory,
-              ),
-
-              const SizedBox(width: 12),
-
-              // Enroll / manage identities button
-              _CtrlBtn(
-                icon: Icons.person_search_outlined,
-                label: 'זיהויים',
-                onTap: onEnroll,
-              ),
-
-              const SizedBox(width: 12),
-
-              // PTZ toggle button
-              if (onPtzToggle != null)
-                _CtrlBtn(
-                  icon: Icons.gamepad_outlined,
-                  label: 'PTZ',
-                  onTap: onPtzToggle!,
-                  active: ptzVisible,
-                  activeColor: AppColors.primary,
-                ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SmallChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+  const _SmallChip(
+      {required this.icon,
+      required this.label,
+      required this.color,
+      required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding:
+            const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: color, size: 13),
+            const SizedBox(width: 4),
+            Text(label,
+                style: TextStyle(
+                    color: color,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600)),
+          ],
         ),
       ),
     );
@@ -693,6 +770,7 @@ class _CtrlBtn extends StatelessWidget {
   final VoidCallback onTap;
   final bool active;
   final Color activeColor;
+  final bool disabled;
 
   const _CtrlBtn({
     required this.icon,
@@ -700,33 +778,41 @@ class _CtrlBtn extends StatelessWidget {
     required this.onTap,
     this.active = false,
     this.activeColor = Colors.white,
+    this.disabled = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final color = active ? activeColor : context.tText;
+    final color = disabled
+        ? Colors.white24
+        : active ? activeColor : context.tText;
     return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 46, height: 46,
-            decoration: BoxDecoration(
-              color: active
-                  ? activeColor.withValues(alpha: 0.18)
-                  : context.tText2(0.10),
-              shape: BoxShape.circle,
-              border: Border.all(
-                  color: color.withValues(alpha: 0.3), width: 1.2),
+      onTap: disabled ? null : onTap,
+      child: Opacity(
+        opacity: disabled ? 0.4 : 1.0,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 56, height: 56,
+              decoration: BoxDecoration(
+                color: active
+                    ? activeColor.withValues(alpha: 0.18)
+                    : Colors.white.withValues(alpha: 0.10),
+                shape: BoxShape.circle,
+                border: Border.all(
+                    color: color.withValues(alpha: 0.30), width: 1.2),
+              ),
+              child: Icon(icon, color: color, size: 24),
             ),
-            child: Icon(icon, color: color, size: 22),
-          ),
-          const SizedBox(height: 4),
-          Text(label,
-              style: TextStyle(
-                  color: color.withValues(alpha: 0.8), fontSize: 11)),
-        ],
+            const SizedBox(height: 6),
+            Text(label,
+                style: TextStyle(
+                    color: color.withValues(alpha: 0.85),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600)),
+          ],
+        ),
       ),
     );
   }
@@ -795,7 +881,7 @@ class _PtzJoystick extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               _PtzBtn(
-                icon: Icons.keyboard_arrow_up_rounded,
+                icon: Symbols.keyboard_arrow_up,
                 onDown: () => _move(tiltY: 0.6),
                 onUp:   _stop,
               ),
@@ -807,7 +893,7 @@ class _PtzJoystick extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               _PtzBtn(
-                icon: Icons.keyboard_arrow_left_rounded,
+                icon: Symbols.keyboard_arrow_left,
                 onDown: () => _move(panX: -0.6),
                 onUp:   _stop,
               ),
@@ -821,7 +907,7 @@ class _PtzJoystick extends StatelessWidget {
               ),
               const SizedBox(width: 6),
               _PtzBtn(
-                icon: Icons.keyboard_arrow_right_rounded,
+                icon: Symbols.keyboard_arrow_right,
                 onDown: () => _move(panX: 0.6),
                 onUp:   _stop,
               ),
@@ -833,7 +919,7 @@ class _PtzJoystick extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               _PtzBtn(
-                icon: Icons.keyboard_arrow_down_rounded,
+                icon: Symbols.keyboard_arrow_down,
                 onDown: () => _move(tiltY: -0.6),
                 onUp:   _stop,
               ),
@@ -849,7 +935,7 @@ class _PtzJoystick extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               _PtzBtn(
-                icon: Icons.zoom_out_rounded,
+                icon: Symbols.zoom_out,
                 onDown: () => _move(zoomX: -0.6),
                 onUp:   _stop,
                 color: const Color(0xFF00B4D8),
@@ -861,7 +947,7 @@ class _PtzJoystick extends StatelessWidget {
                       fontSize: 9)),
               const SizedBox(width: 10),
               _PtzBtn(
-                icon: Icons.zoom_in_rounded,
+                icon: Symbols.zoom_in,
                 onDown: () => _move(zoomX: 0.6),
                 onUp:   _stop,
                 color: const Color(0xFF00B4D8),
@@ -946,6 +1032,7 @@ class _FaceOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.select((AppState st) => st.strings);
     return LayoutBuilder(
       builder: (ctx, constraints) {
         final scaleX = constraints.maxWidth  / frameSize.width;
@@ -973,9 +1060,9 @@ class _FaceOverlay extends StatelessWidget {
             // Build label
             String label;
             if (identified) {
-              label = identity!.displayName;
+              label = identity.displayName;
             } else {
-              label = 'פנים ${i + 1}${face.isSmiling ? ' 😊' : ''}';
+              label = '${s.camFaceLabelFmt.replaceAll('{n}', '${i + 1}')}${face.isSmiling ? ' 😊' : ''}';
             }
 
             return Positioned(
@@ -1054,18 +1141,19 @@ class _ErrorPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.select((AppState st) => st.strings);
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.videocam_off_outlined,
+          Icon(Symbols.videocam_off,
               color: context.tText2(0.24), size: 56),
           const SizedBox(height: 12),
-          Text(camera.name,
+          Text(s.translateCameraName(camera.name),
               style:
                   TextStyle(color: context.tText2(0.6), fontSize: 16)),
           const SizedBox(height: 6),
-          Text('לא ניתן להתחבר לסטרים',
+          Text(s.camStreamConnFailed,
               style: TextStyle(color: context.tText2(0.38), fontSize: 13)),
           if (camera.effectiveRtspUrl != null) ...[
             const SizedBox(height: 8),

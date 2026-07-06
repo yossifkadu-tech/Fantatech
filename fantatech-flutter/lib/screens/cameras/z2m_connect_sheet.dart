@@ -1,3 +1,4 @@
+import 'package:material_symbols_icons/symbols.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 // Z2M Connect Sheet — quick Zigbee2MQTT gateway connection
 // Enter IP (+ optional token) → fetch devices → add to AppState
@@ -34,12 +35,13 @@ class _Z2MConnectSheetState extends State<Z2MConnectSheet> {
   }
 
   Future<void> _connect() async {
+    final s     = context.read<AppState>().strings;
     final ip    = _ipCtrl.text.trim();
     final port  = int.tryParse(_portCtrl.text.trim()) ?? 8080;
     final token = _tokenCtrl.text.trim().isEmpty ? null : _tokenCtrl.text.trim();
 
     if (ip.isEmpty) {
-      setState(() => _error = 'הכנס כתובת IP של ה-Zigbee2MQTT');
+      setState(() => _error = s.z2mEnterIp);
       return;
     }
 
@@ -50,7 +52,9 @@ class _Z2MConnectSheetState extends State<Z2MConnectSheet> {
     if (!healthy) {
       if (mounted) setState(() {
         _loading = false;
-        _error = 'לא ניתן להגיע ל-Zigbee2MQTT ב-$ip:$port\nוודא שה-frontend מופעל וה-IP נכון';
+        _error = s.z2mUnreachableFmt
+            .replaceAll('{ip}', ip)
+            .replaceAll('{port}', '$port');
       });
       return;
     }
@@ -73,13 +77,14 @@ class _Z2MConnectSheetState extends State<Z2MConnectSheet> {
     } else {
       setState(() {
         _loading = false;
-        _error = result.error ?? 'שגיאה לא ידועה';
+        _error = result.error ?? s.z2mUnknownError;
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final s = context.select((AppState st) => st.strings);
     return Container(
       decoration: BoxDecoration(
         color: context.tCard,
@@ -112,7 +117,7 @@ class _Z2MConnectSheetState extends State<Z2MConnectSheet> {
                   color: const Color(0xFFFF9D00).withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(Icons.settings_input_antenna,
+                child: Icon(Symbols.settings_input_antenna,
                     color: Color(0xFFFF9D00), size: 18),
               ),
               const SizedBox(width: 12),
@@ -124,7 +129,7 @@ class _Z2MConnectSheetState extends State<Z2MConnectSheet> {
             ],
           ),
           const SizedBox(height: 6),
-          Text('חיבור לגייטוויי Zigbee — ייבוא מכשירים אוטומטי',
+          Text(s.z2mSubtitle,
               style: TextStyle(
                   color: context.tText2(0.45), fontSize: 12)),
           const SizedBox(height: 20),
@@ -132,9 +137,9 @@ class _Z2MConnectSheetState extends State<Z2MConnectSheet> {
           // IP field
           _Field(
             controller: _ipCtrl,
-            label: 'כתובת IP של Z2M',
-            hint: 'למשל: 192.168.1.50',
-            icon: Icons.router_outlined,
+            label: s.z2mIpLabel,
+            hint: s.z2mIpHint,
+            icon: Symbols.router,
             keyboardType: TextInputType.number,
           ),
           const SizedBox(height: 12),
@@ -146,9 +151,9 @@ class _Z2MConnectSheetState extends State<Z2MConnectSheet> {
                 flex: 2,
                 child: _Field(
                   controller: _portCtrl,
-                  label: 'פורט',
+                  label: s.z2mPortLabel,
                   hint: '8080',
-                  icon: Icons.numbers,
+                  icon: Symbols.numbers,
                   keyboardType: TextInputType.number,
                 ),
               ),
@@ -157,9 +162,9 @@ class _Z2MConnectSheetState extends State<Z2MConnectSheet> {
                 flex: 3,
                 child: _Field(
                   controller: _tokenCtrl,
-                  label: 'API Token (אופציונלי)',
-                  hint: 'אם מוגדר',
-                  icon: Icons.key_outlined,
+                  label: s.z2mTokenLabel,
+                  hint: s.z2mTokenHint,
+                  icon: Symbols.key,
                   obscure: true,
                 ),
               ),
@@ -173,12 +178,12 @@ class _Z2MConnectSheetState extends State<Z2MConnectSheet> {
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.red.withValues(alpha: 0.12),
+                color: AppColors.statusAlarm.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.red.withValues(alpha: 0.30)),
+                border: Border.all(color: AppColors.statusAlarm.withValues(alpha: 0.30)),
               ),
               child: Text(_error!,
-                  style: TextStyle(color: Colors.redAccent, fontSize: 12)),
+                  style: TextStyle(color: AppColors.statusAlarm, fontSize: 12)),
             ),
 
           // Success
@@ -194,10 +199,10 @@ class _Z2MConnectSheetState extends State<Z2MConnectSheet> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.check_circle_outline,
+                  Icon(Symbols.check_circle,
                       color: AppColors.secured, size: 18),
                   const SizedBox(width: 8),
-                  Text('נמצאו $_devicesFound מכשירי Zigbee!',
+                  Text(s.z2mFoundFmt.replaceAll('{n}', '$_devicesFound'),
                       style: TextStyle(
                           color: AppColors.secured, fontSize: 13,
                           fontWeight: FontWeight.w600)),
@@ -225,7 +230,7 @@ class _Z2MConnectSheetState extends State<Z2MConnectSheet> {
                       child: CircularProgressIndicator(
                           strokeWidth: 2, color: Colors.black))
                   : Text(
-                      _devicesFound > 0 ? 'סגור' : 'התחבר וייבא מכשירים',
+                      _devicesFound > 0 ? s.close : s.z2mConnectImport,
                       style: TextStyle(
                           fontWeight: FontWeight.w700, fontSize: 15)),
             ),
@@ -234,7 +239,7 @@ class _Z2MConnectSheetState extends State<Z2MConnectSheet> {
           // Help text
           const SizedBox(height: 10),
           Text(
-            'הפעל frontend ב-Z2M config:\n  frontend:\n    port: 8080',
+            s.z2mFrontendHelp,
             style: TextStyle(
                 color: context.tText2(0.25),
                 fontSize: 10,

@@ -1,3 +1,4 @@
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/app_user.dart';
@@ -5,6 +6,7 @@ import '../../models/app_state.dart';
 import '../../services/auth/user_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/app_background.dart';
+import '../../widgets/ft_button.dart';
 
 class RegisterScreen extends StatefulWidget {
   final void Function(AppUser user) onRegister;
@@ -88,7 +90,7 @@ class _RegisterScreenState extends State<RegisterScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(e.toString().replaceFirst('Exception: ', '')),
-          backgroundColor: Colors.red.shade800,
+          backgroundColor: AppColors.statusAlarm,
         ));
       }
     } finally {
@@ -99,7 +101,7 @@ class _RegisterScreenState extends State<RegisterScreen>
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    final s = context.watch<AppState>().strings;
+    final s = context.select((AppState st) => st.strings);
 
     return Scaffold(
       backgroundColor: const Color(0xFF1D75BD),
@@ -111,10 +113,11 @@ class _RegisterScreenState extends State<RegisterScreen>
             child: SlideTransition(
               position: _slideAnim,
               child: SingleChildScrollView(
-                physics: const NeverScrollableScrollPhysics(),
+                physics: const BouncingScrollPhysics(
+                    parent: AlwaysScrollableScrollPhysics()),
                 padding: const EdgeInsets.symmetric(horizontal: 28),
                 child: ConstrainedBox(
-                  constraints: BoxConstraints(minHeight: size.height - 80),
+                  constraints: BoxConstraints(minHeight: size.height - 120),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -123,24 +126,11 @@ class _RegisterScreenState extends State<RegisterScreen>
                     // Back + Logo row
                     Row(
                       children: [
-                        GestureDetector(
+                        FtButton.iconOnly(
+                          icon: Symbols.arrow_back_ios_new,
+                          variant: FtButtonVariant.neutral,
+                          size: FtButtonSize.sm,
                           onTap: () => Navigator.pop(context),
-                          child: Container(
-                            width: 38,
-                            height: 38,
-                            decoration: BoxDecoration(
-                              color: context.tText2(0.07),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                color: context.tText2(0.10),
-                              ),
-                            ),
-                            child: Icon(
-                              Icons.arrow_back_ios_new_rounded,
-                              color: context.tText2(0.54),
-                              size: 16,
-                            ),
-                          ),
                         ),
                       ],
                     ),
@@ -155,8 +145,8 @@ class _RegisterScreenState extends State<RegisterScreen>
                     // Title
                     Text(
                       s.registerTitle,
-                      style: TextStyle(
-                        color: context.tText,
+                      style: const TextStyle(
+                        color: Colors.white,
                         fontSize: 26,
                         fontWeight: FontWeight.bold,
                       ),
@@ -166,7 +156,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                     Text(
                       s.registerSubtitle,
                       style: TextStyle(
-                        color: context.tText2(0.55),
+                        color: Colors.white.withValues(alpha: 0.65),
                         fontSize: 14,
                       ),
                       textAlign: TextAlign.center,
@@ -178,7 +168,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                     _InputField(
                       controller: _nameCtrl,
                       hint: s.fullName,
-                      icon: Icons.badge_outlined,
+                      icon: Symbols.badge,
                       keyboardType: TextInputType.name,
                     ),
 
@@ -188,7 +178,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                     _InputField(
                       controller: _emailCtrl,
                       hint: s.authEmailHint,
-                      icon: Icons.person_outline,
+                      icon: Symbols.person,
                       keyboardType: TextInputType.emailAddress,
                     ),
 
@@ -198,16 +188,16 @@ class _RegisterScreenState extends State<RegisterScreen>
                     _InputField(
                       controller: _passCtrl,
                       hint: s.authPassHint,
-                      icon: Icons.lock_outline,
+                      icon: Symbols.lock,
                       obscureText: _obscurePassword,
                       suffixIcon: GestureDetector(
                         onTap: () =>
                             setState(() => _obscurePassword = !_obscurePassword),
                         child: Icon(
                           _obscurePassword
-                              ? Icons.visibility_off_outlined
-                              : Icons.visibility_outlined,
-                          color: context.tText2(0.38),
+                              ? Symbols.visibility_off
+                              : Symbols.visibility,
+                          color: const Color(0xFF6B7280),
                           size: 20,
                         ),
                       ),
@@ -219,16 +209,16 @@ class _RegisterScreenState extends State<RegisterScreen>
                     _InputField(
                       controller: _confirmPassCtrl,
                       hint: s.confirmPassHint,
-                      icon: Icons.lock_outline,
+                      icon: Symbols.lock,
                       obscureText: _obscureConfirm,
                       suffixIcon: GestureDetector(
                         onTap: () =>
                             setState(() => _obscureConfirm = !_obscureConfirm),
                         child: Icon(
                           _obscureConfirm
-                              ? Icons.visibility_off_outlined
-                              : Icons.visibility_outlined,
-                          color: context.tText2(0.38),
+                              ? Symbols.visibility_off
+                              : Symbols.visibility,
+                          color: const Color(0xFF6B7280),
                           size: 20,
                         ),
                       ),
@@ -242,22 +232,22 @@ class _RegisterScreenState extends State<RegisterScreen>
                         padding: const EdgeInsets.symmetric(
                             horizontal: 14, vertical: 10),
                         decoration: BoxDecoration(
-                          color: Colors.red.withValues(alpha: 0.12),
+                          color: AppColors.statusAlarm.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: Colors.red.withValues(alpha: 0.3),
+                            color: AppColors.statusAlarm.withValues(alpha: 0.3),
                           ),
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.error_outline,
-                                color: Colors.red, size: 16),
+                            Icon(Symbols.error,
+                                color: AppColors.statusAlarm, size: 16),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 _errorMsg!,
                                 style: TextStyle(
-                                  color: Colors.red,
+                                  color: AppColors.statusAlarm,
                                   fontSize: 13,
                                 ),
                               ),
@@ -270,38 +260,12 @@ class _RegisterScreenState extends State<RegisterScreen>
                     const SizedBox(height: 24),
 
                     // Register button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 52,
-                      child: ElevatedButton(
-                        onPressed: _isLoading ? null : _handleRegister,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: context.tText,
-                          foregroundColor: const Color(0xFF3C4043),
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          disabledBackgroundColor:
-                              context.tText2(0.6),
-                        ),
-                        child: _isLoading
-                            ? const SizedBox(
-                                width: 22,
-                                height: 22,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2.5,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : Text(
-                                s.registerButton,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                      ),
+                    FtButton(
+                      label: s.registerButton,
+                      loading: _isLoading,
+                      expand: true,
+                      size: FtButtonSize.lg,
+                      onTap: _isLoading ? null : _handleRegister,
                     ),
 
                     const SizedBox(height: 28),
@@ -313,20 +277,16 @@ class _RegisterScreenState extends State<RegisterScreen>
                         Text(
                           s.haveAccount,
                           style: TextStyle(
-                            color: context.tText2(0.45),
+                            color: Colors.white.withValues(alpha: 0.70),
                             fontSize: 14,
                           ),
                         ),
-                        GestureDetector(
+                        FtButton(
+                          label: s.loginButton,
+                          variant: FtButtonVariant.ghost,
+                          size: FtButtonSize.sm,
+                          color: Colors.white,
                           onTap: () => Navigator.pop(context),
-                          child: Text(
-                            s.loginButton,
-                            style: TextStyle(
-                              color: AppColors.primary,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
                         ),
                       ],
                     ),
@@ -361,7 +321,7 @@ class _RegisterLogo extends StatelessWidget {
         ),
       ),
       child: Icon(
-        Icons.person_add_outlined,
+        Symbols.person_add,
         color: AppColors.primary,
         size: 28,
       ),
@@ -390,26 +350,35 @@ class _InputField extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: context.tText2(0.07),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: context.tText2(0.10),
+          color: Colors.black.withValues(alpha: 0.10),
           width: 1,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: TextField(
         controller: controller,
         obscureText: obscureText,
         keyboardType: keyboardType,
-        textDirection: TextDirection.rtl,
-        style: TextStyle(color: context.tText, fontSize: 15),
+        textDirection: context.select((AppState st) => st.isRtl)
+            ? TextDirection.rtl
+            : TextDirection.ltr,
+        style: const TextStyle(color: Color(0xFF1A1D27), fontSize: 15),
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: TextStyle(
-            color: context.tText2(0.35),
+          hintStyle: const TextStyle(
+            color: Color(0xFF9CA3AF),
             fontSize: 14,
           ),
-          prefixIcon: Icon(icon, color: context.tText2(0.38), size: 20),
+          prefixIcon: Icon(icon, color: const Color(0xFF6B7280), size: 20),
           suffixIcon: suffixIcon,
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(

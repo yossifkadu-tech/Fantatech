@@ -1,3 +1,4 @@
+import 'package:material_symbols_icons/symbols.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 // GatewayConnectSheet
 //
@@ -9,10 +10,14 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:network_info_plus/network_info_plus.dart';
 import 'package:provider/provider.dart';
+import '../../models/app_state.dart';
+import '../../services/gateways/clients/aqara_hub_client.dart';
 import '../../services/gateways/gateway_manager.dart';
 import '../../services/gateways/gateway_types.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/ft_button.dart';
 
 class GatewayConnectSheet extends StatefulWidget {
   final GatewayMeta meta;
@@ -41,10 +46,11 @@ class _GatewayConnectSheetState extends State<GatewayConnectSheet>
   late final AnimationController _pulseCtrl;
   late final Animation<double>   _pulseAnim;
 
-  bool    _connected  = false;
+  bool    _connected      = false;
   int?    _countdown;
   String? _error;
-  bool    _connecting = false;
+  bool    _connecting     = false;
+  bool    _scanningAqara  = false;
   Timer?  _timer;
 
   @override
@@ -79,6 +85,38 @@ class _GatewayConnectSheetState extends State<GatewayConnectSheet>
     super.dispose();
   }
 
+  // ── Aqara Hub auto-discover ───────────────────────────────────────────────
+
+  Future<void> _scanAqaraHub() async {
+    setState(() { _scanningAqara = true; _error = null; });
+    try {
+      final localIp = await NetworkInfo().getWifiIP();
+      final prefix  = localIp == null
+          ? '192.168.1'
+          : localIp.substring(0, localIp.lastIndexOf('.'));
+      final found = await AqaraHubClient.discover(prefix);
+      if (!mounted) return;
+      if (found != null) {
+        _ctrls['ip']?.text = found.ip;
+        setState(() { _scanningAqara = false; });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Hub found at ${found.ip}'),
+            backgroundColor: const Color(0xFF1565C0),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      } else {
+        setState(() {
+          _scanningAqara = false;
+          _error = 'No Aqara hub found on this network. Make sure the hub is powered on and connected to the same WiFi.';
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() { _scanningAqara = false; _error = e.toString(); });
+    }
+  }
+
   // ── Connect ────────────────────────────────────────────────────────────────
 
   Future<void> _connect() async {
@@ -111,6 +149,7 @@ class _GatewayConnectSheetState extends State<GatewayConnectSheet>
   @override
   Widget build(BuildContext context) {
     final manager = context.watch<GatewayManager>();
+    final s       = context.select((AppState st) => st.strings);
     final meta    = widget.meta;
     final color   = meta.color;
 
@@ -173,7 +212,7 @@ class _GatewayConnectSheetState extends State<GatewayConnectSheet>
                   pulse:     _pulseAnim,
                   status:    manager.isPairing
                       ? manager.pairStatus
-                      : 'מתחבר…',
+                      : s.connecting,
                   countdown: _countdown,
                 ),
               ]
@@ -197,6 +236,20 @@ class _GatewayConnectSheetState extends State<GatewayConnectSheet>
 
                 const SizedBox(height: 12),
 
+                // Aqara: auto-discover hub IP
+                if (meta.type == GatewayType.aqara) ...[
+                  FtButton(
+                    label:       _scanningAqara ? 'Scanning network…' : 'Auto-detect Hub IP',
+                    leadingIcon: Symbols.wifi_find,
+                    onTap:       _scanningAqara ? null : _scanAqaraHub,
+                    loading:     _scanningAqara,
+                    expand:      true,
+                    color:       color,
+                    variant:     FtButtonVariant.secondary,
+                  ),
+                  const SizedBox(height: 12),
+                ],
+
                 // Field inputs
                 ...widget.meta.fields.map((f) => Padding(
                   padding: const EdgeInsets.only(bottom: 12),
@@ -214,41 +267,17 @@ class _GatewayConnectSheetState extends State<GatewayConnectSheet>
                   const SizedBox(height: 8),
 
                 // Connect button
-                SizedBox(
-                  width:  double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: _canConnect ? _connect : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: color,
-                      foregroundColor: context.tText,
-                      disabledBackgroundColor:
-                          color.withValues(alpha: 0.35),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(meta.requiresButtonPress
-                            ? Icons.bluetooth_searching
-                            : Icons.link,
-                            size: 18),
-                        const SizedBox(width: 8),
-                        Text(
-                          meta.requiresButtonPress
-                              ? 'חבר (לאחר לחיצת כפתור)'
-                              : 'חבר',
-                          style: TextStyle(
-                            fontSize:   15,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                FtButton(
+                  label:       meta.requiresButtonPress
+                      ? s.connectAfterButton
+                      : s.connect,
+                  leadingIcon: meta.requiresButtonPress
+                      ? Symbols.bluetooth_searching
+                      : Symbols.link,
+                  onTap:       _canConnect ? _connect : null,
+                  loading:     _connecting,
+                  expand:      true,
+                  color:       color,
                 ),
 
                 const SizedBox(height: 12),
@@ -257,7 +286,7 @@ class _GatewayConnectSheetState extends State<GatewayConnectSheet>
                 if (meta.isCloud)
                   Center(
                     child: Text(
-                      'Token נוצר בפורטל ${meta.name}',
+                      s.tokenPortalFmt.replaceAll('{name}', meta.name),
                       style: TextStyle(
                         color:    context.tText2(0.3),
                         fontSize: 11,
@@ -292,6 +321,7 @@ class _GatewayHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.select((AppState st) => st.strings);
     return Row(
       children: [
         Container(
@@ -330,9 +360,9 @@ class _GatewayHeader extends StatelessWidget {
               border:       Border.all(color: color.withValues(alpha: 0.3)),
             ),
             child: Row(mainAxisSize: MainAxisSize.min, children: [
-              Icon(Icons.cloud_outlined, color: color, size: 12),
+              Icon(Symbols.cloud, color: color, size: 12),
               const SizedBox(width: 4),
-              Text('ענן',
+              Text(s.cloud,
                 style: TextStyle(
                   color:      color,
                   fontSize:   10,
@@ -365,6 +395,7 @@ class _PairingView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.select((AppState st) => st.strings);
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 32),
@@ -398,7 +429,7 @@ class _PairingView extends StatelessWidget {
               textAlign: TextAlign.center),
             if (countdown != null && countdown! > 0) ...[
               const SizedBox(height: 8),
-              Text('$countdown שניות נותרו',
+              Text(s.secondsRemainingFmt.replaceAll('{n}', '$countdown'),
                 style: TextStyle(
                   color:    context.tText2(0.35),
                   fontSize: 12,
@@ -417,7 +448,7 @@ class _PairingView extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.touch_app_outlined, color: color, size: 18),
+                    Icon(Symbols.touch_app, color: color, size: 18),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(meta.buttonInstruction!,
@@ -453,6 +484,7 @@ class _SuccessView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final manager = context.watch<GatewayManager>();
+    final s       = context.select((AppState st) => st.strings);
     final conn    = manager.connections.lastWhere(
         (c) => c.type == meta.type, orElse: () => manager.connections.last);
 
@@ -469,11 +501,11 @@ class _SuccessView extends StatelessWidget {
                 border: Border.all(
                     color: AppColors.secured.withValues(alpha: 0.4), width: 2),
               ),
-              child: Icon(Icons.check_rounded,
+              child: Icon(Symbols.check,
                   color: AppColors.secured, size: 36),
             ),
             const SizedBox(height: 16),
-            Text('מחובר בהצלחה!',
+            Text(s.connectedSuccess,
               style: TextStyle(
                 color:      context.tText,
                 fontSize:   18,
@@ -486,22 +518,10 @@ class _SuccessView extends StatelessWidget {
                 fontSize: 13,
               )),
             const SizedBox(height: 32),
-            SizedBox(
-              width:  double.infinity,
-              height: 48,
-              child: ElevatedButton(
-                onPressed: onClose,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: context.tText,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(13)),
-                  elevation: 0,
-                ),
-                child: Text('סגור',
-                  style: TextStyle(
-                      fontSize: 14, fontWeight: FontWeight.w600)),
-              ),
+            FtButton(
+              label:  s.close,
+              onTap:  onClose,
+              expand: true,
             ),
           ],
         ),
@@ -528,10 +548,10 @@ class _CloudBadge extends StatelessWidget {
         border:       Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Row(children: [
-        Icon(Icons.cloud_outlined, color: color, size: 16),
+        Icon(Symbols.cloud, color: color, size: 16),
         const SizedBox(width: 8),
         Expanded(
-          child: Text('חיבור ענן — הנתונים עוברים דרך שרתי היצרן',
+          child: Text(context.select((AppState st) => st.strings.cloudConnectionNote),
             style: TextStyle(
               color:    context.tText2(0.5),
               fontSize: 11,
@@ -577,17 +597,17 @@ class _SetupStepsState extends State<_SetupSteps> {
               padding: const EdgeInsets.all(12),
               child: Row(
                 children: [
-                  Icon(Icons.help_outline, color: widget.color, size: 18),
+                  Icon(Symbols.help, color: widget.color, size: 18),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: Text('איך משיגים את הפרטים? (${widget.steps.length} צעדים)',
+                    child: Text(context.select((AppState st) => st.strings.setupStepsHintFmt).replaceAll('{n}', '${widget.steps.length}'),
                       style: TextStyle(
                         color:      widget.color,
                         fontSize:   12.5,
                         fontWeight: FontWeight.w600,
                       )),
                   ),
-                  Icon(_open ? Icons.expand_less : Icons.expand_more,
+                  Icon(_open ? Symbols.expand_less : Symbols.expand_more,
                       color: widget.color, size: 20),
                 ],
               ),
@@ -662,7 +682,7 @@ class _ButtonPressHint extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.touch_app_outlined, color: color, size: 18),
+          Icon(Symbols.touch_app, color: color, size: 18),
           const SizedBox(width: 10),
           Expanded(
             child: Text(instruction,
@@ -723,8 +743,8 @@ class _GatewayField extends StatelessWidget {
         // "Optional" suffix
         suffixIcon: !field.required
             ? Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: Text('אופציונלי',
+                padding: const EdgeInsetsDirectional.only(end: 8),
+                child: Text(context.select((AppState st) => st.strings.optional),
                   style: TextStyle(
                     color:    context.tText2(0.2),
                     fontSize: 9,
@@ -755,7 +775,7 @@ class _ErrorBanner extends StatelessWidget {
             color: AppColors.unsecured.withValues(alpha: 0.3)),
       ),
       child: Row(children: [
-        Icon(Icons.error_outline,
+        Icon(Symbols.error,
             color: AppColors.unsecured, size: 16),
         const SizedBox(width: 8),
         Expanded(

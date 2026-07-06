@@ -1,3 +1,4 @@
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -30,20 +31,22 @@ class StoreScreen extends StatefulWidget {
 
 class _StoreScreenState extends State<StoreScreen> {
 
-  static const _baseUrl = 'https://www.fantatech.co.il';
+  static const _baseUrl    = 'https://www.fantatech.co.il';
+  static const _amazonUrl  = 'https://www.amazon.com/s?k=smart+home';
+  static const _aliUrl     = 'https://www.aliexpress.com/wholesale?SearchText=smart+home';
 
-  static const _featured = [
+  List<_Product> _featured(S s) => [
     _Product('ft_hub',   'FantaTech Hub Pro',  149, 4.8, true,  'hub-pro'),
-    _Product('ft_cam',   'FT Camera 4K',       89,  4.7, false, 'camera-4k'),
-    _Product('ft_bulb',  'Smart Bulb RGB',     19,  4.6, false, 'smart-bulb'),
-    _Product('ft_sense', 'חיישן תנועה Shelly', 29,  4.5, false, 'motion-sensor'),
+    _Product('ft_cam',   'FT Camera 4K',        89, 4.7, false, 'camera-4k'),
+    _Product('ft_bulb',  'Smart Bulb RGB',       19, 4.6, false, 'smart-bulb'),
+    _Product('ft_sense', s.prodMotionSensor,     29, 4.5, false, 'motion-sensor'),
   ];
 
-  static const _newArrivals = [
-    _Product('ft_blind', 'מנוע תריס חכם',  79, 4.4, true,  'blind-motor'),
-    _Product('ft_plug',  'שקע חכם 16A',    24, 4.6, false, 'smart-plug'),
-    _Product('ft_gw',    'Gateway Matter', 59, 4.9, true,  'gateway-matter'),
-    _Product('ft_strip', 'רצועת LED 5מ',  34, 4.3, false, 'led-strip'),
+  List<_Product> _newArrivals(S s) => [
+    _Product('ft_blind', s.prodBlindMotor,    79, 4.4, true,  'blind-motor'),
+    _Product('ft_plug',  s.prodSmartPlug,     24, 4.6, false, 'smart-plug'),
+    _Product('ft_gw',    'Gateway Matter',    59, 4.9, true,  'gateway-matter'),
+    _Product('ft_strip', s.prodLedStrip,      34, 4.3, false, 'led-strip'),
   ];
 
   // search
@@ -74,7 +77,7 @@ class _StoreScreenState extends State<StoreScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(context.read<AppState>().strings.storeBrowserError),
-          backgroundColor: Colors.red.shade700,
+          backgroundColor: AppColors.statusAlarm,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ));
@@ -178,8 +181,8 @@ class _StoreScreenState extends State<StoreScreen> {
         .toList();
   }
 
-  bool get _hasResults =>
-      _filter(_featured).isNotEmpty || _filter(_newArrivals).isNotEmpty;
+  bool _hasResults(S s) =>
+      _filter(_featured(s)).isNotEmpty || _filter(_newArrivals(s)).isNotEmpty;
 
   // ── Build ─────────────────────────────────────────────────────────────────
 
@@ -188,8 +191,8 @@ class _StoreScreenState extends State<StoreScreen> {
     final state = context.watch<AppState>();
     final s = state.strings;
     final textDir = state.isRtl ? TextDirection.rtl : TextDirection.ltr;
-    final featured    = _filter(_featured);
-    final newArrivals = _filter(_newArrivals);
+    final featured    = _filter(_featured(s));
+    final newArrivals = _filter(_newArrivals(s));
 
     return Scaffold(
       backgroundColor: context.tBg,
@@ -222,7 +225,7 @@ class _StoreScreenState extends State<StoreScreen> {
                           border: Border.all(
                               color: context.tText2(0.10)),
                         ),
-                        child: Icon(Icons.shopping_bag_outlined,
+                        child: Icon(Symbols.shopping_bag,
                             color: context.tText2(0.7), size: 20),
                       ),
                     ),
@@ -245,7 +248,7 @@ class _StoreScreenState extends State<StoreScreen> {
                   ),
                   child: Row(children: [
                     const SizedBox(width: 12),
-                    Icon(Icons.search_outlined,
+                    Icon(Symbols.search,
                         color: context.tText2(0.35),
                         size: 18),
                     const SizedBox(width: 8),
@@ -275,7 +278,7 @@ class _StoreScreenState extends State<StoreScreen> {
                         },
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 8),
-                          child: Icon(Icons.close_rounded,
+                          child: Icon(Symbols.close,
                               color: context.tText2(0.45),
                               size: 16),
                         ),
@@ -286,14 +289,14 @@ class _StoreScreenState extends State<StoreScreen> {
             ),
 
             // ── No results state ────────────────────────────────
-            if (_query.isNotEmpty && !_hasResults)
+            if (_query.isNotEmpty && !_hasResults(s))
               SliverToBoxAdapter(
                 child: Center(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 40),
                     child: Column(
                       children: [
-                        Icon(Icons.search_off_rounded,
+                        Icon(Symbols.search_off,
                             color: context.tText2(0.2),
                             size: 48),
                         const SizedBox(height: 12),
@@ -350,7 +353,7 @@ class _StoreScreenState extends State<StoreScreen> {
                                 color: context.tText2(0.15),
                                 shape: BoxShape.circle,
                               ),
-                              child: Icon(Icons.language_outlined,
+                              child: Icon(Symbols.language,
                                   color: context.tText, size: 22),
                             ),
                             const SizedBox(width: 14),
@@ -383,13 +386,44 @@ class _StoreScreenState extends State<StoreScreen> {
                                     context.tText2(0.15),
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: Icon(Icons.open_in_new,
+                              child: Icon(Symbols.open_in_new,
                                   color: context.tText, size: 16),
                             ),
                           ],
                         ),
                       ),
                     ),
+                  ),
+                ),
+              ),
+
+            // ── Marketplace banners ─────────────────────────────
+            if (_query.isEmpty)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _MarketBanner(
+                          label: 'Amazon',
+                          subLabel: '${s.storeBuyAt} Amazon',
+                          color: const Color(0xFFFF9900),
+                          icon: Symbols.shopping_bag,
+                          onTap: () => _openUrl(_amazonUrl),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _MarketBanner(
+                          label: 'AliExpress',
+                          subLabel: '${s.storeBuyAt} AliExpress',
+                          color: const Color(0xFFE43225),
+                          icon: Symbols.local_shipping,
+                          onTap: () => _openUrl(_aliUrl),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -616,15 +650,15 @@ class _ProductCard extends StatelessWidget {
 
   IconData get _icon {
     switch (product.id) {
-      case 'ft_hub':   return Icons.hub_outlined;
-      case 'ft_cam':   return Icons.videocam_outlined;
-      case 'ft_bulb':  return Icons.lightbulb_outlined;
-      case 'ft_sense': return Icons.sensors_outlined;
-      case 'ft_blind': return Icons.blinds_outlined;
-      case 'ft_plug':  return Icons.power_outlined;
-      case 'ft_gw':    return Icons.router_outlined;
-      case 'ft_strip': return Icons.wb_iridescent_outlined;
-      default:         return Icons.devices_outlined;
+      case 'ft_hub':   return Symbols.hub;
+      case 'ft_cam':   return Symbols.videocam;
+      case 'ft_bulb':  return Symbols.lightbulb;
+      case 'ft_sense': return Symbols.sensors;
+      case 'ft_blind': return Symbols.blinds;
+      case 'ft_plug':  return Symbols.power;
+      case 'ft_gw':    return Symbols.router;
+      case 'ft_strip': return Symbols.wb_iridescent;
+      default:         return Symbols.devices;
     }
   }
 
@@ -646,11 +680,12 @@ class _ProductCard extends StatelessWidget {
   /// generic products are translated to the selected language.
   String _name(S s) {
     switch (product.id) {
+      case 'ft_bulb':  return '${s.devBulb} RGB';
       case 'ft_sense': return s.prodMotionSensor;
       case 'ft_blind': return s.prodBlindMotor;
       case 'ft_plug':  return s.prodSmartPlug;
       case 'ft_strip': return s.prodLedStrip;
-      default:         return product.name;
+      default:         return product.name; // brand names stay as-is
     }
   }
 
@@ -713,7 +748,7 @@ class _ProductCard extends StatelessWidget {
                     Positioned(
                       top: 6, right: 6,
                       child: Icon(
-                        Icons.open_in_new,
+                        Symbols.open_in_new,
                         color: context.tText2(0.25),
                         size: 12,
                       ),
@@ -738,7 +773,7 @@ class _ProductCard extends StatelessWidget {
 
               // ── Rating ────────────────────────────────────────
               Row(children: [
-                Icon(Icons.star_rounded,
+                Icon(Symbols.star,
                     color: Color(0xFFFBBC05), size: 12),
                 const SizedBox(width: 3),
                 Text(
@@ -772,7 +807,7 @@ class _ProductCard extends StatelessWidget {
                         color: AppColors.primary,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Icon(Icons.shopping_cart_outlined,
+                      child: Icon(Symbols.shopping_cart,
                           color: context.tText, size: 14),
                     ),
                   ),
@@ -780,6 +815,71 @@ class _ProductCard extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Marketplace banner tile ───────────────────────────────────────────────────
+class _MarketBanner extends StatelessWidget {
+  final String label;
+  final String subLabel;
+  final Color color;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _MarketBanner({
+    required this.label,
+    required this.subLabel,
+    required this.color,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 76,
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.10),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: color.withValues(alpha: 0.35), width: 1.5),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 38, height: 38,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.18),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 20),
+            ),
+            const SizedBox(width: 10),
+            Flexible(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label,
+                      style: TextStyle(
+                          color: color,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold)),
+                  Text(subLabel,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          color: color.withValues(alpha: 0.7),
+                          fontSize: 11)),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

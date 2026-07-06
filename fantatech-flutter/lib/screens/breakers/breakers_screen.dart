@@ -1,3 +1,4 @@
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/app_state.dart';
@@ -44,21 +45,21 @@ class _BreakersScreenState extends State<BreakersScreen>
   late Animation<double> _pulseAnim;
 
   final List<_Breaker> _breakers = [
-    _Breaker(id: 'main', room: 'ראשי', amps: 63, isMain: true,
+    _Breaker(id: 'main', room: '__main__', amps: 63, isMain: true,
         state: BreakerState.on, useZigbee: false),
-    _Breaker(id: 'b1', room: 'סלון', amps: 16, state: BreakerState.on),
-    _Breaker(id: 'b2', room: 'מטבח', amps: 20, state: BreakerState.on),
-    _Breaker(id: 'b3', room: 'חדר שינה', amps: 16, state: BreakerState.on,
+    _Breaker(id: 'b1', room: '__living__', amps: 16, state: BreakerState.on),
+    _Breaker(id: 'b2', room: '__kitchen__', amps: 20, state: BreakerState.on),
+    _Breaker(id: 'b3', room: '__bedroom__', amps: 16, state: BreakerState.on,
         useZigbee: true),
-    _Breaker(id: 'b4', room: 'חדר ילדים', amps: 16, state: BreakerState.on,
+    _Breaker(id: 'b4', room: '__kids__', amps: 16, state: BreakerState.on,
         useZigbee: true),
-    _Breaker(id: 'b5', room: 'חדר אמבטיה', amps: 16,
+    _Breaker(id: 'b5', room: '__bathroom__', amps: 16,
         state: BreakerState.tripped, isConnected: false),
-    _Breaker(id: 'b6', room: 'מרפסת', amps: 10, state: BreakerState.off,
+    _Breaker(id: 'b6', room: '__garden__', amps: 10, state: BreakerState.off,
         useZigbee: false),
-    _Breaker(id: 'b7', room: 'מחסן', amps: 10, state: BreakerState.on,
+    _Breaker(id: 'b7', room: '__storage__', amps: 10, state: BreakerState.on,
         isConnected: false),
-    _Breaker(id: 'b8', room: 'מזגן', amps: 25, state: BreakerState.on,
+    _Breaker(id: 'b8', room: '__ac__', amps: 25, state: BreakerState.on,
         useZigbee: true),
   ];
 
@@ -106,7 +107,7 @@ class _BreakersScreenState extends State<BreakersScreen>
 
   @override
   Widget build(BuildContext context) {
-    final s = context.watch<AppState>().strings;
+    final s = context.select((AppState st) => st.strings);
 
     return Scaffold(
       backgroundColor: context.tBg,
@@ -194,7 +195,7 @@ class _TopBar extends StatelessWidget {
                 color: context.tText2(0.07),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(Icons.chevron_right,
+              child: Icon(Symbols.chevron_right,
                   color: context.tText, size: 22),
             ),
           ),
@@ -387,7 +388,7 @@ class _PanelHeader extends StatelessWidget {
           ),
         ),
         const Spacer(),
-        Icon(Icons.electrical_services,
+        Icon(Symbols.electrical_services,
             color: context.tText2(0.3), size: 18),
       ],
     );
@@ -464,7 +465,7 @@ class _MainBreakerCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    breaker.room,
+                    context.select((AppState st) => st.strings).translateRoomKey(breaker.room),
                     style: TextStyle(
                       color: context.tText,
                       fontSize: 16,
@@ -485,9 +486,9 @@ class _MainBreakerCard extends StatelessWidget {
                       _ProtocolChip(
                         label: breaker.useZigbee ? zigbeeLabel : wifiLabel,
                         icon: breaker.useZigbee
-                            ? Icons.hub_outlined
-                            : Icons.wifi,
-                        color: const Color(0xFF7BB8FF),
+                            ? Symbols.hub
+                            : Symbols.wifi,
+                        color: AppColors.circuitBreakerColor,
                       ),
                     ],
                   ),
@@ -674,7 +675,7 @@ class _SubBreakerCard extends StatelessWidget {
             ),
             const Spacer(),
             Text(
-              breaker.room,
+              context.select((AppState st) => st.strings).translateRoomKey(breaker.room),
               style: TextStyle(
                 color: context.tText,
                 fontSize: 11,
@@ -698,9 +699,9 @@ class _SubBreakerCard extends StatelessWidget {
                   _ProtocolChip(
                     label: breaker.useZigbee ? zigbeeLabel : wifiLabel,
                     icon: breaker.useZigbee
-                        ? Icons.hub_outlined
-                        : Icons.wifi,
-                    color: const Color(0xFF7BB8FF),
+                        ? Symbols.hub
+                        : Symbols.wifi,
+                    color: AppColors.circuitBreakerColor,
                     small: true,
                   )
                 else

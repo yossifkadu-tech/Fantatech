@@ -1,3 +1,4 @@
+import 'package:material_symbols_icons/symbols.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 // SmartSwitch Models
 // Unified data layer for every smart-switch protocol in the app.
@@ -17,85 +18,127 @@ enum SwitchProtocol {
   esphome,      // ESPHome REST          — POST /switch/<id>/turn_on|off
   haRest,       // Home Assistant REST   — POST /api/services/switch/turn_on
   z2mMqtt,      // Zigbee2MQTT MQTT      — publish zigbee2mqtt/<name>/set
+  merossLan,    // Meross LAN            — HTTP POST /config + MD5 sign
+  broadlinkIr,  // Broadlink IR Blaster  — UDP AES-128-CBC
+  goveeLan,     // Govee LAN             — UDP port 4003 JSON
+  yeelightLan,  // Yeelight LAN          — TCP 55443 JSON-RPC
+  wizLan,       // WiZ LAN               — UDP port 38899 JSON
+  lifxCloud,    // LIFX Cloud API        — HTTPS api.lifx.com
+  nanoleaf,     // Nanoleaf REST         — HTTP port 16021
+  aqaraHub,     // Aqara Hub M2/E1       — HTTP local API
   unknown,
 }
 
 extension SwitchProtocolX on SwitchProtocol {
   String get displayName => switch (this) {
-        SwitchProtocol.shellyGen1 => 'Shelly Gen1',
-        SwitchProtocol.shellyGen2 => 'Shelly Gen2',
-        SwitchProtocol.shellyGen3 => 'Shelly Gen3',
-        SwitchProtocol.sonoffLan  => 'Sonoff LAN',
-        SwitchProtocol.tuyaLocal  => 'Tuya Local',
-        SwitchProtocol.kasaLocal  => 'Kasa',
-        SwitchProtocol.tapoLocal  => 'Tapo',
-        SwitchProtocol.esphome    => 'ESPHome',
-        SwitchProtocol.haRest     => 'Home Assistant',
-        SwitchProtocol.z2mMqtt    => 'Zigbee2MQTT',
-        SwitchProtocol.unknown    => 'Unknown',
+        SwitchProtocol.shellyGen1  => 'Shelly Gen1',
+        SwitchProtocol.shellyGen2  => 'Shelly Gen2',
+        SwitchProtocol.shellyGen3  => 'Shelly Gen3',
+        SwitchProtocol.sonoffLan   => 'Sonoff LAN',
+        SwitchProtocol.tuyaLocal   => 'Tuya Local',
+        SwitchProtocol.kasaLocal   => 'Kasa',
+        SwitchProtocol.tapoLocal   => 'Tapo',
+        SwitchProtocol.esphome     => 'ESPHome',
+        SwitchProtocol.haRest      => 'Home Assistant',
+        SwitchProtocol.z2mMqtt     => 'Zigbee2MQTT',
+        SwitchProtocol.merossLan   => 'Meross LAN',
+        SwitchProtocol.broadlinkIr => 'Broadlink IR',
+        SwitchProtocol.goveeLan    => 'Govee LAN',
+        SwitchProtocol.yeelightLan => 'Yeelight',
+        SwitchProtocol.wizLan      => 'WiZ',
+        SwitchProtocol.lifxCloud   => 'LIFX Cloud',
+        SwitchProtocol.nanoleaf    => 'Nanoleaf',
+        SwitchProtocol.aqaraHub    => 'Aqara Hub',
+        SwitchProtocol.unknown     => 'Unknown',
       };
 
   String get brand => switch (this) {
         SwitchProtocol.shellyGen1 ||
         SwitchProtocol.shellyGen2 ||
-        SwitchProtocol.shellyGen3 =>
-          'Shelly',
-        SwitchProtocol.sonoffLan  => 'Sonoff',
-        SwitchProtocol.tuyaLocal  => 'Tuya',
+        SwitchProtocol.shellyGen3  => 'Shelly',
+        SwitchProtocol.sonoffLan   => 'Sonoff',
+        SwitchProtocol.tuyaLocal   => 'Tuya',
         SwitchProtocol.kasaLocal ||
-        SwitchProtocol.tapoLocal  =>
-          'TP-Link',
-        SwitchProtocol.esphome    => 'ESPHome',
-        SwitchProtocol.haRest     => 'Home Assistant',
-        SwitchProtocol.z2mMqtt    => 'Zigbee',
-        SwitchProtocol.unknown    => 'Unknown',
+        SwitchProtocol.tapoLocal   => 'TP-Link',
+        SwitchProtocol.esphome     => 'ESPHome',
+        SwitchProtocol.haRest      => 'Home Assistant',
+        SwitchProtocol.z2mMqtt     => 'Zigbee',
+        SwitchProtocol.merossLan   => 'Meross',
+        SwitchProtocol.broadlinkIr => 'Broadlink',
+        SwitchProtocol.goveeLan    => 'Govee',
+        SwitchProtocol.yeelightLan => 'Yeelight',
+        SwitchProtocol.wizLan      => 'WiZ',
+        SwitchProtocol.lifxCloud   => 'LIFX',
+        SwitchProtocol.nanoleaf    => 'Nanoleaf',
+        SwitchProtocol.aqaraHub    => 'Aqara',
+        SwitchProtocol.unknown     => 'Unknown',
       };
 
   Color get color => switch (this) {
         SwitchProtocol.shellyGen1 ||
         SwitchProtocol.shellyGen2 ||
-        SwitchProtocol.shellyGen3 =>
-          const Color(0xFF00B4D8),
-        SwitchProtocol.sonoffLan  => const Color(0xFFFF6B00),
-        SwitchProtocol.tuyaLocal  => const Color(0xFF00C896),
+        SwitchProtocol.shellyGen3  => const Color(0xFF00B4D8),
+        SwitchProtocol.sonoffLan   => const Color(0xFFFF6B00),
+        SwitchProtocol.tuyaLocal   => const Color(0xFF00C896),
         SwitchProtocol.kasaLocal ||
-        SwitchProtocol.tapoLocal  =>
-          const Color(0xFF00A86B),
-        SwitchProtocol.esphome    => const Color(0xFF4895EF),
-        SwitchProtocol.haRest     => const Color(0xFF18BFFF),
-        SwitchProtocol.z2mMqtt    => const Color(0xFFBA68C8),
-        SwitchProtocol.unknown    => Colors.white38,
+        SwitchProtocol.tapoLocal   => const Color(0xFF00A86B),
+        SwitchProtocol.esphome     => const Color(0xFF4895EF),
+        SwitchProtocol.haRest      => const Color(0xFF18BFFF),
+        SwitchProtocol.z2mMqtt     => const Color(0xFFBA68C8),
+        SwitchProtocol.merossLan   => const Color(0xFF00BFA5),
+        SwitchProtocol.broadlinkIr => const Color(0xFFFF5722),
+        SwitchProtocol.goveeLan    => const Color(0xFF9C27B0),
+        SwitchProtocol.yeelightLan => const Color(0xFFFFB300),
+        SwitchProtocol.wizLan      => const Color(0xFF2196F3),
+        SwitchProtocol.lifxCloud   => const Color(0xFFE91E63),
+        SwitchProtocol.nanoleaf    => const Color(0xFF4CAF50),
+        SwitchProtocol.aqaraHub    => const Color(0xFF3F51B5),
+        SwitchProtocol.unknown     => Colors.white38,
       };
 
   IconData get icon => switch (this) {
         SwitchProtocol.shellyGen1 ||
         SwitchProtocol.shellyGen2 ||
-        SwitchProtocol.shellyGen3 =>
-          Icons.power_settings_new_rounded,
-        SwitchProtocol.sonoffLan  => Icons.toggle_on_outlined,
-        SwitchProtocol.tuyaLocal  => Icons.electrical_services_outlined,
+        SwitchProtocol.shellyGen3  => Symbols.power_settings_new,
+        SwitchProtocol.sonoffLan   => Symbols.toggle_on,
+        SwitchProtocol.tuyaLocal   => Symbols.electrical_services,
         SwitchProtocol.kasaLocal ||
-        SwitchProtocol.tapoLocal  =>
-          Icons.outlet_outlined,
-        SwitchProtocol.esphome    => Icons.memory_outlined,
-        SwitchProtocol.haRest     => Icons.home_outlined,
-        SwitchProtocol.z2mMqtt    => Icons.hub_outlined,
-        SwitchProtocol.unknown    => Icons.device_unknown_outlined,
+        SwitchProtocol.tapoLocal   => Symbols.outlet,
+        SwitchProtocol.esphome     => Symbols.memory,
+        SwitchProtocol.haRest      => Symbols.home,
+        SwitchProtocol.z2mMqtt     => Symbols.hub,
+        SwitchProtocol.merossLan   => Symbols.power,
+        SwitchProtocol.broadlinkIr => Symbols.settings_remote,
+        SwitchProtocol.goveeLan    => Symbols.lightbulb,
+        SwitchProtocol.yeelightLan => Symbols.wb_incandescent,
+        SwitchProtocol.wizLan      => Symbols.flare,
+        SwitchProtocol.lifxCloud   => Symbols.wb_iridescent,
+        SwitchProtocol.nanoleaf    => Symbols.hexagon,
+        SwitchProtocol.aqaraHub    => Symbols.device_hub,
+        SwitchProtocol.unknown     => Symbols.device_unknown,
       };
 
   /// True when the app can attempt to toggle this device.
   /// Tuya: needs Local Key — handled in UI (shows key dialog if missing).
   bool get canControl => switch (this) {
-        SwitchProtocol.shellyGen1 ||
-        SwitchProtocol.shellyGen2 ||
-        SwitchProtocol.shellyGen3 ||
-        SwitchProtocol.sonoffLan  ||
-        SwitchProtocol.kasaLocal  ||
-        SwitchProtocol.esphome    ||
-        SwitchProtocol.haRest     ||
-        SwitchProtocol.z2mMqtt    ||
-        SwitchProtocol.tuyaLocal  ||   // Tuya:  key dialog in UI
-        SwitchProtocol.tapoLocal  =>   // Tapo:  credentials dialog in UI
+        SwitchProtocol.shellyGen1  ||
+        SwitchProtocol.shellyGen2  ||
+        SwitchProtocol.shellyGen3  ||
+        SwitchProtocol.sonoffLan   ||
+        SwitchProtocol.kasaLocal   ||
+        SwitchProtocol.esphome     ||
+        SwitchProtocol.haRest      ||
+        SwitchProtocol.z2mMqtt     ||
+        SwitchProtocol.tuyaLocal   ||   // Tuya:  key dialog in UI
+        SwitchProtocol.tapoLocal   ||   // Tapo:  credentials dialog in UI
+        SwitchProtocol.merossLan   ||
+        SwitchProtocol.broadlinkIr ||
+        SwitchProtocol.goveeLan    ||
+        SwitchProtocol.yeelightLan ||
+        SwitchProtocol.wizLan      ||
+        SwitchProtocol.lifxCloud   ||   // LIFX:  token needed
+        SwitchProtocol.nanoleaf    ||   // Nanoleaf: token needed
+        SwitchProtocol.aqaraHub    =>   // Aqara: access token needed
           true,
         _ => false,
       };

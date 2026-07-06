@@ -1,3 +1,4 @@
+import 'package:material_symbols_icons/symbols.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 // SensorHubScreen
 //
@@ -20,6 +21,7 @@ import '../../services/sensors/sensor_controller.dart';
 import '../../services/sensors/sensor_models.dart';
 import '../../services/sensors/sensor_scan_engine.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/device_icons.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -73,28 +75,38 @@ class _SensorHubViewState extends State<_SensorHubView>
     String? mqttHost;
     int    mqttPort = 1883;
     String? mqttUser, mqttPass;
+    String? aqaraIp, aqaraToken;
 
     if (mounted) {
       final gm = context.read<GatewayManager>();
-      final conn = gm.connections.where((c) =>
+      final mqttConn = gm.connections.where((c) =>
           (c.type == GatewayType.mqtt || c.type == GatewayType.zigbee2mqtt) &&
           c.isConnected).firstOrNull;
-      if (conn != null) {
-        mqttHost = conn.credentials['host'] ?? conn.ip;
-        mqttPort = int.tryParse(conn.credentials['port'] ?? '1883') ?? 1883;
-        mqttUser = conn.credentials['username'];
-        mqttPass = conn.credentials['password'];
+      if (mqttConn != null) {
+        mqttHost = mqttConn.credentials['host'] ?? mqttConn.ip;
+        mqttPort = int.tryParse(mqttConn.credentials['port'] ?? '1883') ?? 1883;
+        mqttUser = mqttConn.credentials['username'];
+        mqttPass = mqttConn.credentials['password'];
+      }
+
+      final aqaraConn = gm.connections.where((c) =>
+          c.type == GatewayType.aqara && c.isConnected).firstOrNull;
+      if (aqaraConn != null) {
+        aqaraIp    = aqaraConn.ip;
+        aqaraToken = aqaraConn.token;
       }
     }
 
     if (!mounted) return;
     engine.startScan(
-      haIp:     haIp,
-      haToken:  haToken,
-      mqttHost: mqttHost,
-      mqttPort: mqttPort,
-      mqttUser: mqttUser,
-      mqttPass: mqttPass,
+      haIp:       haIp,
+      haToken:    haToken,
+      mqttHost:   mqttHost,
+      mqttPort:   mqttPort,
+      mqttUser:   mqttUser,
+      mqttPass:   mqttPass,
+      aqaraIp:    aqaraIp,
+      aqaraToken: aqaraToken,
     );
   }
 
@@ -158,13 +170,14 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.select((AppState st) => st.strings);
     final total = sensorsCount + coversCount;
     return Container(
       padding: const EdgeInsets.fromLTRB(8, 8, 16, 0),
       child: Row(
         children: [
           IconButton(
-            icon: Icon(Icons.arrow_back_ios_new_rounded,
+            icon: Icon(Symbols.arrow_back_ios_new,
                 color: context.tText2(0.7), size: 20),
             onPressed: () => Navigator.pop(context),
           ),
@@ -173,17 +186,19 @@ class _Header extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('חיישנים ותריסים',
+                Text(s.sensorHubTitle,
                     style: TextStyle(
                         color: context.tText,
                         fontSize: 18,
                         fontWeight: FontWeight.w700)),
                 Text(
                   isScanning
-                      ? 'סורק רשת…'
+                      ? s.searching
                       : total == 0
-                          ? 'לא נמצאו מכשירים'
-                          : '$sensorsCount חיישנים · $coversCount תריסים',
+                          ? s.noDevicesOnNetwork
+                          : s.sensorHubFoundFmt
+                              .replaceAll('{sensors}', '$sensorsCount')
+                              .replaceAll('{covers}', '$coversCount'),
                   style: TextStyle(color: context.tText2(0.54), fontSize: 12),
                 ),
               ],
@@ -198,8 +213,8 @@ class _Header extends StatelessWidget {
           else
             TextButton.icon(
               onPressed: onScan,
-              icon: Icon(Icons.radar_rounded, size: 16),
-              label: Text('סרוק', style: TextStyle(fontSize: 13)),
+              icon: const Icon(Symbols.radar, size: 16),
+              label: Text(s.rescan, style: const TextStyle(fontSize: 13)),
               style: TextButton.styleFrom(
                   foregroundColor: AppColors.primary,
                   padding:
@@ -228,7 +243,7 @@ class _ProgressChips extends StatelessWidget {
           final scanning = s.status == SensorScanStatus.scanning;
           final hasFound = s.found > 0;
           return Container(
-            margin: const EdgeInsets.only(right: 8),
+            margin: const EdgeInsetsDirectional.only(end: 8),
             padding:
                 const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
@@ -288,6 +303,7 @@ class _TabBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.select((AppState st) => st.strings);
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
@@ -306,12 +322,12 @@ class _TabBar extends StatelessWidget {
         labelColor: AppColors.primary,
         unselectedLabelColor: context.tText2(0.38),
         labelStyle:
-            TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+            const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
         unselectedLabelStyle:
-            TextStyle(fontSize: 13, fontWeight: FontWeight.w400),
-        tabs: const [
-          Tab(icon: Icon(Icons.sensors_rounded, size: 16), text: 'חיישנים'),
-          Tab(icon: Icon(Icons.window_outlined,  size: 16), text: 'תריסים'),
+            const TextStyle(fontSize: 13, fontWeight: FontWeight.w400),
+        tabs: [
+          Tab(icon: const Icon(Symbols.sensors, size: 16), text: s.sensorsTab),
+          Tab(icon: const Icon(Symbols.window,  size: 16), text: s.shuttersTab),
         ],
       ),
     );
@@ -322,6 +338,17 @@ class _TabBar extends StatelessWidget {
 // SENSORS TAB
 // ══════════════════════════════════════════════════════════════════════════════
 
+// Device types that count as sensors
+const _kSensorDeviceTypes = {
+  DeviceType.motionSensor,
+  DeviceType.doorSensor,
+  DeviceType.windowSensor,
+  DeviceType.smokeSensor,
+  DeviceType.waterLeakSensor,
+  DeviceType.gasSensor,
+  DeviceType.glassBreakSensor,
+};
+
 class _SensorsTab extends StatelessWidget {
   final SensorScanEngine engine;
   final VoidCallback onScan;
@@ -329,19 +356,163 @@ class _SensorsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (engine.sensors.isEmpty) {
+    final appState = context.watch<AppState>();
+    final s = appState.strings;
+
+    // IDs already covered by live scan results (registered from this engine)
+    final scannedIds =
+        engine.sensors.map((e) => 'sensor-${e.id}').toSet();
+
+    // Saved devices from state that are sensor types and not in the scan list
+    final savedDevices = appState.devices
+        .where((d) =>
+            _kSensorDeviceTypes.contains(d.type) &&
+            !scannedIds.contains(d.id))
+        .toList();
+
+    final totalItems = engine.sensors.length + savedDevices.length;
+
+    if (totalItems == 0) {
       return _EmptyState(
           isScanning: engine.isScanning,
-          icon: Icons.sensors_rounded,
-          message: 'לא נמצאו חיישנים',
+          icon: Symbols.sensors,
+          message: s.noSensorsFound,
           hint: 'Shelly Door/Window · Shelly Motion\n'
               'ESPHome binary_sensor · HA · Zigbee2MQTT',
           onScan: onScan);
     }
+
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-      itemCount: engine.sensors.length,
-      itemBuilder: (_, i) => _SensorCard(sensor: engine.sensors[i]),
+      itemCount: totalItems,
+      itemBuilder: (_, i) {
+        if (i < engine.sensors.length) {
+          return _SensorCard(sensor: engine.sensors[i]);
+        }
+        return _SavedSensorCard(
+            device: savedDevices[i - engine.sensors.length]);
+      },
+    );
+  }
+}
+
+// ── Card for a sensor saved in state.devices (no live scan data) ─────────────
+class _SavedSensorCard extends StatelessWidget {
+  final Device device;
+  const _SavedSensorCard({required this.device});
+
+  SensorType get _sensorType => switch (device.type) {
+        DeviceType.doorSensor      => SensorType.contact,
+        DeviceType.windowSensor    => SensorType.contact,
+        DeviceType.smokeSensor     => SensorType.smoke,
+        DeviceType.waterLeakSensor => SensorType.water,
+        DeviceType.gasSensor       => SensorType.smoke,
+        DeviceType.glassBreakSensor=> SensorType.vibration,
+        _                          => SensorType.motion,
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    final type    = _sensorType;
+    final color   = type.color;
+    final online  = device.status == DeviceStatus.online;
+    final triggered = device.isOn;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: triggered
+            ? color.withValues(alpha: 0.10)
+            : context.tText2(0.04),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: triggered
+              ? color.withValues(alpha: 0.40)
+              : context.tText2(0.07),
+          width: 1.2,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          children: [
+            // Icon + pulse dot
+            SizedBox(
+              width: 44, height: 44,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Container(
+                    width: 44, height: 44,
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(type.icon, color: color, size: 22),
+                  ),
+                  if (triggered)
+                    Positioned(
+                      right: 2, top: 2,
+                      child: Container(
+                        width: 10, height: 10,
+                        decoration: BoxDecoration(
+                          color: color,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                                color: color.withValues(alpha: 0.6),
+                                blurRadius: 6),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(device.name,
+                      style: TextStyle(
+                          color: context.tText,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 2),
+                  Row(children: [
+                    _Tag(
+                      device.attributes['protocol'] as String? ?? 'wifi',
+                      AppColors.primary,
+                    ),
+                    const SizedBox(width: 5),
+                    _Tag(type.displayName, color),
+                  ]),
+                  const SizedBox(height: 5),
+                  Text(
+                    type.triggeredLabel(triggered),
+                    style: TextStyle(
+                      color: triggered ? color : context.tText2(0.45),
+                      fontSize: 12,
+                      fontWeight: triggered
+                          ? FontWeight.w600
+                          : FontWeight.normal,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Online/offline indicator
+            Container(
+              width: 8, height: 8,
+              decoration: BoxDecoration(
+                color: online ? AppColors.secured : AppColors.unsecured,
+                shape: BoxShape.circle,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -368,6 +539,7 @@ class _SensorCardState extends State<_SensorCard> {
 
   void _addToHome() {
     final appState = context.read<AppState>();
+    final str = appState.strings;
     appState.addDevice(Device(
       id:   'sensor-${s.id}',
       name: s.name,
@@ -388,7 +560,7 @@ class _SensorCardState extends State<_SensorCard> {
     ));
     setState(() => s.isRegistered = true);
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text('✓ ${s.name} נוסף לבית'),
+      content: Text(str.switchAddedFmt.replaceAll('{name}', s.name)),
       backgroundColor: AppColors.secured,
       behavior: SnackBarBehavior.floating,
       duration: const Duration(seconds: 2),
@@ -398,6 +570,7 @@ class _SensorCardState extends State<_SensorCard> {
 
   @override
   Widget build(BuildContext context) {
+    final str       = context.select((AppState st) => st.strings);
     final color     = s.type.color;
     final triggered = s.isTriggered;
 
@@ -483,27 +656,49 @@ class _SensorCardState extends State<_SensorCard> {
                   if (s.temperature != null || s.humidity != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 3),
-                      child: Text(
-                        [
-                          if (s.temperature != null)
-                            '🌡 ${s.temperature!.toStringAsFixed(1)} °C',
-                          if (s.humidity != null)
-                            '💧 ${s.humidity!.toStringAsFixed(0)} %',
-                        ].join('  '),
-                        style: TextStyle(
-                            color: context.tText2(0.54), fontSize: 11),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (s.temperature != null) ...[
+                            Icon(DeviceIcons.forHaDeviceClass('temperature'),
+                                size: 12, color: context.tText2(0.54)),
+                            const SizedBox(width: 2),
+                            Text('${s.temperature!.toStringAsFixed(1)} °C',
+                                style: TextStyle(
+                                    color: context.tText2(0.54), fontSize: 11)),
+                          ],
+                          if (s.temperature != null && s.humidity != null)
+                            const SizedBox(width: 8),
+                          if (s.humidity != null) ...[
+                            Icon(DeviceIcons.forHaDeviceClass('humidity'),
+                                size: 12, color: context.tText2(0.54)),
+                            const SizedBox(width: 2),
+                            Text('${s.humidity!.toStringAsFixed(0)} %',
+                                style: TextStyle(
+                                    color: context.tText2(0.54), fontSize: 11)),
+                          ],
+                        ],
                       ),
                     ),
                   if (s.batteryPercent != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 2),
-                      child: Text(
-                        '🔋 ${s.batteryPercent} %',
-                        style: TextStyle(
-                            color: s.batteryPercent! < 20
-                                ? Colors.red.shade400
-                                : context.tText2(0.38),
-                            fontSize: 11),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(DeviceIcons.batteryIcon(s.batteryPercent),
+                              size: 12,
+                              color: s.batteryPercent! < 20
+                                  ? AppColors.statusAlarm
+                                  : context.tText2(0.38)),
+                          const SizedBox(width: 2),
+                          Text('${s.batteryPercent} %',
+                              style: TextStyle(
+                                  color: s.batteryPercent! < 20
+                                      ? AppColors.statusAlarm
+                                      : context.tText2(0.38),
+                                  fontSize: 11)),
+                        ],
                       ),
                     ),
                 ],
@@ -529,7 +724,7 @@ class _SensorCardState extends State<_SensorCard> {
                             child: CircularProgressIndicator(
                                 strokeWidth: 1.8,
                                 color: AppColors.primary))
-                        : Icon(Icons.refresh_rounded,
+                        : Icon(Symbols.refresh,
                             color: context.tText2(0.54), size: 18),
                   ),
                 ),
@@ -547,7 +742,7 @@ class _SensorCardState extends State<_SensorCard> {
                         border: Border.all(
                             color: color.withValues(alpha: 0.40)),
                       ),
-                      child: Text('הוסף',
+                      child: Text(str.add,
                           style: TextStyle(
                               color: color,
                               fontSize: 10,
@@ -555,7 +750,7 @@ class _SensorCardState extends State<_SensorCard> {
                     ),
                   )
                 else
-                  Icon(Icons.check_circle_rounded,
+                  Icon(Symbols.check_circle,
                       color: color, size: 20),
               ],
             ),
@@ -577,12 +772,13 @@ class _CoversTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.select((AppState st) => st.strings);
     if (engine.covers.isEmpty) {
       return _EmptyState(
           isScanning: engine.isScanning,
-          icon: Icons.window_outlined,
-          message: 'לא נמצאו תריסים',
-          hint: 'Shelly 2.5 ב-roller mode · Shelly Plus 2PM ב-cover mode\n'
+          icon: Symbols.window,
+          message: s.noCoversFound,
+          hint: 'Shelly 2.5 roller mode · Shelly Plus 2PM cover mode\n'
               'ESPHome cover · Home Assistant cover.* · Zigbee',
           onScan: onScan);
     }
@@ -633,9 +829,10 @@ class _CoverCardState extends State<_CoverCard> {
       _action(() => CoverController.setPosition(c, pos));
 
   void _showError() {
+    final str = context.read<AppState>().strings;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text('שגיאה בשליטה על ${c.name}'),
-      backgroundColor: Colors.red.shade700,
+      content: Text(str.errControlFmt.replaceAll('{name}', c.name)),
+      backgroundColor: AppColors.statusAlarm,
       behavior: SnackBarBehavior.floating,
       duration: const Duration(seconds: 2),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -644,6 +841,7 @@ class _CoverCardState extends State<_CoverCard> {
 
   void _addToHome() {
     final appState = context.read<AppState>();
+    final str = appState.strings;
     appState.addDevice(Device(
       id:   'cover-${c.id}',
       name: c.name,
@@ -660,7 +858,7 @@ class _CoverCardState extends State<_CoverCard> {
     ));
     setState(() => c.isRegistered = true);
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text('✓ ${c.name} נוסף לבית'),
+      content: Text(str.switchAddedFmt.replaceAll('{name}', c.name)),
       backgroundColor: AppColors.secured,
       behavior: SnackBarBehavior.floating,
       duration: const Duration(seconds: 2),
@@ -670,6 +868,7 @@ class _CoverCardState extends State<_CoverCard> {
 
   @override
   Widget build(BuildContext context) {
+    final str      = context.select((AppState st) => st.strings);
     final color    = c.protocol.color;
     final stateCol = c.state.color;
     final pos      = c.position;
@@ -740,9 +939,9 @@ class _CoverCardState extends State<_CoverCard> {
                           strokeWidth: 1.5, color: stateCol),
                     )
                   else
-                    Icon(Icons.window_outlined, color: stateCol, size: 12),
+                    Icon(Symbols.window, color: stateCol, size: 12),
                   const SizedBox(width: 4),
-                  Text(c.state.heLabel,
+                  Text(c.state.label,
                       style: TextStyle(
                           color: stateCol,
                           fontSize: 11,
@@ -773,7 +972,7 @@ class _CoverCardState extends State<_CoverCard> {
                       border: Border.all(
                           color: color.withValues(alpha: 0.40)),
                     ),
-                    child: Text('הוסף',
+                    child: Text(str.add,
                         style: TextStyle(
                             color: color,
                             fontSize: 11,
@@ -781,7 +980,7 @@ class _CoverCardState extends State<_CoverCard> {
                   ),
                 )
               else
-                Icon(Icons.check_circle_rounded, color: color, size: 20),
+                Icon(Symbols.check_circle, color: color, size: 20),
             ]),
 
             const SizedBox(height: 12),
@@ -789,7 +988,7 @@ class _CoverCardState extends State<_CoverCard> {
             // ── Position slider ───────────────────────────────────────────────
             if (c.hasPositionControl && pos != null) ...[
               Row(children: [
-                Icon(Icons.unfold_less_rounded,
+                Icon(Symbols.unfold_less,
                     color: context.tText2(0.38), size: 14),
                 Expanded(
                   child: SliderTheme(
@@ -816,7 +1015,7 @@ class _CoverCardState extends State<_CoverCard> {
                     ),
                   ),
                 ),
-                Icon(Icons.unfold_more_rounded,
+                Icon(Symbols.unfold_more,
                     color: context.tText2(0.38), size: 14),
               ]),
             ],
@@ -825,8 +1024,8 @@ class _CoverCardState extends State<_CoverCard> {
             Row(children: [
               Expanded(
                 child: _CtrlButton(
-                  label: '▲  פתח',
-                  color: const Color(0xFF4CAF50),
+                  label: str.coverOpen,
+                  color: AppColors.secured,
                   busy: _busy,
                   onTap: () => _action(() => CoverController.open(c)),
                 ),
@@ -834,8 +1033,8 @@ class _CoverCardState extends State<_CoverCard> {
               const SizedBox(width: 8),
               Expanded(
                 child: _CtrlButton(
-                  label: '■  עצור',
-                  color: const Color(0xFFFF9800),
+                  label: str.coverStop,
+                  color: AppColors.statusWarning,
                   busy: _busy,
                   onTap: () => _action(() => CoverController.stop(c)),
                 ),
@@ -843,8 +1042,8 @@ class _CoverCardState extends State<_CoverCard> {
               const SizedBox(width: 8),
               Expanded(
                 child: _CtrlButton(
-                  label: '▼  סגור',
-                  color: const Color(0xFF9E9E9E),
+                  label: str.coverClose,
+                  color: AppColors.statusOffline,
                   busy: _busy,
                   onTap: () => _action(() => CoverController.close(c)),
                 ),
@@ -922,16 +1121,17 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.select((AppState st) => st.strings);
     if (isScanning) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            CircularProgressIndicator(
+            const CircularProgressIndicator(
                 color: AppColors.primary, strokeWidth: 2),
-            SizedBox(height: 16),
-            Text('סורק רשת…',
-                style: TextStyle(color: Colors.white54, fontSize: 13)),
+            const SizedBox(height: 16),
+            Text(s.searching,
+                style: const TextStyle(color: Colors.white54, fontSize: 13)),
           ],
         ),
       );
@@ -958,8 +1158,8 @@ class _EmptyState extends StatelessWidget {
           const SizedBox(height: 20),
           ElevatedButton.icon(
             onPressed: onScan,
-            icon: Icon(Icons.radar_rounded, size: 16),
-            label: Text('סרוק שוב'),
+            icon: const Icon(Symbols.radar, size: 16),
+            label: Text(s.rescan),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.black,

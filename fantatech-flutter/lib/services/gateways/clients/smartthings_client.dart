@@ -1,4 +1,4 @@
-// ─────────────────────────────────────────────────────────────────────────────
+﻿// ─────────────────────────────────────────────────────────────────────────────
 // SmartThingsClient  — Samsung SmartThings cloud REST API
 //
 // Base URL: https://api.smartthings.com/v1
@@ -44,8 +44,8 @@ class SmartThingsClient {
   static Future<GatewayImportResult> fetchDevices(String token) async {
     try {
       final resp = await _get('/v1/devices', token);
-      if (resp == null) return const GatewayImportResult.failure('אין תגובה מ-SmartThings');
-      if (resp.statusCode == 401) return const GatewayImportResult.failure('Token לא תקין');
+      if (resp == null) return const GatewayImportResult.failure('No response from SmartThings');
+      if (resp.statusCode == 401) return const GatewayImportResult.failure('Invalid token');
       if (resp.statusCode != 200) {
         return GatewayImportResult.failure('שגיאה ${resp.statusCode}');
       }
@@ -54,7 +54,7 @@ class SmartThingsClient {
       try {
         body = jsonDecode(resp.body) as Map<String, dynamic>;
       } catch (_) {
-        return const GatewayImportResult.failure('תגובה לא תקינה מ-SmartThings');
+        return const GatewayImportResult.failure('Invalid response from SmartThings');
       }
 
       final items = (body['items'] as List<dynamic>?) ?? [];
@@ -86,6 +86,7 @@ class SmartThingsClient {
           type:       type,
           isOn:       false,
           status:     DeviceStatus.online,
+          source:     'gateway',
           attributes: {
             'manufacturer': d['manufacturerName'] as String? ?? 'SmartThings',
             'model':        d['presentationId']   as String? ?? '',
@@ -97,7 +98,7 @@ class SmartThingsClient {
 
       return GatewayImportResult.success(devices);
     } catch (e) {
-      return GatewayImportResult.failure('שגיאת SmartThings: $e');
+      return GatewayImportResult.failure('SmartThings error: $e');
     }
   }
 

@@ -1,3 +1,4 @@
+import 'package:material_symbols_icons/symbols.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -28,15 +29,15 @@ class _AdProduct {
 
 const _kProducts = [
   // Featured
-  _AdProduct(id: 'ft_hub',   name: 'FantaTech Hub Pro',  priceUsd: 149, icon: Icons.router_outlined,         color: Color(0xFF00B4D8), track: 'featured'),
-  _AdProduct(id: 'ft_cam',   name: 'FT Camera 4K',       priceUsd: 89,  icon: Icons.videocam_outlined,       color: Color(0xFF9C7AFF), track: 'featured'),
-  _AdProduct(id: 'ft_bulb',  name: 'Smart Bulb RGB',     priceUsd: 19,  icon: Icons.lightbulb_outline,       color: Color(0xFFFFD600), track: 'featured'),
-  _AdProduct(id: 'ft_sense', name: 'Motion Sensor',      priceUsd: 29,  icon: Icons.sensors_outlined,        color: Color(0xFFFF6B6B), track: 'featured'),
+  _AdProduct(id: 'ft_hub',   name: 'FantaTech Hub Pro',  priceUsd: 149, icon: Symbols.router,         color: Color(0xFF00B4D8), track: 'featured'),
+  _AdProduct(id: 'ft_cam',   name: 'FT Camera 4K',       priceUsd: 89,  icon: Symbols.videocam,       color: Color(0xFF9C7AFF), track: 'featured'),
+  _AdProduct(id: 'ft_bulb',  name: 'Smart Bulb RGB',     priceUsd: 19,  icon: Symbols.lightbulb,       color: Color(0xFFFFD600), track: 'featured'),
+  _AdProduct(id: 'ft_sense', name: 'Motion Sensor',      priceUsd: 29,  icon: Symbols.sensors,        color: Color(0xFFFF6B6B), track: 'featured'),
   // New arrivals
-  _AdProduct(id: 'ft_blind', name: 'Smart Blind Motor',  priceUsd: 79,  icon: Icons.blinds_outlined,         color: Color(0xFF7B2FFF), track: 'new'),
-  _AdProduct(id: 'ft_plug',  name: 'Smart Plug 16A',     priceUsd: 24,  icon: Icons.power_outlined,          color: Color(0xFF00C896), track: 'new'),
-  _AdProduct(id: 'ft_gw',    name: 'Gateway Matter',     priceUsd: 59,  icon: Icons.hub_outlined,            color: Color(0xFF00B4D8), track: 'new'),
-  _AdProduct(id: 'ft_strip', name: 'LED Strip 5m',       priceUsd: 34,  icon: Icons.wb_iridescent_outlined,  color: Color(0xFFFF2D8A), track: 'new'),
+  _AdProduct(id: 'ft_blind', name: 'Smart Blind Motor',  priceUsd: 79,  icon: Symbols.blinds,         color: Color(0xFF7B2FFF), track: 'new'),
+  _AdProduct(id: 'ft_plug',  name: 'Smart Plug 16A',     priceUsd: 24,  icon: Symbols.power,          color: Color(0xFF00C896), track: 'new'),
+  _AdProduct(id: 'ft_gw',    name: 'Gateway Matter',     priceUsd: 59,  icon: Symbols.hub,            color: Color(0xFF00B4D8), track: 'new'),
+  _AdProduct(id: 'ft_strip', name: 'LED Strip 5m',       priceUsd: 34,  icon: Symbols.wb_iridescent,  color: Color(0xFFFF2D8A), track: 'new'),
 ];
 
 List<_AdProduct> _productsForTrack(AdTrack track) {
@@ -250,7 +251,7 @@ class _StoreAdBannerState extends State<StoreAdBanner>
                               },
                               child: Padding(
                                 padding: const EdgeInsets.all(4),
-                                child: Icon(Icons.tune_rounded,
+                                child: Icon(Symbols.tune,
                                     color: Colors.white.withValues(alpha: 0.35),
                                     size: 18),
                               ),
@@ -311,28 +312,28 @@ class _AdTrackSheet extends StatelessWidget {
     final options = [
       _TrackOption(
         track: AdTrack.featured,
-        icon: Icons.star_outline_rounded,
+        icon: Symbols.star,
         color: const Color(0xFFFFD600),
         label: s.adFeaturedLabel,
         sub: s.adFeaturedSub,
       ),
       _TrackOption(
         track: AdTrack.newArrivals,
-        icon: Icons.fiber_new_outlined,
+        icon: Symbols.fiber_new,
         color: const Color(0xFF00C896),
         label: s.adNewLabel,
         sub: s.adNewSub,
       ),
       _TrackOption(
         track: AdTrack.all,
-        icon: Icons.grid_view_outlined,
+        icon: Symbols.grid_view,
         color: AppColors.primary,
         label: s.adAllLabel,
         sub: s.adAllSub,
       ),
       _TrackOption(
         track: AdTrack.none,
-        icon: Icons.block_outlined,
+        icon: Symbols.block,
         color: Colors.white38,
         label: s.adNoneLabel,
         sub: s.adNoneSub,
@@ -364,7 +365,7 @@ class _AdTrackSheet extends StatelessWidget {
           // Title
           Row(
             children: [
-              const Icon(Icons.tune_rounded, color: AppColors.primary, size: 20),
+              const Icon(Symbols.tune, color: AppColors.primary, size: 20),
               const SizedBox(width: 8),
               Text(
                 s.adTrackTitle,
@@ -468,7 +469,7 @@ class _TrackTile extends StatelessWidget {
               ),
             ),
             if (selected)
-              Icon(Icons.check_circle_rounded,
+              Icon(Symbols.check_circle,
                   color: option.color, size: 20),
           ],
         ),

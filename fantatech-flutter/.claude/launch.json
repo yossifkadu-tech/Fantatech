@@ -1,0 +1,65 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Hub (FastAPI)",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "cd /d ..\\hub && python -m uvicorn main:app --host 0.0.0.0 --port 8080 --reload"],
+      "port": 8080
+    },
+    {
+      "name": "Backend (Express + Matter)",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "cd /d ..\\backend && node --watch server.js"],
+      "port": 3001
+    },
+    {
+      "name": "App (Vite / React)",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "cd /d ..\\app && npm run dev"],
+      "port": 3000
+    },
+    {
+      "name": "Flutter (Web)",
+      "runtimeExecutable": "flutter",
+      "runtimeArgs": ["run", "-d", "web-server", "--web-port", "8082"],
+      "port": 8082
+    },
+    {
+      "name": "Flutter (Web Build)",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8090", "--directory", "build/web"],
+      "port": 8090
+    },
+    {
+      "name": "Expo (React Native)",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "cd /d ..\\fantatech-app && npx expo start --web"],
+      "port": 8083
+    },
+    {
+      "name": "Gateway Listener (MQTT)",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "cd /d ..\\gateway && python listener.py"],
+      "port": 1883
+    },
+    {
+      "name": "Zigbee Bridge (ZBDONGLE-E)",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "cd /d ..\\bridges\\zigbee && python zigbee_bridge.py"],
+      "port": 1883
+    },
+    {
+      "name": "Mosquitto (MQTT Broker)",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "cd /d ..\\mosquitto && mosquitto -c mosquitto.conf -v"],
+      "port": 1883
+    },
+    {
+      "name": "FantaTech Website",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "4500", "--directory", "C:\\Users\\My laptop\\Desktop\\smarthome-hub\\fantatech web\\FantaTech website"],
+      "port": 4500
+    }
+  ]
+}

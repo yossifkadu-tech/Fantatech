@@ -1,3 +1,4 @@
+import 'package:material_symbols_icons/symbols.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 // FaceAnalysisScreen — history of all face detection results
 // ─────────────────────────────────────────────────────────────────────────────
@@ -14,6 +15,7 @@ class FaceAnalysisScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state   = context.watch<AppState>();
+    final s       = state.strings;
     final history = state.faceAnalysisHistory;
 
     return Scaffold(
@@ -34,22 +36,22 @@ class FaceAnalysisScreen extends StatelessWidget {
                         color: context.tText2(0.07),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Icon(Icons.chevron_right,
+                      child: Icon(Symbols.chevron_right,
                           color: context.tText, size: 22),
                     ),
                   ),
                   const SizedBox(width: 12),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('ניתוח זיהוי פנים',
-                            style: TextStyle(
+                        Text(s.faceAnalysisTitle,
+                            style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold)),
-                        Text('היסטוריית סריקות מצלמות',
-                            style: TextStyle(
+                        Text(s.faceAnalysisSubtitle,
+                            style: const TextStyle(
                                 color: Colors.white38, fontSize: 12)),
                       ],
                     ),
@@ -61,14 +63,14 @@ class FaceAnalysisScreen extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 7),
                         decoration: BoxDecoration(
-                          color: Colors.red.withValues(alpha: 0.12),
+                          color: AppColors.statusAlarm.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                              color: Colors.red.withValues(alpha: 0.3)),
+                              color: AppColors.statusAlarm.withValues(alpha: 0.3)),
                         ),
-                        child: Text('נקה',
-                            style: TextStyle(
-                                color: Colors.redAccent, fontSize: 12)),
+                        child: Text(s.clear,
+                            style: const TextStyle(
+                                color: AppColors.statusAlarm, fontSize: 12)),
                       ),
                     ),
                 ],
@@ -101,18 +103,19 @@ class FaceAnalysisScreen extends StatelessWidget {
   }
 
   void _confirmClear(BuildContext context, AppState state) {
+    final s = context.read<AppState>().strings;
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: context.tCard,
-        title: Text('נקה היסטוריה',
+        title: Text(s.clearHistory,
             style: TextStyle(color: context.tText)),
-        content: Text('האם למחוק את כל תוצאות הניתוח?',
+        content: Text(s.clearHistoryConfirm,
             style: TextStyle(color: context.tText2(0.7))),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('ביטול',
+            child: Text(s.cancel,
                 style: TextStyle(color: context.tText2(0.54))),
           ),
           TextButton(
@@ -120,8 +123,8 @@ class FaceAnalysisScreen extends StatelessWidget {
               state.clearFaceAnalysisHistory();
               Navigator.pop(context);
             },
-            child: Text('מחק',
-                style: TextStyle(color: Colors.redAccent)),
+            child: Text(s.delete,
+                style: const TextStyle(color: AppColors.statusAlarm)),
           ),
         ],
       ),
@@ -137,6 +140,7 @@ class _StatsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final str        = context.select((AppState st) => st.strings);
     final totalFaces = history.fold(0, (s, r) => s + r.faceCount);
     final cameras    = history.map((r) => r.cameraId).toSet().length;
     final alerts     = history
@@ -147,18 +151,18 @@ class _StatsRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Row(
         children: [
-          _StatChip(label: 'סריקות', value: '${history.length}',
+          _StatChip(label: str.statScans, value: '${history.length}',
               color: AppColors.primary),
           const SizedBox(width: 8),
-          _StatChip(label: 'פנים זוהו', value: '$totalFaces',
+          _StatChip(label: str.statFacesDetected, value: '$totalFaces',
               color: const Color(0xFF00C896)),
           const SizedBox(width: 8),
-          _StatChip(label: 'מצלמות', value: '$cameras',
+          _StatChip(label: str.camerasTitle, value: '$cameras',
               color: const Color(0xFF9C7AFF)),
           if (alerts > 0) ...[
             const SizedBox(width: 8),
-            _StatChip(label: 'התראות', value: '$alerts',
-                color: Colors.redAccent),
+            _StatChip(label: str.statAlerts, value: '$alerts',
+                color: AppColors.statusAlarm),
           ],
         ],
       ),
@@ -207,6 +211,7 @@ class _ResultCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s     = context.select((AppState st) => st.strings);
     final level = result.alertLevel;
     final time  = result.timestamp;
     final timeStr =
@@ -241,7 +246,7 @@ class _ResultCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(11),
                           child: Image.memory(result.thumbnail!,
                               fit: BoxFit.cover))
-                      : Icon(Icons.face_outlined,
+                      : Icon(Symbols.face,
                           color: level.color, size: 26),
                 ),
                 const SizedBox(width: 12),
@@ -258,7 +263,7 @@ class _ResultCard extends StatelessWidget {
                               fontWeight: FontWeight.w600)),
                       const SizedBox(height: 2),
                       Row(children: [
-                        Icon(Icons.access_time_outlined,
+                        Icon(Symbols.access_time,
                             color: context.tText2(0.38), size: 11),
                         const SizedBox(width: 4),
                         Text(timeStr,
@@ -286,7 +291,7 @@ class _ResultCard extends StatelessWidget {
                               color: level.color,
                               fontSize: 18,
                               fontWeight: FontWeight.w800)),
-                      Text('פנים',
+                      Text(s.faces,
                           style: TextStyle(
                               color: level.color.withValues(alpha: 0.7),
                               fontSize: 9)),
@@ -330,20 +335,20 @@ class _ResultCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                         _FaceTag(
-                          icon: Icons.directions_outlined,
+                          icon: Symbols.directions,
                           label: face.gazeDirection,
                         ),
                         const SizedBox(width: 6),
                         if (face.isSmiling)
-                          const _FaceTag(
-                            icon: Icons.sentiment_very_satisfied_outlined,
-                            label: 'מחייך',
-                            color: Color(0xFFFFD600),
+                          _FaceTag(
+                            icon: Symbols.sentiment_very_satisfied,
+                            label: s.smiling,
+                            color: const Color(0xFFFFD600),
                           ),
                         if (!face.eyesOpen)
-                          const _FaceTag(
-                            icon: Icons.remove_red_eye_outlined,
-                            label: 'עיניים סגורות',
+                          _FaceTag(
+                            icon: Symbols.remove_red_eye,
+                            label: s.eyesClosed,
                             color: Colors.orange,
                           ),
                         const Spacer(),
@@ -362,10 +367,10 @@ class _ResultCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
               child: Row(children: [
-                Icon(Icons.search_off_outlined,
+                Icon(Symbols.search_off,
                     color: context.tText2(0.24), size: 14),
                 const SizedBox(width: 6),
-                Text('לא זוהו פנים בפריים זה',
+                Text(s.noFacesInFrame,
                     style:
                         TextStyle(color: context.tText2(0.24), fontSize: 12)),
               ]),
@@ -402,6 +407,7 @@ class _FaceTag extends StatelessWidget {
 class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final s = context.select((AppState st) => st.strings);
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -414,18 +420,18 @@ class _EmptyState extends StatelessWidget {
               border: Border.all(
                   color: AppColors.primary.withValues(alpha: 0.2)),
             ),
-            child: Icon(Icons.face_outlined,
+            child: const Icon(Symbols.face,
                 color: AppColors.primary, size: 38),
           ),
           const SizedBox(height: 16),
-          Text('אין ניתוחים עדיין',
+          Text(s.noAnalysesYet,
               style: TextStyle(
                   color: context.tText2(0.6),
                   fontSize: 16,
                   fontWeight: FontWeight.w600)),
           const SizedBox(height: 6),
           Text(
-            'פתח מצלמה ולחץ על כפתור "נתח"\nכדי להפעיל זיהוי פנים',
+            s.faceAnalysisHint,
             textAlign: TextAlign.center,
             style: TextStyle(color: context.tText2(0.3), fontSize: 13),
           ),

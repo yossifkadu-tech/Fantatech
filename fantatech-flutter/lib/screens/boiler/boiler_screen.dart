@@ -1,9 +1,11 @@
+import 'package:material_symbols_icons/symbols.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/app_state.dart';
 import '../../models/device.dart';
 import '../../theme/app_theme.dart';
+import '../smarthome/add_device_screen.dart';
 
 // ─────────────────────────────────────────────────────────────
 // Data model for a boiler unit
@@ -17,8 +19,8 @@ class _GatewayDevice {
   final String protocol; // 'wifi' | 'zigbee'
   final String ip;
   final String model;
-  bool driverInstalled;
-  bool driverDownloading;
+  bool driverInstalled = false;
+  bool driverDownloading = false;
 
   _GatewayDevice({
     required this.id,
@@ -26,8 +28,6 @@ class _GatewayDevice {
     required this.protocol,
     required this.ip,
     required this.model,
-    this.driverInstalled = false,
-    this.driverDownloading = false,
   });
 }
 
@@ -129,37 +129,7 @@ class _BoilerScreenState extends State<BoilerScreen>
         .where((d) => d.type == DeviceType.waterHeater)
         .map((d) => _BoilerUnit.fromDevice(d))
         .toList();
-    // If no real devices, show demo units
-    if (_units.isEmpty) {
-      _units = [
-        _BoilerUnit(
-          deviceId: 'demo1',
-          name: 'דוד מים - ראשי',
-          room: 'מטבח',
-          isOn: false,
-          currentTemp: 40,
-          targetTemp: 60,
-          protocol: 'wifi',
-          isConnected: false, // simulates not-responding device
-          timerMinutes: 0,
-          mode: 'eco',
-          powerW: 2000,
-        ),
-        _BoilerUnit(
-          deviceId: 'demo2',
-          name: 'דוד מים - אמבטיה',
-          room: 'חדר אמבטיה',
-          isOn: true,
-          currentTemp: 55,
-          targetTemp: 65,
-          protocol: 'zigbee',
-          isConnected: true,
-          timerMinutes: 30,
-          mode: 'full',
-          powerW: 1800,
-        ),
-      ];
-    }
+    // No real water heater devices → empty list; empty state shown in build()
   }
 
   @override
@@ -190,7 +160,7 @@ class _BoilerScreenState extends State<BoilerScreen>
 
   @override
   Widget build(BuildContext context) {
-    final s = context.watch<AppState>().strings;
+    final s = context.select((AppState st) => st.strings);
 
     return Scaffold(
       backgroundColor: context.tBg,
@@ -296,7 +266,7 @@ class _BoilerCard extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.wifi_off_rounded,
+                  Icon(Symbols.wifi_off,
                       color: Color(0xFFFF5252), size: 15),
                   const SizedBox(width: 8),
                   Expanded(
@@ -445,7 +415,7 @@ class _BoilerCard extends StatelessWidget {
               const SizedBox(width: 10),
               _ModeChip(
                 label: s.boilerModeEco,
-                icon: Icons.eco,
+                icon: Symbols.eco,
                 selected: unit.mode == 'eco',
                 color: AppColors.secured,
                 onTap: () => onModeChange('eco'),
@@ -453,9 +423,9 @@ class _BoilerCard extends StatelessWidget {
               const SizedBox(width: 8),
               _ModeChip(
                 label: s.boilerModeFull,
-                icon: Icons.local_fire_department,
+                icon: Symbols.local_fire_department,
                 selected: unit.mode == 'full',
-                color: const Color(0xFFFF6B35),
+                color: AppColors.smokeColor,
                 onTap: () => onModeChange('full'),
               ),
             ],
@@ -520,7 +490,7 @@ class _BoilerCard extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.local_fire_department,
+                    Icon(Symbols.local_fire_department,
                         color: AppColors.acColor, size: 14),
                     const SizedBox(width: 6),
                     Text(
@@ -731,7 +701,7 @@ class _TimerRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(Icons.timer_outlined,
+        Icon(Symbols.timer,
             color: context.tText2(0.4), size: 14),
         const SizedBox(width: 6),
         Text(
@@ -752,7 +722,7 @@ class _TimerRow extends StatelessWidget {
                   onTap: () => onChanged(t),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 180),
-                    margin: const EdgeInsets.only(right: 6),
+                    margin: const EdgeInsetsDirectional.only(end: 6),
                     padding: const EdgeInsets.symmetric(
                         horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
@@ -817,13 +787,13 @@ class _ProtocolToggle extends StatelessWidget {
         children: [
           _ProtoBtn(
             label: wifiLabel,
-            icon: Icons.wifi,
+            icon: Symbols.wifi,
             selected: current == 'wifi',
             onTap: () => onChanged('wifi'),
           ),
           _ProtoBtn(
             label: zigbeeLabel,
-            icon: Icons.hub_outlined,
+            icon: Symbols.hub,
             selected: current == 'zigbee',
             onTap: () => onChanged('zigbee'),
           ),
@@ -856,12 +826,12 @@ class _ProtoBtn extends StatelessWidget {
             const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
           color: selected
-              ? const Color(0xFF7BB8FF).withValues(alpha: 0.15)
+              ? AppColors.circuitBreakerColor.withValues(alpha: 0.15)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
           border: selected
               ? Border.all(
-                  color: const Color(0xFF7BB8FF).withValues(alpha: 0.4))
+                  color: AppColors.circuitBreakerColor.withValues(alpha: 0.4))
               : null,
         ),
         child: Row(
@@ -869,7 +839,7 @@ class _ProtoBtn extends StatelessWidget {
           children: [
             Icon(icon,
                 color: selected
-                    ? const Color(0xFF7BB8FF)
+                    ? AppColors.circuitBreakerColor
                     : context.tText2(0.38),
                 size: 11),
             const SizedBox(width: 4),
@@ -877,7 +847,7 @@ class _ProtoBtn extends StatelessWidget {
               label,
               style: TextStyle(
                 color: selected
-                    ? const Color(0xFF7BB8FF)
+                    ? AppColors.circuitBreakerColor
                     : context.tText2(0.38),
                 fontSize: 10,
                 fontWeight: FontWeight.w500,
@@ -994,38 +964,17 @@ class _GatewayDiscoverySheetState extends State<_GatewayDiscoverySheet> {
   _GatewayDevice? _installing;
   _GatewayDevice? _ready;
 
-  static final _demoGateways = [
-    _GatewayDevice(
-      id: 'gw1',
-      name: 'Zigbee Gateway 3.0',
-      protocol: 'zigbee',
-      ip: '192.168.1.12',
-      model: 'Sonoff Zigbee Bridge Pro',
-    ),
-    _GatewayDevice(
-      id: 'gw2',
-      name: 'WiFi Smart Hub',
-      protocol: 'wifi',
-      ip: '192.168.1.18',
-      model: 'TP-Link Tapo H200',
-    ),
-    _GatewayDevice(
-      id: 'gw3',
-      name: 'Zigbee Coordinator',
-      protocol: 'zigbee',
-      ip: '192.168.1.31',
-      model: 'HUSBZB-1 USB Stick',
-    ),
-  ];
-
   @override
   void initState() {
     super.initState();
+    // Real scan: finish after timeout with whatever was actually discovered.
+    // The gateway discovery screen (gateways/gateway_hub_screen.dart) handles
+    // real mDNS/SSDP scanning; this sheet shows only devices already imported.
     Future.delayed(const Duration(seconds: 2), () {
       if (mounted) {
         setState(() {
           _scanning = false;
-          _found = List.from(_demoGateways);
+          // _found stays empty — user navigates to Add Gateway for real pairing
         });
       }
     });
@@ -1050,7 +999,7 @@ class _GatewayDiscoverySheetState extends State<_GatewayDiscoverySheet> {
 
   @override
   Widget build(BuildContext context) {
-    final s = context.watch<AppState>().strings;
+    final s = context.select((AppState st) => st.strings);
 
     return DraggableScrollableSheet(
       initialChildSize: 0.6,
@@ -1086,7 +1035,7 @@ class _GatewayDiscoverySheetState extends State<_GatewayDiscoverySheet> {
                       color: AppColors.primary.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Icon(Icons.router_outlined,
+                    child: Icon(Symbols.router,
                         color: AppColors.primary, size: 18),
                   ),
                   const SizedBox(width: 12),
@@ -1166,7 +1115,7 @@ class _GatewayDiscoverySheetState extends State<_GatewayDiscoverySheet> {
                             height: 50,
                             child: ElevatedButton.icon(
                               onPressed: widget.onConnected,
-                              icon: Icon(Icons.check_circle_outline,
+                              icon: Icon(Symbols.check_circle,
                                   size: 18),
                               label: Text(s.boilerReconnect),
                               style: ElevatedButton.styleFrom(
@@ -1213,7 +1162,7 @@ class _ScanningView extends StatelessWidget {
                     AppColors.primary.withValues(alpha: 0.4)),
               ),
             ),
-            Icon(Icons.router_outlined,
+            Icon(Symbols.router,
                 color: AppColors.primary, size: 32),
           ],
         ),
@@ -1257,10 +1206,10 @@ class _GatewayTile extends StatelessWidget {
 
   Color get _protoColor => gateway.protocol == 'zigbee'
       ? const Color(0xFFFFB300)
-      : const Color(0xFF7BB8FF);
+      : AppColors.circuitBreakerColor;
 
   IconData get _protoIcon =>
-      gateway.protocol == 'zigbee' ? Icons.hub_outlined : Icons.wifi;
+      gateway.protocol == 'zigbee' ? Symbols.hub : Symbols.wifi;
 
   @override
   Widget build(BuildContext context) {
@@ -1402,7 +1351,8 @@ class _AddBoilerCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {},
+      onTap: () => Navigator.push(context,
+          MaterialPageRoute(builder: (_) => const AddDeviceScreen())),
       child: Container(
         height: 72,
         decoration: BoxDecoration(
@@ -1416,7 +1366,7 @@ class _AddBoilerCard extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.add_circle_outline,
+            Icon(Symbols.add_circle,
                 color: context.tText2(0.3), size: 20),
             const SizedBox(width: 10),
             Text(
@@ -1456,7 +1406,7 @@ class _TopBar extends StatelessWidget {
                 color: context.tText2(0.07),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(Icons.chevron_right,
+              child: Icon(Symbols.chevron_right,
                   color: context.tText, size: 22),
             ),
           ),
@@ -1474,9 +1424,9 @@ class _TopBar extends StatelessWidget {
           // Protocol badge row
           Row(
             children: [
-              _ProtoBadge(icon: Icons.wifi, label: 'WiFi'),
+              _ProtoBadge(icon: Symbols.wifi, label: 'WiFi'),
               const SizedBox(width: 6),
-              _ProtoBadge(icon: Icons.hub_outlined, label: 'Zigbee'),
+              _ProtoBadge(icon: Symbols.hub, label: 'Zigbee'),
             ],
           ),
         ],
@@ -1496,14 +1446,14 @@ class _ProtoBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFF7BB8FF).withValues(alpha: 0.1),
+        color: AppColors.circuitBreakerColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-            color: const Color(0xFF7BB8FF).withValues(alpha: 0.25)),
+            color: AppColors.circuitBreakerColor.withValues(alpha: 0.25)),
       ),
       child: Row(
         children: [
-          Icon(icon, color: const Color(0xFF7BB8FF), size: 10),
+          Icon(icon, color: AppColors.circuitBreakerColor, size: 10),
           const SizedBox(width: 3),
           Text(label,
               style: TextStyle(
@@ -1537,7 +1487,7 @@ class _SmartSwitchesSection extends StatelessWidget {
         const SizedBox(height: 8),
         Row(
           children: [
-            Icon(Icons.toggle_on_outlined,
+            Icon(Symbols.toggle_on,
                 color: AppColors.primary, size: 20),
             const SizedBox(width: 8),
             Text(
@@ -1604,7 +1554,7 @@ class _SwitchRow extends StatelessWidget {
                   .withValues(alpha: on ? 0.15 : 0.05),
               borderRadius: BorderRadius.circular(11),
             ),
-            child: Icon(Icons.toggle_on_outlined,
+            child: Icon(Symbols.toggle_on,
                 color: on ? AppColors.primary : context.tText2(0.38), size: 22),
           ),
           const SizedBox(width: 12),

@@ -1,9 +1,11 @@
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/app_state.dart';
 import '../../models/device.dart';
 import '../../l10n/strings.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/device_icons.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -18,76 +20,34 @@ class _NotificationsScreenState extends State<NotificationsScreen>
   int _filterIndex = 0;
 
   // ── Convert AppNotification → local UI model ──────────────────
-  static IconData _iconForType(DeviceType type) {
-    switch (type) {
-      case DeviceType.light:         return Icons.lightbulb_outlined;
-      case DeviceType.airConditioner:return Icons.hvac;
-      case DeviceType.camera:        return Icons.videocam_outlined;
-      case DeviceType.motionSensor:  return Icons.sensors_outlined;
-      case DeviceType.doorSensor:    return Icons.sensor_door_outlined;
-      case DeviceType.windowSensor:  return Icons.window_outlined;
-      case DeviceType.smokeSensor:   return Icons.local_fire_department_outlined;
-      case DeviceType.smartPlug:     return Icons.power_outlined;
-      case DeviceType.smartSwitch:   return Icons.toggle_on_outlined;
-      case DeviceType.router:        return Icons.router_outlined;
-      case DeviceType.gateway:       return Icons.hub_outlined;
-      case DeviceType.waterHeater:   return Icons.water_drop_outlined;
-      case DeviceType.blind:         return Icons.blinds_outlined;
-      case DeviceType.solar:         return Icons.wb_sunny_outlined;
-      case DeviceType.energyMeter:   return Icons.bolt_outlined;
-      case DeviceType.circuitBreaker:return Icons.electrical_services;
-      case DeviceType.smartLock:     return Icons.lock_outline;
-      case DeviceType.gasSensor:     return Icons.cloud_outlined;
-      case DeviceType.waterLeakSensor:return Icons.water_damage_outlined;
-      case DeviceType.matterDevice:  return Icons.hexagon_outlined;
-    }
-  }
+  static IconData _iconForType(DeviceType type) => DeviceIcons.icon(type);
 
-  static Color _colorForType(DeviceType type) {
-    switch (type) {
-      case DeviceType.light:         return AppColors.lightColor;
-      case DeviceType.airConditioner:return AppColors.acColor;
-      case DeviceType.camera:        return AppColors.cameraColor;
-      case DeviceType.motionSensor:  return AppColors.motionColor;
-      case DeviceType.doorSensor:    return AppColors.unsecured;
-      case DeviceType.windowSensor:  return AppColors.motionColor;
-      case DeviceType.smokeSensor:   return const Color(0xFFFF6B35);
-      case DeviceType.smartPlug:     return AppColors.plugColor;
-      case DeviceType.smartSwitch:   return AppColors.plugColor;
-      case DeviceType.router:        return const Color(0xFF00B4D8);
-      case DeviceType.gateway:       return const Color(0xFF00B4D8);
-      case DeviceType.waterHeater:   return AppColors.acColor;
-      case DeviceType.blind:         return AppColors.primary;
-      case DeviceType.solar:         return const Color(0xFFFFB300);
-      case DeviceType.energyMeter:   return const Color(0xFFFFD600);
-      case DeviceType.circuitBreaker:return const Color(0xFF7BB8FF);
-      case DeviceType.smartLock:     return const Color(0xFF34A853);
-      case DeviceType.gasSensor:     return const Color(0xFFFF8C00);
-      case DeviceType.waterLeakSensor:return const Color(0xFF00B4D8);
-      case DeviceType.matterDevice:  return const Color(0xFF7B6FCD);
-    }
-  }
+  static Color _colorForType(DeviceType type) => DeviceIcons.color(type);
 
-  static String _relativeTime(DateTime dt) {
+  static String _relativeTime(DateTime dt, S s) {
     final diff = DateTime.now().difference(dt);
-    if (diff.inSeconds < 60) return 'עכשיו';
-    if (diff.inMinutes < 60) return 'לפני ${diff.inMinutes} דקות';
-    if (diff.inHours < 24) return 'לפני ${diff.inHours} שעות';
-    return 'לפני ${diff.inDays} ימים';
+    if (diff.inSeconds < 60) return s.timeNow;
+    if (diff.inMinutes < 60) {
+      return s.timeMinAgo.replaceAll('{n}', '${diff.inMinutes}');
+    }
+    if (diff.inHours < 24) {
+      return s.timeHrAgo.replaceAll('{n}', '${diff.inHours}');
+    }
+    return s.timeDayAgo.replaceAll('{n}', '${diff.inDays}');
   }
 
-  _Notification _toUiNotif(AppNotification n) => _Notification(
+  _Notification _toUiNotif(AppNotification n, S s) => _Notification(
     id: n.id,
-    title: 'מכשיר חובר: ${n.title}',
-    time: _relativeTime(n.timestamp),
+    title: s.deviceConnectedFmt.replaceAll('{name}', n.title),
+    time: _relativeTime(n.timestamp, s),
     icon: _iconForType(n.deviceType),
     iconColor: _colorForType(n.deviceType),
     type: _NotifType.alert,
     isRead: n.isRead,
   );
 
-  List<_Notification> _buildList(List<AppNotification> source) =>
-      source.map(_toUiNotif).toList();
+  List<_Notification> _buildList(List<AppNotification> source, S s) =>
+      source.map((n) => _toUiNotif(n, s)).toList();
 
   List<_Notification> _filtered(List<_Notification> all) {
     switch (_filterIndex) {
@@ -115,7 +75,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
     final s = state.strings;
-    final allNotifications = _buildList(state.notifications);
+    final allNotifications = _buildList(state.notifications, s);
     final filtered = _filtered(allNotifications);
     final unreadCount = allNotifications.where((n) => !n.isRead).length;
     final filters = [s.allNotif, s.alertsNotif, s.camerasNotif, s.automationsTitle];
@@ -248,7 +208,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
             ),
             const SizedBox(height: 16),
             _MenuOption(
-              icon: Icons.done_all,
+              icon: Symbols.done_all,
               label: s.markAllRead,
               onTap: () {
                 Navigator.pop(context);
@@ -257,7 +217,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
             ),
             const SizedBox(height: 10),
             _MenuOption(
-              icon: Icons.delete_outline,
+              icon: Symbols.delete,
               label: s.delete,
               color: AppColors.unsecured,
               onTap: () {
@@ -337,7 +297,7 @@ class _TopBar extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
-                  Icons.more_vert, color: context.tText, size: 20),
+                  Symbols.more_vert, color: context.tText, size: 20),
             ),
           ),
         ],
@@ -367,13 +327,13 @@ class _SwipeableNotifCard extends StatelessWidget {
       direction: DismissDirection.endToStart,
       onDismissed: (_) => onDismiss(),
       background: Container(
-        alignment: Alignment.centerLeft,
-        padding: const EdgeInsets.only(left: 20),
+        alignment: AlignmentDirectional.centerStart,
+        padding: const EdgeInsetsDirectional.only(start: 20),
         decoration: BoxDecoration(
           color: AppColors.unsecured.withValues(alpha: 0.2),
           borderRadius: BorderRadius.circular(16),
         ),
-        child: Icon(Icons.delete_outline,
+        child: Icon(Symbols.delete,
             color: AppColors.unsecured, size: 22),
       ),
       child: GestureDetector(
@@ -558,7 +518,7 @@ class _NotifThumbnail extends StatelessWidget {
             ],
 
             Icon(
-              Icons.videocam_outlined,
+              Symbols.videocam,
               color: context.tText2(0.25),
               size: 14,
             ),
@@ -616,13 +576,13 @@ class _BadgeWidget extends StatelessWidget {
 class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final s = context.watch<AppState>().strings;
+    final s = context.select((AppState st) => st.strings);
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            Icons.notifications_none_outlined,
+            Symbols.notifications_none,
             color: context.tText2(0.2),
             size: 56,
           ),
@@ -701,9 +661,9 @@ class _Notification {
   final Color iconColor;
   final _NotifType type;
   bool isRead;
-  final bool hasThumbnail;
-  final int thumbnailSeed;
-  final _BadgeData? badge;
+  final bool hasThumbnail = false;
+  final int thumbnailSeed = 0;
+  final _BadgeData? badge = null;
 
   _Notification({
     required this.id,
@@ -713,16 +673,13 @@ class _Notification {
     required this.iconColor,
     required this.type,
     required this.isRead,
-    this.hasThumbnail = false,
-    this.thumbnailSeed = 0,
-    this.badge,
   });
 }
 
 class _BadgeData {
-  final String? text;
-  final IconData? icon;
+  final String? text = null;
+  final IconData? icon = null;
   final Color color;
 
-  const _BadgeData({this.text, this.icon, required this.color});
+  const _BadgeData({required this.color});
 }

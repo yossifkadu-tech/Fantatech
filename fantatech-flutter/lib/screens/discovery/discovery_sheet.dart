@@ -1,3 +1,4 @@
+import 'package:material_symbols_icons/symbols.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 // DiscoverySheet
 //
@@ -89,33 +90,29 @@ class _DiscoverySheetState extends State<DiscoverySheet> {
 
   /// Explains how to bring a Matter device into the app (via a Matter hub).
   void _showMatterHelp(BuildContext context) {
+    final s = context.read<AppState>().strings;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: context.tCard,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         title: Row(children: [
-          const Icon(Icons.hexagon_outlined, color: Color(0xFF7B6FCD), size: 22),
+          const Icon(Symbols.hexagon, color: Color(0xFF7B6FCD), size: 22),
           const SizedBox(width: 8),
           Expanded(
-            child: Text('מכשיר Matter',
+            child: Text(s.matterDeviceTitle,
                 style: TextStyle(
                     color: context.tText, fontWeight: FontWeight.bold)),
           ),
         ]),
         content: Text(
-          'מכשירי Matter (כמו מנורת IKEA) מצורפים דרך רכזת Matter — לא ישירות '
-          'מהאפליקציה.\n\n'
-          'הדרך הפשוטה:\n'
-          '1. צרף את המנורה ל-DIRIGERA דרך אפליקציית IKEA Home smart.\n'
-          '2. כאן: גשרים → DIRIGERA → "ייבא מכשירים".\n'
-          'המנורה תופיע עם שליטה מלאה.',
+          s.matterDeviceHelp,
           style: TextStyle(color: context.tText2(0.7), fontSize: 13, height: 1.5),
         ),
         actions: [
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('הבנתי'),
+            child: Text(s.understood),
           ),
         ],
       ),
@@ -179,8 +176,9 @@ class _DiscoverySheetState extends State<DiscoverySheet> {
     for (final d in pending) {
       _addDevice(context, d, engine, state);
     }
+    final s = context.read<AppState>().strings;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text('נוספו ${pending.length} מכשירים'),
+      content: Text(s.devicesAddedFmt.replaceAll('{n}', '${pending.length}')),
       backgroundColor: AppColors.secured,
       duration: const Duration(seconds: 2),
     ));
@@ -211,8 +209,6 @@ class _DiscoverySheetState extends State<DiscoverySheet> {
 
   // ── Icon / colour maps ─────────────────────────────────────────────────────
 
-  static const _networkColor = Color(0xFF00B4D8);
-
   Color _typeColor(DiscoveredDeviceType t) => switch (t) {
     DiscoveredDeviceType.light         => AppColors.lightColor,
     DiscoveredDeviceType.boiler        => AppColors.acColor,
@@ -221,34 +217,34 @@ class _DiscoverySheetState extends State<DiscoverySheet> {
     DiscoveredDeviceType.motionSensor  => AppColors.motionColor,
     DiscoveredDeviceType.windowSensor  => AppColors.motionColor,
     DiscoveredDeviceType.doorSensor    => AppColors.motionColor,
-    DiscoveredDeviceType.waterLeak     => const Color(0xFF00B4D8),
-    DiscoveredDeviceType.smokeSensor   => const Color(0xFFFF6B35),
-    DiscoveredDeviceType.energyMeter   => const Color(0xFFFFD600),
-    DiscoveredDeviceType.gateway       => _networkColor,
-    DiscoveredDeviceType.router        => _networkColor,
+    DiscoveredDeviceType.waterLeak     => AppColors.networkColor,
+    DiscoveredDeviceType.smokeSensor   => AppColors.smokeColor,
+    DiscoveredDeviceType.energyMeter   => AppColors.energyColor,
+    DiscoveredDeviceType.gateway       => AppColors.networkColor,
+    DiscoveredDeviceType.router        => AppColors.networkColor,
     _                                  => AppColors.plugColor,
   };
 
   IconData _typeIcon(DiscoveredDeviceType t) => switch (t) {
-    DiscoveredDeviceType.light         => Icons.lightbulb_outlined,
-    DiscoveredDeviceType.socket        => Icons.power_outlined,
-    DiscoveredDeviceType.smartSwitch   => Icons.toggle_on_outlined,
-    DiscoveredDeviceType.thermostat    => Icons.hvac,
-    DiscoveredDeviceType.camera        => Icons.videocam_outlined,
-    DiscoveredDeviceType.gateway       => Icons.hub_outlined,
-    DiscoveredDeviceType.boiler        => Icons.water_drop_outlined,
-    DiscoveredDeviceType.solar         => Icons.wb_sunny_outlined,
-    DiscoveredDeviceType.circuitBreaker => Icons.electrical_services,
-    DiscoveredDeviceType.energyMeter   => Icons.bolt_outlined,
-    DiscoveredDeviceType.smokeSensor   => Icons.local_fire_department_outlined,
-    DiscoveredDeviceType.motionSensor  => Icons.sensors_outlined,
-    DiscoveredDeviceType.windowSensor  => Icons.window_outlined,
-    DiscoveredDeviceType.doorSensor    => Icons.sensor_door_outlined,
-    DiscoveredDeviceType.waterLeak     => Icons.water_damage_outlined,
-    DiscoveredDeviceType.router        => Icons.router_outlined,
-    DiscoveredDeviceType.speaker       => Icons.speaker_outlined,
-    DiscoveredDeviceType.tv            => Icons.tv_outlined,
-    _                                  => Icons.device_unknown_outlined,
+    DiscoveredDeviceType.light         => Symbols.lightbulb,
+    DiscoveredDeviceType.socket        => Symbols.power,
+    DiscoveredDeviceType.smartSwitch   => Symbols.toggle_on,
+    DiscoveredDeviceType.thermostat    => Symbols.hvac,
+    DiscoveredDeviceType.camera        => Symbols.videocam,
+    DiscoveredDeviceType.gateway       => Symbols.hub,
+    DiscoveredDeviceType.boiler        => Symbols.water_drop,
+    DiscoveredDeviceType.solar         => Symbols.wb_sunny,
+    DiscoveredDeviceType.circuitBreaker => Symbols.electrical_services,
+    DiscoveredDeviceType.energyMeter   => Symbols.bolt,
+    DiscoveredDeviceType.smokeSensor   => Symbols.local_fire_department,
+    DiscoveredDeviceType.motionSensor  => Symbols.sensors,
+    DiscoveredDeviceType.windowSensor  => Symbols.window,
+    DiscoveredDeviceType.doorSensor    => Symbols.sensor_door,
+    DiscoveredDeviceType.waterLeak     => Symbols.water_damage,
+    DiscoveredDeviceType.router        => Symbols.router,
+    DiscoveredDeviceType.speaker       => Symbols.speaker,
+    DiscoveredDeviceType.tv            => Symbols.tv,
+    _                                  => Symbols.device_unknown,
   };
 
   String _protocolLabel(DiscoveryProtocol p) => switch (p) {
@@ -265,6 +261,7 @@ class _DiscoverySheetState extends State<DiscoverySheet> {
   Widget build(BuildContext context) {
     final engine = context.watch<RealDiscoveryEngine>();
     final state  = context.watch<AppState>();
+    final s      = state.strings;
 
     return DraggableScrollableSheet(
       initialChildSize: 0.88,
@@ -295,12 +292,12 @@ class _DiscoverySheetState extends State<DiscoverySheet> {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 children: [
-                  Icon(Icons.radar, color: AppColors.primary, size: 22),
+                  Icon(Symbols.radar, color: AppColors.primary, size: 22),
                   const SizedBox(width: 10),
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      'חיפוש מכשירים',
-                      style: TextStyle(
+                      s.discoveryTitle,
+                      style: const TextStyle(
                         color:      Colors.white,
                         fontSize:   18,
                         fontWeight: FontWeight.bold,
@@ -430,6 +427,7 @@ class _ScanButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.select((AppState st) => st.strings);
     return GestureDetector(
       onTap: isScanning ? onStop : onScan,
       child: AnimatedContainer(
@@ -448,7 +446,7 @@ class _ScanButton extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              isScanning ? Icons.stop_rounded : Icons.radar,
+              isScanning ? Symbols.stop : Symbols.radar,
               color: isScanning
                   ? context.tText2(0.6)
                   : context.tText,
@@ -456,7 +454,7 @@ class _ScanButton extends StatelessWidget {
             ),
             const SizedBox(width: 7),
             Text(
-              isScanning ? 'עצור' : 'סרוק',
+              isScanning ? s.stop : s.scan,
               style: TextStyle(
                 color:      isScanning
                     ? context.tText2(0.6)
@@ -502,7 +500,8 @@ class _HaBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const haColor = Color(0xFF18BCEC);
+    final s = context.select((AppState st) => st.strings);
+    final haColor = AppColors.networkColor;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
@@ -524,7 +523,7 @@ class _HaBanner extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             child: Row(
               children: [
-                Icon(Icons.home_outlined,
+                Icon(Symbols.home,
                     color: connected ? AppColors.secured : haColor, size: 20),
                 const SizedBox(width: 10),
                 Expanded(
@@ -532,7 +531,7 @@ class _HaBanner extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Home Assistant נמצא',
+                        s.haFound,
                         style: TextStyle(
                           color:      connected ? AppColors.secured : haColor,
                           fontSize:   13,
@@ -541,7 +540,7 @@ class _HaBanner extends StatelessWidget {
                       ),
                       Text(
                         connected
-                            ? 'מחובר — $deviceCount מכשירים יובאו'
+                            ? s.haConnectedFmt.replaceAll('{n}', '$deviceCount')
                             : ip,
                         style: TextStyle(
                           color:    context.tText2(0.45),
@@ -564,7 +563,7 @@ class _HaBanner extends StatelessWidget {
                             color: haColor.withValues(alpha: 0.4)),
                       ),
                       child: Text(
-                        showForm ? 'בטל' : 'חבר',
+                        showForm ? s.cancel : s.haConnect,
                         style: TextStyle(
                           color:      haColor,
                           fontSize:   12,
@@ -574,7 +573,7 @@ class _HaBanner extends StatelessWidget {
                     ),
                   )
                 else
-                  Icon(Icons.check_circle_outline,
+                  Icon(Symbols.check_circle,
                       color: AppColors.secured, size: 20),
               ],
             ),
@@ -590,9 +589,9 @@ class _HaBanner extends StatelessWidget {
                   // IP field
                   _HaField(
                     ctrl:        ipCtrl,
-                    label:       'כתובת IP',
+                    label:       s.ipAddressLabel,
                     hint:        '192.168.x.x',
-                    icon:        Icons.wifi_outlined,
+                    icon:        Symbols.wifi,
                     keyboardType: TextInputType.url,
                   ),
                   const SizedBox(height: 8),
@@ -602,14 +601,14 @@ class _HaBanner extends StatelessWidget {
                     ctrl:   tokenCtrl,
                     label:  'Long-Lived Access Token',
                     hint:   'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...',
-                    icon:   Icons.key_outlined,
+                    icon:   Symbols.key,
                     obscure: false,
                     small:   true,
                   ),
 
                   const SizedBox(height: 6),
                   Text(
-                    'צור Token ב: Profile → Long-Lived Access Tokens',
+                    s.haTokenHint,
                     style: TextStyle(
                       color:    context.tText2(0.35),
                       fontSize: 10,
@@ -663,8 +662,8 @@ class _HaBanner extends StatelessWidget {
                               ),
                             )
                           : Text(
-                              'ייבא מכשירים מ-Home Assistant',
-                              style: TextStyle(
+                              s.importFromHa,
+                              style: const TextStyle(
                                 fontSize:   13,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -732,7 +731,7 @@ class _HaField extends StatelessWidget {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
           borderSide:
-              BorderSide(color: const Color(0xFF18BCEC).withValues(alpha: 0.5)),
+              BorderSide(color: AppColors.networkColor.withValues(alpha: 0.5)),
         ),
         isDense:       true,
         contentPadding: const EdgeInsets.symmetric(
@@ -762,6 +761,7 @@ class _DeviceRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s     = context.select((AppState st) => st.strings);
     final added = device.isRegistered;
 
     return Container(
@@ -884,13 +884,13 @@ class _DeviceRow extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    added ? Icons.check : Icons.add,
+                    added ? Symbols.check : Symbols.add,
                     color:  added ? AppColors.secured : AppColors.primary,
                     size:   13,
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    added ? 'נוסף' : 'הוסף',
+                    added ? s.added : s.add,
                     style: TextStyle(
                       color:      added ? AppColors.secured : AppColors.primary,
                       fontSize:   11,
@@ -916,6 +916,7 @@ class _EmptyHint extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.select((AppState st) => st.strings);
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -923,13 +924,13 @@ class _EmptyHint extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              isScanning ? Icons.radar : Icons.wifi_find_outlined,
+              isScanning ? Symbols.radar : Symbols.wifi_find,
               color: context.tText2(0.15),
               size:  56,
             ),
             const SizedBox(height: 16),
             Text(
-              isScanning ? 'מחפש מכשירים…' : 'לחץ "סרוק" כדי לחפש מכשירים ברשת',
+              isScanning ? s.scanningDevices : s.scanHint,
               style: TextStyle(
                 color:    context.tText2(0.3),
                 fontSize: 14,
@@ -953,6 +954,7 @@ class _AddAllBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.select((AppState st) => st.strings);
     return Container(
       padding: EdgeInsets.fromLTRB(
           16, 10, 16, 10 + MediaQuery.of(context).padding.bottom),
@@ -966,10 +968,10 @@ class _AddAllBar extends StatelessWidget {
         width:  double.infinity,
         height: 48,
         child: ElevatedButton.icon(
-          icon:  Icon(Icons.add_circle_outline, size: 18),
+          icon:  const Icon(Symbols.add_circle, size: 18),
           label: Text(
-            'הוסף הכל ($count מכשירים)',
-            style: TextStyle(
+            s.addAllFmt.replaceAll('{n}', '$count'),
+            style: const TextStyle(
               fontSize:   14,
               fontWeight: FontWeight.w600,
             ),

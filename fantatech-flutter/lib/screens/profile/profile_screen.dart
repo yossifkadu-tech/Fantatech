@@ -1,120 +1,370 @@
+import 'package:material_symbols_icons/symbols.dart';
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../app_version.dart';
 import '../../models/app_state.dart';
-import '../../services/auth/user_service.dart';
+import '../../models/app_user.dart';
 import '../../services/auth/biometric_service.dart';
+import '../../services/auth/user_service.dart';
 import '../../theme/app_theme.dart';
 import '../../l10n/strings.dart';
+import '../../widgets/ft_button.dart';
 import '../calendar/calendar_screen.dart';
+import '../mirror/mirror_screen.dart';
 
-class ProfileScreen extends StatelessWidget {
-  final VoidCallback onSignOut;
-  const ProfileScreen({super.key, required this.onSignOut});
+// ─── Home management sheet — reusable from outside this screen ───────────────
+void showHomeManagementSheet(BuildContext context) {
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: context.tCard,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+    ),
+    builder: (_) => const _HomeManagementSheet(),
+  );
+}
+
+// ─── Subscription sheet — reusable from outside this screen ──────────────────
+void _openSubscriptionSheet(BuildContext context) {
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: Colors.transparent,
+    isScrollControlled: true,
+    builder: (_) => const _SubscriptionSheet(),
+  );
+}
+
+// ─── Installer mode — tap the badge to enter the code, or to exit ───────────
+void _handleInstallerBadgeTap(BuildContext context, AppState state) {
+  if (state.installerMode) {
+    _confirmExitInstallerMode(context, state);
+  } else {
+    _promptInstallerCode(context, state);
+  }
+}
+
+void _confirmExitInstallerMode(BuildContext context, AppState state) {
+  final s = state.strings;
+  showDialog<void>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      backgroundColor: context.tCard,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      title: Text(s.installerCodeTitle,
+          style: TextStyle(color: context.tText, fontWeight: FontWeight.bold)),
+      content: Text(s.installerExitConfirm,
+          style: TextStyle(color: context.tText2(0.6))),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx),
+          child: Text(s.cancel, style: TextStyle(color: context.tText2(0.4))),
+        ),
+        TextButton(
+          onPressed: () {
+            state.exitInstallerMode();
+            Navigator.pop(ctx);
+            ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(s.installerModeOffMsg)));
+          },
+          child: Text(s.okButton,
+              style: const TextStyle(
+                  color: AppColors.alert, fontWeight: FontWeight.bold)),
+        ),
+      ],
+    ),
+  );
+}
+
+void _promptInstallerCode(BuildContext context, AppState state) {
+  final ctrl = TextEditingController();
+  String? error;
+  showDialog<void>(
+    context: context,
+    builder: (ctx) => StatefulBuilder(
+      builder: (ctx, setS) => AlertDialog(
+        backgroundColor: context.tCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(state.strings.installerCodeTitle,
+            style:
+                TextStyle(color: context.tText, fontWeight: FontWeight.bold)),
+        content: TextField(
+          controller: ctrl,
+          autofocus: true,
+          obscureText: true,
+          keyboardType: TextInputType.number,
+          style: TextStyle(color: context.tText),
+          decoration: InputDecoration(
+            hintText: state.strings.installerCodeHint,
+            filled: true,
+            fillColor: context.tText2(0.06),
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none),
+            errorText: error,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(state.strings.cancel,
+                style: TextStyle(color: context.tText2(0.4))),
+          ),
+          TextButton(
+            onPressed: () {
+              if (state.tryUnlockInstallerMode(ctrl.text.trim())) {
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text(state.strings.installerModeOnMsg)));
+              } else {
+                setS(() => error = state.strings.installerCodeWrong);
+              }
+            },
+            child: Text(state.strings.okButton,
+                style: const TextStyle(
+                    color: AppColors.primary, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+// ─── Plan helpers (shared by hero + subscription sheet) ──────────────────────
+Color _planAccent(UserPlan p) => switch (p) {
+  UserPlan.free         => AppColors.textSecondary,
+  UserPlan.basic        => AppColors.primary,
+  UserPlan.advanced     => AppColors.acColor,
+  UserPlan.advancedPlus => const Color(0xFF9C7AFF),
+  UserPlan.unlimited    => const Color(0xFFFFD700),
+};
+
+String _planLabel(UserPlan p, dynamic s) => switch (p) {
+  UserPlan.free         => s.planFree,
+  UserPlan.basic        => s.planBasic,
+  UserPlan.advanced     => s.planAdvanced,
+  UserPlan.advancedPlus => s.planAdvancedPlus,
+  UserPlan.unlimited    => s.planUnlimited,
+};
+
+IconData _planIconData(UserPlan p) => switch (p) {
+  UserPlan.free         => Symbols.lock_open,
+  UserPlan.basic        => Symbols.star_border,
+  UserPlan.advanced     => Symbols.workspace_premium,
+  UserPlan.advancedPlus => Symbols.auto_awesome,
+  UserPlan.unlimited    => Symbols.diamond,
+};
+
+class ProfileScreen extends StatefulWidget {
+  const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final List<Animation<double>> _anims;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 860));
+    // 5 staggered slots: hero / stats / group-home / group-app / version
+    _anims = List.generate(5, (i) {
+      final start = i * 0.07;
+      final end   = (start + 0.55).clamp(0.0, 1.0);
+      return CurvedAnimation(
+        parent: _ctrl,
+        curve: Interval(start, end, curve: Curves.easeOutCubic),
+      );
+    });
+    _ctrl.forward();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
     final s = state.strings;
+    final userCount = state.homeUsers.length;
 
     return Scaffold(
       backgroundColor: context.tBg,
       body: SafeArea(
         child: Column(
           children: [
-            // ── Top bar ──────────────────────────────────────
+            // ── Top bar ──────────────────────────────────────────────
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-              child: Center(
-                child: Text(
-                  s.myProfile,
-                  style: TextStyle(
-                    color: context.tText,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+              padding: const EdgeInsets.fromLTRB(AppSpacing.s16, 14, AppSpacing.s16, 0),
+              child: Row(
+                children: [
+                  Text(
+                    s.myProfile,
+                    style: AppTypography.headlineSm.copyWith(color: context.tText),
                   ),
-                ),
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: () => _showEditProfileSheet(context, state),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(AppBorderRadius.r8),
+                        border: Border.all(
+                            color: AppColors.primary.withValues(alpha: 0.25)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Symbols.edit,
+                              color: AppColors.primary, size: 14),
+                          const SizedBox(width: 4),
+                          Text(
+                            s.editProfile,
+                            style: AppTypography.labelMd.copyWith(
+                                color: AppColors.primary),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
 
+            const SizedBox(height: AppSpacing.s16),
+
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.s16, 0, AppSpacing.s16, 80),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const SizedBox(height: 28),
-
-                    // ── Avatar ───────────────────────────────
-                    _AvatarSection(),
-
-                    const SizedBox(height: 32),
-
-                    // ── Menu items ───────────────────────────
-                    _MenuItem(
-                      icon: Icons.home_outlined,
-                      label: s.myHome,
-                      color: AppColors.primary,
-                      onTap: () => _showHomeManagementSheet(context),
-                    ),
-                    const SizedBox(height: 10),
-                    _MenuItem(
-                      icon: Icons.people_outline,
-                      label: s.usersTitle,
-                      color: const Color(0xFF7B6FCD),
-                      onTap: () => _showUsersSheet(context),
-                    ),
-                    const SizedBox(height: 10),
-                    _MenuItem(
-                      icon: Icons.credit_card_outlined,
-                      label: s.subscriptionTitle,
-                      color: AppColors.acColor,
-                      onTap: () => _showSubscriptionSheet(context),
-                    ),
-                    const SizedBox(height: 10),
-                    _MenuItem(
-                      icon: Icons.palette_outlined,
-                      label: s.appearanceTitle,
-                      color: AppColors.cameraColor,
-                      onTap: () => _showAppearanceSheet(context),
-                    ),
-                    const SizedBox(height: 10),
-                    _MenuItem(
-                      icon: Icons.settings_outlined,
-                      label: s.settingsTitle,
-                      color: context.tText2(0.7),
-                      onTap: () => _showSettingsSheet(context, state),
-                    ),
-                    const SizedBox(height: 10),
-                    _MenuItem(
-                      icon: Icons.help_outline,
-                      label: s.helpTitle,
-                      color: AppColors.lightColor,
-                      onTap: () => _showHelpSheet(context),
-                    ),
-                    const SizedBox(height: 10),
-                    _MenuItem(
-                      icon: Icons.logout,
-                      label: s.signOut,
-                      color: AppColors.unsecured,
-                      onTap: () => _confirmSignOut(context, s, onSignOut),
-                      isDestructive: true,
-                    ),
-
-                    const SizedBox(height: 32),
-
-                    // ── Version ──────────────────────────────
-                    Text(
-                      'FantaTech v2.6.0',
-                      style: TextStyle(
-                        color: context.tText2(0.2),
-                        fontSize: 12,
+                    // ── Hero card ─────────────────────────────────────
+                    _FadeSlide(
+                      animation: _anims[0],
+                      child: _ProfileHero(
+                        state: state,
+                        onEditProfile: () => _showEditProfileSheet(context, state),
+                        onPickImage: () => _pickAvatarImage(context, state),
                       ),
                     ),
 
-                    const SizedBox(height: 80),
+                    const SizedBox(height: AppSpacing.s16),
+
+                    // ── Statistics ────────────────────────────────────
+                    _FadeSlide(
+                      animation: _anims[1],
+                      child: _StatsGrid(state: state),
+                    ),
+
+                    const SizedBox(height: AppSpacing.s20),
+
+                    // ── Group: Home ───────────────────────────────────
+                    _FadeSlide(
+                      animation: _anims[2],
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _GroupLabel(s.myHome),
+                          const SizedBox(height: AppSpacing.s8),
+                          _MenuSection(
+                            children: [
+                              FtListTile(
+                                icon: Symbols.home,
+                                iconBg: AppColors.primary.withValues(alpha: 0.12),
+                                iconColor: AppColors.primary,
+                                title: s.myHome,
+                                onTap: () => _showHomeManagementSheet(context),
+                              ),
+                              FtListTile(
+                                icon: Symbols.people,
+                                iconBg: const Color(0xFF7B6FCD).withValues(alpha: 0.12),
+                                iconColor: const Color(0xFF7B6FCD),
+                                title: s.usersTitle,
+                                trailing: userCount > 0
+                                    ? _CountBadge(
+                                        count: userCount,
+                                        color: const Color(0xFF7B6FCD),
+                                      )
+                                    : null,
+                                onTap: () => _showUsersSheet(context),
+                              ),
+                              FtListTile(
+                                icon: Symbols.credit_card,
+                                iconBg: AppColors.success.withValues(alpha: 0.12),
+                                iconColor: AppColors.success,
+                                title: s.subscriptionTitle,
+                                onTap: () => _showSubscriptionSheet(context),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: AppSpacing.s16),
+
+                    // ── Group: App preferences ────────────────────────
+                    _FadeSlide(
+                      animation: _anims[3],
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _GroupLabel(s.settingsTitle),
+                          const SizedBox(height: AppSpacing.s8),
+                          _MenuSection(
+                            children: [
+                              FtListTile(
+                                icon: Symbols.settings,
+                                iconBg: AppColors.statusOffline.withValues(alpha: 0.12),
+                                iconColor: AppColors.statusOffline,
+                                title: s.settingsTitle,
+                                onTap: () => _showSettingsSheet(context, state),
+                              ),
+                              FtListTile(
+                                icon: Symbols.help,
+                                iconBg: AppColors.statusOffline.withValues(alpha: 0.12),
+                                iconColor: AppColors.statusOffline,
+                                title: s.helpTitle,
+                                onTap: () => _showHelpSheet(context),
+                              ),
+                              FtListTile(
+                                icon: Symbols.backup,
+                                iconBg: AppColors.networkColor.withValues(alpha: 0.12),
+                                iconColor: AppColors.networkColor,
+                                title: s.backupSection,
+                                onTap: () => _showBackupSheet(context, state, s),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: AppSpacing.s24),
+
+                    // ── Version chip ──────────────────────────────────
+                    _FadeSlide(
+                      animation: _anims[4],
+                      child: const Center(child: _VersionChip()),
+                    ),
+
+                    const SizedBox(height: AppSpacing.s8),
                   ],
                 ),
               ),
@@ -125,138 +375,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  void _showUsersSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: context.tCard,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (_) => const _UsersSheet(),
-    );
-  }
-
-  void _showHomeManagementSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: context.tCard,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (_) => const _HomeManagementSheet(),
-    );
-  }
-
-  void _showSubscriptionSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (_) => const _SubscriptionSheet(),
-    );
-  }
-
-  void _showSettingsSheet(BuildContext context, AppState state) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: context.tCard,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (_) => _SettingsSheet(state: state),
-    );
-  }
-
-  void _showAppearanceSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: context.tCard,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (_) => const _AppearanceSheet(),
-    );
-  }
-
-  void _showHelpSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: context.tCard,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (_) => const _HelpSheet(),
-    );
-  }
-
-  void _confirmSignOut(BuildContext context, S s, VoidCallback onSignOut) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: context.tCard,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          'יציאה מהאפליקציה',
-          style: TextStyle(color: context.tText, fontWeight: FontWeight.bold),
-          textAlign: TextAlign.center,
-        ),
-        content: Text(
-          'בחר כיצד ברצונך לצאת',
-          style: TextStyle(color: context.tText2(0.55)),
-          textAlign: TextAlign.center,
-        ),
-        contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
-        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        actions: [
-          // Cancel
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(s.cancel,
-                style: TextStyle(color: context.tText2(0.38), fontSize: 13)),
-          ),
-          const SizedBox(height: 8),
-          // Option 1 — Sign out, return to login screen (app stays open)
-          _ExitOption(
-            icon: Icons.logout,
-            color: AppColors.primary,
-            label: 'התנתק וחזור למסך הכניסה',
-            subtitle: 'מנתק את החשבון — כניסה מחדש תידרש',
-            onTap: () async {
-              Navigator.pop(ctx); // close dialog
-              await UserService.signOut(); // clear session
-              onSignOut();        // → back to login screen (real auth required)
-            },
-          ),
-          const SizedBox(height: 10),
-          // Option 2 — Full exit (sign out + close app)
-          _ExitOption(
-            icon: Icons.power_settings_new,
-            color: AppColors.unsecured,
-            label: 'יציאה מלאה',
-            subtitle: 'מנתק וסוגר את האפליקציה',
-            onTap: () async {
-              Navigator.pop(ctx); // close dialog
-              await UserService.signOut();
-              onSignOut();        // → back to login screen
-              SystemNavigator.pop(); // close app
-            },
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────
-// Avatar section
-// ─────────────────────────────────────────────────────────────
-class _AvatarSection extends StatelessWidget {
-  void _showEditProfile(BuildContext context, AppState state) {
+  void _showEditProfileSheet(BuildContext context, AppState state) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -268,9 +387,8 @@ class _AvatarSection extends StatelessWidget {
     );
   }
 
-  Future<void> _pickImage(BuildContext context, AppState state) async {
+  Future<void> _pickAvatarImage(BuildContext context, AppState state) async {
     final picker = ImagePicker();
-    // Show source chooser
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
       backgroundColor: context.tCard,
@@ -283,34 +401,39 @@ class _AvatarSection extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(width: 36, height: 4,
+              Container(
+                  width: 36, height: 4,
                   decoration: BoxDecoration(
                       color: context.tText2(0.24),
                       borderRadius: BorderRadius.circular(2))),
               const SizedBox(height: 20),
               Text(s.editProfile,
-                  style: TextStyle(
-                      color: context.tText,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold)),
+                  style: TextStyle(color: context.tText,
+                      fontSize: 16, fontWeight: FontWeight.bold)),
               const SizedBox(height: 20),
-              _SourceTile(
-                icon: Icons.photo_library_outlined,
-                label: s.fromGallery,
+              FtListTile(
+                icon: Symbols.photo_library,
+                iconBg: AppColors.primary.withValues(alpha: 0.12),
+                iconColor: AppColors.primary,
+                title: s.fromGallery,
                 onTap: () => Navigator.pop(ctx, ImageSource.gallery),
               ),
               const SizedBox(height: 10),
-              _SourceTile(
-                icon: Icons.camera_alt_outlined,
-                label: s.fromCamera,
+              FtListTile(
+                icon: Symbols.camera_alt,
+                iconBg: AppColors.primary.withValues(alpha: 0.12),
+                iconColor: AppColors.primary,
+                title: s.fromCamera,
                 onTap: () => Navigator.pop(ctx, ImageSource.camera),
               ),
               if (state.userImagePath != null) ...[
                 const SizedBox(height: 10),
-                _SourceTile(
-                  icon: Icons.delete_outline,
-                  label: s.removePhoto,
-                  color: AppColors.unsecured,
+                FtListTile(
+                  icon: Symbols.delete,
+                  iconBg: AppColors.alert.withValues(alpha: 0.12),
+                  iconColor: AppColors.alert,
+                  title: s.removePhoto,
+                  destructive: true,
                   onTap: () {
                     Navigator.pop(ctx);
                     state.setUserImage(null);
@@ -326,171 +449,603 @@ class _AvatarSection extends StatelessWidget {
     final picked = await picker.pickImage(
         source: source, maxWidth: 512, maxHeight: 512, imageQuality: 85);
     if (picked != null) {
-      state.setUserImage(picked.path);
+      await state.setUserImage(picked.path);
     }
   }
 
+  void _showUsersSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: context.tCard,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => const _UsersSheet(),
+    );
+  }
+
+  void _showHomeManagementSheet(BuildContext context) =>
+      showHomeManagementSheet(context);
+
+  void _showSubscriptionSheet(BuildContext context) =>
+      _openSubscriptionSheet(context);
+
+  void _showSettingsSheet(BuildContext context, AppState state) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: context.tCard,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => _SettingsSheet(state: state),
+    );
+  }
+
+  void _showHelpSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: context.tCard,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => const _HelpSheet(),
+    );
+  }
+
+  void _showBackupSheet(BuildContext context, AppState state, S s) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: context.tCard,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => _BackupSheet(state: state, s: s),
+    );
+  }
+
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Profile Hero — premium header card with avatar, name, email, plan badge
+// ─────────────────────────────────────────────────────────────────────────────
+class _ProfileHero extends StatelessWidget {
+  final AppState state;
+  final VoidCallback onEditProfile;
+  final VoidCallback onPickImage;
+
+  const _ProfileHero({
+    required this.state,
+    required this.onEditProfile,
+    required this.onPickImage,
+  });
+
   @override
   Widget build(BuildContext context) {
-    final state = context.watch<AppState>();
-    final hasImage = state.userImagePath != null;
+    final hasImage   = state.userImagePath != null;
+    final planColor  = _planAccent(state.userPlan);
+    final planName   = _planLabel(state.userPlan, state.strings);
+    final planIcon   = _planIconData(state.userPlan);
+    final isPremium  = state.userPlan != UserPlan.free;
 
-    return Column(
-      children: [
-        // Avatar with gradient ring — tap to change photo
-        GestureDetector(
-          onTap: () => _pickImage(context, state),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              // Gradient ring
-              Container(
-                width: 96,
-                height: 96,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    colors: [AppColors.primary, Color(0xFF7B6FCD)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: context.isLight
+              ? [const Color(0xFF1A1F3A), const Color(0xFF0D1226)]
+              : [const Color(0xFF111827), const Color(0xFF0A0F1E)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: AppBorderRadius.cardLg,
+        boxShadow: AppShadows.glow(AppColors.primary, intensity: 0.35),
+      ),
+      child: Stack(
+        children: [
+          // Decorative orange glow orb top-right
+          Positioned(
+            top: -30, right: -20,
+            child: Container(
+              width: 130, height: 130,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.primary.withValues(alpha: 0.08),
               ),
-              // Avatar background / photo
-              if (hasImage)
-                ClipOval(
-                  child: Image.file(
-                    File(state.userImagePath!),
-                    width: 90,
-                    height: 90,
-                    fit: BoxFit.cover,
-                  ),
-                )
-              else ...[
-                Container(
-                  width: 88,
-                  height: 88,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: context.tBg,
+            ),
+          ),
+          // Decorative purple orb bottom-left
+          Positioned(
+            bottom: -20, left: 10,
+            child: Container(
+              width: 80, height: 80,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFF7B6FCD).withValues(alpha: 0.10),
+              ),
+            ),
+          ),
+
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+                AppSpacing.s24, AppSpacing.s32, AppSpacing.s24, AppSpacing.s24),
+            child: Column(
+              children: [
+                // ── Avatar ──────────────────────────────────────
+                GestureDetector(
+                  onTap: onPickImage,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      // Animated gradient ring
+                      Container(
+                        width: 108,
+                        height: 108,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: const LinearGradient(
+                            colors: [AppColors.primary, Color(0xFF7B6FCD)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primary.withValues(alpha: 0.35),
+                              blurRadius: 20,
+                              spreadRadius: 2,
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Avatar content
+                      if (hasImage)
+                        ClipOval(
+                          child: Image.file(
+                            File(state.userImagePath!),
+                            width: 100,
+                            height: 100,
+                            fit: BoxFit.cover,
+                          ),
+                        )
+                      else ...[
+                        Container(
+                          width: 100, height: 100,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Color(0xFF1A2640),
+                          ),
+                        ),
+                        SizedBox(
+                          width: 96, height: 96,
+                          child: ClipOval(
+                            child: CustomPaint(painter: _AvatarPainter()),
+                          ),
+                        ),
+                      ],
+                      // Camera badge — bottom right
+                      Positioned(
+                        bottom: 2, right: 2,
+                        child: Container(
+                          width: 32, height: 32,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                                color: const Color(0xFF0D1226), width: 2.5),
+                          ),
+                          child: const Icon(Symbols.camera_alt,
+                              color: Colors.white, size: 15),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                Container(
-                  width: 84,
-                  height: 84,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: const [Color(0xFF2A3A5C), Color(0xFF1A2640)],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                    ),
+
+                const SizedBox(height: AppSpacing.s16),
+
+                // ── Name ─────────────────────────────────────────
+                GestureDetector(
+                  onTap: onEditProfile,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        state.userName.isEmpty ? 'FantaTech User' : state.userName,
+                        style: AppTypography.headlineMd.copyWith(
+                          color: Colors.white,
+                          letterSpacing: -0.3,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.s8),
+                      Icon(Symbols.edit,
+                          color: Colors.white.withValues(alpha: 0.35),
+                          size: 15),
+                    ],
                   ),
-                  child: CustomPaint(painter: _AvatarPainter()),
+                ),
+
+                const SizedBox(height: AppSpacing.s4),
+
+                // ── Email ─────────────────────────────────────────
+                Text(
+                  state.userEmail.isEmpty ? '—' : state.userEmail,
+                  style: AppTypography.bodyMd.copyWith(
+                    color: Colors.white.withValues(alpha: 0.50),
+                  ),
+                ),
+
+                const SizedBox(height: AppSpacing.s16),
+
+                // ── Plan badge + Installer badge ─────────────────
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    GestureDetector(
+                      onTap: () => _openSubscriptionSheet(context),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.s16, vertical: AppSpacing.s8),
+                        decoration: BoxDecoration(
+                          color: planColor.withValues(alpha: isPremium ? 0.18 : 0.10),
+                          borderRadius: AppBorderRadius.chip,
+                          border: Border.all(
+                              color: planColor.withValues(alpha: 0.40)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(planIcon, color: planColor, size: 14),
+                            const SizedBox(width: AppSpacing.s8),
+                            Text(
+                              planName,
+                              style: AppTypography.labelMd.copyWith(color: planColor),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    if (state.hasHomeManager) ...[
+                      const SizedBox(width: AppSpacing.s8),
+                      GestureDetector(
+                        onTap: () => _handleInstallerBadgeTap(context, state),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.s12, vertical: AppSpacing.s8),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: state.installerMode
+                                  ? const [Color(0xFF2ECC71), Color(0xFF1E8E4E)]
+                                  : const [Color(0xFFFF6B35), Color(0xFFE8920A)],
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                            ),
+                            borderRadius: AppBorderRadius.chip,
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.primary.withValues(alpha: 0.35),
+                                blurRadius: 8,
+                                spreadRadius: 0,
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                  state.installerMode
+                                      ? Symbols.lock_open
+                                      : Symbols.verified,
+                                  color: Colors.white, size: 13),
+                              const SizedBox(width: 5),
+                              Text(
+                                state.strings.installerBadge,
+                                style: AppTypography.labelSm.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.8,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ],
-              // Camera icon overlay (bottom-left)
-              Positioned(
-                bottom: 0,
-                left: 0,
-                child: Container(
-                  width: 28,
-                  height: 28,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: context.tBg, width: 2),
-                  ),
-                  child: Icon(Icons.camera_alt, color: context.tText, size: 14),
-                ),
-              ),
-              // Edit pencil (bottom-right)
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: GestureDetector(
-                  onTap: () => _showEditProfile(context, state),
-                  child: Container(
-                    width: 28,
-                    height: 28,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF7B6FCD),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: context.tBg, width: 2),
-                    ),
-                    child: Icon(Icons.edit, color: context.tText, size: 14),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Statistics grid — Homes · Devices · Automations · Cameras
+// ─────────────────────────────────────────────────────────────────────────────
+class _StatsGrid extends StatelessWidget {
+  final AppState state;
+  const _StatsGrid({required this.state});
+
+  @override
+  Widget build(BuildContext context) {
+    final s = state.strings;
+    final rooms = state.rooms.length;
+    final devices = state.devices.length;
+    final automations = state.automations.length;
+    final cameras = state.cameras.length;
+
+    return GridView.count(
+      crossAxisCount: 2,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisSpacing: AppSpacing.s12,
+      mainAxisSpacing: AppSpacing.s12,
+      childAspectRatio: 1.55,
+      children: [
+        _StatCard(
+          icon: Symbols.home,
+          color: AppColors.primary,
+          value: '$rooms',
+          label: s.statHomesLabel,
         ),
-
-        const SizedBox(height: 14),
-
-        // Name — tappable
-        GestureDetector(
-          onTap: () => _showEditProfile(context, state),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                state.userName,
-                style: TextStyle(
-                  color: context.tText,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(width: 6),
-              Icon(
-                Icons.edit_outlined,
-                color: context.tText2(0.3),
-                size: 15,
-              ),
-            ],
-          ),
+        _StatCard(
+          icon: Symbols.devices,
+          color: const Color(0xFF06B6D4),
+          value: '$devices',
+          label: s.navDevices,
         ),
-
-        const SizedBox(height: 4),
-
-        Text(
-          state.userEmail,
-          style: TextStyle(
-            color: context.tText2(0.4),
-            fontSize: 13,
-          ),
+        _StatCard(
+          icon: Symbols.bolt,
+          color: const Color(0xFF9C7AFF),
+          value: '$automations',
+          label: s.navAutomations,
+        ),
+        _StatCard(
+          icon: Symbols.videocam,
+          color: const Color(0xFF16A34A),
+          value: '$cameras',
+          label: s.navCameras,
         ),
       ],
     );
   }
 }
 
-class _SourceTile extends StatelessWidget {
+class _StatCard extends StatelessWidget {
   final IconData icon;
-  final String label;
-  final VoidCallback onTap;
   final Color color;
-  const _SourceTile({required this.icon, required this.label,
-      required this.onTap, this.color = Colors.white});
+  final String value;
+  final String label;
+
+  const _StatCard({
+    required this.icon,
+    required this.color,
+    required this.value,
+    required this.label,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.06),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: color.withValues(alpha: 0.12)),
+    return Container(
+      padding: AppSpacing.card,
+      decoration: BoxDecoration(
+        color: context.tCard,
+        borderRadius: AppBorderRadius.card,
+        boxShadow: context.isLight ? AppShadows.md : AppShadows.dark,
+        border: Border.all(
+          color: context.isLight
+              ? AppColors.lightBorder
+              : AppColors.darkBorder.withValues(alpha: 0.6),
         ),
-        child: Row(children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(width: 14),
-          Text(label, style: TextStyle(color: color, fontSize: 15,
-              fontWeight: FontWeight.w500)),
-        ]),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44, height: 44,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: context.isLight ? 0.10 : 0.15),
+              borderRadius: AppBorderRadius.icon,
+            ),
+            child: Icon(icon, color: color, size: 22),
+          ),
+          const SizedBox(width: AppSpacing.s12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  value,
+                  style: AppTypography.displaySm.copyWith(
+                    color: context.tText,
+                    fontSize: 24,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  label,
+                  style: AppTypography.caption.copyWith(
+                    color: context.tTextSecondary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Menu section — grouped card containing FtListTile items
+// ─────────────────────────────────────────────────────────────────────────────
+class _MenuSection extends StatelessWidget {
+  final List<Widget> children;
+  const _MenuSection({required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: context.tCard,
+        borderRadius: AppBorderRadius.card,
+        boxShadow: context.isLight ? AppShadows.md : AppShadows.dark,
+        border: Border.all(
+          color: context.isLight
+              ? AppColors.lightBorder
+              : AppColors.darkBorder.withValues(alpha: 0.6),
+        ),
+      ),
+      child: Column(
+        children: [
+          for (int i = 0; i < children.length; i++) ...[
+            children[i],
+            if (i < children.length - 1)
+              Divider(
+                height: 1,
+                thickness: 1,
+                indent: 56,
+                endIndent: 16,
+                color: context.isLight
+                    ? AppColors.lightBorder
+                    : AppColors.darkBorder.withValues(alpha: 0.4),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Animation helper — fade + slide-up entry
+// ─────────────────────────────────────────────────────────────────────────────
+class _FadeSlide extends StatelessWidget {
+  final Animation<double> animation;
+  final Widget child;
+  const _FadeSlide({required this.animation, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: animation,
+      child: AnimatedBuilder(
+        animation: animation,
+        builder: (_, child) => Transform.translate(
+          offset: Offset(0, 18 * (1 - animation.value)),
+          child: child,
+        ),
+        child: child,
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Group label — uppercase section header above a _MenuSection
+// ─────────────────────────────────────────────────────────────────────────────
+class _GroupLabel extends StatelessWidget {
+  final String label;
+  const _GroupLabel(this.label);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4),
+      child: Text(
+        label.toUpperCase(),
+        style: TextStyle(
+          color: context.tText2(0.35),
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.9,
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Count badge — small colored pill used as trailing on list tiles
+// ─────────────────────────────────────────────────────────────────────────────
+class _CountBadge extends StatelessWidget {
+  final int count;
+  final Color color;
+  const _CountBadge({required this.count, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.28)),
+      ),
+      child: Text(
+        '$count',
+        style: TextStyle(
+          color: color,
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Version chip — branded footer pill with app name + version number
+// ─────────────────────────────────────────────────────────────────────────────
+class _VersionChip extends StatelessWidget {
+  const _VersionChip();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+      decoration: BoxDecoration(
+        color: context.tText2(0.04),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: context.tText2(0.08)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Symbols.bolt, color: AppColors.primary, size: 14),
+          const SizedBox(width: 5),
+          Flexible(
+            child: Text(
+              'FantaTech Smart Home & Security Solution',
+              style: AppTypography.caption.copyWith(
+                color: context.tText2(0.55),
+                fontWeight: FontWeight.w700,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          Container(
+            width: 1,
+            height: 11,
+            margin: const EdgeInsets.symmetric(horizontal: 8),
+            color: context.tText2(0.15),
+          ),
+          Text(
+            'v$kAppVersion',
+            style: AppTypography.caption.copyWith(
+              color: context.tText2(0.35),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -653,7 +1208,7 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                   controller: _nameCtrl,
                   style: TextStyle(color: context.tText),
                   textDirection: textDir,
-                  decoration: _inputDeco(s.fullName, Icons.person_outline),
+                  decoration: _inputDeco(s.fullName, Symbols.person),
                 ),
 
                 const SizedBox(height: 12),
@@ -662,49 +1217,33 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                   controller: _emailCtrl,
                   style: TextStyle(color: context.tText),
                   keyboardType: TextInputType.emailAddress,
-                  decoration: _inputDeco(s.emailLabel, Icons.email_outlined),
+                  decoration: _inputDeco(s.emailLabel, Symbols.email),
                 ),
 
                 const SizedBox(height: 24),
 
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      widget.state.setUserName(_nameCtrl.text);
-                      widget.state.setUserEmail(_emailCtrl.text);
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            s.profileUpdated,
-                            textDirection: textDir,
-                          ),
-                          backgroundColor: AppColors.secured,
-                          behavior: SnackBarBehavior.floating,
-                          duration: const Duration(seconds: 2),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
+                FtButton(
+                  label: s.saveChanges,
+                  expand: true,
+                  onTap: () {
+                    widget.state.setUserName(_nameCtrl.text);
+                    widget.state.setUserEmail(_emailCtrl.text);
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          s.profileUpdated,
+                          textDirection: textDir,
                         ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                        backgroundColor: AppColors.secured,
+                        behavior: SnackBarBehavior.floating,
+                        duration: const Duration(seconds: 2),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
-                    ),
-                    child: Text(
-                      s.saveChanges,
-                      style: TextStyle(
-                        color: context.tText,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
+                    );
+                  },
                 ),
               ],
             );
@@ -717,82 +1256,6 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────
-// Menu item
-// ─────────────────────────────────────────────────────────────
-class _MenuItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-  final bool isDestructive;
-
-  const _MenuItem({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.onTap,
-    this.isDestructive = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
-        decoration: BoxDecoration(
-          color: context.tCard,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isDestructive
-                ? AppColors.unsecured.withValues(alpha: 0.15)
-                : context.tText2(0.07),
-          ),
-        ),
-        child: Row(
-          children: [
-            // Icon container
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(11),
-              ),
-              child: Icon(icon, color: color, size: 19),
-            ),
-
-            const SizedBox(width: 14),
-
-            // Label
-            Expanded(
-              child: Text(
-                label,
-                style: TextStyle(
-                  color: isDestructive
-                      ? AppColors.unsecured
-                      : context.tText,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-
-            // Chevron
-            Icon(
-              Icons.chevron_left,
-              color: isDestructive
-                  ? AppColors.unsecured.withValues(alpha: 0.6)
-                  : context.tText2(0.25),
-              size: 20,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 // ─────────────────────────────────────────────────────────────
 // Users sheet — shows real registered home users
@@ -859,7 +1322,7 @@ class _UsersSheet extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.manage_accounts_outlined,
+                          Icon(Symbols.manage_accounts,
                               color: AppColors.primary, size: 15),
                           const SizedBox(width: 4),
                           Text(s.edit,
@@ -886,7 +1349,7 @@ class _UsersSheet extends StatelessWidget {
                               color: context.tText2(0.05),
                               shape: BoxShape.circle,
                             ),
-                            child: Icon(Icons.people_outline,
+                            child: Icon(Symbols.people,
                                 color: context.tText2(0.24), size: 30),
                           ),
                           const SizedBox(height: 12),
@@ -944,15 +1407,121 @@ class _UsersSheet extends StatelessWidget {
   }
 }
 
-class _HomeMemberTile extends StatelessWidget {
+class _HomeMemberTile extends StatefulWidget {
   final HomeUser user;
   final S s;
   const _HomeMemberTile({required this.user, required this.s});
 
   @override
+  State<_HomeMemberTile> createState() => _HomeMemberTileState();
+}
+
+class _HomeMemberTileState extends State<_HomeMemberTile> {
+  final _picker = ImagePicker();
+
+  Future<void> _editName(AppState state) async {
+    final ctrl = TextEditingController(text: widget.user.name);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: context.tCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(widget.s.editUserName,
+            style: TextStyle(color: context.tText, fontSize: 16)),
+        content: TextField(
+          controller: ctrl,
+          autofocus: true,
+          style: TextStyle(color: context.tText),
+          decoration: InputDecoration(
+            hintText: widget.user.name,
+            hintStyle: TextStyle(color: context.tText2(0.35)),
+            filled: true,
+            fillColor: context.tText2(0.07),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide.none,
+            ),
+          ),
+        ),
+        actions: [
+          FtButton(
+            label: widget.s.cancel,
+            variant: FtButtonVariant.ghost,
+            onTap: () => Navigator.pop(ctx, false),
+          ),
+          FtButton(
+            label: widget.s.save,
+            onTap: () => Navigator.pop(ctx, true),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && ctrl.text.trim().isNotEmpty) {
+      await state.renameHomeUser(widget.user.id, ctrl.text.trim());
+    }
+    ctrl.dispose();
+  }
+
+  Future<void> _pickPhoto(AppState state) async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: context.tCard,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              FtListTile(
+                icon: Symbols.photo_library,
+                iconBg: AppColors.primary.withValues(alpha: 0.12),
+                iconColor: AppColors.primary,
+                title: widget.s.fromGallery,
+                onTap: () => Navigator.pop(context, ImageSource.gallery),
+              ),
+              const SizedBox(height: 10),
+              FtListTile(
+                icon: Symbols.camera_alt,
+                iconBg: AppColors.primary.withValues(alpha: 0.12),
+                iconColor: AppColors.primary,
+                title: widget.s.fromCamera,
+                onTap: () => Navigator.pop(context, ImageSource.camera),
+              ),
+              if (widget.user.imagePath != null) ...[
+                const SizedBox(height: 10),
+                FtListTile(
+                  icon: Symbols.delete,
+                  iconBg: AppColors.alert.withValues(alpha: 0.12),
+                  iconColor: AppColors.alert,
+                  title: widget.s.removePhoto,
+                  destructive: true,
+                  onTap: () => Navigator.pop(context, null),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+    if (!mounted) return;
+    if (source == null && widget.user.imagePath != null) {
+      await state.setHomeUserImage(widget.user.id, null);
+      return;
+    }
+    if (source == null) return;
+    final picked = await _picker.pickImage(source: source, imageQuality: 80);
+    if (!mounted || picked == null) return;
+    await state.setHomeUserImage(widget.user.id, picked.path);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final color = user.isManager ? AppColors.primary : const Color(0xFF7B6FCD);
-    final roleLabel = user.isManager ? s.homeManagerLabel : s.memberLabel;
+    final state     = context.read<AppState>();
+    final color     = widget.user.isManager ? AppColors.primary : const Color(0xFF7B6FCD);
+    final roleLabel = widget.user.isManager ? widget.s.homeManagerLabel : widget.s.memberLabel;
+    final imgPath   = widget.user.imagePath;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -961,19 +1530,42 @@ class _HomeMemberTile extends StatelessWidget {
         color: context.tText2(0.05),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: user.isManager
+          color: widget.user.isManager
               ? AppColors.primary.withValues(alpha: 0.2)
               : context.tText2(0.08),
         ),
       ),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 20,
-            backgroundColor: color.withValues(alpha: 0.15),
-            child: Text(
-              user.name.isNotEmpty ? user.name[0] : '?',
-              style: TextStyle(color: color, fontWeight: FontWeight.bold),
+          GestureDetector(
+            onTap: () => _pickPhoto(state),
+            child: Stack(
+              children: [
+                CircleAvatar(
+                  radius: 22,
+                  backgroundColor: color.withValues(alpha: 0.15),
+                  backgroundImage: imgPath != null ? FileImage(File(imgPath)) : null,
+                  child: imgPath == null
+                      ? Text(
+                          widget.user.name.isNotEmpty ? widget.user.name[0] : '?',
+                          style: TextStyle(color: color, fontWeight: FontWeight.bold),
+                        )
+                      : null,
+                ),
+                Positioned(
+                  bottom: 0, right: 0,
+                  child: Container(
+                    width: 16, height: 16,
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 1.5),
+                    ),
+                    child: const Icon(Symbols.camera_alt,
+                        color: Colors.white, size: 9),
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(width: 12),
@@ -981,7 +1573,7 @@ class _HomeMemberTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(user.name,
+                Text(widget.user.name,
                     style: TextStyle(
                         color: context.tText, fontWeight: FontWeight.w600)),
                 Text(roleLabel,
@@ -991,17 +1583,35 @@ class _HomeMemberTile extends StatelessWidget {
               ],
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              roleLabel,
-              style: TextStyle(
-                  color: color, fontSize: 11, fontWeight: FontWeight.bold),
-            ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              GestureDetector(
+                onTap: () => _editName(context.read<AppState>()),
+                child: Container(
+                  width: 32, height: 32,
+                  margin: const EdgeInsetsDirectional.only(end: 6),
+                  decoration: BoxDecoration(
+                    color: context.tText2(0.06),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(Symbols.edit,
+                      color: context.tText2(0.45), size: 16),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  roleLabel,
+                  style: TextStyle(
+                      color: color, fontSize: 11, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -1020,19 +1630,196 @@ class _HomeManagementSheet extends StatefulWidget {
 }
 
 class _HomeManagementSheetState extends State<_HomeManagementSheet> {
-  final _memberCtrl = TextEditingController();
-  final _pinCtrl    = TextEditingController();
-  bool _pinVisible  = false;
+  final _memberCtrl      = TextEditingController();
+  final _pinCtrl         = TextEditingController();
+  final _inviteEmailCtrl = TextEditingController();
+  bool _pinVisible       = false;
+  bool _showInviteField  = false;
 
   @override
   void dispose() {
     _memberCtrl.dispose();
     _pinCtrl.dispose();
+    _inviteEmailCtrl.dispose();
     super.dispose();
+  }
+
+  // ── Pick image for a household member ──────────────────────────
+  Future<void> _pickMemberImage(AppState state, HomeUser user) async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: context.tCard,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(width: 36, height: 4,
+                decoration: BoxDecoration(
+                    color: context.tText2(0.24),
+                    borderRadius: BorderRadius.circular(2))),
+            const SizedBox(height: 20),
+            Text(state.strings.profilePhotoFmt.replaceAll('{name}', user.name),
+                style: TextStyle(color: context.tText, fontSize: 15,
+                    fontWeight: FontWeight.bold)),
+            const SizedBox(height: 20),
+            FtListTile(
+              icon: Symbols.photo_library,
+              iconBg: AppColors.primary.withValues(alpha: 0.12),
+              iconColor: AppColors.primary,
+              title: state.strings.fromGallery,
+              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+            ),
+            const SizedBox(height: 10),
+            FtListTile(
+              icon: Symbols.camera_alt,
+              iconBg: AppColors.primary.withValues(alpha: 0.12),
+              iconColor: AppColors.primary,
+              title: state.strings.fromCamera,
+              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+            ),
+            if (user.imagePath != null) ...[
+              const SizedBox(height: 10),
+              FtListTile(
+                icon: Symbols.delete,
+                iconBg: AppColors.alert.withValues(alpha: 0.12),
+                iconColor: AppColors.alert,
+                title: state.strings.removePhoto,
+                destructive: true,
+                onTap: () => Navigator.pop(ctx, null),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+    // null from sheet = remove; ImageSource = pick
+    if (source == null && user.imagePath != null) {
+      await state.setHomeUserImage(user.id, null);
+    } else if (source != null) {
+      final picked = await ImagePicker().pickImage(
+          source: source, maxWidth: 512, maxHeight: 512, imageQuality: 85);
+      if (picked != null && mounted) {
+        await state.setHomeUserImage(user.id, picked.path);
+      }
+    }
+  }
+
+  // ── Send household invite via email ────────────────────────────
+  Future<void> _sendInviteEmail(String email, String code) async {
+    final s = context.read<AppState>().strings;
+    final subject = Uri.encodeComponent(s.inviteSubject);
+    final body    = Uri.encodeComponent(
+      s.inviteBodyFmt.replaceAll('{code}', code),
+    );
+    final uri = Uri.parse('mailto:$email?subject=$subject&body=$body');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(s.noEmailApp),
+        backgroundColor: AppColors.statusAlarm,
+      ));
+    }
   }
 
   void _registerManager(AppState state) {
     state.registerAsHomeManager();
+    // Show confirmation with the household code
+    if (!mounted) return;
+    final code = state.householdCode ?? '------';
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: context.tCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        contentPadding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Success icon
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: AppColors.secured.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Symbols.verified,
+                  color: AppColors.secured, size: 32),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              state.strings.regManagerMsg,
+              style: TextStyle(
+                color: context.tText,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              state.strings.nameFieldFmt.replaceAll(
+                  '{name}', state.homeManager?.name ?? state.userName),
+              style: TextStyle(color: context.tText2(0.55), fontSize: 14),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            // Household code card
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 20, vertical: 14),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                    color: AppColors.primary.withValues(alpha: 0.25)),
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    state.strings.homeJoinTitle,
+                    style: TextStyle(
+                        color: context.tText2(0.5),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    code,
+                    style: TextStyle(
+                      color: AppColors.primary,
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 6,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    state.strings.shareCodeHint,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        color: context.tText2(0.4), fontSize: 11),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          FtButton(
+            label: state.strings.gotIt,
+            expand: true,
+            onTap: () => Navigator.pop(ctx),
+          ),
+        ],
+      ),
+    );
   }
 
   void _addMember(AppState state, S s) {
@@ -1113,7 +1900,7 @@ class _HomeManagementSheetState extends State<_HomeManagementSheet> {
                   color: AppColors.primary.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(Icons.home, color: AppColors.primary, size: 18),
+                child: Icon(Symbols.home, color: AppColors.primary, size: 18),
               ),
               const SizedBox(width: 12),
               Text(s.myHome,
@@ -1123,7 +1910,7 @@ class _HomeManagementSheetState extends State<_HomeManagementSheet> {
             const SizedBox(height: 24),
 
             // ── Section 0: Home style (icon + color) ─────────
-            _SectionLabel('סגנון הבית'),
+            _SectionLabel(state.strings.homeStyleTitle),
             const SizedBox(height: 12),
             _HomeStylePicker(state: state),
             const SizedBox(height: 24),
@@ -1150,7 +1937,7 @@ class _HomeManagementSheetState extends State<_HomeManagementSheet> {
                         color: AppColors.primary.withValues(alpha: 0.15),
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(Icons.person_add_outlined,
+                      child: Icon(Symbols.person_add,
                           color: AppColors.primary, size: 22),
                     ),
                     const SizedBox(width: 14),
@@ -1163,14 +1950,16 @@ class _HomeManagementSheetState extends State<_HomeManagementSheet> {
                                   color: context.tText,
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600)),
-                          Text(state.userName,
-                              style: TextStyle(
-                                  color: context.tText2(0.4),
-                                  fontSize: 12)),
+                          Text(
+                            state.strings.registerAsFmt.replaceAll('{name}', state.userName),
+                            style: TextStyle(
+                                color: context.tText2(0.4),
+                                fontSize: 12),
+                          ),
                         ],
                       ),
                     ),
-                    Icon(Icons.chevron_left,
+                    Icon(Symbols.chevron_left,
                         color: AppColors.primary, size: 20),
                   ]),
                 ),
@@ -1189,14 +1978,20 @@ class _HomeManagementSheetState extends State<_HomeManagementSheet> {
                   CircleAvatar(
                     radius: 22,
                     backgroundColor: AppColors.primary.withValues(alpha: 0.2),
-                    child: Text(
-                      state.homeManager!.name.isNotEmpty
-                          ? state.homeManager!.name[0]
-                          : '?',
-                      style: TextStyle(
-                          color: AppColors.primary, fontWeight: FontWeight.bold,
-                          fontSize: 16),
-                    ),
+                    backgroundImage: state.homeManager!.imagePath != null
+                        ? FileImage(File(state.homeManager!.imagePath!))
+                        : null,
+                    child: state.homeManager!.imagePath == null
+                        ? Text(
+                            state.homeManager!.name.isNotEmpty
+                                ? state.homeManager!.name[0]
+                                : '?',
+                            style: TextStyle(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16),
+                          )
+                        : null,
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -1220,11 +2015,59 @@ class _HomeManagementSheetState extends State<_HomeManagementSheet> {
                       color: AppColors.primary.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Icon(Icons.verified_outlined,
+                    child: Icon(Symbols.verified,
                         color: AppColors.primary, size: 16),
                   ),
                 ]),
               ),
+              if (state.householdCode != null && state.canManageHousehold) ...[
+                const SizedBox(height: 10),
+                GestureDetector(
+                  onTap: () {
+                    final newCode = state.regenerateHouseholdCode();
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text(state.strings.newCodeFmt.replaceAll('{code}', newCode)),
+                      backgroundColor: AppColors.primary,
+                      behavior: SnackBarBehavior.floating,
+                      duration: const Duration(seconds: 3),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                    ));
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                          color: AppColors.primary.withValues(alpha: 0.15)),
+                    ),
+                    child: Row(children: [
+                      Icon(Symbols.key,
+                          color: AppColors.primary, size: 16),
+                      const SizedBox(width: 8),
+                      Text(
+                        state.strings.joinCodeInline,
+                        style: TextStyle(
+                            color: context.tText2(0.5), fontSize: 12),
+                      ),
+                      Text(
+                        state.householdCode!,
+                        style: TextStyle(
+                          color: AppColors.primary,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 3,
+                        ),
+                      ),
+                      const Spacer(),
+                      Icon(Symbols.refresh,
+                          color: context.tText2(0.3), size: 15),
+                    ]),
+                  ),
+                ),
+              ],
             ],
             const SizedBox(height: 24),
 
@@ -1242,19 +2085,45 @@ class _HomeManagementSheetState extends State<_HomeManagementSheet> {
                   decoration: BoxDecoration(
                     color: context.tText2(0.04),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                        color: context.tText2(0.08)),
+                    border: Border.all(color: context.tText2(0.08)),
                   ),
                   child: Row(children: [
-                    CircleAvatar(
-                      radius: 18,
-                      backgroundColor:
-                          const Color(0xFF7B6FCD).withValues(alpha: 0.15),
-                      child: Text(
-                        u.name.isNotEmpty ? u.name[0] : '?',
-                        style: TextStyle(
-                            color: Color(0xFF7B6FCD),
-                            fontWeight: FontWeight.bold),
+                    // Avatar — tap to change photo
+                    GestureDetector(
+                      onTap: () => _pickMemberImage(state, u),
+                      child: Stack(
+                        children: [
+                          CircleAvatar(
+                            radius: 20,
+                            backgroundColor:
+                                const Color(0xFF7B6FCD).withValues(alpha: 0.15),
+                            backgroundImage: u.imagePath != null
+                                ? FileImage(File(u.imagePath!))
+                                : null,
+                            child: u.imagePath == null
+                                ? Text(
+                                    u.name.isNotEmpty ? u.name[0] : '?',
+                                    style: const TextStyle(
+                                        color: Color(0xFF7B6FCD),
+                                        fontWeight: FontWeight.bold),
+                                  )
+                                : null,
+                          ),
+                          Positioned(
+                            bottom: 0, right: 0,
+                            child: Container(
+                              width: 14, height: 14,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF7B6FCD),
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                    color: context.tBg, width: 1.5),
+                              ),
+                              child: const Icon(Symbols.camera_alt,
+                                  color: Colors.white, size: 8),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -1273,23 +2142,24 @@ class _HomeManagementSheetState extends State<_HomeManagementSheet> {
                         ],
                       ),
                     ),
-                    GestureDetector(
-                      onTap: () => state.removeHomeUser(u.id),
-                      child: Container(
-                        width: 30, height: 30,
-                        decoration: BoxDecoration(
-                          color: AppColors.unsecured.withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(8),
+                    if (state.canManageHousehold)
+                      GestureDetector(
+                        onTap: () => state.removeHomeUser(u.id),
+                        child: Container(
+                          width: 30, height: 30,
+                          decoration: BoxDecoration(
+                            color: AppColors.unsecured.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(Symbols.close,
+                              color: AppColors.unsecured, size: 14),
                         ),
-                        child: Icon(Icons.close,
-                            color: AppColors.unsecured, size: 14),
                       ),
-                    ),
                   ]),
                 )),
 
-            // Add member input
-            if (state.hasHomeManager) ...[
+            // Add member input — manager-only (Permission.manageUsers)
+            if (state.hasHomeManager && state.canManageHousehold) ...[
               const SizedBox(height: 8),
               Row(children: [
                 Expanded(
@@ -1302,7 +2172,7 @@ class _HomeManagementSheetState extends State<_HomeManagementSheet> {
                       hintText: s.memberName,
                       hintStyle: TextStyle(
                           color: context.tText2(0.3)),
-                      prefixIcon: Icon(Icons.person_add_outlined,
+                      prefixIcon: Icon(Symbols.person_add,
                           color: context.tText2(0.38), size: 18),
                       filled: true,
                       fillColor: context.tText2(0.05),
@@ -1328,22 +2198,121 @@ class _HomeManagementSheetState extends State<_HomeManagementSheet> {
                   ),
                 ),
                 const SizedBox(width: 10),
-                GestureDetector(
+                FtButton.iconOnly(
+                  icon: Symbols.add,
+                  variant: FtButtonVariant.secondary,
                   onTap: () => _addMember(state, s),
-                  child: Container(
-                    width: 44, height: 44,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                          color: AppColors.primary.withValues(alpha: 0.3)),
-                    ),
-                    child: Icon(Icons.add,
-                        color: AppColors.primary, size: 20),
-                  ),
                 ),
               ]),
             ],
+
+            // ── Invite by email ─── manager-only (Permission.manageUsers)
+            if (state.hasHomeManager &&
+                state.householdCode != null &&
+                state.canManageHousehold) ...[
+              const SizedBox(height: 16),
+              GestureDetector(
+                onTap: () => setState(() => _showInviteField = !_showInviteField),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A73E8).withValues(alpha: 0.07),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                        color: const Color(0xFF1A73E8).withValues(alpha: 0.2)),
+                  ),
+                  child: Row(children: [
+                    Container(
+                      width: 34, height: 34,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1A73E8).withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Symbols.email,
+                          color: Color(0xFF1A73E8), size: 18),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(state.strings.inviteByEmail,
+                              style: TextStyle(
+                                color: context.tText,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              )),
+                          Text(state.strings.inviteByEmailSub,
+                              style: TextStyle(
+                                color: context.tText2(0.4),
+                                fontSize: 11,
+                              )),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      _showInviteField
+                          ? Symbols.keyboard_arrow_up
+                          : Symbols.keyboard_arrow_down,
+                      color: const Color(0xFF1A73E8),
+                      size: 20,
+                    ),
+                  ]),
+                ),
+              ),
+              if (_showInviteField) ...[
+                const SizedBox(height: 8),
+                Row(children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _inviteEmailCtrl,
+                      keyboardType: TextInputType.emailAddress,
+                      textDirection: TextDirection.ltr,
+                      style: TextStyle(color: context.tText, fontSize: 14),
+                      decoration: InputDecoration(
+                        hintText: 'example@gmail.com',
+                        hintStyle: TextStyle(color: context.tText2(0.3)),
+                        prefixIcon: Icon(Symbols.alternate_email,
+                            color: context.tText2(0.38), size: 18),
+                        filled: true,
+                        fillColor: context.tText2(0.05),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 12),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: context.tText2(0.10)),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: context.tText2(0.10)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                              color: Color(0xFF1A73E8), width: 1.5),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  FtButton(
+                    label: state.strings.helpSendBtn,
+                    color: const Color(0xFF1A73E8),
+                    onTap: () {
+                      final email = _inviteEmailCtrl.text.trim();
+                      final code  = state.householdCode!;
+                      if (email.contains('@')) {
+                        _sendInviteEmail(email, code);
+                        _inviteEmailCtrl.clear();
+                        setState(() => _showInviteField = false);
+                      }
+                    },
+                  ),
+                ]),
+              ],
+            ],
+
             const SizedBox(height: 24),
 
             // ── Section 3: PIN ────────────────────────────────
@@ -1364,8 +2333,8 @@ class _HomeManagementSheetState extends State<_HomeManagementSheet> {
                   Row(children: [
                     Icon(
                       state.homePin != null
-                          ? Icons.lock_outline
-                          : Icons.lock_open_outlined,
+                          ? Symbols.lock
+                          : Symbols.lock_open,
                       color: state.homePin != null
                           ? AppColors.secured
                           : context.tText2(0.38),
@@ -1422,8 +2391,8 @@ class _HomeManagementSheetState extends State<_HomeManagementSheet> {
                                 setState(() => _pinVisible = !_pinVisible),
                             child: Icon(
                               _pinVisible
-                                  ? Icons.visibility_off_outlined
-                                  : Icons.visibility_outlined,
+                                  ? Symbols.visibility_off
+                                  : Symbols.visibility,
                               color: context.tText2(0.38),
                               size: 18,
                             ),
@@ -1447,26 +2416,10 @@ class _HomeManagementSheetState extends State<_HomeManagementSheet> {
                       ),
                     ),
                     const SizedBox(width: 10),
-                    GestureDetector(
+                    FtButton(
+                      label: s.save,
+                      variant: FtButtonVariant.secondary,
                       onTap: () => _savePin(state, s),
-                      child: Container(
-                        height: 46,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16),
-                        decoration: BoxDecoration(
-                          color: AppColors.secured.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                              color: AppColors.secured.withValues(
-                                  alpha: 0.3)),
-                        ),
-                        child: Center(
-                          child: Text(s.save,
-                              style: TextStyle(
-                                  color: AppColors.secured,
-                                  fontWeight: FontWeight.w600)),
-                        ),
-                      ),
                     ),
                   ]),
                 ],
@@ -1535,11 +2488,11 @@ class _SubscriptionSheetState extends State<_SubscriptionSheet> {
   };
 
   IconData _planIcon(UserPlan p) => switch (p) {
-    UserPlan.free         => Icons.lock_open_outlined,
-    UserPlan.basic        => Icons.star_border,
-    UserPlan.advanced     => Icons.workspace_premium_outlined,
-    UserPlan.advancedPlus => Icons.auto_awesome_outlined,
-    UserPlan.unlimited    => Icons.diamond_outlined,
+    UserPlan.free         => Symbols.lock_open,
+    UserPlan.basic        => Symbols.star_border,
+    UserPlan.advanced     => Symbols.workspace_premium,
+    UserPlan.advancedPlus => Symbols.auto_awesome,
+    UserPlan.unlimited    => Symbols.diamond,
   };
 
   List<_PlanRow> _buildRows(UserPlan p, dynamic s) => switch (p) {
@@ -1617,7 +2570,7 @@ class _SubscriptionSheetState extends State<_SubscriptionSheet> {
               padding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
               child: Row(
                 children: [
-                  Icon(Icons.workspace_premium,
+                  Icon(Symbols.workspace_premium,
                       color: Color(0xFFFFD700), size: 22),
                   const SizedBox(width: 10),
                   Text(
@@ -1681,25 +2634,12 @@ class _SubscriptionSheetState extends State<_SubscriptionSheet> {
                   // Apply button
                   if (_selected != currentPlan) ...[
                     const SizedBox(height: 4),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 52,
-                      child: ElevatedButton.icon(
-                        icon: Icon(_planIcon(_selected), size: 18),
-                        label: Text(
-                          '${s.planUpgradeNow} → ${_planName(_selected, s)}',
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 15),
-                        ),
-                        onPressed: () => _applyPlan(context),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _planColor(_selected),
-                          foregroundColor: context.tText,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14)),
-                          elevation: 0,
-                        ),
-                      ),
+                    FtButton(
+                      label: '${s.planUpgradeNow} → ${_planName(_selected, s)}',
+                      leadingIcon: _planIcon(_selected),
+                      color: _planColor(_selected),
+                      expand: true,
+                      onTap: () => _applyPlan(context),
                     ),
                   ] else ...[
                     const SizedBox(height: 4),
@@ -1719,7 +2659,7 @@ class _SubscriptionSheetState extends State<_SubscriptionSheet> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.check_circle,
+                            Icon(Symbols.check_circle,
                                 color: _planColor(currentPlan), size: 18),
                             const SizedBox(width: 8),
                             Text(
@@ -1873,7 +2813,7 @@ class _PlanCard extends StatelessWidget {
                       color: color,
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(Icons.check,
+                    child: Icon(Symbols.check,
                         color: context.tText, size: 14),
                   )
                 else
@@ -1894,8 +2834,8 @@ class _PlanCard extends StatelessWidget {
               child: Row(children: [
                 Icon(
                   r.included
-                      ? Icons.check_circle_outline
-                      : Icons.remove_circle_outline,
+                      ? Symbols.check_circle
+                      : Symbols.remove_circle,
                   color: r.included
                       ? color.withValues(alpha: 0.8)
                       : context.tText2(0.2),
@@ -1980,6 +2920,136 @@ class _SettingsSheetState extends State<_SettingsSheet> {
     }
   }
 
+  // ── Switch account ─────────────────────────────────────────────────────
+  //
+  // A real sign-out path exists (unlike the removed Profile logout button),
+  // but it's tucked inside Settings and gated behind re-verifying identity —
+  // password re-entry for email accounts, biometric for SSO/guest accounts
+  // when enabled — so it can't be triggered by an accidental tap.
+
+  Future<void> _confirmSwitchAccount(
+      BuildContext context, AppState state, S s) async {
+    final user = UserService.currentUser;
+    if (user == null) return;
+
+    final proceed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: context.tCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(s.switchAccountConfirmTitle,
+            style:
+                TextStyle(color: context.tText, fontWeight: FontWeight.bold)),
+        content: Text(s.switchAccountConfirmBody,
+            style: TextStyle(color: context.tText2(0.6))),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(s.cancel, style: TextStyle(color: context.tText2(0.4))),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(s.switchAccountConfirmBtn,
+                style: const TextStyle(
+                    color: AppColors.alert, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+    if (proceed != true || !context.mounted) return;
+
+    final verified = await _reverifyIdentity(context, user, s);
+    if (!verified || !context.mounted) return;
+
+    await UserService.signOut();
+    if (!context.mounted) return;
+    Navigator.pop(context); // close the settings sheet
+    state.requestSignOut();
+  }
+
+  /// Confirms the user really is who they say before switching accounts:
+  /// password re-entry for email/password accounts, biometric re-auth for
+  /// SSO/guest accounts when the device has it enabled.
+  Future<bool> _reverifyIdentity(
+      BuildContext context, AppUser user, S s) async {
+    if (user.authProvider == AuthProvider.member && user.password.isNotEmpty) {
+      return _confirmWithPassword(context, user, s);
+    }
+    if (_bioEnabled && _bioAvailable) {
+      return BiometricService.authenticate(s.bioReason);
+    }
+    return true; // no stronger local factor available (guest / SSO, bio off)
+  }
+
+  Future<bool> _confirmWithPassword(
+      BuildContext context, AppUser user, S s) async {
+    final ctrl = TextEditingController();
+    bool obscure = true;
+    String? error;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setS) => AlertDialog(
+          backgroundColor: context.tCard,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text(s.switchAccountConfirmTitle,
+              style: TextStyle(
+                  color: context.tText, fontWeight: FontWeight.bold)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(s.switchAccountPasswordPrompt,
+                  style: TextStyle(color: context.tText2(0.6), fontSize: 13)),
+              const SizedBox(height: 12),
+              TextField(
+                controller: ctrl,
+                obscureText: obscure,
+                autofocus: true,
+                style: TextStyle(color: context.tText),
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: context.tText2(0.06),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                        obscure ? Symbols.visibility_off : Symbols.visibility,
+                        color: context.tText2(0.4)),
+                    onPressed: () => setS(() => obscure = !obscure),
+                  ),
+                  errorText: error,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child:
+                  Text(s.cancel, style: TextStyle(color: context.tText2(0.4))),
+            ),
+            TextButton(
+              onPressed: () async {
+                try {
+                  await UserService.signInWithEmail(user.email, ctrl.text);
+                  if (ctx.mounted) Navigator.pop(ctx, true);
+                } catch (_) {
+                  setS(() => error = s.switchAccountWrongPassword);
+                }
+              },
+              child: Text(s.switchAccountConfirmBtn,
+                  style: const TextStyle(
+                      color: AppColors.alert, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      ),
+    );
+    return ok == true;
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
@@ -2014,20 +3084,28 @@ class _SettingsSheetState extends State<_SettingsSheet> {
           _SectionLabel(s.displayLabel),
           const SizedBox(height: 10),
 
-          // Theme
+          // Theme — Light / Dark / Auto
           _SettingsRow(
             label: s.themeLabel,
-            child: SegmentedButton<ThemeMode>(
+            child: SegmentedButton<String>(
               segments: const [
-                ButtonSegment(value: ThemeMode.dark,   icon: Icon(Icons.dark_mode,  size: 15)),
-                ButtonSegment(value: ThemeMode.light,  icon: Icon(Icons.light_mode, size: 15)),
-                ButtonSegment(value: ThemeMode.system, icon: Icon(Icons.auto_mode,  size: 15)),
+                ButtonSegment(value: 'light', icon: Icon(Symbols.light_mode, size: 15)),
+                ButtonSegment(value: 'dark',  icon: Icon(Symbols.dark_mode,  size: 15)),
+                ButtonSegment(value: 'auto',  icon: Icon(Symbols.auto_mode,  size: 15)),
               ],
-              selected: {state.themeMode},
+              selected: {
+                state.autoTheme
+                  ? 'auto'
+                  : (state.themeMode == ThemeMode.light ? 'light' : 'dark')
+              },
               onSelectionChanged: (sel) {
-                // Pop first, then change state — avoids rebuild on a dismissing widget
                 Navigator.pop(context);
-                context.read<AppState>().setTheme(sel.first);
+                final appState = context.read<AppState>();
+                switch (sel.first) {
+                  case 'light': appState.setTheme(ThemeMode.light); break;
+                  case 'dark':  appState.setTheme(ThemeMode.dark);  break;
+                  case 'auto':  appState.setAutoTheme(true);         break;
+                }
               },
               style: const ButtonStyle(visualDensity: VisualDensity.compact),
             ),
@@ -2036,11 +3114,11 @@ class _SettingsSheetState extends State<_SettingsSheet> {
 
           // Home layout — classic list vs clean grid
           _SettingsRow(
-            label: 'פריסת מסך הבית',
+            label: s.homeLayoutLabel,
             child: SegmentedButton<bool>(
               segments: const [
-                ButtonSegment(value: false, icon: Icon(Icons.view_agenda_outlined, size: 15)),
-                ButtonSegment(value: true,  icon: Icon(Icons.grid_view_rounded,    size: 15)),
+                ButtonSegment(value: false, icon: Icon(Symbols.view_agenda, size: 15)),
+                ButtonSegment(value: true,  icon: Icon(Symbols.grid_view,    size: 15)),
               ],
               selected: {state.gridLayout},
               onSelectionChanged: (sel) =>
@@ -2065,14 +3143,37 @@ class _SettingsSheetState extends State<_SettingsSheet> {
                 DropdownMenuItem(value: AppLocale.amharic, child: Text('አማርኛ 🇪🇹')),
                 DropdownMenuItem(value: AppLocale.spanish, child: Text('Español 🇪🇸')),
                 DropdownMenuItem(value: AppLocale.russian, child: Text('Русский 🇷🇺')),
+                DropdownMenuItem(value: AppLocale.french,  child: Text('Français 🇫🇷')),
               ],
               onChanged: (v) {
                 if (v != null) {
-                  // Pop first — sheet is dismissed BEFORE the locale rebuild fires
+                  final appState = context.read<AppState>();
                   Navigator.pop(context);
-                  context.read<AppState>().setLocale(v);
+                  // Wait for the sheet close animation before switching locale
+                  // so the RTL/LTR flip doesn't fight with the dismiss animation.
+                  Future.delayed(const Duration(milliseconds: 280), () {
+                    appState.setLocale(v);
+                  });
                 }
               },
+            ),
+          ),
+
+          const SizedBox(height: 14),
+
+          // ── Shabbat ───────────────────────────────────────────
+          _ToggleRow(
+            icon: Symbols.auto_awesome,
+            color: const Color(0xFFFFD700),
+            label: s.keepShabbatLabel,
+            value: state.keepShabbat,
+            onChanged: (v) => context.read<AppState>().setKeepShabbat(v),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 6, 14, 0),
+            child: Text(
+              s.shabbatCandlesDesc,
+              style: TextStyle(color: context.tText2(0.38), fontSize: 11.5, height: 1.45),
             ),
           ),
 
@@ -2083,7 +3184,7 @@ class _SettingsSheetState extends State<_SettingsSheet> {
           const SizedBox(height: 10),
 
           _ToggleRow(
-            icon: Icons.sensors_outlined,
+            icon: Symbols.sensors,
             color: AppColors.motionColor,
             label: state.strings.motionSensors,
             value: _notifMotion,
@@ -2091,7 +3192,7 @@ class _SettingsSheetState extends State<_SettingsSheet> {
           ),
           const SizedBox(height: 10),
           _ToggleRow(
-            icon: Icons.sensor_door_outlined,
+            icon: Symbols.sensor_door,
             color: AppColors.primary,
             label: state.strings.doorSensor,
             value: _notifDoor,
@@ -2099,7 +3200,7 @@ class _SettingsSheetState extends State<_SettingsSheet> {
           ),
           const SizedBox(height: 10),
           _ToggleRow(
-            icon: Icons.bolt_outlined,
+            icon: Symbols.bolt,
             color: AppColors.lightColor,
             label: state.strings.energyTitle,
             value: _notifEnergy,
@@ -2109,57 +3210,41 @@ class _SettingsSheetState extends State<_SettingsSheet> {
           const SizedBox(height: 22),
 
           // ── Calendar ─────────────────────────────────────────
-          GestureDetector(
+          FtListTile(
+            icon: Symbols.calendar_month,
+            iconBg: const Color(0xFFFFD700).withValues(alpha: 0.12),
+            iconColor: const Color(0xFFFFD700),
+            title: s.calendarTitle,
             onTap: () {
               Navigator.pop(context);
               Navigator.push(context,
                   MaterialPageRoute(builder: (_) => const CalendarScreen()));
             },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFD700).withValues(alpha: 0.06),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                    color: const Color(0xFFFFD700).withValues(alpha: 0.2)),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFD700).withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(Icons.calendar_month,
-                        color: Color(0xFFFFD700), size: 18),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      s.calendarTitle,
-                      style: TextStyle(
-                        color: context.tText,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                  Icon(Icons.chevron_left,
-                      color: context.tText2(0.3), size: 20),
-                ],
-              ),
-            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          // ── Smart Mirror ──────────────────────────────────────
+          FtListTile(
+            icon: Symbols.auto_awesome,
+            iconBg: const Color(0xFF9C27B0).withValues(alpha: 0.12),
+            iconColor: const Color(0xFFCE93D8),
+            title: s.mirrorScreenTitle,
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const MirrorScreen()));
+            },
           ),
 
           const SizedBox(height: 22),
 
           // ── Security ──────────────────────────────────────────
-          if (_bioAvailable) ...[
-            _SectionLabel(s.secSection),
-            const SizedBox(height: 10),
-            Container(
+          _SectionLabel(s.secSection),
+          const SizedBox(height: 10),
+          Opacity(
+            opacity: _bioAvailable ? 1.0 : 0.45,
+            child: Container(
               padding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               decoration: BoxDecoration(
@@ -2176,7 +3261,7 @@ class _SettingsSheetState extends State<_SettingsSheet> {
                       color: AppColors.primary.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Icon(Icons.fingerprint,
+                    child: Icon(Symbols.fingerprint,
                         color: AppColors.primary, size: 20),
                   ),
                   const SizedBox(width: 12),
@@ -2189,10 +3274,12 @@ class _SettingsSheetState extends State<_SettingsSheet> {
                                 color: context.tText,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500)),
-                        Text(s.bioLoginSub,
-                            style: TextStyle(
-                                color: context.tText2(0.4),
-                                fontSize: 11)),
+                        Text(
+                          _bioAvailable ? s.bioLoginSub : s.bioUnavailable,
+                          style: TextStyle(
+                              color: context.tText2(0.4),
+                              fontSize: 11),
+                        ),
                       ],
                     ),
                   ),
@@ -2200,26 +3287,47 @@ class _SettingsSheetState extends State<_SettingsSheet> {
                     value: _bioEnabled,
                     activeThumbColor: context.tText,
                     activeTrackColor: AppColors.primary,
-                    onChanged: _toggleBiometric,
+                    onChanged: _bioAvailable ? _toggleBiometric : null,
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 22),
-          ],
+          ),
+          const SizedBox(height: 22),
+
+          // ── Account ────────────────────────────────────────────
+          _SectionLabel(s.accountSection),
+          const SizedBox(height: 10),
+          FtListTile(
+            icon: Symbols.switch_account,
+            iconBg: AppColors.statusOffline.withValues(alpha: 0.12),
+            iconColor: AppColors.statusOffline,
+            title: s.switchAccountTitle,
+            subtitle: s.switchAccountSub,
+            onTap: () => _confirmSwitchAccount(context, state, s),
+          ),
+          const SizedBox(height: 22),
 
           // ── Legal & Privacy ───────────────────────────────────
           _SectionLabel(s.legalSection),
           const SizedBox(height: 10),
-          _LinkRow(
-            icon: Icons.description_outlined,
-            label: s.termsLabel,
+          FtListTile(
+            icon: Symbols.description,
+            iconBg: AppColors.statusOffline.withValues(alpha: 0.12),
+            iconColor: AppColors.statusOffline,
+            title: s.termsLabel,
+            showArrow: false,
+            trailing: Icon(Symbols.open_in_new, color: AppColors.statusOffline.withValues(alpha: 0.6), size: 18),
             onTap: () => _open('/terms'),
           ),
           const SizedBox(height: 10),
-          _LinkRow(
-            icon: Icons.privacy_tip_outlined,
-            label: s.privacyLabel,
+          FtListTile(
+            icon: Symbols.privacy_tip,
+            iconBg: AppColors.statusOffline.withValues(alpha: 0.12),
+            iconColor: AppColors.statusOffline,
+            title: s.privacyLabel,
+            showArrow: false,
+            trailing: Icon(Symbols.open_in_new, color: AppColors.statusOffline.withValues(alpha: 0.6), size: 18),
             onTap: () => _open('/privacy'),
           ),
 
@@ -2239,9 +3347,9 @@ class _SettingsSheetState extends State<_SettingsSheet> {
               children: [
                 _AboutRow(label: 'App', value: 'FantaTech'),
                 const Divider(height: 20, color: Colors.white12),
-                _AboutRow(label: 'Version', value: 'v2.6.0'),
+                _AboutRow(label: 'Version', value: 'v$kAppVersion'),
                 const Divider(height: 20, color: Colors.white12),
-                _AboutRow(label: 'Build', value: '2026.05.27'),
+                _AboutRow(label: 'Build', value: '2026.07.06'),
               ],
             ),
           ),
@@ -2271,52 +3379,6 @@ class _SectionLabel extends StatelessWidget {
   }
 }
 
-/// Tappable settings row that opens an external link.
-class _LinkRow extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  const _LinkRow(
-      {required this.icon, required this.label, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: context.tText2(0.04),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: context.tText2(0.08)),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: context.tText2(0.06),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, color: context.tText2(0.7), size: 18),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(label,
-                  style: TextStyle(
-                      color: context.tText,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500)),
-            ),
-            Icon(Icons.open_in_new,
-                color: context.tText2(0.3), size: 18),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class _ToggleRow extends StatelessWidget {
   final IconData icon;
@@ -2360,7 +3422,8 @@ class _ToggleRow extends StatelessWidget {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: AppColors.primary,
+            activeThumbColor: Colors.white,
+            activeTrackColor: AppColors.primary,
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
         ],
@@ -2418,7 +3481,7 @@ class _AppearanceSheetState extends State<_AppearanceSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final s = context.watch<AppState>().strings;
+    final s = context.select<AppState, S>((st) => st.strings);
 
     return DraggableScrollableSheet(
       initialChildSize: 0.75,
@@ -2455,6 +3518,7 @@ class _AppearanceSheetState extends State<_AppearanceSheet> {
               runSpacing: 8,
               children: AppFont.values.map((f) {
                 final name = switch (f) {
+                  AppFont.inter     => 'Inter',
                   AppFont.heebo     => 'Heebo',
                   AppFont.rubik     => 'Rubik',
                   AppFont.notoSans  => 'Noto Sans',
@@ -2517,7 +3581,7 @@ class _AppearanceSheetState extends State<_AppearanceSheet> {
                             ? [BoxShadow(color: c.withValues(alpha: 0.5), blurRadius: 8)]
                             : [],
                       ),
-                      child: sel ? Icon(Icons.check, color: checkColor, size: 16) : null,
+                      child: sel ? Icon(Symbols.check, color: checkColor, size: 16) : null,
                     ),
                   );
                 }),
@@ -2572,6 +3636,32 @@ class _AppearanceSheetState extends State<_AppearanceSheet> {
                     _apply();
                   }),
                   accent: _prefs.accent,
+                ),
+                const SizedBox(height: 8),
+                _BgTile(
+                  label: s.themeBgLightGray,
+                  bg: const Color(0xFFEEF2FA),
+                  card: const Color(0xFFFFFFFF),
+                  selected: _prefs.bgStyle == AppBgStyle.lightGray,
+                  onTap: () => setState(() {
+                    _prefs = _prefs.copyWith(bgStyle: AppBgStyle.lightGray);
+                    _apply();
+                  }),
+                  accent: _prefs.accent,
+                  isLight: true,
+                ),
+                const SizedBox(height: 8),
+                _BgTile(
+                  label: s.themeBgLightWhite,
+                  bg: const Color(0xFFFFFFFF),
+                  card: const Color(0xFFF3F5F9),
+                  selected: _prefs.bgStyle == AppBgStyle.lightWhite,
+                  onTap: () => setState(() {
+                    _prefs = _prefs.copyWith(bgStyle: AppBgStyle.lightWhite);
+                    _apply();
+                  }),
+                  accent: _prefs.accent,
+                  isLight: true,
                 ),
               ],
             ),
@@ -2629,6 +3719,7 @@ class _BgTile extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
   final Color accent;
+  final bool isLight;  // light-palette tile → use dark text
 
   const _BgTile({
     required this.label,
@@ -2637,10 +3728,12 @@ class _BgTile extends StatelessWidget {
     required this.selected,
     required this.onTap,
     required this.accent,
+    this.isLight = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final textColor = isLight ? const Color(0xFF1A1D27) : context.tText;
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -2649,7 +3742,7 @@ class _BgTile extends StatelessWidget {
           color: bg,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-              color: selected ? accent : context.tText2(0.12),
+              color: selected ? accent : (isLight ? const Color(0xFFCDD3E0) : context.tText2(0.12)),
               width: selected ? 2 : 1),
         ),
         child: Row(
@@ -2657,15 +3750,17 @@ class _BgTile extends StatelessWidget {
             Container(
               width: 28, height: 28,
               decoration: BoxDecoration(
-                  color: card, borderRadius: BorderRadius.circular(6)),
+                  color: card,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: const Color(0x22000000), width: 0.5)),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Text(label,
-                  style: TextStyle(color: context.tText, fontSize: 13)),
+                  style: TextStyle(color: textColor, fontSize: 13)),
             ),
             if (selected)
-              Icon(Icons.check_circle, color: accent, size: 18),
+              Icon(Symbols.check_circle, color: accent, size: 18),
           ],
         ),
       ),
@@ -2895,7 +3990,7 @@ class _HelpSheetState extends State<_HelpSheet>
                                     color: AppColors.primary.withValues(alpha: 0.20)),
                                 ),
                                 child: Row(children: [
-                                  Icon(Icons.person_add_outlined,
+                                  Icon(Symbols.person_add,
                                       color: AppColors.primary, size: 20),
                                   const SizedBox(width: 10),
                                   Expanded(
@@ -2919,7 +4014,7 @@ class _HelpSheetState extends State<_HelpSheet>
                                 style: TextStyle(
                                     color: context.tText, fontSize: 14),
                                 decoration: _deco(
-                                    s.helpNameHint, Icons.person_outline),
+                                    s.helpNameHint, Symbols.person),
                               ),
                               const SizedBox(height: 12),
 
@@ -2930,7 +4025,7 @@ class _HelpSheetState extends State<_HelpSheet>
                                 style: TextStyle(
                                     color: context.tText, fontSize: 14),
                                 decoration: _deco(
-                                    s.helpEmailHint, Icons.email_outlined),
+                                    s.helpEmailHint, Symbols.email),
                               ),
                               const SizedBox(height: 12),
 
@@ -2942,38 +4037,21 @@ class _HelpSheetState extends State<_HelpSheet>
                                 style: TextStyle(
                                     color: context.tText, fontSize: 14),
                                 decoration: _deco(
-                                    s.helpMsgHint, Icons.message_outlined),
+                                    s.helpMsgHint, Symbols.message),
                               ),
                               const SizedBox(height: 20),
 
                               // Send button
-                              SizedBox(
-                                width: double.infinity,
-                                height: 50,
-                                child: ElevatedButton.icon(
-                                  icon: Icon(Icons.save_outlined, size: 18),
-                                  label: Text(
-                                    s.helpSendBtn,
-                                    style: TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  onPressed: () {
-                                    if (_nameCtrl.text.trim().isNotEmpty &&
-                                        _emailCtrl.text.trim().isNotEmpty) {
-                                      setState(() => _sent = true);
-                                    }
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppColors.primary,
-                                    foregroundColor: context.tText,
-                                    elevation: 0,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(14),
-                                    ),
-                                  ),
-                                ),
+                              FtButton(
+                                label: s.helpSendBtn,
+                                leadingIcon: Symbols.save,
+                                expand: true,
+                                onTap: () {
+                                  if (_nameCtrl.text.trim().isNotEmpty &&
+                                      _emailCtrl.text.trim().isNotEmpty) {
+                                    setState(() => _sent = true);
+                                  }
+                                },
                               ),
                             ],
                           ),
@@ -3034,7 +4112,7 @@ class _FaqTileState extends State<_FaqTile> {
                   ),
                 ),
                 Icon(
-                  _open ? Icons.expand_less : Icons.expand_more,
+                  _open ? Symbols.expand_less : Symbols.expand_more,
                   color: context.tText2(0.38),
                   size: 18,
                 ),
@@ -3077,7 +4155,7 @@ class _SentSuccess extends StatelessWidget {
               color: AppColors.secured.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.check_circle_outline,
+            child: Icon(Symbols.check_circle,
                 color: AppColors.secured, size: 36),
           ),
           const SizedBox(height: 16),
@@ -3103,30 +4181,47 @@ class _SentSuccess extends StatelessWidget {
 
 /// All available house types
 const _kHomeTypes = [
-  (label: 'בית',        icon: Icons.home_rounded),
-  (label: 'דירה',       icon: Icons.apartment_rounded),
-  (label: 'וילה',       icon: Icons.villa),
-  (label: 'קוטג׳',      icon: Icons.cottage),
-  (label: 'קאבין',      icon: Icons.cabin),
-  (label: 'מגדל',       icon: Icons.location_city),
-  (label: 'פנטהאוס',    icon: Icons.roofing),
-  (label: 'חווה',       icon: Icons.agriculture),
-  (label: 'משק',        icon: Icons.grass),
-  (label: 'יאכטה',      icon: Icons.directions_boat_rounded),
+  (label: 'House',      icon: Symbols.home),
+  (label: 'Apartment',  icon: Symbols.apartment),
+  (label: 'Villa',      icon: Symbols.villa),
+  (label: 'Cottage',    icon: Symbols.cottage),
+  (label: 'Cabin',      icon: Symbols.cabin),
+  (label: 'Tower',      icon: Symbols.location_city),
+  (label: 'Penthouse',  icon: Symbols.roofing),
+  (label: 'Farm',       icon: Symbols.agriculture),
+  (label: 'Ranch',      icon: Symbols.grass),
+  (label: 'Yacht',      icon: Symbols.directions_boat),
 ];
+
+/// Const map so the icon tree-shaker can statically enumerate home icons.
+const _kHomeIconMap = <int, IconData>{
+  0xe318: Symbols.home,
+  0xe33c: Symbols.apartment,
+  0xe57c: Symbols.villa,
+  0xe508: Symbols.cottage,
+  0xe501: Symbols.cabin,
+  0xe3a9: Symbols.location_city,
+  0xe4f3: Symbols.roofing,
+  0xe011: Symbols.agriculture,
+  0xe3b3: Symbols.grass,
+  0xe1b1: Symbols.directions_boat,
+};
+
+IconData _resolveHomeIcon(int cp) =>
+    _kHomeIconMap[cp] ?? Symbols.home;
 
 /// Available palette colors (value, Hebrew label)
 const _kHomePalette = [
-  (value: 0xFF00B4D8, label: 'כחול'),
-  (value: 0xFF7B6FCD, label: 'סגול'),
-  (value: 0xFF00C853, label: 'ירוק'),
-  (value: 0xFFFF6B35, label: 'כתום'),
-  (value: 0xFFFFD700, label: 'זהב'),
-  (value: 0xFFE53935, label: 'אדום'),
-  (value: 0xFF00BFA5, label: 'טורקיז'),
-  (value: 0xFFEC407A, label: 'ורוד'),
-  (value: 0xFF8D6E63, label: 'חום'),
-  (value: 0xFF90A4AE, label: 'אפור'),
+  (value: 0xFF00B4D8, label: 'Blue'),
+  (value: 0xFF7B6FCD, label: 'Purple'),
+  (value: 0xFF00C853, label: 'Green'),
+  (value: 0xFFFF6B35, label: 'Orange'),
+  (value: 0xFFFFD700, label: 'Gold'),
+  (value: 0xFFE53935, label: 'Red'),
+  (value: 0xFF00BFA5, label: 'Turquoise'),
+  (value: 0xFFEC407A, label: 'Pink'),
+  (value: 0xFF8D6E63, label: 'Brown'),
+  (value: 0xFF90A4AE, label: 'Gray'),
 ];
 
 class _HomeStylePicker extends StatelessWidget {
@@ -3137,6 +4232,7 @@ class _HomeStylePicker extends StatelessWidget {
   Widget build(BuildContext context) {
     final selIcon  = state.homeIconCode;
     final selColor = state.homeColor;
+    final s        = state.strings;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -3170,7 +4266,7 @@ class _HomeStylePicker extends StatelessWidget {
                     ],
                   ),
                   child: Icon(
-                    IconData(selIcon, fontFamily: 'MaterialIcons'),
+                    _resolveHomeIcon(selIcon),
                     color: selColor,
                     size: 34,
                   ),
@@ -3192,7 +4288,7 @@ class _HomeStylePicker extends StatelessWidget {
 
           // ── House type grid ───────────────────────────────────
           Text(
-            'סוג הבית',
+            s.homeTypeTitle,
             style: TextStyle(
               color: context.tText2(0.45),
               fontSize: 11,
@@ -3238,7 +4334,7 @@ class _HomeStylePicker extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          ht.label,
+                          s.homeTypeLabels[i],
                           style: TextStyle(
                             color: isSel
                                 ? selColor
@@ -3262,7 +4358,7 @@ class _HomeStylePicker extends StatelessWidget {
 
           // ── Color palette ─────────────────────────────────────
           Text(
-            'צבע',
+            s.homeColorTitle,
             style: TextStyle(
               color: context.tText2(0.45),
               fontSize: 11,
@@ -3274,11 +4370,12 @@ class _HomeStylePicker extends StatelessWidget {
           Wrap(
             spacing: 10,
             runSpacing: 10,
-            children: _kHomePalette.map((p) {
+            children: _kHomePalette.asMap().entries.map((entry) {
+              final p      = entry.value;
               final c      = Color(p.value);
               final isSel  = p.value == selColor.value;
               return Tooltip(
-                message: p.label,
+                message: s.homeColorLabels[entry.key],
                 child: GestureDetector(
                   onTap: () => state.setHomeColor(p.value),
                   child: AnimatedContainer(
@@ -3298,7 +4395,7 @@ class _HomeStylePicker extends StatelessWidget {
                           : null,
                     ),
                     child: isSel
-                        ? Icon(Icons.check, color: context.tText, size: 16)
+                        ? Icon(Symbols.check, color: context.tText, size: 16)
                         : null,
                   ),
                 ),
@@ -3311,78 +4408,13 @@ class _HomeStylePicker extends StatelessWidget {
   }
 
   String _labelForIcon(int code) {
-    for (final ht in _kHomeTypes) {
-      if (ht.icon.codePoint == code) return ht.label;
+    for (var i = 0; i < _kHomeTypes.length; i++) {
+      if (_kHomeTypes[i].icon.codePoint == code) return state.strings.homeTypeLabels[i];
     }
-    return 'בית';
+    return state.strings.homeTypeLabels.first;
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Exit option tile (used inside the sign-out dialog)
-// ─────────────────────────────────────────────────────────────────────────────
-class _ExitOption extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final String label;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  const _ExitOption({
-    required this.icon,
-    required this.color,
-    required this.label,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.07),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: color.withValues(alpha: 0.20)),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, color: color, size: 19),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(label,
-                      style: TextStyle(
-                          color: color,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14)),
-                  Text(subtitle,
-                      style: TextStyle(
-                          color: context.tText2(0.38),
-                          fontSize: 11)),
-                ],
-              ),
-            ),
-            Icon(Icons.chevron_left,
-                color: color.withValues(alpha: 0.5), size: 18),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class _SettingsRow extends StatelessWidget {
   final String label;
@@ -3438,7 +4470,7 @@ class _ColorMixTile extends StatelessWidget {
               color: selected ? context.tText : context.tText2(0.2),
               width: selected ? 2.5 : 1),
         ),
-        child: Icon(Icons.tune,
+        child: Icon(Symbols.tune,
             color: Colors.white,
             size: 16,
             shadows: const [Shadow(color: Colors.black54, blurRadius: 2)]),
@@ -3470,11 +4502,12 @@ class _ColorMixerDialogState extends State<_ColorMixerDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.select<AppState, S>((st) => st.strings);
     String hex = '#${_color.toARGB32().toRadixString(16).substring(2).toUpperCase()}';
     return AlertDialog(
       backgroundColor: context.tCard,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      title: Text('ערבוב צבע',
+      title: Text(s.colorMix,
           style: TextStyle(color: context.tText, fontWeight: FontWeight.bold),
           textAlign: TextAlign.center),
       content: Column(
@@ -3505,19 +4538,15 @@ class _ColorMixerDialogState extends State<_ColorMixerDialog> {
         ],
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text('ביטול', style: TextStyle(color: context.tText2(0.5))),
+        FtButton(
+          label: s.cancel,
+          variant: FtButtonVariant.ghost,
+          onTap: () => Navigator.pop(context),
         ),
-        ElevatedButton(
-          onPressed: () => Navigator.pop(context, _color),
-          style: ElevatedButton.styleFrom(backgroundColor: _color),
-          child: Text('בחר',
-              style: TextStyle(
-                  color: _color.computeLuminance() > 0.6
-                      ? Colors.black
-                      : Colors.white,
-                  fontWeight: FontWeight.w600)),
+        FtButton(
+          label: s.pickLabel,
+          color: _color,
+          onTap: () => Navigator.pop(context, _color),
         ),
       ],
     );
@@ -3540,5 +4569,158 @@ class _ColorMixerDialogState extends State<_ColorMixerDialog> {
               textAlign: TextAlign.end,
               style: TextStyle(color: context.tText2(0.7), fontSize: 12))),
     ]);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Backup & Restore sheet
+// ─────────────────────────────────────────────────────────────────────────────
+class _BackupSheet extends StatefulWidget {
+  final AppState state;
+  final S s;
+  const _BackupSheet({required this.state, required this.s});
+
+  @override
+  State<_BackupSheet> createState() => _BackupSheetState();
+}
+
+class _BackupSheetState extends State<_BackupSheet> {
+  bool _busy = false;
+
+  Future<String?> _backupFilePath() async {
+    try {
+      Directory? dir;
+      if (Platform.isAndroid) {
+        dir = await getExternalStorageDirectory();
+      }
+      dir ??= await getApplicationDocumentsDirectory();
+      return '${dir.path}/fantatech_backup.json';
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _export() async {
+    setState(() => _busy = true);
+    try {
+      final path = await _backupFilePath();
+      if (path == null) throw Exception('no path');
+      final json = jsonEncode(widget.state.exportBackup());
+      await File(path).writeAsString(json, flush: true);
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(widget.s.backupExportDone),
+          backgroundColor: AppColors.secured,
+          duration: const Duration(seconds: 3),
+        ));
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(widget.s.backupImportError),
+          backgroundColor: AppColors.alert,
+        ));
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _import() async {
+    setState(() => _busy = true);
+    try {
+      final path = await _backupFilePath();
+      if (path == null) throw Exception('no path');
+      final file = File(path);
+      if (!await file.exists()) throw Exception('not found');
+      final raw = await file.readAsString();
+      final data = jsonDecode(raw) as Map<String, dynamic>;
+      await widget.state.restoreFromBackup(data);
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(widget.s.backupImportDone),
+          backgroundColor: AppColors.secured,
+          duration: const Duration(seconds: 3),
+        ));
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(widget.s.backupImportError),
+          backgroundColor: AppColors.alert,
+        ));
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = widget.s;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+          20, 16, 20, 24 + MediaQuery.of(context).viewInsets.bottom),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle
+          Center(
+            child: Container(
+              width: 40, height: 4,
+              decoration: BoxDecoration(
+                  color: context.tText2(0.18),
+                  borderRadius: BorderRadius.circular(2)),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(s.backupTitle,
+              style: TextStyle(
+                  color: context.tText,
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold)),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            height: 50,
+            child: ElevatedButton.icon(
+              onPressed: _busy ? null : _export,
+              icon: const Icon(Symbols.upload, size: 18),
+              label: Text(s.backupExport,
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: context.tText,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            height: 50,
+            child: OutlinedButton.icon(
+              onPressed: _busy ? null : _import,
+              icon: const Icon(Symbols.download, size: 18),
+              label: Text(s.backupImport,
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: context.tText,
+                side: BorderSide(color: context.tText2(0.18)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
+              ),
+            ),
+          ),
+          if (_busy) ...[
+            const SizedBox(height: 16),
+            const CircularProgressIndicator(),
+          ],
+        ],
+      ),
+    );
   }
 }
