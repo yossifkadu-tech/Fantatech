@@ -11,6 +11,7 @@ import '../../models/layout_item.dart';
 import '../../theme/app_theme.dart';
 import '../../l10n/strings.dart';
 import '../../services/cameras/onvif_service.dart';
+import '../../widgets/device_edit_sheet.dart';
 import '../../widgets/edit_mode/edit_toolbar.dart';
 import '../../widgets/edit_mode/reorderable_dashboard.dart';
 import '../notifications/notifications_screen.dart';
@@ -83,13 +84,29 @@ class _CamerasScreenState extends State<CamerasScreen>
     } catch (_) {}
 
     if (localIp == null) {
-      if (mounted) setState(() => _scanning = false);
+      if (mounted) {
+        setState(() => _scanning = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(s.camNoWifiIp),
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
       return;
     }
 
     final parts = localIp.split('.');
     if (parts.length != 4) {
-      if (mounted) setState(() => _scanning = false);
+      if (mounted) {
+        setState(() => _scanning = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(s.camNoWifiIp),
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
       return;
     }
     final prefix = '${parts[0]}.${parts[1]}.${parts[2]}';
@@ -109,7 +126,17 @@ class _CamerasScreenState extends State<CamerasScreen>
       setState(() => _scanFound = found);
     }
 
-    if (mounted) setState(() => _scanning = false);
+    if (mounted) {
+      setState(() => _scanning = false);
+      if (found == 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(s.camScanNoneFound),
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    }
   }
 
   Future<Map<String, String>?> _showCredentialsDialog(String name, String ip) {
@@ -387,7 +414,7 @@ class _TopBar extends StatelessWidget {
               ),
             ),
           ),
-          const EditModeButton(),
+          const EditModeButton(dashboardId: DashboardId.cameras),
           const SizedBox(width: 6),
           GestureDetector(
             onTap: () => Navigator.push(
@@ -455,6 +482,8 @@ class _CameraCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: onTap,
+      onLongPress: () => showCameraEditSheet(context,
+          camera: camera, state: context.read<AppState>()),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: SizedBox(

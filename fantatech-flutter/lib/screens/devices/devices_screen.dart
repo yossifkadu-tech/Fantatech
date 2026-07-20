@@ -364,7 +364,6 @@ class _DevicesScreenState extends State<DevicesScreen> {
                           s: s,
                           onToggle: () => state.toggleDevice(filtered[i].id),
                           onTap: () => _showDetail(context, filtered[i], state, s),
-                          onRemove: () => state.removeDevice(filtered[i].id),
                           onOptions: () => _showCardOptions(
                               context, filtered[i], state, s, rooms),
                           onFavoriteToggle: () =>
@@ -489,7 +488,6 @@ class _DeviceCard extends StatelessWidget {
   final S s;
   final VoidCallback onToggle;
   final VoidCallback onTap;
-  final VoidCallback onRemove;
   final VoidCallback onOptions;
   final VoidCallback? onFavoriteToggle;
   const _DeviceCard({
@@ -497,7 +495,6 @@ class _DeviceCard extends StatelessWidget {
     required this.s,
     required this.onToggle,
     required this.onTap,
-    required this.onRemove,
     required this.onOptions,
     this.onFavoriteToggle,
   });
@@ -584,21 +581,45 @@ class _DeviceCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                // Quick toggle
+                // Quick toggle — locked for offline / alerted devices. A
+                // locked switch used to just silently ignore taps; tapping
+                // it while offline now explains why nothing happened.
                 Transform.scale(
                   scale: 0.72,
                   alignment: Alignment.centerRight,
-                  child: Switch(
-                    value: isOn,
-                    onChanged: status.isControllable && !isAlerted
-                        ? (_) => onToggle()
-                        : null,
-                    activeThumbColor: color,
-                    activeTrackColor: color.withValues(alpha: 0.30),
-                    inactiveThumbColor: context.tText2(0.25),
-                    inactiveTrackColor: context.tText2(0.10),
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
+                  child: (status.isControllable && !isAlerted)
+                      ? Switch(
+                          value: isOn,
+                          onChanged: (_) => onToggle(),
+                          activeThumbColor: color,
+                          activeTrackColor: color.withValues(alpha: 0.30),
+                          inactiveThumbColor: context.tText2(0.25),
+                          inactiveTrackColor: context.tText2(0.10),
+                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        )
+                      : GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: status.isOffline
+                              ? () => ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(s.deviceOfflineHint),
+                                      behavior: SnackBarBehavior.floating,
+                                      duration: const Duration(seconds: 2),
+                                    ),
+                                  )
+                              : null,
+                          child: IgnorePointer(
+                            child: Switch(
+                              value: isOn,
+                              onChanged: (_) {},
+                              activeThumbColor: color,
+                              activeTrackColor: color.withValues(alpha: 0.30),
+                              inactiveThumbColor: context.tText2(0.25),
+                              inactiveTrackColor: context.tText2(0.10),
+                              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                          ),
+                        ),
                 ),
               ],
             ),
@@ -1183,6 +1204,35 @@ class _DeviceDetailSheetState extends State<_DeviceDetailSheet> {
     setState(() => _editingName = false);
   }
 
+  void _confirmDelete(BuildContext context) async {
+    final s = widget.s;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (dCtx) => AlertDialog(
+        backgroundColor: context.tCard,
+        title: Text(s.remove, style: TextStyle(color: context.tText)),
+        content: Text(s.deviceWillBeRemoved,
+            style: TextStyle(color: context.tText2(0.6))),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dCtx, false),
+            child: Text(s.cancel, style: TextStyle(color: context.tText2(0.5))),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.statusAlarm),
+            onPressed: () => Navigator.pop(dCtx, true),
+            child: Text(s.remove, style: const TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+    if (ok == true && context.mounted) {
+      widget.state.removeDevice(widget.device.id);
+      Navigator.pop(context);
+    }
+  }
+
   void _pickRoom(BuildContext context) async {
     final s = widget.s;
     final allDevices = widget.state.devices;
@@ -1325,6 +1375,23 @@ class _DeviceDetailSheetState extends State<_DeviceDetailSheet> {
                               ),
                               child: Icon(Symbols.edit,
                                   color: context.tText2(0.45),
+                                  size: 15),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          // Delete device button — the only other place this
+                          // lived was the tiny ⋮ icon on the grid card, easy
+                          // to miss, so it's surfaced here too.
+                          GestureDetector(
+                            onTap: () => _confirmDelete(context),
+                            child: Container(
+                              padding: const EdgeInsets.all(7),
+                              decoration: BoxDecoration(
+                                color: AppColors.statusAlarm.withValues(alpha: 0.10),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(Symbols.delete,
+                                  color: AppColors.statusAlarm,
                                   size: 15),
                             ),
                           ),

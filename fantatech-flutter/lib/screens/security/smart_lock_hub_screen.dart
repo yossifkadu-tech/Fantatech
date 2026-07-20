@@ -7,6 +7,7 @@ import '../../models/device.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/device_icons.dart';
 import '../../l10n/strings.dart';
+import '../../widgets/device_edit_sheet.dart';
 import '../../widgets/ft_button.dart';
 import '../../widgets/ft_nav.dart';
 
@@ -326,6 +327,8 @@ class _LockCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: onTap,
+      onLongPress: () => showDeviceEditSheet(context,
+          device: device, state: context.read<AppState>()),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(

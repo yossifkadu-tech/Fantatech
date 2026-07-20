@@ -2,7 +2,7 @@ name: fantatech
 description: FantaTech Smart Home Hub
 
 publish_to: 'none'
-version: 1.0.0+10000
+version: 2.15.1+10001
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
@@ -78,6 +78,8 @@ dependencies:
 
   # Voice / speech-to-text (on-device — no cloud, no cost)
   speech_to_text: ^7.0.0
+  # Voice / text-to-speech (on-device — used by the AI agent's spoken replies)
+  flutter_tts: ^4.2.0
 
   # Barcode / QR scanner
   mobile_scanner: ^5.2.3

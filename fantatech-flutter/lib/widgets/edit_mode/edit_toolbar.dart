@@ -36,7 +36,7 @@ class EditToolbar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider  = context.watch<LayoutProvider>();
-    final isEditMode = provider.editMode;
+    final isEditMode = provider.editModeFor(dashboardId);
     final accent    = Theme.of(context).colorScheme.primary;
     final isLight   = Theme.of(context).brightness == Brightness.light;
 
@@ -114,7 +114,7 @@ class EditToolbar extends StatelessWidget {
                     ),
                     icon: const Icon(Symbols.check, size: 15),
                     label: const Text('סיום'),
-                    onPressed: () => provider.exitEditMode(),
+                    onPressed: () => provider.exitEditMode(dashboardId),
                   ),
                 ],
               ),
@@ -166,12 +166,13 @@ class EditToolbar extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class EditModeButton extends StatelessWidget {
-  const EditModeButton({super.key});
+  final String dashboardId;
+  const EditModeButton({super.key, required this.dashboardId});
 
   @override
   Widget build(BuildContext context) {
     final provider   = context.watch<LayoutProvider>();
-    final isEditMode = provider.editMode;
+    final isEditMode = provider.editModeFor(dashboardId);
     final accent     = Theme.of(context).colorScheme.primary;
 
     return AnimatedContainer(
@@ -197,7 +198,7 @@ class EditModeButton extends StatelessWidget {
           ),
         ),
         tooltip: isEditMode ? 'סיום עריכה' : 'ערוך לוח',
-        onPressed: provider.toggleEditMode,
+        onPressed: () => provider.toggleEditMode(dashboardId),
       ),
     );
   }

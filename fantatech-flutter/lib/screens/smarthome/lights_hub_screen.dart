@@ -8,6 +8,7 @@ import '../../services/gateways/clients/ha_gateway_client.dart';
 import '../../services/gateways/gateway_manager.dart';
 import '../../services/gateways/gateway_types.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/device_edit_sheet.dart';
 import '../../widgets/ft_nav.dart';
 
 class LightsHubScreen extends StatelessWidget {
@@ -222,7 +223,10 @@ class _LightCard extends StatelessWidget {
     final on    = device.isOn;
     final color = on ? _activeColor : context.tText2(0.2);
 
-    return Container(
+    return GestureDetector(
+      onLongPress: () => showDeviceEditSheet(context,
+          device: device, state: context.read<AppState>()),
+      child: Container(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
       decoration: BoxDecoration(
         color: context.tCard,
@@ -325,6 +329,7 @@ class _LightCard extends StatelessWidget {
             ),
           ],
         ],
+      ),
       ),
     );
   }

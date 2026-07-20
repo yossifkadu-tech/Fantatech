@@ -74,14 +74,24 @@ class Z2MGatewayClient {
         );
         final appType = DeviceClassifier.toAppType(discType);
 
+        // Z2M's bridge/devices payload includes a live `available` flag
+        // (from the availability feature) on most recent versions; fall
+        // back to interview_completed only when that field is absent, since
+        // interview_completed never flips back to false once a device has
+        // paired even if it later goes offline.
+        final available = d['available'] as bool?;
+        final status = available != null
+            ? (available ? DeviceStatus.online : DeviceStatus.offline)
+            : ((d['interview_completed'] as bool? ?? false)
+                ? DeviceStatus.online
+                : DeviceStatus.offline);
+
         devices.add(Device(
           id:         'z2m_${ieee.replaceAll('0x', '')}',
           name:       name,
           type:       appType,
           isOn:       false,
-          status:     (d['interview_completed'] as bool? ?? false)
-              ? DeviceStatus.online
-              : DeviceStatus.offline,
+          status:     status,
           source:     'gateway',
           attributes: {
             'ip':            ip,
@@ -246,6 +256,58 @@ class Z2MGatewayClient {
         friendlyName: friendlyName,
         payload: payload,
       );
+
+  // ── Pairing ─────────────────────────────────────────────────────────────────
+  //
+  // Z2M only accepts new Zigbee joins while its "permit join" window is open
+  // — reading bridge/devices alone (as fetchDevices does) never opens that
+  // window, so a device held in pairing mode never actually joins the mesh.
+  // This publishes the request that opens it for `seconds`.
+
+  static Future<bool> permitJoin({
+    required String mqttHost,
+    int             mqttPort = 1883,
+    String?         mqttUser,
+    String?         mqttPass,
+    int             seconds  = 60,
+    String          baseTopic = 'zigbee2mqtt',
+  }) async {
+    final clientId = 'fantatech_join_${DateTime.now().microsecondsSinceEpoch}';
+    final client = MqttServerClient.withPort(mqttHost, clientId, mqttPort)
+      ..keepAlivePeriod        = 10
+      ..connectTimeoutPeriod   = 5000
+      ..logging(on: false)
+      ..autoReconnect          = false;
+
+    var conn = MqttConnectMessage().withClientIdentifier(clientId).startClean();
+    if (mqttUser != null && mqttUser.isNotEmpty) {
+      conn = conn.authenticateAs(mqttUser, mqttPass ?? '');
+    }
+    client.connectionMessage = conn;
+
+    try {
+      await client.connect();
+      if (client.connectionStatus?.state != MqttConnectionState.connected) {
+        client.disconnect();
+        return false;
+      }
+
+      final builder = MqttClientPayloadBuilder()
+        ..addString(jsonEncode({'value': true, 'time': seconds}));
+      client.publishMessage(
+        '$baseTopic/bridge/request/permit_join',
+        MqttQos.atLeastOnce,
+        builder.payload!,
+      );
+
+      await Future.delayed(const Duration(milliseconds: 300));
+      client.disconnect();
+      return true;
+    } catch (_) {
+      try { client.disconnect(); } catch (_) {}
+      return false;
+    }
+  }
 
   // ── HTTP helper ────────────────────────────────────────────────────────────
 

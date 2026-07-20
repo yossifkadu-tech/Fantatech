@@ -467,9 +467,9 @@ class AppState extends ChangeNotifier {
 
   /// Ids the user has explicitly deleted. Devices sourced from a live
   /// gateway/HA sync get re-fetched and re-added on every sync cycle by
-  /// design (upsertDevice/addDevice) — without this blocklist, deleting one
-  /// of them looked like "delete does nothing" because the very next sync
-  /// silently brought it right back.
+  /// design (upsertDevice) — without this blocklist, deleting one of them
+  /// looked like "delete does nothing" because the very next sync silently
+  /// brought it right back.
   Set<String> _removedDeviceIds = {};
   List<AppNotification> _appNotifications = [];
   List<Camera> _cameras = [];
@@ -873,6 +873,67 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  /// Deterministic, awaitable power set — unlike [toggleDevice] this doesn't
+  /// just flip the current state, and it actually reports whether the
+  /// physical command succeeded. Built for the AI agent: it must never claim
+  /// an action succeeded without a real confirmation from the gateway layer.
+  Future<bool> setDevicePower(String id, bool on) async {
+    final idx = _devices.indexWhere((d) => d.id == id);
+    if (idx == -1) return false;
+    final device = _devices[idx];
+    final was = device.isOn;
+    device.isOn = on;
+    notifyListeners();
+    final gw = _gateways;
+    if (gw == null) return true; // no gateway configured — local-only device
+    final ok = await DeviceCommander.setOnOff(device, on, gateways: gw);
+    if (!ok) {
+      device.isOn = was;
+      notifyListeners();
+    }
+    return ok;
+  }
+
+  /// Awaitable brightness set (0-100) — same "confirm before claiming
+  /// success" contract as [setDevicePower], for the AI agent.
+  Future<bool> agentSetBrightness(String id, int level) async {
+    final idx = _devices.indexWhere((d) => d.id == id);
+    if (idx == -1) return false;
+    final gw = _gateways;
+    if (gw == null) return false;
+    return DeviceCommander.setBrightness(_devices[idx], level, gateways: gw);
+  }
+
+  /// Awaitable cover/blind/valve position set (0-100) for the AI agent.
+  Future<bool> agentSetCoverPosition(String id, int position) async {
+    final idx = _devices.indexWhere((d) => d.id == id);
+    if (idx == -1) return false;
+    final gw = _gateways;
+    if (gw == null) return false;
+    final ok = await DeviceCommander.setCoverPosition(_devices[idx], position,
+        gateways: gw);
+    if (ok) {
+      _devices[idx].attributes = {..._devices[idx].attributes, 'position': position};
+      notifyListeners();
+    }
+    return ok;
+  }
+
+  /// Awaitable climate set for the AI agent — only one of the named
+  /// parameters should be supplied per call, mirroring [DeviceCommander.setClimate].
+  Future<bool> agentSetClimate(String id,
+      {String? hvacMode, double? temperature, String? fanMode}) async {
+    final idx = _devices.indexWhere((d) => d.id == id);
+    if (idx == -1) return false;
+    final gw = _gateways;
+    if (gw == null) return false;
+    return DeviceCommander.setClimate(_devices[idx],
+        hvacMode: hvacMode,
+        temperature: temperature,
+        fanMode: fanMode,
+        gateways: gw);
+  }
+
   void toggleFavorite(String id) {
     final idx = _devices.indexWhere((d) => d.id == id);
     if (idx == -1) return;
@@ -896,6 +957,13 @@ class AppState extends ChangeNotifier {
     if (gw == null) return;
     final device = _devices.firstWhere((d) => d.id == id);
     DeviceCommander.stopCover(device, gateways: gw);
+  }
+
+  void vacuumCommand(String id, VacuumAction action) {
+    final gw = _gateways;
+    if (gw == null) return;
+    final device = _devices.firstWhere((d) => d.id == id);
+    DeviceCommander.vacuumCommand(device, action, gateways: gw);
   }
 
   void setDeviceAttribute(String id, String key, dynamic value) {
@@ -1245,11 +1313,14 @@ class AppState extends ChangeNotifier {
     await prefs.setInt('home_color_value', _homeColorValue);
   }
 
-  void addDevice(Device device) {
-    if (_removedDeviceIds.contains(device.id)) return;
-    if (!_devices.any((d) => d.id == device.id)) {
+  /// מוסיף מכשיר חדש או מעדכן קיים (לפי id) — משמש ע"י HaSyncService וגם
+  /// ע"י כל מסכי הצימוד, כדי שחיבור חוזר של אותו מכשיר יעדכן את פרטי
+  /// החיבור (IP/host/token חדשים) במקום להתעלם מהם.
+  void upsertDevice(Device device) {
+    final idx = _devices.indexWhere((d) => d.id == device.id);
+    if (idx == -1) {
+      if (_removedDeviceIds.contains(device.id)) return;
       _devices.add(device);
-      // Create a notification for this real device connection
       _appNotifications.insert(0, AppNotification(
         id: 'notif_${device.id}_${DateTime.now().millisecondsSinceEpoch}',
         title: device.name,
@@ -1257,20 +1328,10 @@ class AppState extends ChangeNotifier {
         deviceType: device.type,
         timestamp: DateTime.now(),
       ));
-      _saveDevicesToPrefs();
-      notifyListeners();
-    }
-  }
-
-  /// מוסיף מכשיר חדש או מעדכן קיים (לפי id) — משמש ע"י HaSyncService
-  void upsertDevice(Device device) {
-    final idx = _devices.indexWhere((d) => d.id == device.id);
-    if (idx == -1) {
-      if (_removedDeviceIds.contains(device.id)) return;
-      _devices.add(device);
     } else {
       _devices[idx] = device;
     }
+    _saveDevicesToPrefs();
     notifyListeners();
   }
 
@@ -1384,6 +1445,12 @@ class AppState extends ChangeNotifier {
     }
     _removedDeviceIds = (prefs.getStringList('ft_removed_device_ids') ?? [])
         .toSet();
+    final cameraJsonList = prefs.getStringList('ft_cameras') ?? [];
+    if (cameraJsonList.isNotEmpty) {
+      _cameras = cameraJsonList
+          .map((s) => Camera.fromJson(jsonDecode(s) as Map<String, dynamic>))
+          .toList();
+    }
     // Load home style
     _homeIconCode   = prefs.getInt('home_icon_code')   ?? _homeIconCode;
     _homeColorValue = prefs.getInt('home_color_value') ?? _homeColorValue;
@@ -1468,16 +1535,32 @@ class AppState extends ChangeNotifier {
     await prefs.setStringList('ft_devices', jsonList);
   }
 
+  Future<void> _saveCamerasToPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonList = _cameras.map((c) => jsonEncode(c.toJson())).toList();
+    await prefs.setStringList('ft_cameras', jsonList);
+  }
+
   // ── Camera management ────────────────────────────────────────
   void addRealCamera(Camera camera) {
     if (!_cameras.any((c) => c.id == camera.id)) {
       _cameras.add(camera);
+      _saveCamerasToPrefs();
       notifyListeners();
     }
   }
 
   void removeCamera(String id) {
     _cameras.removeWhere((c) => c.id == id);
+    _saveCamerasToPrefs();
+    notifyListeners();
+  }
+
+  void updateCameraName(String id, String name) {
+    final camera = _cameras.firstWhere((c) => c.id == id,
+        orElse: () => throw StateError('not found'));
+    camera.name = name;
+    _saveCamerasToPrefs();
     notifyListeners();
   }
 

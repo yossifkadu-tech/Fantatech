@@ -476,7 +476,7 @@ class _SwitchCardState extends State<_SwitchCard> {
           ? dev.name
           : '${dev.name} — ${ch.name}';
 
-      appState.addDevice(Device(
+      appState.upsertDevice(Device(
         id:   '${dev.id}_ch$i',
         name: deviceName,
         type: DeviceType.smartSwitch,

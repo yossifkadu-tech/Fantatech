@@ -142,6 +142,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   static Widget _buildItem(BuildContext ctx, LayoutItem item) {
     final Widget body = switch (item.type) {
+      'ai_hero'       => const _AiHeroCard(),
       'weather'       => const _WeatherEnergyRow(),
       'security'      => const _SecurityBanner(),
       'cameras'       => const _CamerasSection(),
@@ -259,8 +260,6 @@ class _TopBar extends StatelessWidget {
 
     void openAddDevice() => Navigator.push(context,
         MaterialPageRoute(builder: (_) => const AddDeviceScreen()));
-    void openAi() => Navigator.push(context,
-        MaterialPageRoute(builder: (_) => const FantaAIScreen()));
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(AppSpacing.s16, 14, AppSpacing.s16, 0),
@@ -320,31 +319,6 @@ class _TopBar extends StatelessWidget {
                 ),
               ),
               // Action buttons
-              GestureDetector(
-                onTap: openAi,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFFFB800), Color(0xFFFF6B00)],
-                    ),
-                    borderRadius: BorderRadius.circular(AppBorderRadius.r24),
-                    boxShadow: AppShadows.glow(_kOrange, intensity: 0.5),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Symbols.auto_awesome, color: Colors.white, size: 14),
-                      SizedBox(width: 4),
-                      Text('AI',
-                          style: TextStyle(
-                              color: Colors.white, fontSize: 12,
-                              fontWeight: FontWeight.w800, letterSpacing: 0.5)),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: AppSpacing.s8),
               FtButton.iconOnly(
                 icon: Symbols.add,
                 variant: FtButtonVariant.neutral,
@@ -561,7 +535,9 @@ class _EnergyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final s = context.select((AppState st) => st.strings);
+    final state = context.watch<AppState>();
+    final s = state.strings;
+    final todayKwh = todayEnergyKwh(state);
     return GestureDetector(
       onTap: () => _openSheet(context),
       child: Container(
@@ -589,29 +565,8 @@ class _EnergyCard extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.s8),
             Text(
-              '18.7 kWh',
+              todayKwh != null ? '${todayKwh.toStringAsFixed(1)} kWh' : s.noResults,
               style: AppTypography.displaySm.copyWith(color: context.tText),
-            ),
-            const SizedBox(height: AppSpacing.s8),
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: AppColors.success.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(AppBorderRadius.r24),
-                  ),
-                  child: Text(
-                    '-12% ${s.vsYesterday}',
-                    style: AppTypography.labelSm.copyWith(color: AppColors.success),
-                  ),
-                ),
-                const Spacer(),
-                SizedBox(
-                  width: 48, height: 28,
-                  child: CustomPaint(painter: _LinePainter()),
-                ),
-              ],
             ),
           ],
         ),
@@ -623,34 +578,28 @@ class _EnergyCard extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────
 // Energy + Breakers Bottom Sheet
 // ─────────────────────────────────────────────────────────────────
-enum _BState { on, off, tripped }
-
 class _EnergySheet extends StatelessWidget {
   const _EnergySheet();
 
-  static const _breakers = [
-    (room: '__main__',     amps: 63, state: _BState.on,      isMain: true),
-    (room: '__living__',   amps: 16, state: _BState.on,      isMain: false),
-    (room: '__kitchen__',  amps: 20, state: _BState.on,      isMain: false),
-    (room: '__bedroom__',  amps: 16, state: _BState.on,      isMain: false),
-    (room: '__kids__',     amps: 16, state: _BState.on,      isMain: false),
-    (room: '__bathroom__', amps: 16, state: _BState.tripped, isMain: false),
-    (room: '__garden__',   amps: 10, state: _BState.off,     isMain: false),
-    (room: '__storage__',  amps: 10, state: _BState.on,      isMain: false),
-    (room: '__ac__',       amps: 25, state: _BState.on,      isMain: false),
-  ];
+  Color _breakerColor(Device d) => d.status == DeviceStatus.alarm
+      ? AppColors.statusAlarm
+      : (d.isOn ? AppColors.statusOnline : _kGrey);
 
-  Color _stateColor(_BState s) => switch (s) {
-    _BState.on      => AppColors.statusOnline,
-    _BState.tripped => AppColors.statusAlarm,
-    _BState.off     => _kGrey,
-  };
+  String _breakerLabel(S s, Device d) => d.status == DeviceStatus.alarm
+      ? s.breakerTripped
+      : (d.isOn ? s.breakerOn : s.breakerOff);
 
   @override
   Widget build(BuildContext context) {
-    final state = context.read<AppState>();
+    final state = context.watch<AppState>();
     final s = state.strings;
-    final trippedCount = _breakers.where((b) => b.state == _BState.tripped).length;
+    // Real breaker devices only — no gateway currently reports circuit
+    // breakers, so this list is empty for virtually everyone today. That's
+    // shown honestly (see below) rather than filled with invented rooms.
+    final breakerDevices =
+        state.devices.where((d) => d.type == DeviceType.circuitBreaker).toList();
+    final trippedCount =
+        breakerDevices.where((d) => d.status == DeviceStatus.alarm).length;
 
     return DraggableScrollableSheet(
       initialChildSize: 0.78,
@@ -695,93 +644,6 @@ class _EnergySheet extends StatelessWidget {
                   const SizedBox(height: 24),
                   const Divider(height: 1),
                   const SizedBox(height: 20),
-
-                  // ── Energy Analytics ─────────────────────────
-                  Row(
-                    children: [
-                      const Icon(Symbols.bolt, color: _kOrange, size: 20),
-                      const SizedBox(width: 8),
-                      Text(s.energyAnalytics,
-                          style: const TextStyle(
-                              color: _kDark, fontSize: 17, fontWeight: FontWeight.w700)),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  // Metric grid 2×2
-                  GridView.count(
-                    crossAxisCount: 2,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisSpacing: 12, mainAxisSpacing: 12,
-                    childAspectRatio: 1.6,
-                    children: [
-                      _EnergyMetric(
-                        icon: Symbols.solar_power,
-                        color: const Color(0xFFFFB800),
-                        label: s.solarProduction,
-                        value: '4.7 kW',
-                      ),
-                      _EnergyMetric(
-                        icon: Symbols.power,
-                        color: _kOrange,
-                        label: s.solarConsumption,
-                        value: '2.1 kW',
-                      ),
-                      _EnergyMetric(
-                        icon: Symbols.battery_charging_full,
-                        color: _kGreen,
-                        label: s.solarBattery,
-                        value: '78%',
-                      ),
-                      _EnergyMetric(
-                        icon: Symbols.savings,
-                        color: const Color(0xFF00C853),
-                        label: s.solarSaving,
-                        value: '₪22',
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  // Feed-in row
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    decoration: _card(context),
-                    child: Row(children: [
-                      const Icon(Symbols.electrical_services,
-                          color: Color(0xFF00B4D8), size: 20),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(s.solarFeedIn,
-                            style: AppTypography.bodyMd.copyWith(
-                                color: context.tTextSecondary)),
-                      ),
-                      Text('2.6 kW',
-                          style: AppTypography.titleMd.copyWith(
-                              color: context.tText)),
-                    ]),
-                  ),
-                  const SizedBox(height: 6),
-                  // Today kWh summary
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFFFF6B00), Color(0xFFFFB800)],
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                      ),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Row(children: [
-                      Text(s.energyToday,
-                          style: const TextStyle(color: Colors.white70, fontSize: 13)),
-                      const Spacer(),
-                      const Text('18.7 kWh',
-                          style: TextStyle(
-                              color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
-                    ]),
-                  ),
-                  const SizedBox(height: 24),
                   // ── Breakers ────────────────────────────────
                   Row(
                     children: [
@@ -810,62 +672,73 @@ class _EnergySheet extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  // Breakers grid
-                  GridView.count(
-                    crossAxisCount: 3,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisSpacing: 10, mainAxisSpacing: 10,
-                    childAspectRatio: 1.1,
-                    children: _breakers.map((b) {
-                      final col  = _stateColor(b.state);
-                      final name = s.translateRoomKey(b.room);
-                      final stLabel = switch (b.state) {
-                        _BState.on      => s.breakerOn,
-                        _BState.off     => s.breakerOff,
-                        _BState.tripped => s.breakerTripped,
-                      };
-                      return Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: b.state == _BState.tripped
-                              ? AppColors.statusAlarm.withValues(alpha: 0.08)
-                              : context.tCard,
-                          borderRadius: BorderRadius.circular(14),
-                          border: b.state == _BState.tripped
-                              ? Border.all(
-                                  color: AppColors.statusAlarm.withValues(alpha: 0.4),
-                                  width: 1.5)
-                              : Border.all(color: context.tBorder),
-                          boxShadow: context.isLight
-                              ? const [BoxShadow(color: Color(0x0A000000), blurRadius: 6)]
-                              : const [],
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              width: 10, height: 10,
-                              decoration: BoxDecoration(
-                                  shape: BoxShape.circle, color: col),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(name,
-                                style: TextStyle(
-                                    color: _kDark, fontSize: 11,
-                                    fontWeight: b.isMain ? FontWeight.w800 : FontWeight.w600),
-                                maxLines: 1, overflow: TextOverflow.ellipsis,
-                                textAlign: TextAlign.center),
-                            Text('${b.amps}A',
-                                style: const TextStyle(color: _kGrey, fontSize: 10)),
-                            Text(stLabel,
-                                style: TextStyle(
-                                    color: col, fontSize: 10, fontWeight: FontWeight.w700)),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                  ),
+                  // Breakers grid — real devices only. No gateway currently
+                  // reports circuit breakers, so this is honestly empty for
+                  // almost everyone rather than showing invented rooms.
+                  if (breakerDevices.isEmpty)
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: context.tCard,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: context.tBorder),
+                      ),
+                      child: Row(children: [
+                        Icon(Symbols.electrical_services,
+                            color: _kGrey, size: 18),
+                        const SizedBox(width: 10),
+                        Text(s.notConnectedLabel,
+                            style: const TextStyle(color: _kGrey, fontSize: 13)),
+                      ]),
+                    )
+                  else
+                    GridView.count(
+                      crossAxisCount: 3,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisSpacing: 10, mainAxisSpacing: 10,
+                      childAspectRatio: 1.1,
+                      children: breakerDevices.map((d) {
+                        final col = _breakerColor(d);
+                        final tripped = d.status == DeviceStatus.alarm;
+                        return Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: tripped
+                                ? AppColors.statusAlarm.withValues(alpha: 0.08)
+                                : context.tCard,
+                            borderRadius: BorderRadius.circular(14),
+                            border: tripped
+                                ? Border.all(
+                                    color: AppColors.statusAlarm.withValues(alpha: 0.4),
+                                    width: 1.5)
+                                : Border.all(color: context.tBorder),
+                            boxShadow: context.isLight
+                                ? const [BoxShadow(color: Color(0x0A000000), blurRadius: 6)]
+                                : const [],
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                width: 10, height: 10,
+                                decoration: BoxDecoration(
+                                    shape: BoxShape.circle, color: col),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(d.name,
+                                  style: TextStyle(color: _kDark, fontSize: 11,
+                                      fontWeight: FontWeight.w600),
+                                  maxLines: 1, overflow: TextOverflow.ellipsis,
+                                  textAlign: TextAlign.center),
+                              Text(_breakerLabel(s, d),
+                                  style: TextStyle(
+                                      color: col, fontSize: 10, fontWeight: FontWeight.w700)),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ),
                   const SizedBox(height: 20),
                   // ── Navigation button ──────────────────────────
                   // Solar System is now its own interactive card in the
@@ -902,6 +775,24 @@ class _EnergySheet extends StatelessWidget {
 // Deliberately shows "no data" rather than a placeholder number — this
 // section is the one part of the energy sheet that's fully live.
 // ─────────────────────────────────────────────────────────────────
+// Sum of today's real energy-meter readings (kWh only — a power meter in W
+// reports instantaneous draw, not accumulated energy, and summing the two
+// would silently produce a meaningless number). Null when no real energy
+// meter reports anything, so callers show an honest "no data" state instead
+// of a placeholder number. Shared by every energy widget on this screen so
+// there's exactly one definition of "today's energy" in the app.
+double? todayEnergyKwh(AppState state) {
+  final energyReadings = state.devices
+      .where((d) => d.type == DeviceType.energyMeter)
+      .where((d) => (d.attributes['unit'] as String?)?.toLowerCase() == 'kwh')
+      .map((d) => (d.attributes['reading'] as num?)?.toDouble())
+      .whereType<double>()
+      .toList();
+  return energyReadings.isEmpty
+      ? null
+      : energyReadings.fold<double>(0.0, (a, b) => a + b);
+}
+
 class _TodaysEnergyCards extends StatelessWidget {
   const _TodaysEnergyCards();
 
@@ -912,18 +803,7 @@ class _TodaysEnergyCards extends StatelessWidget {
 
     final switchDevices = state.devices.where((d) =>
         d.type == DeviceType.smartSwitch || d.type == DeviceType.smartPlug).toList();
-    // Only sum meters whose unit is actually energy (kWh) — a power meter
-    // (W) reports instantaneous draw, not accumulated "today" energy, and
-    // summing the two together would silently produce a meaningless number.
-    final energyReadings = state.devices
-        .where((d) => d.type == DeviceType.energyMeter)
-        .where((d) => (d.attributes['unit'] as String?)?.toLowerCase() == 'kwh')
-        .map((d) => (d.attributes['reading'] as num?)?.toDouble())
-        .whereType<double>()
-        .toList();
-    final todayKwh = energyReadings.isEmpty
-        ? null
-        : energyReadings.fold(0.0, (a, b) => a + b);
+    final todayKwh = todayEnergyKwh(state);
 
     // Solar: no inverter integration is actually wired up yet (SolarScreen
     // itself only ever shows real data post-connection, currently never
@@ -1016,79 +896,6 @@ class _TodayEnergyCard extends StatelessWidget {
   }
 }
 
-class _EnergyMetric extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final String label;
-  final String value;
-  const _EnergyMetric({
-    required this.icon, required this.color,
-    required this.label, required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: context.tCard,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: context.isLight
-            ? const [BoxShadow(color: Color(0x0A000000), blurRadius: 8)]
-            : const [],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Icon(icon, color: color, size: 20),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(value,
-                  style: AppTypography.titleLg.copyWith(color: context.tText)),
-              Text(label,
-                  style: AppTypography.caption.copyWith(
-                      color: context.tTextSecondary)),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _LinePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = _kOrange
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke
-      ..strokeJoin = StrokeJoin.round
-      ..strokeCap = StrokeCap.round;
-
-    final pts = [
-      Offset(0, size.height * .7),
-      Offset(size.width * .2, size.height * .5),
-      Offset(size.width * .4, size.height * .8),
-      Offset(size.width * .6, size.height * .3),
-      Offset(size.width * .8, size.height * .5),
-      Offset(size.width, size.height * .15),
-    ];
-
-    final path = Path()..moveTo(pts[0].dx, pts[0].dy);
-    for (var i = 1; i < pts.length; i++) {
-      path.lineTo(pts[i].dx, pts[i].dy);
-    }
-    canvas.drawPath(path, paint);
-    canvas.drawCircle(pts.last, 3, Paint()..color = _kOrange);
-  }
-
-  @override
-  bool shouldRepaint(_) => false;
-}
-
 // ─────────────────────────────────────────────────────────────────
 // Unread-notification badge — wraps a banner's icon avatar so it
 // reports a count, same pattern used by the quick-actions row.
@@ -1159,6 +966,81 @@ class _BannerGearButton extends StatelessWidget {
         child: const Icon(
           Symbols.settings,
           color: Colors.white, size: 17,
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// AI Hero Card — Fanta AI front and center. Tapping the card or the
+// mic opens the full assistant; the chip row underneath dispatches
+// compact search-bar style: one tap anywhere opens the full assistant.
+// No quick-action chips here — those add real device-control weight to
+// a home-screen element that's meant to be a lightweight entry point.
+// ─────────────────────────────────────────────────────────────────
+class _AiHeroCard extends StatelessWidget {
+  const _AiHeroCard();
+
+  void _openAi(BuildContext context) => Navigator.push(
+      context, MaterialPageRoute(builder: (_) => const FantaAIScreen()));
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.watch<AppState>().strings;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: GestureDetector(
+        onTap: () => _openAi(context),
+        child: Container(
+          height: 56,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          decoration: BoxDecoration(
+            color: context.tCard,
+            borderRadius: BorderRadius.circular(100),
+            boxShadow: context.isLight ? AppShadows.md : AppShadows.dark,
+            border: Border.all(
+              color: context.isLight
+                  ? AppColors.lightBorder
+                  : AppColors.darkBorder.withValues(alpha: 0.6),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 40, height: 40,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFFFB800), Color(0xFFFF6B00)],
+                  ),
+                  shape: BoxShape.circle,
+                  boxShadow: AppShadows.glow(_kOrange, intensity: 0.5),
+                ),
+                child: const Icon(Symbols.auto_awesome,
+                    color: Colors.white, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  s.aiSubtitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.bodyMd
+                      .copyWith(color: context.tTextSecondary),
+                ),
+              ),
+              Container(
+                width: 40, height: 40,
+                decoration: BoxDecoration(
+                  color: _kOrange.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Symbols.mic, color: _kOrange, size: 20),
+              ),
+            ],
+          ),
         ),
       ),
     );

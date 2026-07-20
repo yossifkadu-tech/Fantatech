@@ -555,15 +555,22 @@ class GatewayManager extends ChangeNotifier {
         }
         final r = await HaClient.fetchDevices(ip, token);
         if (!r.isSuccess) return GatewayImportResult.failure(r.errorMessage);
-        final devices = r.devices.map((d) => Device(
-          id:           d.id,
-          name:         d.displayName,
-          type:         DeviceClassifier.toAppType(d.type),
-          status:       DeviceStatus.online,
-          attributes:   d.metadata,
-          room:         '',
-          source:       'gateway',
-        )).toList();
+        final devices = r.devices.map((d) {
+          // HA reports offline devices via their state string, not a
+          // separate HTTP failure — 'unavailable'/'unknown' both mean the
+          // underlying device isn't actually reachable right now.
+          final rawState = (d.metadata['state'] as String? ?? '').toLowerCase();
+          final offline  = rawState == 'unavailable' || rawState == 'unknown';
+          return Device(
+            id:           d.id,
+            name:         d.displayName,
+            type:         DeviceClassifier.toAppType(d.type),
+            status:       offline ? DeviceStatus.offline : DeviceStatus.online,
+            attributes:   d.metadata,
+            room:         '',
+            source:       'gateway',
+          );
+        }).toList();
         return GatewayImportResult.success(devices);
       }
 
@@ -601,11 +608,12 @@ class GatewayManager extends ChangeNotifier {
         if (ip.isEmpty || key.isEmpty) {
           return const GatewayImportResult.failure('Missing deCONZ credentials');
         }
-        return DeCONZGatewayClient.fetchDevices(
-          ip,
-          int.tryParse(creds['port'] ?? '80') ?? 80,
-          key,
-        );
+        final port = int.tryParse(creds['port'] ?? '80') ?? 80;
+        // Open the join window so a device held in pairing mode can
+        // actually join the mesh before we read the device list back.
+        await DeCONZGatewayClient.permitJoin(ip, port, key, seconds: 60);
+        await Future.delayed(const Duration(seconds: 20));
+        return DeCONZGatewayClient.fetchDevices(ip, port, key);
       }
 
       case GatewayType.smartThings: {

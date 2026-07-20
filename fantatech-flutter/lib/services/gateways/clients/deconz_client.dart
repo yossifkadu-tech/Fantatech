@@ -49,6 +49,17 @@ class DeCONZGatewayClient {
     return null;
   }
 
+  /// Opens the Zigbee join window so a device held in pairing mode can
+  /// actually join the mesh. App authentication (tryPair/pairWithPolling
+  /// above) only registers this app with deCONZ's REST API — it does not
+  /// put the coordinator into a state where new Zigbee devices can join.
+  static Future<bool> permitJoin(
+      String ip, int port, String apiKey, {int seconds = 60}) async {
+    final raw = await _request(ip, port, 'PUT', '/api/$apiKey/config',
+        jsonEncode({'permitjoin': seconds}));
+    return raw != null;
+  }
+
   // ── Import ─────────────────────────────────────────────────────────────────
 
   static Future<GatewayImportResult> fetchDevices(
@@ -66,7 +77,9 @@ class DeCONZGatewayClient {
           name:       d['name'] as String? ?? 'deCONZ Light $id',
           type:       DeviceType.light,
           isOn:       state['on'] as bool? ?? false,
-          status:     DeviceStatus.online,
+          status:     (state['reachable'] as bool? ?? true)
+              ? DeviceStatus.online
+              : DeviceStatus.offline,
           source:     'gateway',
           attributes: {
             'ip':           ip,
@@ -92,7 +105,9 @@ class DeCONZGatewayClient {
           name:       d['name'] as String? ?? 'Sensor $id',
           type:       dt,
           isOn:       config['on'] as bool? ?? true,
-          status:     DeviceStatus.online,
+          status:     (config['reachable'] as bool? ?? true)
+              ? DeviceStatus.online
+              : DeviceStatus.offline,
           source:     'gateway',
           attributes: {
             'ip':       ip,

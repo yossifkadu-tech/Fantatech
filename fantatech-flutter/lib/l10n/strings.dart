@@ -1007,6 +1007,13 @@ class S {
   final String installerModeOnMsg;
   final String installerModeOffMsg;
   final String installerExitConfirm;
+  // Offline-device toggle hint (shown when tapping a locked switch)
+  final String deviceOfflineHint;
+  // AI Agent
+  final String aiBackendNotConfigured;
+  final String aiRequestFailed;
+  final String aiEmptyReply;
+  final String aiTooManySteps;
   // Smart Mirror
   final String mirrorScreenTitle;
   // Ad banner
@@ -1082,6 +1089,7 @@ class S {
   final String deviceNotFoundHint;
   final String manualAddLabel;
   final String deviceNameLabel;
+  final String deviceDeleteConfirm;
   final String ipAddressOptional;
   final String back;
 
@@ -1285,6 +1293,16 @@ class S {
   final String intercomRinging;
   final String intercomUnlockDoor;
 
+  // Robot vacuum
+  final String vacuumCategory;
+  final String vacuumNoDevices;
+  final String vacuumHint;
+  final String vacuumStart;
+  final String vacuumPause;
+  final String vacuumDock;
+  final String vacuumCleaning;
+  final String vacuumDocked;
+
   // Energy rate
   final String energyRateLabel;
   final String energyRateEdit;
@@ -1303,6 +1321,8 @@ class S {
   // Biometric splash & permission strings
   final String biometricSplashLabel;
   final String camLocationPermission;
+  final String camNoWifiIp;
+  final String camScanNoneFound;
 
   // Security screen (layout management)
   final String showHideSections;
@@ -1321,6 +1341,14 @@ class S {
     this.intercomCategory   = 'Video Doorbell',
     this.intercomRinging    = 'Someone at the door…',
     this.intercomUnlockDoor = 'Unlock door',
+    this.vacuumCategory  = 'Robot Vacuum',
+    this.vacuumNoDevices = 'No robot vacuums found',
+    this.vacuumHint      = 'Connect your robot vacuum through Home Assistant to see it here',
+    this.vacuumStart     = 'Start',
+    this.vacuumPause     = 'Pause',
+    this.vacuumDock      = 'Return to dock',
+    this.vacuumCleaning  = 'Cleaning',
+    this.vacuumDocked    = 'Docked',
     this.energyRateLabel    = 'Electricity rate',
     this.energyRateEdit     = 'Edit rate',
     this.energyRateUnit     = '₪/kWh',
@@ -1334,6 +1362,8 @@ class S {
     this.backupSection      = 'Data & Backup',
     this.biometricSplashLabel   = 'Authenticate',
     this.camLocationPermission  = 'Location permission required to scan the network',
+    this.camNoWifiIp = "Couldn't detect your WiFi network — connect to WiFi and try again, or add the camera manually",
+    this.camScanNoneFound = "No cameras found on the network. If yours isn't ONVIF-compatible, add it manually with its IP address instead.",
     // Home screen (redesigned) — English defaults; locales override below.
     this.homeGreetingSub     = 'Your home, safe & smart.',
     this.aiSugDesc1   = 'I can turn off all the lights in the house',
@@ -1419,6 +1449,11 @@ class S {
     this.installerModeOnMsg    = 'Installer Mode activated',
     this.installerModeOffMsg   = 'Installer Mode exited',
     this.installerExitConfirm  = 'Exit Installer Mode?',
+    this.deviceOfflineHint = 'Device offline — check its connection',
+    this.aiBackendNotConfigured = 'AI assistant is not set up yet',
+    this.aiRequestFailed = "Sorry, I couldn't reach the assistant right now",
+    this.aiEmptyReply = "Done.",
+    this.aiTooManySteps = 'That request needs too many steps — try something simpler',
     this.mirrorScreenTitle   = 'Smart Mirror',
     this.adBannerShop        = 'Shop',
     this.loginBiometric      = 'Sign in with fingerprint / face',
@@ -1476,6 +1511,7 @@ class S {
     this.deviceNotFoundHint   = 'Make sure the device is powered and on WiFi,\nor that Bluetooth is on and enabled.',
     this.manualAddLabel       = 'Add manually',
     this.deviceNameLabel      = 'Device name',
+    this.deviceDeleteConfirm  = 'Remove this device from the app? You can add it back later by scanning again.',
     this.ipAddressOptional    = 'IP address (optional)',
     this.back                 = 'Back',
     this.faceConfigured       = '✓ Configured',
@@ -2495,6 +2531,11 @@ class S {
     installerCodeHint: 'הזן קוד מתקין', installerCodeWrong: 'קוד מתקין שגוי',
     installerModeOnMsg: 'מצב מתקין הופעל', installerModeOffMsg: 'מצב מתקין הופסק',
     installerExitConfirm: 'לצאת ממצב מתקין?',
+    deviceOfflineHint: 'המכשיר לא מקוון — בדוק את החיבור שלו',
+    aiBackendNotConfigured: 'עוזר ה-AI עוד לא הוגדר',
+    aiRequestFailed: 'סליחה, לא הצלחתי להתחבר לעוזר כרגע',
+    aiEmptyReply: 'בוצע.',
+    aiTooManySteps: 'הבקשה הזו דורשת יותר מדי שלבים — נסה משהו פשוט יותר',
     mirrorScreenTitle: 'מראה חכמה', adBannerShop: 'לחנות',
     confirm: 'אישור', pickDay: 'יום', pickMonth: 'חודש',
     pickHebrewDate: 'בחר תאריך עברי',
@@ -2548,7 +2589,7 @@ class S {
     connecting: 'מתחבר...',
     deviceNotFoundHint: 'ודא שהמכשיר מחובר לחשמל וברשת WiFi,\nאו שה-Bluetooth פועל ומופעל.',
     manualAddLabel: 'הוסף ידנית',
-    deviceNameLabel: 'שם המכשיר',
+    deviceNameLabel: 'שם המכשיר', deviceDeleteConfirm: 'להסיר את המכשיר הזה מהאפליקציה? תוכל להוסיף אותו שוב מאוחר יותר בסריקה חוזרת.',
     ipAddressOptional: 'כתובת IP (אופציונלי)',
     back: 'חזור',
     faceConfigured: '✓ מוגדר',
@@ -2710,6 +2751,10 @@ class S {
     intercomHint: 'הוסף אינטרקום דרך הקטלוג או ייבוא גשר',
     intercomRing: 'צלצל', intercomAnswer: 'ענה', intercomDecline: 'דחה',
     intercomCategory: 'פעמון וידאו', intercomRinging: 'מישהו בדלת…',
+    vacuumCategory: 'רובוט שואב', vacuumNoDevices: 'לא נמצאו רובוטים שואבים',
+    vacuumHint: 'חבר את הרובוט השואב דרך Home Assistant כדי לראות אותו כאן',
+    vacuumStart: 'התחל', vacuumPause: 'השהה', vacuumDock: 'חזור לתחנה',
+    vacuumCleaning: 'מנקה', vacuumDocked: 'בתחנה',
     intercomUnlockDoor: 'פתח דלת',
     energyRateLabel: 'תעריף חשמל', energyRateEdit: 'ערוך תעריף',
     energyRateUnit: '₪/קוט"ש', energyRateSaved: 'תעריף נשמר',
@@ -2719,6 +2764,8 @@ class S {
     backupSection: 'נתונים וגיבוי',
     biometricSplashLabel: 'אמת זהות',
     camLocationPermission: 'נדרשת הרשאת מיקום לסריקת הרשת',
+    camNoWifiIp: 'לא הצלחנו לזהות את רשת ה-WiFi שלך — התחבר ל-WiFi ונסה שוב, או הוסף את המצלמה ידנית',
+    camScanNoneFound: 'לא נמצאו מצלמות ברשת. אם המצלמה שלך לא תומכת ב-ONVIF, הוסף אותה ידנית לפי כתובת ה-IP שלה.',
     showHideSections: 'הצג / הסתר אזורים', restoreDefaults: 'שחזור ברירת מחדל?', restoreDefaultsConfirm: 'פעולה זו תאפס את סידור לוח האבטחה. לא ניתן לבטל.', restore: 'שחזר', systemTest: 'בדיקת מערכת',
   );
 
@@ -2977,10 +3024,17 @@ class S {
     installerCodeHint: 'Enter installer code', installerCodeWrong: 'Incorrect installer code',
     installerModeOnMsg: 'Installer Mode activated', installerModeOffMsg: 'Installer Mode exited',
     installerExitConfirm: 'Exit Installer Mode?',
+    deviceOfflineHint: 'Device offline — check its connection',
+    aiBackendNotConfigured: 'AI assistant is not set up yet',
+    aiRequestFailed: "Sorry, I couldn't reach the assistant right now",
+    aiEmptyReply: 'Done.',
+    aiTooManySteps: 'That request needs too many steps — try something simpler',
     mirrorScreenTitle: 'Smart Mirror', adBannerShop: 'Shop',
     gatewaysTitle: 'Gateways', statusOffline: 'Offline',
     biometricSplashLabel: 'Authenticate',
     camLocationPermission: 'Location permission required to scan the network',
+    camNoWifiIp: "Couldn't detect your WiFi network — connect to WiFi and try again, or add the camera manually",
+    camScanNoneFound: "No cameras found on the network. If yours isn't ONVIF-compatible, add it manually with its IP address instead.",
     showHideSections: 'Show / Hide Sections', restoreDefaults: 'Restore Defaults?', restoreDefaultsConfirm: 'This will reset the security panel layout. Cannot be undone.', restore: 'Restore', systemTest: 'System Test',
   );
 
@@ -3250,6 +3304,11 @@ class S {
     installerCodeHint: 'أدخل رمز المثبت', installerCodeWrong: 'رمز المثبت غير صحيح',
     installerModeOnMsg: 'تم تفعيل وضع المثبت', installerModeOffMsg: 'تم الخروج من وضع المثبت',
     installerExitConfirm: 'الخروج من وضع المثبت؟',
+    deviceOfflineHint: 'الجهاز غير متصل — تحقق من الاتصال',
+    aiBackendNotConfigured: 'مساعد الذكاء الاصطناعي لم يتم إعداده بعد',
+    aiRequestFailed: 'عذرًا، لم أتمكن من الوصول إلى المساعد الآن',
+    aiEmptyReply: 'تم.',
+    aiTooManySteps: 'هذا الطلب يحتاج خطوات كثيرة جدًا — جرّب شيئًا أبسط',
     mirrorScreenTitle: 'مرآة ذكية', adBannerShop: 'تسوق',
     confirm: 'تأكيد', pickDay: 'يوم', pickMonth: 'شهر',
     pickHebrewDate: 'اختر تاريخاً عبرياً',
@@ -3294,7 +3353,7 @@ class S {
     deviceNotFoundStatus: 'الجهاز غير موجود', manualAddStatus: 'إضافة يدوية',
     connecting: 'جارٍ الاتصال...',
     deviceNotFoundHint: 'تأكد أن الجهاز متصل بالكهرباء وبشبكة WiFi،\nأو أن البلوتوث مفعّل.',
-    manualAddLabel: 'إضافة يدوياً', deviceNameLabel: 'اسم الجهاز',
+    manualAddLabel: 'إضافة يدوياً', deviceNameLabel: 'اسم الجهاز', deviceDeleteConfirm: 'إزالة هذا الجهاز من التطبيق؟ يمكنك إضافته مرة أخرى لاحقاً عن طريق إعادة المسح.',
     ipAddressOptional: 'عنوان IP (اختياري)', back: 'رجوع',
     faceConfigured: '✓ مُضبوط', faceIdTitle: 'التعرف على الهوية',
     faceIdSubtitle: 'سجّل أشخاصاً للتعرف التلقائي',
@@ -3418,6 +3477,10 @@ class S {
     intercomHint: 'أضف إنترفوناً عبر الكتالوج أو استيراد البوابة',
     intercomRing: 'رنّ', intercomAnswer: 'رد', intercomDecline: 'رفض',
     intercomCategory: 'جرس الفيديو', intercomRinging: 'شخص عند الباب…',
+    vacuumCategory: 'مكنسة روبوت', vacuumNoDevices: 'لم يتم العثور على مكانس روبوتية',
+    vacuumHint: 'قم بتوصيل المكنسة الروبوتية عبر Home Assistant لرؤيتها هنا',
+    vacuumStart: 'ابدأ', vacuumPause: 'إيقاف مؤقت', vacuumDock: 'العودة للقاعدة',
+    vacuumCleaning: 'تنظيف', vacuumDocked: 'في القاعدة',
     intercomUnlockDoor: 'فتح الباب',
     energyRateLabel: 'تعريفة الكهرباء', energyRateEdit: 'تعديل التعريفة',
     energyRateUnit: '₪/كيلوواط', energyRateSaved: 'تم حفظ التعريفة',
@@ -3427,6 +3490,8 @@ class S {
     backupSection: 'البيانات والنسخ الاحتياطي',
     biometricSplashLabel: 'المصادقة',
     camLocationPermission: 'إذن الموقع مطلوب لفحص الشبكة',
+    camNoWifiIp: 'تعذر التعرف على شبكة WiFi الخاصة بك — اتصل بشبكة WiFi وحاول مرة أخرى، أو أضف الكاميرا يدويًا',
+    camScanNoneFound: 'لم يتم العثور على كاميرات في الشبكة. إذا كانت كاميرتك لا تدعم ONVIF، أضفها يدويًا باستخدام عنوان IP الخاص بها.',
     showHideSections: 'إظهار / إخفاء الأقسام', restoreDefaults: 'استعادة الإعدادات الافتراضية؟', restoreDefaultsConfirm: 'سيؤدي ذلك إلى إعادة تعيين تخطيط لوحة الأمان. لا يمكن التراجع.', restore: 'استعادة', systemTest: 'اختبار النظام',
   );
 
@@ -3696,6 +3761,11 @@ class S {
     installerCodeHint: 'የተካይ ኮድ ያስገቡ', installerCodeWrong: 'የተሳሳተ የተካይ ኮድ',
     installerModeOnMsg: 'የተካይ ሁነታ ነቅቷል', installerModeOffMsg: 'የተካይ ሁነታ ተዘግቷል',
     installerExitConfirm: 'ከተካይ ሁነታ ይውጡ?',
+    deviceOfflineHint: 'መሣሪያው ከመስመር ውጭ ነው — ግንኙነቱን ያረጋግጡ',
+    aiBackendNotConfigured: 'የ AI ረዳት ገና አልተዋቀረም',
+    aiRequestFailed: 'ይቅርታ፣ አሁን ረዳቱን ማግኘት አልቻልኩም',
+    aiEmptyReply: 'ተከናውኗል።',
+    aiTooManySteps: 'ይህ ጥያቄ ብዙ ደረጃዎችን ይፈልጋል — ቀላል ነገር ይሞክሩ',
     mirrorScreenTitle: 'ብልህ መስታወት', adBannerShop: 'ሱቅ',
     confirm: 'አረጋግጥ', pickDay: 'ቀን', pickMonth: 'ወር',
     pickHebrewDate: 'የዕብራይስጥ ቀን ምረጥ',
@@ -3737,7 +3807,7 @@ class S {
     deviceNotFoundStatus: 'መሳሪያ አልተገኘም', manualAddStatus: 'ቀጥታ ጨምር',
     connecting: 'በማገናኘት...',
     deviceNotFoundHint: 'መሳሪያው ከኃይል እና WiFi ጋር መገናኘቱን ያረጋግጡ,\nወይም Bluetooth ይክፈቱ።',
-    manualAddLabel: 'ቀጥታ ጨምር', deviceNameLabel: 'የመሳሪያ ስም',
+    manualAddLabel: 'ቀጥታ ጨምር', deviceNameLabel: 'የመሳሪያ ስም', deviceDeleteConfirm: 'ይህን መሳሪያ ከመተግበሪያው ማስወገድ?',
     ipAddressOptional: 'IP አድራሻ (አማራጭ)', back: 'ተመለስ',
     faceConfigured: '✓ ተዋቅሯል', faceIdTitle: 'የፊት መለያ',
     faceIdSubtitle: 'ለራስ-ሰር ልየታ ሰዎችን ተመዝግቡ',
@@ -3853,6 +3923,10 @@ class S {
     intercomHint: 'በካታሎግ ወይም ጌትዌይ ኢምፖርት ኢንተርኮም ይጨምሩ',
     intercomRing: 'ደውል', intercomAnswer: 'መልስ', intercomDecline: 'አቋርጥ',
     intercomCategory: 'የቪዲዮ ደወል', intercomRinging: 'በሩ ላይ ሰው አለ…',
+    vacuumCategory: 'ሮቦት ጠራጊ', vacuumNoDevices: 'ምንም ሮቦት ጠራጊ አልተገኘም',
+    vacuumHint: 'ሮቦት ጠራጊዎን በ Home Assistant በኩል ያገናኙ',
+    vacuumStart: 'ጀምር', vacuumPause: 'ላፍታ አቁም', vacuumDock: 'ወደ ጣቢያ ተመለስ',
+    vacuumCleaning: 'እየጠረገ', vacuumDocked: 'በጣቢያ',
     intercomUnlockDoor: 'በር ክፈት',
     energyRateLabel: 'የኤሌክትሪክ ዋጋ', energyRateEdit: 'ዋጋ አስተካክል',
     energyRateUnit: '₪/kWh', energyRateSaved: 'ዋጋ ተቀምጧል',
@@ -3862,6 +3936,8 @@ class S {
     backupSection: 'ውሂብ እና ምትኬ',
     biometricSplashLabel: 'ያረጋግጡ',
     camLocationPermission: 'አውታረ መረቡን ለመቃኘት የቦታ ፈቃድ ያስፈልጋል',
+    camNoWifiIp: 'የ WiFi አውታረ መረብዎን ማወቅ አልቻልንም — ከ WiFi ጋር ይገናኙ እና እንደገና ይሞክሩ፣ ወይም ካሜራውን በእጅ ያክሉ',
+    camScanNoneFound: 'በአውታረ መረቡ ላይ ካሜራዎች አልተገኙም። ካሜራዎ ONVIF የማይደግፍ ከሆነ በ IP አድራሻው በእጅ ያክሉት።',
     showHideSections: 'ክፍሎችን አሳይ / ደብቅ', restoreDefaults: 'ነባሪዎችን እንደገና አስጀምር?', restoreDefaultsConfirm: 'ይህ የደህንነት ፓነሉን አቀማመጥ ዳግም ያስጀምራል። ሊቀለበስ አይችልም።', restore: 'እንደገና አስጀምር', systemTest: 'የስርዓት ፈተና',
   );
 
@@ -4131,6 +4207,11 @@ class S {
     installerCodeHint: 'Ingresa el código de instalador', installerCodeWrong: 'Código de instalador incorrecto',
     installerModeOnMsg: 'Modo Instalador activado', installerModeOffMsg: 'Modo Instalador desactivado',
     installerExitConfirm: '¿Salir del Modo Instalador?',
+    deviceOfflineHint: 'Dispositivo desconectado — revisa su conexión',
+    aiBackendNotConfigured: 'El asistente de IA aún no está configurado',
+    aiRequestFailed: 'Lo siento, no pude conectar con el asistente ahora',
+    aiEmptyReply: 'Hecho.',
+    aiTooManySteps: 'Esa solicitud necesita demasiados pasos — intenta algo más simple',
     mirrorScreenTitle: 'Espejo Inteligente', adBannerShop: 'Tienda',
     confirm: 'Confirmar', pickDay: 'Día', pickMonth: 'Mes',
     pickHebrewDate: 'Seleccionar fecha hebrea',
@@ -4172,7 +4253,7 @@ class S {
     deviceNotFoundStatus: 'Dispositivo no encontrado', manualAddStatus: 'Añadir manualmente',
     connecting: 'Conectando...',
     deviceNotFoundHint: 'Verifica que el dispositivo esté enchufado y en WiFi,\no que el Bluetooth esté activado.',
-    manualAddLabel: 'Añadir manualmente', deviceNameLabel: 'Nombre del dispositivo',
+    manualAddLabel: 'Añadir manualmente', deviceNameLabel: 'Nombre del dispositivo', deviceDeleteConfirm: '¿Eliminar este dispositivo de la app? Puedes volver a añadirlo más tarde escaneando de nuevo.',
     ipAddressOptional: 'Dirección IP (opcional)', back: 'Volver',
     faceConfigured: '✓ Configurado', faceIdTitle: 'Identificación facial',
     faceIdSubtitle: 'Registra personas para identificación automática',
@@ -4289,6 +4370,10 @@ class S {
     intercomHint: 'Añade un intercomunicador desde el catálogo o importación de pasarela',
     intercomRing: 'Timbrar', intercomAnswer: 'Contestar', intercomDecline: 'Rechazar',
     intercomCategory: 'Timbre de vídeo', intercomRinging: 'Alguien en la puerta…',
+    vacuumCategory: 'Robot aspirador', vacuumNoDevices: 'No se encontraron robots aspiradores',
+    vacuumHint: 'Conecta tu robot aspirador a través de Home Assistant para verlo aquí',
+    vacuumStart: 'Iniciar', vacuumPause: 'Pausar', vacuumDock: 'Volver a la base',
+    vacuumCleaning: 'Limpiando', vacuumDocked: 'En la base',
     intercomUnlockDoor: 'Abrir puerta',
     energyRateLabel: 'Tarifa eléctrica', energyRateEdit: 'Editar tarifa',
     energyRateUnit: '₪/kWh', energyRateSaved: 'Tarifa guardada',
@@ -4298,6 +4383,8 @@ class S {
     backupSection: 'Datos y copia de seguridad',
     biometricSplashLabel: 'Autenticar',
     camLocationPermission: 'Se requiere permiso de ubicación para escanear la red',
+    camNoWifiIp: 'No pudimos detectar tu red WiFi — conéctate a WiFi e inténtalo de nuevo, o añade la cámara manualmente',
+    camScanNoneFound: 'No se encontraron cámaras en la red. Si la tuya no es compatible con ONVIF, añádela manualmente con su dirección IP.',
     showHideSections: 'Mostrar / Ocultar secciones', restoreDefaults: '¿Restaurar valores predeterminados?', restoreDefaultsConfirm: 'Esto restablecerá el diseño del panel de seguridad. No se puede deshacer.', restore: 'Restaurar', systemTest: 'Prueba del sistema',
   );
 
@@ -4567,6 +4654,11 @@ class S {
     installerCodeHint: 'Введите код установщика', installerCodeWrong: 'Неверный код установщика',
     installerModeOnMsg: 'Режим установщика активирован', installerModeOffMsg: 'Режим установщика завершён',
     installerExitConfirm: 'Выйти из режима установщика?',
+    deviceOfflineHint: 'Устройство не в сети — проверьте подключение',
+    aiBackendNotConfigured: 'ИИ-ассистент ещё не настроен',
+    aiRequestFailed: 'Извините, не удалось связаться с ассистентом',
+    aiEmptyReply: 'Готово.',
+    aiTooManySteps: 'Этот запрос требует слишком много шагов — попробуйте проще',
     mirrorScreenTitle: 'Умное зеркало', adBannerShop: 'Магазин',
     confirm: 'Подтвердить', pickDay: 'День', pickMonth: 'Месяц',
     pickHebrewDate: 'Выбрать еврейскую дату',
@@ -4610,7 +4702,7 @@ class S {
     deviceNotFoundStatus: 'Устройство не найдено', manualAddStatus: 'Добавить вручную',
     connecting: 'Подключение...',
     deviceNotFoundHint: 'Убедитесь, что устройство подключено к питанию и WiFi,\nили что Bluetooth включён.',
-    manualAddLabel: 'Добавить вручную', deviceNameLabel: 'Имя устройства',
+    manualAddLabel: 'Добавить вручную', deviceNameLabel: 'Имя устройства', deviceDeleteConfirm: 'Удалить это устройство из приложения? Позже его можно будет снова добавить повторным сканированием.',
     ipAddressOptional: 'IP-адрес (необязательно)', back: 'Назад',
     faceConfigured: '✓ Настроено', faceIdTitle: 'Идентификация лица',
     faceIdSubtitle: 'Зарегистрируйте людей для автоматического распознавания',
@@ -4733,6 +4825,10 @@ class S {
     intercomHint: 'Добавьте домофон из каталога или через импорт шлюза',
     intercomRing: 'Позвонить', intercomAnswer: 'Ответить', intercomDecline: 'Отклонить',
     intercomCategory: 'Видеозвонок', intercomRinging: 'Кто-то у двери…',
+    vacuumCategory: 'Робот-пылесос', vacuumNoDevices: 'Роботы-пылесосы не найдены',
+    vacuumHint: 'Подключите робота-пылесоса через Home Assistant, чтобы увидеть его здесь',
+    vacuumStart: 'Старт', vacuumPause: 'Пауза', vacuumDock: 'На базу',
+    vacuumCleaning: 'Уборка', vacuumDocked: 'На базе',
     intercomUnlockDoor: 'Открыть дверь',
     energyRateLabel: 'Тариф электроэнергии', energyRateEdit: 'Изменить тариф',
     energyRateUnit: '₪/кВт·ч', energyRateSaved: 'Тариф сохранён',
@@ -4742,6 +4838,8 @@ class S {
     backupSection: 'Данные и резервное копирование',
     biometricSplashLabel: 'Аутентификация',
     camLocationPermission: 'Для сканирования сети требуется разрешение геолокации',
+    camNoWifiIp: 'Не удалось определить вашу сеть WiFi — подключитесь к WiFi и попробуйте снова, или добавьте камеру вручную',
+    camScanNoneFound: 'Камеры в сети не найдены. Если ваша камера не поддерживает ONVIF, добавьте её вручную по IP-адресу.',
     showHideSections: 'Показать / Скрыть разделы', restoreDefaults: 'Восстановить настройки по умолчанию?', restoreDefaultsConfirm: 'Это сбросит расположение панели безопасности. Отменить невозможно.', restore: 'Восстановить', systemTest: 'Тест системы',
   );
 
@@ -5012,6 +5110,11 @@ class S {
     installerCodeHint: "Entrez le code installateur", installerCodeWrong: 'Code installateur incorrect',
     installerModeOnMsg: 'Mode Installateur activé', installerModeOffMsg: 'Mode Installateur désactivé',
     installerExitConfirm: 'Quitter le Mode Installateur ?',
+    deviceOfflineHint: 'Appareil hors ligne — vérifiez sa connexion',
+    aiBackendNotConfigured: "L'assistant IA n'est pas encore configuré",
+    aiRequestFailed: "Désolé, je n'ai pas pu joindre l'assistant",
+    aiEmptyReply: 'Fait.',
+    aiTooManySteps: 'Cette demande nécessite trop d\'étapes — essayez plus simple',
     mirrorScreenTitle: 'Miroir connecté', adBannerShop: 'Boutique',
     gatewaysTitle: 'Passerelles', statusOffline: 'Hors ligne',
     confirm: 'Confirmer', pickDay: 'Jour', pickMonth: 'Mois',
@@ -5056,7 +5159,7 @@ class S {
     deviceNotFoundStatus: 'Appareil introuvable', manualAddStatus: 'Ajouter manuellement',
     connecting: 'Connexion en cours...',
     deviceNotFoundHint: 'Vérifiez que l\'appareil est alimenté et connecté au WiFi,\nou que le Bluetooth est activé.',
-    manualAddLabel: 'Ajouter manuellement', deviceNameLabel: 'Nom de l\'appareil',
+    manualAddLabel: 'Ajouter manuellement', deviceNameLabel: 'Nom de l\'appareil', deviceDeleteConfirm: 'Supprimer cet appareil de l\'application ? Vous pourrez le rajouter plus tard en relançant une recherche.',
     ipAddressOptional: 'Adresse IP (optionnel)', back: 'Retour',
     faceConfigured: '✓ Configuré', faceIdTitle: 'Identification faciale',
     faceIdSubtitle: 'Enregistrez des personnes pour une identification automatique',
@@ -5179,6 +5282,10 @@ class S {
     intercomHint: 'Ajoutez un interphone via le catalogue ou l\'importation de passerelle',
     intercomRing: 'Sonner', intercomAnswer: 'Répondre', intercomDecline: 'Refuser',
     intercomCategory: 'Sonnette vidéo', intercomRinging: 'Quelqu\'un à la porte…',
+    vacuumCategory: 'Robot aspirateur', vacuumNoDevices: 'Aucun robot aspirateur trouvé',
+    vacuumHint: 'Connectez votre robot aspirateur via Home Assistant pour le voir ici',
+    vacuumStart: 'Démarrer', vacuumPause: 'Pause', vacuumDock: 'Retour à la base',
+    vacuumCleaning: 'Nettoyage', vacuumDocked: 'À la base',
     intercomUnlockDoor: 'Déverrouiller la porte',
     energyRateLabel: 'Tarif électricité', energyRateEdit: 'Modifier le tarif',
     energyRateUnit: '₪/kWh', energyRateSaved: 'Tarif enregistré',
@@ -5188,6 +5295,8 @@ class S {
     backupSection: 'Données et sauvegarde',
     biometricSplashLabel: 'Authentifier',
     camLocationPermission: 'Autorisation de localisation requise pour scanner le réseau',
+    camNoWifiIp: "Impossible de détecter votre réseau WiFi — connectez-vous au WiFi et réessayez, ou ajoutez la caméra manuellement",
+    camScanNoneFound: "Aucune caméra trouvée sur le réseau. Si la vôtre n'est pas compatible ONVIF, ajoutez-la manuellement avec son adresse IP.",
     showHideSections: 'Afficher / Masquer les sections', restoreDefaults: 'Restaurer les paramètres par défaut ?', restoreDefaultsConfirm: "Cette action réinitialisera la disposition du panneau de sécurité. Impossible d'annuler.", restore: 'Restaurer', systemTest: 'Test système',
   );
 }

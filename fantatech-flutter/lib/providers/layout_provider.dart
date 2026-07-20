@@ -11,8 +11,8 @@ import '../services/layout_sync_service.dart';
 // Usage:
 //   final lp = context.read<LayoutProvider>();
 //
-//   // Enter / exit edit mode
-//   lp.toggleEditMode();
+//   // Enter / exit edit mode for a specific dashboard
+//   lp.toggleEditMode('home');
 //
 //   // Get sorted visible items for a dashboard
 //   final items = lp.getItems('home');
@@ -26,11 +26,17 @@ class LayoutProvider extends ChangeNotifier {
 
   // ── State ──────────────────────────────────────────────────────────────────
 
-  bool _editMode = false;
+  // Per-dashboard, not a single global flag — entering edit mode on the
+  // Security screen used to also flip Home and Devices into their edit-mode
+  // chrome (drag handles + wiggle + a semi-transparent ⋮ button on every
+  // card), since IndexedStack keeps all tabs mounted and they all watched
+  // the same bool. Scoping by dashboardId keeps edit mode local to the
+  // screen the user actually opened it on.
+  final Set<String> _editModeDashboards = {};
   bool _loaded   = false;
   final Map<String, DashboardLayout> _layouts = {};
 
-  bool get editMode => _editMode;
+  bool editModeFor(String dashboardId) => _editModeDashboards.contains(dashboardId);
   bool get loaded   => _loaded;
 
   // ── Initialization ─────────────────────────────────────────────────────────
@@ -40,15 +46,28 @@ class LayoutProvider extends ChangeNotifier {
 
   // ── Edit mode ──────────────────────────────────────────────────────────────
 
-  void toggleEditMode() {
-    _editMode = !_editMode;
+  void toggleEditMode(String dashboardId) {
+    if (_editModeDashboards.contains(dashboardId)) {
+      _editModeDashboards.remove(dashboardId);
+      _autoSave();
+    } else {
+      _editModeDashboards.add(dashboardId);
+    }
     notifyListeners();
-    if (!_editMode) _autoSave();
   }
 
-  void exitEditMode() {
-    if (!_editMode) return;
-    _editMode = false;
+  void exitEditMode(String dashboardId) {
+    if (!_editModeDashboards.contains(dashboardId)) return;
+    _editModeDashboards.remove(dashboardId);
+    notifyListeners();
+    _autoSave();
+  }
+
+  /// Safety net for navigation — clears edit mode on every dashboard at
+  /// once, so switching tabs never leaves one stuck mid-edit.
+  void exitAllEditModes() {
+    if (_editModeDashboards.isEmpty) return;
+    _editModeDashboards.clear();
     notifyListeners();
     _autoSave();
   }

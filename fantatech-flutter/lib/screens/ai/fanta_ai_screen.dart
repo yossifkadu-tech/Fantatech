@@ -1,11 +1,12 @@
 import 'package:material_symbols_icons/symbols.dart';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../../models/app_state.dart';
-import '../../models/device.dart';
 import '../../l10n/strings.dart';
+import '../../services/ai/ai_agent_service.dart';
 import '../../theme/app_theme.dart';
 
 // Dedicated accent for the Fanta AI screen — distinct from the app's orange
@@ -32,6 +33,10 @@ class _FantaAIScreenState extends State<FantaAIScreen>
   // Speech-to-text
   final stt.SpeechToText _speech = stt.SpeechToText();
   bool _speechAvailable = false;
+
+  // Real Claude-backed agent + spoken replies
+  final AiAgentService _agent = AiAgentService();
+  final FlutterTts _tts = FlutterTts();
 
   late AnimationController _orbPulse;
   late AnimationController _orbGlow;
@@ -63,6 +68,7 @@ class _FantaAIScreenState extends State<FantaAIScreen>
     );
 
     _initSpeech();
+    _tts.setLanguage(_speechLocaleId(context.read<AppState>().locale));
   }
 
   Future<void> _initSpeech() async {
@@ -149,132 +155,38 @@ class _FantaAIScreenState extends State<FantaAIScreen>
     _inputCtrl.dispose();
     _scrollCtrl.dispose();
     _inputFocus.dispose();
+    _tts.stop();
     super.dispose();
   }
 
-  Future<void> _sendMessage(String text, {int sugIndex = -1}) async {
+  Future<void> _sendMessage(String text) async {
     if (text.trim().isEmpty || _isThinking) return;
     _inputCtrl.clear();
+    final state = context.read<AppState>();
 
     setState(() {
       _messages.add(_ChatMessage(text: text, isUser: true));
       _isThinking = true;
     });
-
     _scrollToBottom();
 
-    await Future.delayed(const Duration(milliseconds: 1200));
-
-    final replyKey = _generateReply(text, sugIndex: sugIndex);
+    // Real Claude agent — understands intent, calls real device commands via
+    // AppState/DeviceCommander, and only reports success it actually
+    // confirmed. See AiAgentService for the tool-use loop.
+    final reply = await _agent.send(text, state);
     if (!mounted) return;
-
-    // Execute the real action behind the reply so the AI actually controls
-    // the home — and the conversation stays open for the next request.
-    _runAction(replyKey);
 
     setState(() {
       _isThinking = false;
-      if (replyKey == _ReplyKey.replyDefault) {
-        // Dynamic context-aware reply instead of the generic "coming soon"
-        _messages.add(_ChatMessage(
-            text: _buildDynamicReply(text), isUser: false));
-      } else {
-        _messages.add(_ChatMessage(text: '', isUser: false, replyKey: replyKey));
-      }
+      _messages.add(_ChatMessage(text: reply.text, isUser: false));
     });
-
     _scrollToBottom();
-    // Re-focus the input so the user can immediately type another message.
     _inputFocus.requestFocus();
-  }
 
-  /// Perform the home action that corresponds to a canned reply.
-  void _runAction(_ReplyKey key) {
-    final state = context.read<AppState>();
-    switch (key) {
-      case _ReplyKey.reply1: // turn off all lights
-        state.setAllLights(false);
-        break;
-      case _ReplyKey.reply3: // night mode
-        state.activateGoodNight();
-        break;
-      case _ReplyKey.reply2: // status — read-only
-      case _ReplyKey.reply4: // security check — read-only
-      case _ReplyKey.replyDefault:
-        break;
+    if (reply.text.isNotEmpty) {
+      await _tts.setLanguage(_speechLocaleId(state.locale));
+      await _tts.speak(reply.text);
     }
-  }
-
-  _ReplyKey _generateReply(String input, {int sugIndex = -1}) {
-    // suggestion chip tapped — reply by index
-    if (sugIndex == 0) return _ReplyKey.reply1;
-    if (sugIndex == 1) return _ReplyKey.reply2;
-    if (sugIndex == 2) return _ReplyKey.reply3;
-    if (sugIndex == 3) return _ReplyKey.reply4;
-    // free-text: match keywords across all supported languages
-    final lower = input.toLowerCase();
-    final isLights = lower.contains('אור') || lower.contains('תאורה') ||
-        lower.contains('light') || lower.contains('свет') ||
-        lower.contains('ضوء') || lower.contains('luz') || lower.contains('መብራት');
-    final isStatus = lower.contains('מצב') || lower.contains('סטטוס') ||
-        lower.contains('status') || lower.contains('состояние') ||
-        lower.contains('حالة') || lower.contains('estado') || lower.contains('ሁኔታ');
-    final isNight = lower.contains('לילה') || lower.contains('שקט') ||
-        lower.contains('night') || lower.contains('ночь') ||
-        lower.contains('ليل') || lower.contains('noche') || lower.contains('ሌሊት');
-    final isAlert = lower.contains('התראה') || lower.contains('אבטחה') ||
-        lower.contains('alert') || lower.contains('security') ||
-        lower.contains('تنبيه') || lower.contains('alerta') || lower.contains('ማስጠንቀቂያ');
-    if (isLights) return _ReplyKey.reply1;
-    if (isStatus) return _ReplyKey.reply2;
-    if (isNight)  return _ReplyKey.reply3;
-    if (isAlert)  return _ReplyKey.reply4;
-    return _ReplyKey.replyDefault;
-  }
-
-  /// Build a context-aware reply for inputs that don't match a canned key.
-  String _buildDynamicReply(String input) {
-    final state = context.read<AppState>();
-    final lower = input.toLowerCase();
-    final devices = state.devices;
-    final onCount = devices.where((d) => d.isOn).length;
-    final total   = devices.length;
-
-    // Temperature / AC
-    if (lower.contains('טמפ') || lower.contains('חם') || lower.contains('קר') ||
-        lower.contains('temp') || lower.contains('hot') || lower.contains('cold') ||
-        lower.contains('ac') || lower.contains('מזג')) {
-      final acs = devices.where((d) => d.type == DeviceType.airConditioner);
-      if (acs.isEmpty) return 'לא מצאתי מזגן מחובר. אפשר להוסיף מזגן דרך + הוסף מכשיר.';
-      final active = acs.where((d) => d.isOn).length;
-      return 'יש ${acs.length} מזגן${acs.length > 1 ? "ים" : ""}, $active פעיל${active > 1 ? "ים" : ""}. לשליטה ישירה פתח מסך הבית.';
-    }
-    // Cameras
-    if (lower.contains('מצלמ') || lower.contains('camera') || lower.contains('cam') ||
-        lower.contains('ראיה') || lower.contains('שמור')) {
-      final cams = state.cameras;
-      if (cams.isEmpty) return 'אין מצלמות מחוברות. תוכל להוסיף מצלמה דרך + הוסף מכשיר.';
-      final onlineCams = cams.where((c) => c.isOnline).length;
-      return '${cams.length} מצלמות ב-FantaTech, $onlineCams מחוברות ומשדרות.';
-    }
-    // Energy
-    if (lower.contains('חשמל') || lower.contains('צריכה') || lower.contains('energy') ||
-        lower.contains('power') || lower.contains('watt') || lower.contains('kw')) {
-      return 'כרגע $onCount מכשירים פעילים מתוך $total. לניתוח צריכת חשמל מפורט פתח את מסך האנרגיה.';
-    }
-    // Devices count / summary
-    if (lower.contains('כמה') || lower.contains('how many') || lower.contains('list') ||
-        lower.contains('רשימה') || lower.contains('מכשירים')) {
-      return 'יש לך $total מכשירים חכמים. כרגע $onCount פעיל${onCount != 1 ? "ים" : ""}.';
-    }
-    // Hello / greeting
-    if (lower.contains('שלום') || lower.contains('היי') || lower.contains('hello') ||
-        lower.contains('hi ') || lower.startsWith('hi') || lower.contains('hey')) {
-      final name = state.userName.isNotEmpty ? state.userName.split(' ').first : '';
-      return 'שלום${name.isNotEmpty ? " $name" : ""}! אני פנטה, העוזר החכם שלך. יש $total מכשירים מחוברים, $onCount פעילים. במה אוכל לעזור?';
-    }
-    // Fallback — still contextual
-    return 'מבין. כרגע $onCount מכשירים פעילים מתוך $total. נסה לשאול: "כבה אורות", "מה המצב", "מצב לילה" או "בדוק אבטחה".';
   }
 
   void _scrollToBottom() {
@@ -409,7 +321,7 @@ class _FantaAIScreenState extends State<FantaAIScreen>
                 accent: bgColors[i],
                 title: titles[i],
                 desc: descs[i],
-                onTap: () => _sendMessage(titles[i], sugIndex: i),
+                onTap: () => _sendMessage(titles[i]),
               );
             }),
           ),
@@ -470,7 +382,7 @@ class _FantaAIScreenState extends State<FantaAIScreen>
         runSpacing: 8,
         children: List.generate(sugg.length, (i) {
           return GestureDetector(
-            onTap: () => _sendMessage(sugg[i], sugIndex: i),
+            onTap: () => _sendMessage(sugg[i]),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
               decoration: BoxDecoration(
@@ -766,33 +678,11 @@ class _SuggestionCard extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────
 // Chat message bubble
 // ─────────────────────────────────────────────────────────────
-/// Identifies which canned bot reply a message holds, so it can be
-/// re-rendered in the currently-selected language instead of staying
-/// frozen in the language it was first generated in.
-enum _ReplyKey { reply1, reply2, reply3, reply4, replyDefault }
-
 class _ChatMessage {
-  /// Literal text — used for user-typed messages (kept as the user wrote them).
   final String text;
   final bool isUser;
 
-  /// For bot messages: which canned reply this is. When non-null the bubble
-  /// resolves the text live from the current language's strings.
-  final _ReplyKey? replyKey;
-
-  _ChatMessage({required this.text, required this.isUser, this.replyKey});
-
-  /// Resolve the text to display in the given language.
-  String resolve(S s) {
-    switch (replyKey) {
-      case _ReplyKey.reply1:       return s.aiReply1;
-      case _ReplyKey.reply2:       return s.aiReply2;
-      case _ReplyKey.reply3:       return s.aiReply3;
-      case _ReplyKey.reply4:       return s.aiReply4;
-      case _ReplyKey.replyDefault: return s.aiReplyDefault;
-      case null:                   return text; // user message
-    }
-  }
+  _ChatMessage({required this.text, required this.isUser});
 }
 
 class _MessageBubble extends StatelessWidget {
@@ -801,9 +691,7 @@ class _MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Resolve bot replies live so they follow the selected language.
     final state = context.watch<AppState>();
-    final s = state.strings;
     return Align(
       alignment: message.isUser
           ? AlignmentDirectional.centerEnd
@@ -826,7 +714,7 @@ class _MessageBubble extends StatelessWidget {
           ).resolve(Directionality.of(context)),
         ),
         child: Text(
-          message.resolve(s),
+          message.text,
           style: TextStyle(
             color: message.isUser
                 ? Colors.white

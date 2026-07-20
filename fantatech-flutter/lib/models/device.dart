@@ -26,6 +26,7 @@ enum DeviceType {
   intercom,          // video door intercom
   garage,            // garage door / gate controller
   alarmPanel,        // Ajax / Risco / PIMA alarm panel
+  robotVacuum,       // robot vacuum / mop (iRobot, Roborock, Ecovacs…)
   unknown,
 }
 
@@ -333,4 +334,49 @@ class Camera {
   bool get hasRealStream =>
       mjpegUrl != null || snapshotUrl != null || rtspUrl != null ||
       (ip != null);
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'room': room,
+    'isOnline': isOnline,
+    'motionDetection': motionDetection,
+    'thumbnailUrl': thumbnailUrl,
+    'ip': ip,
+    'port': port,
+    'username': username,
+    'password': password,
+    'rtspUrl': rtspUrl,
+    'mjpegUrl': mjpegUrl,
+    'snapshotUrl': snapshotUrl,
+    'manufacturer': manufacturer,
+    'model': model,
+    'streamType': streamType.name,
+    'isPtz': isPtz,
+    'onvifProfileToken': onvifProfileToken,
+  };
+
+  factory Camera.fromJson(Map<String, dynamic> json) => Camera(
+    id: json['id'] as String,
+    name: json['name'] as String,
+    room: json['room'] as String? ?? '',
+    isOnline: json['isOnline'] as bool? ?? true,
+    motionDetection: json['motionDetection'] as bool? ?? true,
+    thumbnailUrl: json['thumbnailUrl'] as String?,
+    ip: json['ip'] as String?,
+    port: json['port'] as int? ?? 554,
+    username: json['username'] as String?,
+    password: json['password'] as String?,
+    rtspUrl: json['rtspUrl'] as String?,
+    mjpegUrl: json['mjpegUrl'] as String?,
+    snapshotUrl: json['snapshotUrl'] as String?,
+    manufacturer: json['manufacturer'] as String?,
+    model: json['model'] as String?,
+    streamType: CameraStreamType.values.firstWhere(
+      (e) => e.name == json['streamType'],
+      orElse: () => CameraStreamType.unknown,
+    ),
+    isPtz: json['isPtz'] as bool? ?? false,
+    onvifProfileToken: json['onvifProfileToken'] as String? ?? 'MainStream',
+  );
 }

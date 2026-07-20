@@ -67,7 +67,7 @@ class _Z2MConnectSheetState extends State<Z2MConnectSheet> {
       final appState = context.read<AppState>();
       int added = 0;
       for (final device in result.devices) {
-        appState.addDevice(device);
+        appState.upsertDevice(device);
         added++;
       }
       setState(() {

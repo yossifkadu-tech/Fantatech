@@ -3,8 +3,11 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import '../models/app_state.dart';
 import '../models/device.dart';
+import '../models/device_capabilities.dart';
+import '../services/control/device_commander.dart';
 import '../theme/app_theme.dart';
 import '../theme/device_icons.dart';
+import 'device_edit_sheet.dart';
 import 'status_indicator.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -27,12 +30,25 @@ class DeviceCard extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onFavoriteToggle;
 
+  /// Shows a capability-driven quick control (brightness slider / temp
+  /// stepper / cover buttons) directly on the card. Off by default because
+  /// several callers place [DeviceCard] in a fixed-aspect-ratio grid tile
+  /// that has no room for the extra content — only turn this on in a
+  /// full-width, height-unconstrained list.
+  final bool showInlineControl;
+
+  /// Long-press opens the shared rename/delete sheet. Set false only when
+  /// the caller already provides its own edit affordance for this card.
+  final bool enableEditSheet;
+
   const DeviceCard({
     super.key,
     required this.device,
     required this.onToggle,
     this.onTap,
     this.onFavoriteToggle,
+    this.showInlineControl = false,
+    this.enableEditSheet = true,
   });
 
   IconData get _icon => DeviceIcons.forDevice(device);
@@ -65,6 +81,10 @@ class DeviceCard extends StatelessWidget {
 
     return _TapScale(
       onTap: onTap,
+      onLongPress: enableEditSheet
+          ? () => showDeviceEditSheet(context,
+              device: device, state: context.read<AppState>())
+          : null,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOutCubic,
@@ -156,21 +176,46 @@ class DeviceCard extends StatelessWidget {
                   ),
                 ),
 
-                // Quick toggle — disabled for offline / alerted devices
+                // Quick toggle — locked for offline / alerted devices. A
+                // locked switch used to just silently ignore taps, which is
+                // indistinguishable from "the app is broken" — now tapping
+                // it while offline explains why nothing happened instead.
                 Transform.scale(
                   scale: 0.80,
                   alignment: Alignment.centerRight,
-                  child: Switch(
-                    value: isOn,
-                    onChanged: status.isControllable && !isAlerted
-                        ? (_) => onToggle()
-                        : null,
-                    activeThumbColor: color,
-                    activeTrackColor: color.withValues(alpha: 0.30),
-                    inactiveThumbColor: context.tText2(0.25),
-                    inactiveTrackColor: context.tCardAlt,
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
+                  child: (status.isControllable && !isAlerted)
+                      ? Switch(
+                          value: isOn,
+                          onChanged: (_) => onToggle(),
+                          activeThumbColor: color,
+                          activeTrackColor: color.withValues(alpha: 0.30),
+                          inactiveThumbColor: context.tText2(0.25),
+                          inactiveTrackColor: context.tCardAlt,
+                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        )
+                      : GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: isOffline
+                              ? () => ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(s.deviceOfflineHint as String),
+                                      behavior: SnackBarBehavior.floating,
+                                      duration: const Duration(seconds: 2),
+                                    ),
+                                  )
+                              : null,
+                          child: IgnorePointer(
+                            child: Switch(
+                              value: isOn,
+                              onChanged: (_) {},
+                              activeThumbColor: color,
+                              activeTrackColor: color.withValues(alpha: 0.30),
+                              inactiveThumbColor: context.tText2(0.25),
+                              inactiveTrackColor: context.tCardAlt,
+                              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                          ),
+                        ),
                 ),
               ],
             ),
@@ -266,8 +311,254 @@ class DeviceCard extends StatelessWidget {
                 ],
               ],
             ),
+
+            // ── Inline quick control — capability-driven, no tap needed ──
+            if (showInlineControl)
+              _InlineQuickControl(device: device, accent: color, enabled: isOn),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// _InlineQuickControl — renders the single most relevant control for a
+// device directly on its card (brightness slider / temperature stepper /
+// open-stop-close), driven by DeviceCapabilities so it adapts to whatever
+// the device actually reports instead of a hardcoded per-type list.
+// ─────────────────────────────────────────────────────────────────────────────
+class _InlineQuickControl extends StatelessWidget {
+  final Device device;
+  final Color accent;
+  final bool enabled;
+
+  const _InlineQuickControl({
+    required this.device,
+    required this.accent,
+    required this.enabled,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final caps = DeviceCapabilities.of(device);
+
+    if (caps.contains(DeviceCapability.climateControl)) {
+      return _TempStepper(device: device, accent: accent, enabled: enabled);
+    }
+    if (caps.contains(DeviceCapability.position)) {
+      return _CoverButtons(device: device, accent: accent);
+    }
+    if (caps.contains(DeviceCapability.vacuumControl)) {
+      return _VacuumButtons(device: device, accent: accent);
+    }
+    if (caps.contains(DeviceCapability.brightness)) {
+      return _BrightnessSlider(device: device, accent: accent, enabled: enabled);
+    }
+    return const SizedBox.shrink();
+  }
+}
+
+class _BrightnessSlider extends StatefulWidget {
+  final Device device;
+  final Color accent;
+  final bool enabled;
+  const _BrightnessSlider({
+    required this.device,
+    required this.accent,
+    required this.enabled,
+  });
+
+  @override
+  State<_BrightnessSlider> createState() => _BrightnessSliderState();
+}
+
+class _BrightnessSliderState extends State<_BrightnessSlider> {
+  double? _dragValue;
+
+  @override
+  Widget build(BuildContext context) {
+    final stored = (widget.device.attributes['brightness'] as num?)?.toInt() ?? 80;
+    final value = _dragValue ?? stored.toDouble();
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Opacity(
+        opacity: widget.enabled ? 1.0 : 0.35,
+        child: SliderTheme(
+          data: SliderTheme.of(context).copyWith(
+            trackHeight: 3,
+            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+            overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+          ),
+          child: Slider(
+            value: value.clamp(0, 100),
+            min: 0,
+            max: 100,
+            activeColor: widget.accent,
+            inactiveColor: widget.accent.withValues(alpha: 0.15),
+            onChanged: widget.enabled
+                ? (v) => setState(() => _dragValue = v)
+                : null,
+            onChangeEnd: widget.enabled
+                ? (v) {
+                    context
+                        .read<AppState>()
+                        .setDeviceAttribute(widget.device.id, 'brightness', v.toInt());
+                    setState(() => _dragValue = null);
+                  }
+                : null,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TempStepper extends StatelessWidget {
+  final Device device;
+  final Color accent;
+  final bool enabled;
+  const _TempStepper({
+    required this.device,
+    required this.accent,
+    required this.enabled,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final temp = (device.attributes['temperature'] as num?)?.toInt() ?? 22;
+
+    void step(int delta) {
+      final next = (temp + delta).clamp(16, 30);
+      context.read<AppState>().setDeviceAttribute(device.id, 'temperature', next);
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Opacity(
+        opacity: enabled ? 1.0 : 0.35,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _StepperButton(
+              icon: Symbols.remove,
+              color: accent,
+              onTap: enabled ? () => step(-1) : null,
+            ),
+            Text(
+              '$temp°C',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: context.tText2(0.85),
+              ),
+            ),
+            _StepperButton(
+              icon: Symbols.add,
+              color: accent,
+              onTap: enabled ? () => step(1) : null,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StepperButton extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final VoidCallback? onTap;
+  const _StepperButton({required this.icon, required this.color, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        width: 28,
+        height: 28,
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.14),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, size: 16, color: color),
+      ),
+    );
+  }
+}
+
+class _CoverButtons extends StatelessWidget {
+  final Device device;
+  final Color accent;
+  const _CoverButtons({required this.device, required this.accent});
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.read<AppState>();
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _StepperButton(
+            icon: Symbols.expand_less,
+            color: accent,
+            onTap: () {
+              state.toggleDevice(device.id);
+              state.setCoverPosition(device.id, 100);
+            },
+          ),
+          _StepperButton(
+            icon: Symbols.stop,
+            color: accent,
+            onTap: () => state.stopCover(device.id),
+          ),
+          _StepperButton(
+            icon: Symbols.expand_more,
+            color: accent,
+            onTap: () {
+              state.toggleDevice(device.id);
+              state.setCoverPosition(device.id, 0);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _VacuumButtons extends StatelessWidget {
+  final Device device;
+  final Color accent;
+  const _VacuumButtons({required this.device, required this.accent});
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.read<AppState>();
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _StepperButton(
+            icon: Symbols.play_arrow,
+            color: accent,
+            onTap: () => state.vacuumCommand(device.id, VacuumAction.start),
+          ),
+          _StepperButton(
+            icon: Symbols.pause,
+            color: accent,
+            onTap: () => state.vacuumCommand(device.id, VacuumAction.pause),
+          ),
+          _StepperButton(
+            icon: Symbols.home_pin,
+            color: accent,
+            onTap: () => state.vacuumCommand(device.id, VacuumAction.dock),
+          ),
+        ],
       ),
     );
   }
@@ -348,7 +639,8 @@ class _SignalBars extends StatelessWidget {
 class _TapScale extends StatefulWidget {
   final Widget child;
   final VoidCallback? onTap;
-  const _TapScale({required this.child, this.onTap});
+  final VoidCallback? onLongPress;
+  const _TapScale({required this.child, this.onTap, this.onLongPress});
 
   @override
   State<_TapScale> createState() => _TapScaleState();
@@ -387,6 +679,7 @@ class _TapScaleState extends State<_TapScale>
       },
       onTapDown: (_) => _ctrl.forward(),
       onTapCancel: () => _ctrl.reverse(),
+      onLongPress: widget.onLongPress,
       child: AnimatedBuilder(
         animation: _scale,
         builder: (_, child) =>

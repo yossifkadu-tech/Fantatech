@@ -410,9 +410,36 @@ class _AuthGateState extends State<AuthGate> {
       return const _BiometricSplash();
     }
     if (!_loggedIn) {
-      return LoginScreen(
-        onLogin: _handleLogin,
-        onBiometricTap: _bioReady ? _handleBiometricLogin : null,
+      return Stack(
+        children: [
+          LoginScreen(
+            onLogin: _handleLogin,
+            onBiometricTap: _bioReady ? _handleBiometricLogin : null,
+          ),
+          // Debug-only screenshot/preview shortcut — kDebugMode is false in
+          // every release build, so this can never ship. Remove once the
+          // preview session this was added for is done.
+          if (kDebugMode)
+            Positioned(
+              bottom: 16,
+              right: 16,
+              child: SafeArea(
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.black87),
+                  onPressed: () => _handleLogin(AppUser(
+                    id: 'debug-preview',
+                    name: 'Preview',
+                    email: 'preview@debug.local',
+                    role: UserRole.homeManager,
+                    authProvider: AuthProvider.member,
+                    registeredAt: DateTime.now(),
+                  )),
+                  child: const Text('Skip Login (Debug)',
+                      style: TextStyle(color: Colors.white, fontSize: 11)),
+                ),
+              ),
+            ),
+        ],
       );
     }
     return const MainShell();
@@ -514,7 +541,7 @@ class _MainShellState extends State<MainShell> {
     final s = state.strings;
 
     void onNavTap(int i) {
-      context.read<LayoutProvider>().exitEditMode();
+      context.read<LayoutProvider>().exitAllEditModes();
       setState(() => _index = i);
     }
 
@@ -695,6 +722,9 @@ class _SideNav extends StatelessWidget {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Material 3 bottom navigation bar — animated pill indicator, ripple, scale.
+// Fanta AI is reached from the hero card on the Home screen only — a
+// second and third entry point here and in the top bar made AI feel like
+// it was everywhere, so those were removed in favor of this single one.
 // ─────────────────────────────────────────────────────────────────────────────
 class _BottomNav extends StatelessWidget {
   final int index;

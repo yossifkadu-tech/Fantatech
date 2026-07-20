@@ -32,10 +32,16 @@ class SwitchController {
   // ── Public: toggle one channel ──────────────────────────────────────────────
 
   /// Returns true on success.  Does not throw.
+  /// isOnline was never written back after scan time before this — a
+  /// device that went offline kept showing "connected" forever. Every
+  /// real network round-trip now updates it.
   static Future<bool> toggle(SmartSwitchDevice device, int channelIdx) async {
     try {
-      return await _dispatch(device, channelIdx, null);
+      final ok = await _dispatch(device, channelIdx, null);
+      device.isOnline = ok;
+      return ok;
     } catch (_) {
+      device.isOnline = false;
       return false;
     }
   }
@@ -43,8 +49,11 @@ class SwitchController {
   static Future<bool> setOn(
       SmartSwitchDevice device, int channelIdx, bool on) async {
     try {
-      return await _dispatch(device, channelIdx, on);
+      final ok = await _dispatch(device, channelIdx, on);
+      device.isOnline = ok;
+      return ok;
     } catch (_) {
+      device.isOnline = false;
       return false;
     }
   }
@@ -53,8 +62,11 @@ class SwitchController {
   static Future<bool?> readState(
       SmartSwitchDevice device, int channelIdx) async {
     try {
-      return await _readState(device, channelIdx);
+      final state = await _readState(device, channelIdx);
+      device.isOnline = state != null;
+      return state;
     } catch (_) {
+      device.isOnline = false;
       return null;
     }
   }
@@ -250,7 +262,12 @@ class SwitchController {
             )
             .timeout(_timeout);
         if (r.statusCode != 200) return null;
-        return (jsonDecode(r.body) as Map)['state'] == 'on';
+        final haState = (jsonDecode(r.body) as Map)['state'] as String?;
+        // A live 200 response with state "unavailable"/"unknown" means the
+        // device is offline, not that the switch is off — treat it the
+        // same as a failed read so isOnline reflects reality.
+        if (haState == 'unavailable' || haState == 'unknown') return null;
+        return haState == 'on';
 
       case SwitchProtocol.kasaLocal:
         final info = await _kasaGetSysinfo(ip);

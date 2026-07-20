@@ -93,7 +93,7 @@ class _ReorderableDashboardState extends State<ReorderableDashboard> {
   @override
   Widget build(BuildContext context) {
     final provider  = context.watch<LayoutProvider>();
-    final editMode  = provider.editMode;
+    final editMode  = provider.editModeFor(widget.dashboardId);
 
     // Seed defaults if this dashboard has not been persisted yet.
     // Safe to call from build — does NOT call notifyListeners when already set.
@@ -378,7 +378,7 @@ class _InlineEditButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider   = context.watch<LayoutProvider>();
-    final isEditMode = provider.editMode;
+    final isEditMode = provider.editModeFor(dashboardId);
     final accent     = Theme.of(context).colorScheme.primary;
     final isLight    = Theme.of(context).brightness == Brightness.light;
 
@@ -410,7 +410,7 @@ class _InlineEditButton extends StatelessWidget {
           ),
           child: InkWell(
             borderRadius: BorderRadius.circular(20),
-            onTap: provider.toggleEditMode,
+            onTap: () => provider.toggleEditMode(dashboardId),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               child: Row(
@@ -450,11 +450,12 @@ abstract class DashboardDefaults {
   // Page 1: smart home, security, cameras, ad banner, store.
   // Page 2: energy (weather), system status, home management, media.
   static const List<LayoutItem> home = [
-    LayoutItem(id: 'quick_actions',   type: 'quick_actions',   order: 0,  page: 0),
-    LayoutItem(id: 'security',        type: 'security',        order: 1,  page: 0),
-    LayoutItem(id: 'cameras',         type: 'cameras',         order: 2,  page: 0),
-    LayoutItem(id: 'ad_banner',       type: 'ad_banner',       order: 3,  page: 0),
-    LayoutItem(id: 'store',           type: 'store',           order: 4,  page: 0),
+    LayoutItem(id: 'ai_hero',         type: 'ai_hero',         order: 0,  page: 0, pinned: true),
+    LayoutItem(id: 'quick_actions',   type: 'quick_actions',   order: 1,  page: 0),
+    LayoutItem(id: 'security',        type: 'security',        order: 2,  page: 0),
+    LayoutItem(id: 'cameras',         type: 'cameras',         order: 3,  page: 0),
+    LayoutItem(id: 'ad_banner',       type: 'ad_banner',       order: 4,  page: 0),
+    LayoutItem(id: 'store',           type: 'store',           order: 5,  page: 0),
     LayoutItem(id: 'weather',         type: 'weather',         order: 10, page: 1),
     LayoutItem(id: 'system_status',   type: 'system_status',   order: 11, page: 1),
     LayoutItem(id: 'home_management', type: 'home_management', order: 12, page: 1),
@@ -464,7 +465,7 @@ abstract class DashboardDefaults {
   /// Item types that belong on home-screen page 1. Anything else (including
   /// future/unrecognized types) defaults to page 2 — the "אחר" bucket.
   static const homePage0Types = {
-    'quick_actions', 'security', 'cameras', 'ad_banner', 'store',
+    'ai_hero', 'quick_actions', 'security', 'cameras', 'ad_banner', 'store',
   };
 
   // Cameras screen
@@ -483,14 +484,15 @@ abstract class DashboardDefaults {
     LayoutItem(id: 'sec_history', type: 'event_log',  order: 4),
   ];
 
-  // SmartHome category chips — Lights / Switches / Plugs only. Climate (AC)
-  // lives in Home Management; all sensor/detector categories live in
-  // Security — neither belongs inside Smart Home.
+  // SmartHome category chips — Lights / Switches / Plugs / Robot Vacuum.
+  // Climate (AC) lives in Home Management; all sensor/detector categories
+  // live in Security — neither belongs inside Smart Home.
   static const List<LayoutItem> smarthomeCats = [
     LayoutItem(id: 'cat_light',  type: 'cat_light',  order: 0),
     LayoutItem(id: 'cat_blind',  type: 'cat_blind',  order: 1),
     LayoutItem(id: 'cat_plug',   type: 'cat_plug',   order: 2),
     LayoutItem(id: 'cat_switch', type: 'cat_switch', order: 3),
+    LayoutItem(id: 'cat_vacuum', type: 'cat_vacuum', order: 4),
   ];
 
   // Automations screen
@@ -502,6 +504,7 @@ abstract class DashboardDefaults {
 
   static String nameOf(LayoutItem item) {
     const names = <String, String>{
+      'ai_hero':       'Fanta AI',
       'weather':       'צריכת אנרגיה',
       'security':      'כרזת אבטחה',
       'rooms':         'חדרים',
@@ -532,6 +535,7 @@ abstract class DashboardDefaults {
 
   static IconData iconOf(LayoutItem item) {
     const icons = <String, IconData>{
+      'ai_hero':       Symbols.auto_awesome,
       'weather':       Symbols.bolt,
       'security':      Symbols.shield,
       'rooms':         Symbols.door_front,

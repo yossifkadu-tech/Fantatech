@@ -15,6 +15,7 @@ import 'scan_discovery_screen.dart';
 import 'wiz_setup_screen.dart';
 import 'matter_commission_screen.dart';
 import 'sensor_brand_picker_screen.dart';
+import '../cameras/cameras_screen.dart';
 
 // ─────────────────────────────────────────────────────────────
 // Data models
@@ -263,6 +264,18 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
       return;
     }
 
+    // Cameras have their own model (Camera, not Device) with real ONVIF
+    // scan / manual RTSP / Zigbee2MQTT add flows already built into
+    // CamerasScreen — route there instead of creating an empty, orphaned
+    // Device that would never show up among real cameras or stream video.
+    if (item.id == 'cam_in' || item.id == 'cam_out') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const CamerasScreen()),
+      );
+      return;
+    }
+
     // Sensors, plugs, and switches → brand/protocol picker
     if (item.id == 'motion' || item.id == 'door' || item.id == 'window' ||
         item.id == 'smoke' || item.id == 'plug' || item.id == 'switch1' ||
@@ -285,7 +298,7 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
                 isOn: true,
                 attributes: const {},
               );
-              state.addDevice(device);
+              state.upsertDevice(device);
               setState(() => _addedIds.add(item.id));
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -327,7 +340,7 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
                   _typeFor(id) != DeviceType.gateway,
             attributes: const {},
           );
-          state.addDevice(device);
+          state.upsertDevice(device);
           setState(() => _addedIds.add(id));
 
           ScaffoldMessenger.of(context).showSnackBar(

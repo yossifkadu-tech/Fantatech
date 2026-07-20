@@ -8,7 +8,7 @@ import 'package:material_symbols_icons/symbols.dart';
 //   • "Home Assistant נמצא!" banner when haIp != null && !haConnected
 //     └─ "חבר" opens inline token field → connectHA(ip, token)
 //   • Real-time list of discovered devices, one card per device
-//     └─ "הוסף" button → appState.addDevice + engine.markRegistered
+//     └─ "הוסף" button → appState.upsertDevice + engine.markRegistered
 //   • "הוסף הכל" button adds every un-registered device at once
 //
 // Open with:
@@ -147,7 +147,7 @@ class _DiscoverySheetState extends State<DiscoverySheet> {
         ? (state.rooms.first['name'] as String)
         : '';
 
-    state.addDevice(Device(
+    state.upsertDevice(Device(
       id:   d.id,
       name: d.displayName,
       type: appType,

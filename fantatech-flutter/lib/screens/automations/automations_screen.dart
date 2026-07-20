@@ -163,7 +163,7 @@ class _TopBar extends StatelessWidget {
               ),
             ),
           ),
-          const EditModeButton(),
+          const EditModeButton(dashboardId: DashboardId.automations),
         ],
       ),
     );

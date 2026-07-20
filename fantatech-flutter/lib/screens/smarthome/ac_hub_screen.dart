@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../models/app_state.dart';
 import '../../models/device.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/device_edit_sheet.dart';
 import '../../widgets/ft_nav.dart';
 
 class ACHubScreen extends StatelessWidget {
@@ -180,7 +181,10 @@ class _ACCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final on = device.isOn;
 
-    return Container(
+    return GestureDetector(
+      onLongPress: () => showDeviceEditSheet(context,
+          device: device, state: context.read<AppState>()),
+      child: Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: context.tCard,
@@ -315,6 +319,7 @@ class _ACCard extends StatelessWidget {
             ),
           ],
         ],
+      ),
       ),
     );
   }

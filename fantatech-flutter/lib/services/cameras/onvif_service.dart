@@ -224,7 +224,10 @@ class OnvifService {
     '/axis-cgi/mjpg/video.cgi',
   ];
 
-  static const _cameraPorts = [80, 8080, 8081, 8082, 554, 8554];
+  // 8000 is Reolink's default ONVIF/proprietary port — several models expose
+  // their whole HTTP/ONVIF service there instead of 80, so without it a
+  // Reolink camera with 80/554 filtered/closed is invisible to this scan.
+  static const _cameraPorts = [80, 8080, 8081, 8082, 8000, 554, 8554];
 
   /// Probe a single IP for camera presence. Returns null if not a camera.
   static Future<DiscoveredCamera?> probeCameraAt(
@@ -256,7 +259,8 @@ class OnvifService {
     String? mjpegUrl;
     String? snapshotUrl;
     String? manufacturer;
-    final httpPort = openPorts.firstWhere((p) => p == 80 || p == 8080,
+    final httpPort = openPorts.firstWhere(
+        (p) => p == 80 || p == 8080 || p == 8000,
         orElse: () => -1);
 
     if (httpPort > 0) {

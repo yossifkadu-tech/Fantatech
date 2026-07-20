@@ -21,6 +21,7 @@ import 'package:mqtt_client/mqtt_server_client.dart';
 import 'package:network_info_plus/network_info_plus.dart';
 
 import '../gateways/clients/aqara_hub_client.dart';
+import '../gateways/clients/z2m_client.dart';
 import 'sensor_models.dart';
 
 class SensorScanEngine extends ChangeNotifier {
@@ -473,7 +474,6 @@ class SensorScanEngine extends ChangeNotifier {
       }
       client.subscribe('zigbee2mqtt/bridge/devices', MqttQos.atMostOnce);
 
-      final completer = Completer<void>();
       client.updates?.listen((events) {
         for (final event in events) {
           final msg = event.payload;
@@ -485,14 +485,24 @@ class SensorScanEngine extends ChangeNotifier {
             _parseZ2mDevices(
                 jsonDecode(pl) as List, mqttHost, mqttPort, mqttUser, mqttPass);
           } catch (_) {}
-          if (!completer.isCompleted) completer.complete();
         }
       });
 
-      await Future.any([
-        completer.future,
-        Future<void>.delayed(const Duration(seconds: 5)),
-      ]);
+      // Open the join window so a device held in pairing mode can actually
+      // join the mesh — without this, the scan only ever sees devices that
+      // were already paired, no matter how long a new sensor is held.
+      await Z2MGatewayClient.permitJoin(
+        mqttHost: mqttHost, mqttPort: mqttPort,
+        mqttUser: mqttUser, mqttPass: mqttPass,
+        seconds: 60,
+      );
+
+      // Give Z2M time to receive the join, interview the device, and
+      // republish bridge/devices — a fresh interview commonly takes well
+      // past the old 5s timeout. Keep listening for the full pairing
+      // window; bridge/devices may republish more than once as the
+      // interview progresses.
+      await Future<void>.delayed(const Duration(seconds: 25));
       state.status = SensorScanStatus.done;
     } catch (e) {
       state.status  = SensorScanStatus.error;

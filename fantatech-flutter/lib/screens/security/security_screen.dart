@@ -12,6 +12,7 @@ import '../../providers/layout_provider.dart';
 import '../../widgets/edit_mode/reorderable_dashboard.dart';
 import '../../widgets/ft_button.dart';
 import '../cyber/cyber_screen.dart';
+import '../smarthome/sensor_brand_picker_screen.dart';
 import 'smart_lock_hub_screen.dart';
 
 class SecurityScreen extends StatefulWidget {
@@ -92,7 +93,7 @@ class _SecurityScreenState extends State<SecurityScreen>
           onTap: () => _showSensorDetail(context, s, s.doorSensor,
               _sensorStatusLabel(doorSensor, s),
               _sensorColor(doorSensor), Symbols.lock,
-              doorSensor),
+              doorSensor, 'door'),
         ),
         const SizedBox(height: 10),
         _SensorRow(
@@ -104,7 +105,7 @@ class _SecurityScreenState extends State<SecurityScreen>
           onTap: () => _showSensorDetail(context, s, s.windowsSensor,
               _sensorStatusLabel(windowSensor, s),
               _sensorColor(windowSensor), Symbols.window,
-              windowSensor),
+              windowSensor, 'window'),
         ),
       ],
     );
@@ -135,7 +136,8 @@ class _SecurityScreenState extends State<SecurityScreen>
                   ? AppColors.unsecured
                   : AppColors.secured,
               Symbols.sensors,
-              motionSensors.isEmpty ? null : motionSensors.first),
+              motionSensors.isEmpty ? null : motionSensors.first,
+              'motion'),
         ),
         const SizedBox(height: 10),
         _SensorRow(
@@ -156,7 +158,8 @@ class _SecurityScreenState extends State<SecurityScreen>
               context, s, s.smokeDetector,
               smokeSensors.isEmpty ? s.offlineLabel : s.normalStatus,
               AppColors.secured, Symbols.smoke_free,
-              smokeSensors.isEmpty ? null : smokeSensors.first),
+              smokeSensors.isEmpty ? null : smokeSensors.first,
+              'smoke'),
         ),
         const SizedBox(height: 10),
         _SensorRow(
@@ -329,8 +332,19 @@ class _SecurityScreenState extends State<SecurityScreen>
     );
   }
 
+  // Sensor types with a real brand/pairing catalog in SensorBrandPickerScreen
+  // (see add_device_screen.dart's catalog — 'motion'/'door'/'window'/'smoke').
+  // Water-leak isn't in that catalog yet, so it gets no add button here.
+  static const _addableDeviceTypes = {
+    'motion': DeviceType.motionSensor,
+    'door': DeviceType.doorSensor,
+    'window': DeviceType.windowSensor,
+    'smoke': DeviceType.smokeSensor,
+  };
+
   void _showSensorDetail(BuildContext context, S s, String label,
-      String status, Color color, IconData icon, Device? device) {
+      String status, Color color, IconData icon, Device? device,
+      [String? addDeviceId]) {
     HapticFeedback.lightImpact();
     final battery = device?.attributes['battery'];
     final online = device != null;
@@ -379,6 +393,41 @@ class _SecurityScreenState extends State<SecurityScreen>
               const SizedBox(height: 10),
               _detailRow(Symbols.battery_full, '🔋', '$battery%',
                   AppColors.secured),
+            ],
+            if (!online && addDeviceId != null) ...[
+              const SizedBox(height: 22),
+              FtButton(
+                label: s.scanNetworkTitle,
+                leadingIcon: Symbols.sensors,
+                color: color,
+                expand: true,
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => SensorBrandPickerScreen(
+                        deviceId: addDeviceId,
+                        deviceName: label,
+                        deviceIcon: icon,
+                        deviceColor: color,
+                        onConfirm: (name) {
+                          final type = _addableDeviceTypes[addDeviceId];
+                          if (type == null) return;
+                          context.read<AppState>().upsertDevice(Device(
+                                id: '${addDeviceId}_${name.trim().toLowerCase().replaceAll(RegExp(r'\s+'), '_')}',
+                                name: name,
+                                type: type,
+                                status: DeviceStatus.online,
+                                isOn: true,
+                                attributes: const {},
+                              ));
+                        },
+                      ),
+                    ),
+                  );
+                },
+              ),
             ],
           ],
         ),
@@ -465,7 +514,7 @@ class _SecurityScreenState extends State<SecurityScreen>
         s: s,
         onEditLayout: () {
           Navigator.pop(ctx);
-          provider.toggleEditMode();
+          provider.toggleEditMode(DashboardId.security);
         },
         onToggleSections: () {
           Navigator.pop(ctx);
@@ -1325,7 +1374,7 @@ class _SecurityOptionsSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isEditMode = provider.editMode;
+    final isEditMode = provider.editModeFor(DashboardId.security);
     final accent = Theme.of(context).colorScheme.primary;
 
     final options = [

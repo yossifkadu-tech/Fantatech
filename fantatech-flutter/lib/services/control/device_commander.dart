@@ -39,6 +39,8 @@ import '../lights/nanoleaf_controller.dart';
 import '../switches/meross_controller.dart';
 import '../live/mqtt_connection_pool.dart';
 
+enum VacuumAction { start, pause, dock }
+
 class DeviceCommander {
   /// Turn a device on or off. Returns true if the command was sent
   /// successfully (does not guarantee the physical device responded).
@@ -265,6 +267,29 @@ class DeviceCommander {
       return HaGatewayClient.callService(ip, token, 'cover', 'stop_cover', entityId);
     }
     return false;
+  }
+
+  /// Send a robot-vacuum command (start / pause / return to dock). HA only —
+  /// vacuums are synced in via the `vacuum` domain, no local pairing flow.
+  static Future<bool> vacuumCommand(
+    Device device,
+    VacuumAction action, {
+    required GatewayManager gateways,
+  }) async {
+    if (!device.id.startsWith('ha_')) return false;
+    final gw = _gateway(gateways, GatewayType.homeAssistant);
+    if (gw == null) return false;
+    final ip       = gw.credentials['ip'];
+    final token    = gw.credentials['token'];
+    final entityId = device.attributes['entityId'] as String?;
+    if (ip == null || token == null || entityId == null) return false;
+
+    final service = switch (action) {
+      VacuumAction.start => 'start',
+      VacuumAction.pause => 'pause',
+      VacuumAction.dock  => 'return_to_base',
+    };
+    return HaGatewayClient.callService(ip, token, 'vacuum', service, entityId);
   }
 
   /// Set brightness 0..100 for a dimmable light. Returns true on success.

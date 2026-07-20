@@ -11,6 +11,7 @@ import 'package:provider/provider.dart';
 import '../../models/app_state.dart';
 import '../../models/device.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/device_edit_sheet.dart';
 import '../cameras/mjpeg_view.dart';
 
 class IntercomHubScreen extends StatelessWidget {
@@ -345,7 +346,10 @@ class _IntercomCard extends StatelessWidget {
     final online = device.status == DeviceStatus.online;
     final mjpeg  = _mjpegUrl();
 
-    return Container(
+    return GestureDetector(
+      onLongPress: () => showDeviceEditSheet(context,
+          device: device, state: context.read<AppState>()),
+      child: Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
         color: context.tCard,
@@ -459,6 +463,7 @@ class _IntercomCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
       ),
     );
   }

@@ -35,10 +35,16 @@ class SensorController {
   }
 
   /// Refresh all fields (state, battery, temperature, humidity) in-place.
+  /// A failed refresh (timeout, HTTP error, exception) means the sensor is
+  /// no longer reachable — flip isOnline so the UI stops showing a stale
+  /// "connected" card for a device that's actually offline.
   static Future<bool> refresh(SmartSensor sensor) async {
     try {
-      return await _refresh(sensor);
+      final ok = await _refresh(sensor);
+      if (!ok) sensor.isOnline = false;
+      return ok;
     } catch (_) {
+      sensor.isOnline = false;
       return false;
     }
   }
@@ -126,8 +132,13 @@ class SensorController {
           headers: {'Authorization': 'Bearer $token'},
         ).timeout(_timeout);
         if (r.statusCode != 200) return false;
-        final json = jsonDecode(r.body) as Map<String, dynamic>;
-        sensor.isTriggered = json['state'] == 'on';
+        final json  = jsonDecode(r.body) as Map<String, dynamic>;
+        final state = json['state'] as String?;
+        // HA reports a real entity as "unavailable"/"unknown" when the
+        // underlying device has dropped off — that's a live 200 response,
+        // not an HTTP failure, so it needs its own offline check.
+        if (state == 'unavailable' || state == 'unknown') return false;
+        sensor.isTriggered = state == 'on';
         final attrs = json['attributes'] as Map?;
         if (attrs?['battery_level'] != null) {
           sensor.batteryPercent = (attrs!['battery_level'] as num).toInt();

@@ -72,7 +72,7 @@ class _DraggableItemState extends State<DraggableItem>
   @override
   void didUpdateWidget(DraggableItem old) {
     super.didUpdateWidget(old);
-    final editMode = context.read<LayoutProvider>().editMode;
+    final editMode = context.read<LayoutProvider>().editModeFor(widget.dashboardId);
     _updateWiggle(editMode);
   }
 
@@ -94,7 +94,7 @@ class _DraggableItemState extends State<DraggableItem>
   @override
   Widget build(BuildContext context) {
     final provider  = context.watch<LayoutProvider>();
-    final editMode  = provider.editMode;
+    final editMode  = provider.editModeFor(widget.dashboardId);
     final item      = widget.item;
     final accent    = Theme.of(context).colorScheme.primary;
     final isLight   = Theme.of(context).brightness == Brightness.light;

@@ -194,7 +194,7 @@ class GatewayHubScreen extends StatelessWidget {
     int added = 0;
     for (final d in devices) {
       if (!state.devices.any((e) => e.id == d.id)) {
-        state.addDevice(d);
+        state.upsertDevice(d);
         added++;
       }
     }

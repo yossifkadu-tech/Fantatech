@@ -52,6 +52,9 @@ enum DeviceCapability {
 
   /// Battery-powered — reports a charge level.
   battery,
+
+  /// Robot vacuum/mop control — start / pause / return to dock.
+  vacuumControl,
 }
 
 abstract class DeviceCapabilities {
@@ -111,6 +114,9 @@ abstract class DeviceCapabilities {
       case DeviceType.garage:
       case DeviceType.matterDevice:
         caps.add(DeviceCapability.onOff);
+        break;
+      case DeviceType.robotVacuum:
+        caps.addAll([DeviceCapability.onOff, DeviceCapability.vacuumControl]);
         break;
       default:
         break;

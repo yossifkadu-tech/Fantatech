@@ -23,7 +23,7 @@ const Color _kBorder = Color(0xFFE5E7EB);
 // LoginScreen
 //
 // Single screen that handles the full entry flow:
-//   • Main panel  — Sign-in options (Google, Apple, Email, Guest, Household)
+//   • Main panel  — Sign-in options (Google, Apple, Email, Household)
 //   • Email panel — Inline email/password form (AnimatedSwitcher, same BG)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -55,10 +55,9 @@ class _LoginScreenState extends State<LoginScreen>
   bool  _isBioLoading    = false;
   bool  _rememberMe      = true;
 
-  // ── SSO / guest loading ────────────────────────────────────────────────────
+  // ── SSO loading ────────────────────────────────────────────────────────────
   bool _isGoogleLoading = false;
   bool _isAppleLoading  = false;
-  bool _isGuestLoading  = false;
 
   // ── Entrance animation ─────────────────────────────────────────────────────
   late AnimationController _animCtrl;
@@ -189,20 +188,6 @@ class _LoginScreenState extends State<LoginScreen>
       _showError('Apple: ${e.toString()}');
     } finally {
       if (mounted) setState(() => _isAppleLoading = false);
-    }
-  }
-
-  // ── Guest ──────────────────────────────────────────────────────────────────
-
-  Future<void> _handleGuest() async {
-    setState(() => _isGuestLoading = true);
-    try {
-      final user = await UserService.signInAsGuest();
-      if (mounted) widget.onLogin(user);
-    } catch (e) {
-      _showError(e.toString().replaceFirst('Exception: ', ''));
-    } finally {
-      if (mounted) setState(() => _isGuestLoading = false);
     }
   }
 
@@ -570,7 +555,7 @@ class _LoginScreenState extends State<LoginScreen>
 
           const SizedBox(height: 14),
 
-          // ── Secondary row: Register · Guest · Household ───────────────────
+          // ── Secondary row: Register · Household ────────────────────────────
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -581,14 +566,6 @@ class _LoginScreenState extends State<LoginScreen>
                     MaterialPageRoute(
                         builder: (_) =>
                             RegisterScreen(onRegister: widget.onLogin))),
-              ),
-              _Dot(),
-              _GhostLink(
-                icon: Symbols.person,
-                label: s.continueAsGuest,
-                color: const Color(0xFF1E88E5),
-                loading: _isGuestLoading,
-                onTap: _isGuestLoading ? null : _handleGuest,
               ),
               _Dot(),
               _GhostLink(

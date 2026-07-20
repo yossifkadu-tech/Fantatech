@@ -18,6 +18,7 @@ import 'package:mqtt_client/mqtt_server_client.dart';
 import 'package:multicast_dns/multicast_dns.dart';
 import 'package:network_info_plus/network_info_plus.dart';
 
+import '../gateways/clients/z2m_client.dart';
 import 'smart_switch_models.dart';
 import 'switch_controller.dart';
 
@@ -795,6 +796,15 @@ class SwitchScanEngine extends ChangeNotifier {
         return;
       }
 
+      // Open the join window so a device held in pairing mode can actually
+      // join the mesh — without this, only devices already paired before
+      // the scan started can ever be found.
+      await Z2MGatewayClient.permitJoin(
+        mqttHost: mqttHost, mqttPort: mqttPort,
+        mqttUser: user, mqttPass: pass,
+        seconds: 60,
+      );
+
       final devices = await _z2mGetDevices(client, mqttHost, mqttPort, user, pass);
 
       for (final d in devices) {
@@ -822,7 +832,13 @@ class SwitchScanEngine extends ChangeNotifier {
     client.subscribe('zigbee2mqtt/bridge/devices', MqttQos.atMostOnce);
 
     final completer = Completer<List<SmartSwitchDevice>>();
-    final timer = Timer(const Duration(seconds: 6), () {
+    // bridge/devices is a retained MQTT topic — subscribing delivers the
+    // broker's last-cached list immediately, before a device that's still
+    // mid-pairing has finished its interview. Don't complete on that first
+    // message; keep listening for the whole join window (permit_join was
+    // opened by the caller before this runs) and take whatever the latest
+    // republish looks like when the timer fires.
+    Timer(const Duration(seconds: 25), () {
       if (!completer.isCompleted) completer.complete(result);
     });
 
@@ -836,14 +852,13 @@ class SwitchScanEngine extends ChangeNotifier {
             recvMsg.payload.message);
         try {
           final list = jsonDecode(payload) as List;
+          result.clear();
           for (final item in list) {
             final dev = _parseZ2mDevice(
                 item as Map<String, dynamic>,
                 mqttHost, mqttPort, user, pass);
             if (dev != null) result.add(dev);
           }
-          timer.cancel();
-          if (!completer.isCompleted) completer.complete(result);
         } catch (_) {}
       }
     });

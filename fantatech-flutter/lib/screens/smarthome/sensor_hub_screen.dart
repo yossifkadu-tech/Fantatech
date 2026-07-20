@@ -22,6 +22,7 @@ import '../../services/sensors/sensor_models.dart';
 import '../../services/sensors/sensor_scan_engine.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/device_icons.dart';
+import '../../widgets/device_edit_sheet.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -418,7 +419,10 @@ class _SavedSensorCard extends StatelessWidget {
     final online  = device.status == DeviceStatus.online;
     final triggered = device.isOn;
 
-    return Container(
+    return GestureDetector(
+      onLongPress: () => showDeviceEditSheet(context,
+          device: device, state: context.read<AppState>()),
+      child: Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
         color: triggered
@@ -513,6 +517,7 @@ class _SavedSensorCard extends StatelessWidget {
           ],
         ),
       ),
+      ),
     );
   }
 }
@@ -540,7 +545,7 @@ class _SensorCardState extends State<_SensorCard> {
   void _addToHome() {
     final appState = context.read<AppState>();
     final str = appState.strings;
-    appState.addDevice(Device(
+    appState.upsertDevice(Device(
       id:   'sensor-${s.id}',
       name: s.name,
       type: s.type == SensorType.motion
@@ -842,7 +847,7 @@ class _CoverCardState extends State<_CoverCard> {
   void _addToHome() {
     final appState = context.read<AppState>();
     final str = appState.strings;
-    appState.addDevice(Device(
+    appState.upsertDevice(Device(
       id:   'cover-${c.id}',
       name: c.name,
       type: DeviceType.smartSwitch,

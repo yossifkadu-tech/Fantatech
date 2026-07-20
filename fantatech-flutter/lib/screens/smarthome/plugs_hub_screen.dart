@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/app_state.dart';
 import '../../models/device.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/device_edit_sheet.dart';
 import '../../widgets/ft_nav.dart';
 
 // ─────────────────────────────────────────────────────────────
@@ -333,7 +334,8 @@ class _PlugsHubViewState extends State<_PlugsHubView> {
                             HapticFeedback.lightImpact();
                             state.toggleDevice(d.id);
                           },
-                          onRename: () => _showRenameDialog(context, d, state),
+                          onRename: () =>
+                              showDeviceEditSheet(context, device: d, state: state),
                           onSchedule: () => _showScheduleSheet(context, d, sched),
                         );
                       },
@@ -345,63 +347,6 @@ class _PlugsHubViewState extends State<_PlugsHubView> {
     );
   }
 
-  // ── Rename dialog ───────────────────────────────────────────
-  void _showRenameDialog(BuildContext context, Device device, AppState state) {
-    final s   = state.strings;
-    final ctrl = TextEditingController(text: device.name);
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: context.tCard,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: Text(s.deviceEditName,
-            style: TextStyle(color: context.tText, fontWeight: FontWeight.bold)),
-        content: TextField(
-          controller: ctrl,
-          autofocus: true,
-          style: TextStyle(color: context.tText),
-          decoration: InputDecoration(
-            labelText: s.deviceRename,
-            labelStyle: TextStyle(color: context.tText2(0.5)),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: context.tText2(0.15)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: AppColors.plugColor),
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(s.cancelButton,
-                style: TextStyle(color: context.tText2(0.5))),
-          ),
-          TextButton(
-            onPressed: () {
-              final name = ctrl.text.trim();
-              if (name.isNotEmpty) {
-                state.updateDeviceName(device.id, name);
-                Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(s.deviceRenamed),
-                    backgroundColor: AppColors.plugColor,
-                    duration: const Duration(seconds: 2),
-                  ),
-                );
-              }
-            },
-            child: Text(s.okButton,
-                style: TextStyle(
-                    color: AppColors.plugColor, fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
-    );
-  }
 
   // ── Schedule sheet ──────────────────────────────────────────
   void _showScheduleSheet(

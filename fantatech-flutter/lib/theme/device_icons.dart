@@ -113,6 +113,7 @@ class MaterialSymbolsIconSet extends DeviceIconSet {
         DeviceType.printer          => Symbols.print,
         DeviceType.garage           => Symbols.garage,
         DeviceType.alarmPanel       => Symbols.security,
+        DeviceType.robotVacuum      => Symbols.robot_2,
         DeviceType.unknown          => Symbols.device_unknown,
       };
 
@@ -145,6 +146,7 @@ class MaterialSymbolsIconSet extends DeviceIconSet {
         DeviceType.printer          => AppColors.printerColor,
         DeviceType.garage           => AppColors.garageColor,
         DeviceType.alarmPanel       => AppColors.statusAlarm,
+        DeviceType.robotVacuum      => AppColors.plugColor,
         DeviceType.unknown          => AppColors.plugColor,
       };
 

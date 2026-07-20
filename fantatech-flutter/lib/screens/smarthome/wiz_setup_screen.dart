@@ -104,7 +104,7 @@ class _WizSetupScreenState extends State<WizSetupScreen> {
       isOn: false,
       attributes: {'ip': ip, 'protocol': 'wiz'},
     );
-    state.addDevice(device);
+    state.upsertDevice(device);
     final s = context.read<AppState>().strings;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

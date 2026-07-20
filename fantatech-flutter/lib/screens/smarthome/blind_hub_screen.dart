@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../models/app_state.dart';
 import '../../models/device.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/device_edit_sheet.dart';
 import '../../widgets/ft_nav.dart';
 import '../../l10n/strings.dart';
 
@@ -317,7 +318,10 @@ class _BlindCardState extends State<_BlindCard> {
     final isOnline = device.status == DeviceStatus.online;
     final hasPosition = device.attributes.containsKey('position') || device.id.startsWith('ha_');
 
-    return Container(
+    return GestureDetector(
+      onLongPress: () =>
+          showDeviceEditSheet(context, device: device, state: widget.state),
+      child: Container(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
       decoration: BoxDecoration(
         color: context.tCard,
@@ -475,6 +479,7 @@ class _BlindCardState extends State<_BlindCard> {
             ],
           ),
         ],
+      ),
       ),
     );
   }

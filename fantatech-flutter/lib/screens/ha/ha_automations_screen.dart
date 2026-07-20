@@ -88,7 +88,7 @@ class _HaAutomationsScreenState extends State<HaAutomationsScreen> {
                   }),
                 ),
                 const SizedBox(width: 8),
-                const EditModeButton(),
+                const EditModeButton(dashboardId: 'ha_automations'),
               ],
             ),
           ),

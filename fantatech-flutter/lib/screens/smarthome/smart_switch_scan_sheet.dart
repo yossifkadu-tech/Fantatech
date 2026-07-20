@@ -115,7 +115,7 @@ class _SmartSwitchScanSheetState extends State<SmartSwitchScanSheet> {
       },
     );
 
-    appState.addDevice(device);
+    appState.upsertDevice(device);
     setState(() => _added.add(sw.id));
 
     final s = context.read<AppState>().strings;

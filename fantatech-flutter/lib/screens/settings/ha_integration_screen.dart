@@ -180,7 +180,7 @@ class _HaIntegrationScreenState extends State<HaIntegrationScreen> {
       final isOn = _stateIsOn(stateStr);
       final brightness = attrs['brightness'];
 
-      state.addDevice(Device(
+      state.upsertDevice(Device(
         id:         'ha_${entityId.replaceAll('.', '_')}',
         name:       friendly,
         type:       type,

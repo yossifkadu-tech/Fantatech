@@ -20,6 +20,7 @@ import 'plugs_hub_screen.dart';
 import 'smart_switch_hub_screen.dart';
 import 'sensor_hub_screen.dart';
 import 'intercom_hub_screen.dart';
+import 'robot_vacuum_hub_screen.dart';
 
 class SmartHomeScreen extends StatefulWidget {
   const SmartHomeScreen({super.key});
@@ -41,8 +42,14 @@ class _SmartHomeScreenState extends State<SmartHomeScreen> {
     // ones.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      context.read<LayoutProvider>().pruneObsoleteTypes(
+      final provider = context.read<LayoutProvider>();
+      provider.pruneObsoleteTypes(
           DashboardId.smarthomeCats, const {'cat_ac', 'cat_sensor'});
+      // Existing installs persisted their smarthomeCats layout before the
+      // Robot Vacuum chip existed — ensureLayout is a no-op once a layout is
+      // saved, so it needs to be added explicitly for upgraders.
+      provider.syncNewItems(
+          DashboardId.smarthomeCats, DashboardDefaults.smarthomeCats);
     });
   }
 
@@ -56,6 +63,7 @@ class _SmartHomeScreenState extends State<SmartHomeScreen> {
     'cat_switch': (label: s.switchesCategory, type: DeviceType.smartSwitch,     icon: DeviceIcons.icon(DeviceType.smartSwitch),     color: DeviceIcons.color(DeviceType.smartSwitch),     dest: const SmartSwitchHubScreen()),
     'cat_sensor':   (label: s.sensorsCategory,  type: DeviceType.motionSensor, icon: DeviceIcons.icon(DeviceType.motionSensor), color: DeviceIcons.color(DeviceType.motionSensor), dest: const SensorHubScreen()),
     'cat_intercom': (label: s.intercomCategory, type: DeviceType.intercom,    icon: DeviceIcons.icon(DeviceType.intercom),     color: DeviceIcons.color(DeviceType.intercom),     dest: const IntercomHubScreen()),
+    'cat_vacuum':   (label: s.vacuumCategory,   type: DeviceType.robotVacuum, icon: DeviceIcons.icon(DeviceType.robotVacuum),  color: DeviceIcons.color(DeviceType.robotVacuum),  dest: const RobotVacuumHubScreen()),
   };
 
   @override
@@ -64,7 +72,7 @@ class _SmartHomeScreenState extends State<SmartHomeScreen> {
     final s        = state.strings;
     final theme    = Theme.of(context);
     final provider = context.watch<LayoutProvider>();
-    final editMode = provider.editMode;
+    final editMode = provider.editModeFor(DashboardId.smarthome);
 
     // Seed category layout (no-op if already saved)
     provider.ensureLayout(DashboardId.smarthomeCats, DashboardDefaults.smarthomeCats);
@@ -114,7 +122,7 @@ class _SmartHomeScreenState extends State<SmartHomeScreen> {
                       ),
                       Row(
                         children: [
-                          const EditModeButton(),
+                          const EditModeButton(dashboardId: DashboardId.smarthome),
                           const SizedBox(width: 8),
                           FtButton.iconOnly(
                             icon: Symbols.add,
@@ -298,6 +306,7 @@ class _SmartHomeScreenState extends State<SmartHomeScreen> {
                                 _showDeviceDetail(context, device, state),
                             onFavoriteToggle: () =>
                                 state.toggleFavorite(device.id),
+                            showInlineControl: true,
                           ),
                         );
                       },

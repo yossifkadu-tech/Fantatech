@@ -2,6 +2,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/app_state.dart';
+import '../../models/device.dart';
 import '../../theme/app_theme.dart';
 
 // ─────────────────────────────────────────────────────────────
@@ -14,16 +15,14 @@ class _Breaker {
   final String room;
   final int amps;
   BreakerState state;
-  final bool isMain;
   bool isConnected;
-  bool useZigbee; // false = WiFi
+  bool useZigbee; // false = WiFi — no gateway reports real protocol yet
 
   _Breaker({
     required this.id,
     required this.room,
     required this.amps,
     this.state = BreakerState.on,
-    this.isMain = false,
     this.isConnected = true,
     this.useZigbee = false,
   });
@@ -44,29 +43,22 @@ class _BreakersScreenState extends State<BreakersScreen>
   late AnimationController _pulseCtrl;
   late Animation<double> _pulseAnim;
 
-  final List<_Breaker> _breakers = [
-    _Breaker(id: 'main', room: '__main__', amps: 63, isMain: true,
-        state: BreakerState.on, useZigbee: false),
-    _Breaker(id: 'b1', room: '__living__', amps: 16, state: BreakerState.on),
-    _Breaker(id: 'b2', room: '__kitchen__', amps: 20, state: BreakerState.on),
-    _Breaker(id: 'b3', room: '__bedroom__', amps: 16, state: BreakerState.on,
-        useZigbee: true),
-    _Breaker(id: 'b4', room: '__kids__', amps: 16, state: BreakerState.on,
-        useZigbee: true),
-    _Breaker(id: 'b5', room: '__bathroom__', amps: 16,
-        state: BreakerState.tripped, isConnected: false),
-    _Breaker(id: 'b6', room: '__garden__', amps: 10, state: BreakerState.off,
-        useZigbee: false),
-    _Breaker(id: 'b7', room: '__storage__', amps: 10, state: BreakerState.on,
-        isConnected: false),
-    _Breaker(id: 'b8', room: '__ac__', amps: 25, state: BreakerState.on,
-        useZigbee: true),
-  ];
-
-  int get _onCount =>
-      _breakers.where((b) => b.state == BreakerState.on).length;
-  int get _trippedCount =>
-      _breakers.where((b) => b.state == BreakerState.tripped).length;
+  // Real circuit-breaker devices only. No gateway currently classifies
+  // anything as DeviceType.circuitBreaker, so this is honestly empty for
+  // virtually everyone — see the empty state in build() below, instead of
+  // the fixed 9-room demo panel this screen used to show unconditionally
+  // (which is why a real "off"/"tripped" room could never change color).
+  List<_Breaker> _breakersFrom(List<Device> devices) => devices
+      .map((d) => _Breaker(
+            id: d.id,
+            room: d.name,
+            amps: (d.attributes['amps'] as num?)?.toInt() ?? 0,
+            state: d.status == DeviceStatus.alarm
+                ? BreakerState.tripped
+                : (d.isOn ? BreakerState.on : BreakerState.off),
+            isConnected: d.status.isControllable,
+          ))
+      .toList();
 
   @override
   void initState() {
@@ -85,29 +77,15 @@ class _BreakersScreenState extends State<BreakersScreen>
     super.dispose();
   }
 
-  void _toggleBreaker(_Breaker b) {
-    if (!b.isConnected) return;
-    setState(() {
-      if (b.isMain) {
-        // Main toggles all
-        final newState =
-            b.state == BreakerState.on ? BreakerState.off : BreakerState.on;
-        b.state = newState;
-        for (final sub in _breakers.where((x) => !x.isMain)) {
-          if (sub.isConnected) sub.state = newState;
-        }
-      } else if (b.state == BreakerState.tripped) {
-        b.state = BreakerState.on;
-      } else {
-        b.state =
-            b.state == BreakerState.on ? BreakerState.off : BreakerState.on;
-      }
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    final s = context.select((AppState st) => st.strings);
+    final state = context.watch<AppState>();
+    final s = state.strings;
+    final breakers = _breakersFrom(
+        state.devices.where((d) => d.type == DeviceType.circuitBreaker).toList());
+    final onCount = breakers.where((b) => b.state == BreakerState.on).length;
+    final trippedCount =
+        breakers.where((b) => b.state == BreakerState.tripped).length;
 
     return Scaffold(
       backgroundColor: context.tBg,
@@ -115,56 +93,59 @@ class _BreakersScreenState extends State<BreakersScreen>
         child: Column(
           children: [
             _TopBar(title: s.breakersTitle),
-            _StatusStrip(
-              onCount: _onCount,
-              trippedCount: _trippedCount,
-              total: _breakers.length,
-              pulseAnim: _pulseAnim,
-              onLabel: s.breakerOn,
-              trippedLabel: s.breakerTripped,
-            ),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Panel header
-                    _PanelHeader(label: s.breakerPanel),
-                    const SizedBox(height: 14),
-
-                    // Main breaker
-                    _MainBreakerCard(
-                      breaker: _breakers[0],
-                      onTap: () => _toggleBreaker(_breakers[0]),
-                      onLabel: s.breakerOn,
-                      offLabel: s.breakerOff,
-                      trippedLabel: s.breakerTripped,
-                      ampsLabel: s.breakerAmps,
-                      wifiLabel: s.breakerWifi,
-                      zigbeeLabel: s.breakerZigbee,
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // Sub-breaker grid
-                    _SubBreakerGrid(
-                      breakers: _breakers.where((b) => !b.isMain).toList(),
-                      onTap: _toggleBreaker,
-                      onLabel: s.breakerOn,
-                      offLabel: s.breakerOff,
-                      trippedLabel: s.breakerTripped,
-                      ampsLabel: s.breakerAmps,
-                      connectLabel: s.breakerConnect,
-                      wifiLabel: s.breakerWifi,
-                      zigbeeLabel: s.breakerZigbee,
-                      pulseAnim: _pulseAnim,
-                    ),
-
-                    const SizedBox(height: 8),
-                  ],
-                ),
+            if (breakers.isNotEmpty)
+              _StatusStrip(
+                onCount: onCount,
+                trippedCount: trippedCount,
+                total: breakers.length,
+                pulseAnim: _pulseAnim,
+                onLabel: s.breakerOn,
+                trippedLabel: s.breakerTripped,
               ),
+            Expanded(
+              child: breakers.isEmpty
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(32),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Symbols.electrical_services,
+                                color: context.tText2(0.25), size: 44),
+                            const SizedBox(height: 12),
+                            Text(s.notConnectedLabel,
+                                style: TextStyle(
+                                    color: context.tText2(0.5), fontSize: 14)),
+                          ],
+                        ),
+                      ),
+                    )
+                  : SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _PanelHeader(label: s.breakerPanel),
+                          const SizedBox(height: 14),
+                          // No real device carries a "main breaker" flag —
+                          // list every real breaker uniformly instead of
+                          // fabricating which one is "main".
+                          _SubBreakerGrid(
+                            breakers: breakers,
+                            onTap: (_) {}, // no real control path yet
+                            onLabel: s.breakerOn,
+                            offLabel: s.breakerOff,
+                            trippedLabel: s.breakerTripped,
+                            ampsLabel: s.breakerAmps,
+                            connectLabel: s.breakerConnect,
+                            wifiLabel: s.breakerWifi,
+                            zigbeeLabel: s.breakerZigbee,
+                            pulseAnim: _pulseAnim,
+                          ),
+                          const SizedBox(height: 8),
+                        ],
+                      ),
+                    ),
             ),
           ],
         ),
@@ -391,136 +372,6 @@ class _PanelHeader extends StatelessWidget {
         Icon(Symbols.electrical_services,
             color: context.tText2(0.3), size: 18),
       ],
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────
-// Main breaker card
-// ─────────────────────────────────────────────────────────────
-class _MainBreakerCard extends StatelessWidget {
-  final _Breaker breaker;
-  final VoidCallback onTap;
-  final String onLabel;
-  final String offLabel;
-  final String trippedLabel;
-  final String ampsLabel;
-  final String wifiLabel;
-  final String zigbeeLabel;
-
-  const _MainBreakerCard({
-    required this.breaker,
-    required this.onTap,
-    required this.onLabel,
-    required this.offLabel,
-    required this.trippedLabel,
-    required this.ampsLabel,
-    required this.wifiLabel,
-    required this.zigbeeLabel,
-  });
-
-  Color get _stateColor {
-    return switch (breaker.state) {
-      BreakerState.on => AppColors.secured,
-      BreakerState.off => Colors.white.withValues(alpha: 0.38),
-      BreakerState.tripped => AppColors.unsecured,
-    };
-  }
-
-  String _stateLabel(BuildContext ctx) {
-    return switch (breaker.state) {
-      BreakerState.on => onLabel,
-      BreakerState.off => offLabel,
-      BreakerState.tripped => trippedLabel,
-    };
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final color = _stateColor;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              color.withValues(alpha: 0.18),
-              context.tCard,
-            ],
-          ),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: color.withValues(alpha: 0.35), width: 1.5),
-        ),
-        child: Row(
-          children: [
-            // Breaker visual
-            _BreakerVisual(state: breaker.state, size: 54),
-            const SizedBox(width: 16),
-            // Info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    context.select((AppState st) => st.strings).translateRoomKey(breaker.room),
-                    style: TextStyle(
-                      color: context.tText,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${breaker.amps}A  ·  $ampsLabel',
-                    style: TextStyle(
-                      color: context.tText2(0.5),
-                      fontSize: 12,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      _ProtocolChip(
-                        label: breaker.useZigbee ? zigbeeLabel : wifiLabel,
-                        icon: breaker.useZigbee
-                            ? Symbols.hub
-                            : Symbols.wifi,
-                        color: AppColors.circuitBreakerColor,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            // State badge
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: color.withValues(alpha: 0.4)),
-                  ),
-                  child: Text(
-                    _stateLabel(context),
-                    style: TextStyle(
-                      color: color,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
