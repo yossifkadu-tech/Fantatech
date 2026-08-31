@@ -51,6 +51,12 @@ class TuyaCloudClient {
   static const _emptyBodySha =
       'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
 
+  /// Human-readable dump of the last `fetchDevices()` call — exactly what
+  /// Tuya's API returned (or the raw error), so import problems (wrong
+  /// linked account, unmapped categories, etc.) are visible instead of
+  /// silently showing "0 imported".
+  static String lastRawSummary = '';
+
   final String clientId;
   final String clientSecret;
   final TuyaRegion region;
@@ -86,6 +92,8 @@ class TuyaCloudClient {
     try {
       final token = await c._getToken();
       if (token == null) {
+        lastRawSummary = 'Authentication failed — check Access ID/Secret and region.\n'
+            'Verify the Cloud Authorization IP Allowlist is disabled or set to allow all.';
         return const GatewayImportResult.failure(
             'Tuya authentication failed — check Access ID/Secret and region');
       }
@@ -93,10 +101,15 @@ class TuyaCloudClient {
       final resp = await c._signedGet(
           '/v1.0/iot-01/associated-users/devices', token);
       if (resp == null) {
+        lastRawSummary = 'No response from Tuya (network/timeout).';
         return const GatewayImportResult.failure('No response from Tuya');
       }
       final body = jsonDecode(resp) as Map<String, dynamic>;
       if (body['success'] != true) {
+        lastRawSummary = 'Tuya API error.\n'
+            'code: ${body['code']}\n'
+            'msg: ${body['msg']}\n'
+            'Raw response:\n$resp';
         return GatewayImportResult.failure(
             'Tuya: ${body['msg'] ?? 'error'}');
       }
@@ -104,6 +117,10 @@ class TuyaCloudClient {
       final result = body['result'] as Map<String, dynamic>? ?? {};
       final list = (result['devices'] as List<dynamic>?) ?? [];
       final devices = <Device>[];
+      final summaryLines = <String>[
+        'Tuya API returned ${list.length} device(s) for this account.',
+        '',
+      ];
 
       for (final item in list) {
         final d = item as Map<String, dynamic>;
@@ -113,7 +130,10 @@ class TuyaCloudClient {
         final online = d['online'] as bool? ?? true;
 
         final type = _categoryToType(category);
-        if (type == null) continue; // skip hubs / unknown
+        summaryLines.add(
+            '• $name — category "$category" → ${type?.name ?? "HIDDEN (hub/gateway)"}'
+            ' (id: tuya_$id, online: $online)');
+        if (type == null) continue; // skip hubs only — everything else maps to a type
 
         devices.add(Device(
           id: 'tuya_$id',
@@ -132,56 +152,102 @@ class TuyaCloudClient {
         ));
       }
 
+      if (list.isEmpty) {
+        summaryLines.add(
+            'No devices were returned at all — this usually means the '
+            'Smart Life account was not fully linked to this project '
+            '(Devices → Link Tuya App Account), not a filtering issue.');
+      }
+      lastRawSummary = summaryLines.join('\n');
+
       return GatewayImportResult.success(devices);
     } catch (e) {
+      lastRawSummary = 'Exception while importing: $e';
       return GatewayImportResult.failure('Tuya error: $e');
     }
   }
 
   // ── Tuya category → DeviceType ─────────────────────────────────────────────
   // https://developer.tuya.com/en/docs/iot/standarddescription
+  //
+  // Tuya's category taxonomy is large and grows over time — rather than only
+  // recognizing a hand-picked list and silently dropping everything else
+  // (which made real devices with less-common category codes vanish from
+  // import with no error), every category maps to a concrete DeviceType.
+  // Only the hub/gateway categories are explicitly hidden; anything else we
+  // don't have a specific mapping for still imports as DeviceType.unknown
+  // rather than disappearing.
   static DeviceType? _categoryToType(String category) {
     switch (category) {
+      // ── Lights ──────────────────────────────────────────────────────────
       case 'dj': // light bulb
       case 'dd': // light strip
       case 'dc': // string light
       case 'xdd': // ceiling light
+      case 'fwd': // ceiling fan light
+      case 'tgq': // dimmer switch/lamp
+      case 'tgkg': // dimmer switch
         return DeviceType.light;
+      // ── Switches ────────────────────────────────────────────────────────
       case 'kg': // switch
       case 'tdq': // breaker
+      case 'kj': // air purifier / switch-adjacent controllers
+      case 'qn': // heater switch
         return DeviceType.smartSwitch;
+      // ── Plugs / sockets ─────────────────────────────────────────────────
       case 'cz': // socket
       case 'pc': // power strip
+      case 'insleep': // smart plug variant
         return DeviceType.smartPlug;
+      // ── Motion / presence sensors ───────────────────────────────────────
       case 'pir': // PIR motion sensor
+      case 'hps': // human presence sensor
+      case 'ldcg': // radar motion sensor
         return DeviceType.motionSensor;
+      // ── Door / window sensors ───────────────────────────────────────────
       case 'mcs': // contact / door-window sensor
         return DeviceType.windowSensor;
+      // ── Smoke ───────────────────────────────────────────────────────────
       case 'ywbj': // smoke detector
         return DeviceType.smokeSensor;
+      // ── Gas / CO ────────────────────────────────────────────────────────
       case 'rqbj': // gas detector
       case 'cobj': // CO detector
         return DeviceType.gasSensor;
+      // ── Water leak ──────────────────────────────────────────────────────
       case 'sj': // water leak sensor
         return DeviceType.waterLeakSensor;
+      // ── Locks ───────────────────────────────────────────────────────────
       case 'ms': // door lock
       case 'jtmspro':
+      case 'videolock': // video door lock
         return DeviceType.smartLock;
+      // ── Blinds / curtains ───────────────────────────────────────────────
       case 'cl': // curtain / blind motor
+      case 'clkg': // curtain switch
         return DeviceType.blind;
+      // ── Climate ─────────────────────────────────────────────────────────
       case 'wk': // thermostat
       case 'ktkzq': // AC controller
+      case 'kt': // air conditioner
         return DeviceType.airConditioner;
+      // ── Energy ──────────────────────────────────────────────────────────
       case 'znjld': // energy meter
       case 'zndb':
         return DeviceType.energyMeter;
+      case 'dlq': // circuit breaker w/ metering
+        return DeviceType.circuitBreaker;
+      // ── Cameras ─────────────────────────────────────────────────────────
       case 'sp': // smart camera
         return DeviceType.camera;
-      case 'wg2': // gateway / hub
+      // ── Gateways / hubs — hidden, not imported as devices ──────────────
+      case 'wg2':
       case 'wf_gw':
-        return null; // hide the hub itself
-      default:
+      case 'zigbee_gateway':
         return null;
+      // ── Anything else: import as a generic device rather than drop it ───
+      default:
+        return DeviceType.unknown;
     }
   }
 

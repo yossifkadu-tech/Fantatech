@@ -32,6 +32,9 @@ class SensorScanEngine extends ChangeNotifier {
   bool   isScanning      = false;
   double overallProgress = 0;
 
+  bool _cancelled = false;
+  bool _disposed  = false;
+
   final Map<String, SensorScanState> scanStates = {
     'wifi': SensorScanState(
       key:   'WiFi',
@@ -68,6 +71,7 @@ class SensorScanEngine extends ChangeNotifier {
     String? aqaraToken,
   }) async {
     if (isScanning) return;
+    _cancelled = false;
     sensors.clear();
     covers.clear();
     overallProgress = 0;
@@ -88,7 +92,29 @@ class SensorScanEngine extends ChangeNotifier {
 
     overallProgress = 1.0;
     isScanning = false;
-    notifyListeners();
+    _safeNotify();
+  }
+
+  /// Stops any in-progress scan. Safe to call multiple times.
+  void stopScan() {
+    _cancelled = true;
+    isScanning = false;
+  }
+
+  /// notifyListeners() that no-ops once this engine has been disposed —
+  /// in-flight subnet probes from a 254-host scan complete asynchronously
+  /// and must not call back into a disposed ChangeNotifier.
+  void _safeNotify() {
+    if (!_disposed) notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    // Stop the 254-host WiFi sweep immediately rather than letting dozens of
+    // in-flight probes keep running against the LAN after this screen closes.
+    _cancelled = true;
+    _disposed  = true;
+    super.dispose();
   }
 
   // ── WiFi scan ─────────────────────────────────────────────────────────────
@@ -110,12 +136,14 @@ class SensorScanEngine extends ChangeNotifier {
       var done          = 0;
 
       for (int i = 1; i <= 254; i++) {
+        if (_cancelled) break;
         final ip = '$prefix.$i';
         futures.add(semaphore.run(() async {
+          if (_cancelled) return;
           await _probeHost(ip, state);
           done++;
           overallProgress = done / 254 * 0.5;
-          notifyListeners();
+          _safeNotify();
         }));
       }
 
@@ -125,7 +153,7 @@ class SensorScanEngine extends ChangeNotifier {
       state.status  = SensorScanStatus.error;
       state.message = e.toString();
     }
-    notifyListeners();
+    _safeNotify();
   }
 
   Future<void> _probeHost(String ip, SensorScanState state) async {

@@ -27,6 +27,8 @@ enum GatewayType {
   pima,            // PIMA alarm panel (Net4Pro/Net2Pro local HTTP)
   zwave,           // Z-Wave JS UI (local REST API)
   ifttt,           // IFTTT Webhooks
+  irobot,          // iRobot Roomba/Braava (local MQTTS)
+  xiaomiVacuum,    // Xiaomi/Mi Robot Vacuum (local miIO/UDP)
 }
 
 // ── Connection field descriptor ────────────────────────────────────────────
@@ -659,6 +661,76 @@ class GatewayRegistry {
       ],
       fields: [
         GatewayFieldDef(key: 'webhookKey', label: 'Webhooks Key', hint: 'From ifttt.com/maker_webhooks/settings', icon: Symbols.key, inputType: FieldInputType.token),
+      ],
+    ),
+
+    // ── iRobot (Roomba / Braava) ────────────────────────────────────────────
+    GatewayMeta(
+      type:        GatewayType.irobot,
+      name:        'iRobot',
+      subtitle:    'Roomba / Braava · Local MQTT',
+      description: 'Connect directly to a Roomba or Braava jet robot on your local network — no cloud round-trip needed.',
+      icon:        Symbols.robot_2,
+      color:       Color(0xFF00A0DC),
+      setupSteps: [
+        'Make sure the robot is connected to the same WiFi network.',
+        'Hold the robot\'s Home/Clean button for ~2 seconds until it beeps and the WiFi light flashes — this broadcasts the robot\'s local credentials briefly.',
+        'Use a "Get Robot Password" community tool to capture the BLID and Local Password (one-time, not an iRobot account password).',
+        'Enter the robot\'s IP, BLID, and Local Password below.',
+      ],
+      fields: [
+        GatewayFieldDef(
+          key:       'ip',
+          label:     'Robot IP Address',
+          hint:      '192.168.1.x',
+          icon:      Symbols.wifi,
+          inputType: FieldInputType.ip,
+        ),
+        GatewayFieldDef(
+          key:       'blid',
+          label:     'BLID',
+          hint:      'Robot local identifier',
+          icon:      Symbols.badge,
+          inputType: FieldInputType.text,
+        ),
+        GatewayFieldDef(
+          key:       'password',
+          label:     'Local Password',
+          hint:      'Not your iRobot account password',
+          icon:      Symbols.key,
+          inputType: FieldInputType.password,
+        ),
+      ],
+    ),
+
+    // ── Xiaomi / Mi Robot Vacuum ─────────────────────────────────────────────
+    GatewayMeta(
+      type:        GatewayType.xiaomiVacuum,
+      name:        'Xiaomi Vacuum',
+      subtitle:    'Mi Robot Vacuum · Local miIO',
+      description: 'Connect directly to a Xiaomi/Mi robot vacuum on your local network using its local token.',
+      icon:        Symbols.robot_2,
+      color:       Color(0xFFFF6900),
+      setupSteps: [
+        'Make sure the vacuum is connected to the same WiFi network (via the Mi Home app).',
+        'Use a "Xiaomi Cloud Tokens Extractor" community tool to retrieve the device\'s local Token — log in once with your Mi account, no ongoing cloud dependency afterward.',
+        'Enter the vacuum\'s IP and 32-character Token below.',
+      ],
+      fields: [
+        GatewayFieldDef(
+          key:       'ip',
+          label:     'Vacuum IP Address',
+          hint:      '192.168.1.x',
+          icon:      Symbols.wifi,
+          inputType: FieldInputType.ip,
+        ),
+        GatewayFieldDef(
+          key:       'token',
+          label:     'Local Token',
+          hint:      '32-character hex token',
+          icon:      Symbols.key,
+          inputType: FieldInputType.token,
+        ),
       ],
     ),
   ];

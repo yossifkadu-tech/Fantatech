@@ -12,6 +12,7 @@ import '../../models/device.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/device_edit_sheet.dart';
 import '../../widgets/ft_nav.dart';
+import '../../widgets/state_views.dart';
 
 // ─────────────────────────────────────────────────────────────
 // Plug schedule model
@@ -318,7 +319,7 @@ class _PlugsHubViewState extends State<_PlugsHubView> {
             // ── List ─────────────────────────────────────────────
             Expanded(
               child: plugs.isEmpty
-                  ? _EmptyState(s: s)
+                  ? EmptyState(icon: Symbols.power_off, title: s.noPlugsFound, subtitle: s.plugsHint)
                   : ListView.separated(
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                       addAutomaticKeepAlives: false,
@@ -837,38 +838,6 @@ class _ActionBtn extends StatelessWidget {
                     color: effectiveColor,
                     fontSize: 13,
                     fontWeight: FontWeight.w600)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _EmptyState extends StatelessWidget {
-  final dynamic s;
-  const _EmptyState({required this.s});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(40),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Symbols.power_off,
-                size: 64, color: context.tText2(0.18)),
-            const SizedBox(height: 20),
-            Text(s.noPlugsFound,
-                style: TextStyle(
-                    color: context.tText,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600)),
-            const SizedBox(height: 8),
-            Text(s.plugsHint,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    color: context.tText2(0.45), fontSize: 13)),
           ],
         ),
       ),

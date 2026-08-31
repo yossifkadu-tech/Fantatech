@@ -565,7 +565,7 @@ class _AutomationCardState extends State<_AutomationCard> {
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
-    final isHebrew = state.locale == AppLocale.hebrew;
+    final isHebrew = state.keepShabbat;
     final textDir = state.isRtl ? TextDirection.rtl : TextDirection.ltr;
 
     return AnimatedContainer(
@@ -1452,7 +1452,7 @@ class _EditAutomationSheetState extends State<_EditAutomationSheet> {
                   style: TextStyle(color: context.tText),
                   decoration: _inputDeco(s.autoCondition),
                 ),
-                if (state.locale == AppLocale.hebrew) ...[
+                if (state.keepShabbat) ...[
                   const SizedBox(height: 10),
                   _HebrewCalendarConditions(controller: _condCtrl),
                   const SizedBox(height: 12),
@@ -1536,22 +1536,20 @@ class _HebrewCalendarConditions extends StatelessWidget {
   final TextEditingController controller;
   const _HebrewCalendarConditions({required this.controller});
 
-  static const _presets = <String>[
-    'כניסת שבת',
-    'צאת שבת',
-    'ערב חג',
-    'חג / יום טוב',
-    'ראש חודש',
-    'חול המועד',
-  ];
+  static List<String> _presets(S s) => [
+        s.shabbatCandles,
+        s.shabbatHavdalah,
+        s.holidayEve,
+        s.holidayChag,
+        s.roshChodesh,
+        s.cholHamoed,
+      ];
 
-  static const _hebrewMonths = <String>[
-    'תשרי', 'חשוון', 'כסלו', 'טבת', 'שבט', 'אדר', 'אדר א׳', 'אדר ב׳',
-    'ניסן', 'אייר', 'סיוון', 'תמוז', 'אב', 'אלול',
-  ];
+  static List<String> _monthNames(S s) => s.hebrewMonthsCsv.split(',');
 
-  /// Hebrew gematria label for a day 1..30.
-  static String _gematriaDay(int d) {
+  /// Hebrew gematria label for a day 1..30 (Hebrew locale), plain digits otherwise.
+  static String _dayLabel(int d, bool hebrewScript) {
+    if (!hebrewScript) return '$d';
     const ones = ['', 'א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט'];
     const tens = ['', 'י', 'כ', 'ל'];
     if (d == 15) return 'ט״ו';
@@ -1563,6 +1561,8 @@ class _HebrewCalendarConditions extends StatelessWidget {
   }
 
   Future<void> _pickHebrewDate(BuildContext context, S s) async {
+    final hebrewScript = context.read<AppState>().locale == AppLocale.hebrew;
+    final months = _monthNames(s);
     int day = 15;
     int monthIdx = 5; // אדר
     final result = await showModalBottomSheet<String>(
@@ -1599,7 +1599,7 @@ class _HebrewCalendarConditions extends StatelessWidget {
                       style: TextStyle(color: context.tText, fontSize: 15),
                       items: [
                         for (var d = 1; d <= 30; d++)
-                          DropdownMenuItem(value: d, child: Text(_gematriaDay(d))),
+                          DropdownMenuItem(value: d, child: Text(_dayLabel(d, hebrewScript))),
                       ],
                       onChanged: (v) => setSheet(() => day = v ?? day),
                     ),
@@ -1618,8 +1618,8 @@ class _HebrewCalendarConditions extends StatelessWidget {
                       underline: const SizedBox(),
                       style: TextStyle(color: context.tText, fontSize: 15),
                       items: [
-                        for (var i = 0; i < _hebrewMonths.length; i++)
-                          DropdownMenuItem(value: i, child: Text(_hebrewMonths[i])),
+                        for (var i = 0; i < months.length; i++)
+                          DropdownMenuItem(value: i, child: Text(months[i])),
                       ],
                       onChanged: (v) => setSheet(() => monthIdx = v ?? monthIdx),
                     ),
@@ -1632,7 +1632,10 @@ class _HebrewCalendarConditions extends StatelessWidget {
                 height: 48,
                 child: ElevatedButton(
                   onPressed: () => Navigator.pop(ctx,
-                      s.hebrewDateFmt.replaceAll('{date}', '${_gematriaDay(day)} ב${_hebrewMonths[monthIdx]}')),
+                      s.hebrewDateFmt.replaceAll('{date}',
+                          hebrewScript
+                              ? '${_dayLabel(day, true)} ב${months[monthIdx]}'
+                              : '${_dayLabel(day, false)} ${months[monthIdx]}')),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     shape: RoundedRectangleBorder(
@@ -1714,7 +1717,7 @@ class _HebrewCalendarConditions extends StatelessWidget {
           spacing: 8,
           runSpacing: 8,
           children: [
-            for (final p in _presets) _chip(p, () => controller.text = p),
+            for (final p in _presets(s)) _chip(p, () => controller.text = p),
             _chip(s.hebrewCalendarChip, () => _pickHebrewDate(context, s), outlined: true),
           ],
         ),

@@ -29,6 +29,8 @@ import 'clients/risco_client.dart';
 import 'clients/pima_client.dart';
 import 'clients/zwave_client.dart';
 import 'clients/ifttt_client.dart';
+import 'clients/irobot_client.dart';
+import 'clients/xiaomi_vacuum_client.dart';
 
 class GatewayManager extends ChangeNotifier {
   static const _uuid = Uuid();
@@ -362,6 +364,49 @@ class GatewayManager extends ChangeNotifier {
         return GatewayConnectResult.ok({'ip': ip, 'deviceCount': '${probe.length}'});
       }
 
+      // ── iRobot (Roomba / Braava) ─────────────────────────────────────────────
+      case GatewayType.irobot: {
+        final blid     = fields['blid']     ?? '';
+        final password = fields['password'] ?? '';
+        if (ip.isEmpty || blid.isEmpty || password.isEmpty) {
+          return const GatewayConnectResult.fail('IP, BLID, and Local Password are required');
+        }
+        final ok = await IRobotClient(ip: ip, blid: blid, password: password)
+            .testConnection();
+        if (!ok) return const GatewayConnectResult.fail('Could not connect — check IP, BLID, and password');
+        _addConnection(GatewayConnection(
+          id:          _uuid.v4(),
+          type:        type,
+          displayName: 'iRobot ($ip)',
+          credentials: {'ip': ip, 'blid': blid, 'password': password},
+          isConnected: true,
+          lastSync:    DateTime.now(),
+          deviceCount: 1,
+        ));
+        return const GatewayConnectResult.ok({'deviceCount': '1'});
+      }
+
+      // ── Xiaomi / Mi Robot Vacuum ───────────────────────────────────────────
+      case GatewayType.xiaomiVacuum: {
+        final vacToken = fields['token'] ?? '';
+        if (ip.isEmpty || vacToken.isEmpty) {
+          return const GatewayConnectResult.fail('IP and Local Token are required');
+        }
+        final ok = await XiaomiVacuumClient(ip: ip, token: vacToken)
+            .testConnection();
+        if (!ok) return const GatewayConnectResult.fail('Could not connect — check IP and token');
+        _addConnection(GatewayConnection(
+          id:          _uuid.v4(),
+          type:        type,
+          displayName: 'Xiaomi Vacuum ($ip)',
+          credentials: {'ip': ip, 'token': vacToken},
+          isConnected: true,
+          lastSync:    DateTime.now(),
+          deviceCount: 1,
+        ));
+        return const GatewayConnectResult.ok({'deviceCount': '1'});
+      }
+
       // ── Ajax Systems ─────────────────────────────────────────────────────────
       case GatewayType.ajax: {
         final email    = fields['email']    ?? '';
@@ -673,6 +718,47 @@ class GatewayManager extends ChangeNotifier {
           );
         }).where((d) => d.id != 'aqara-').toList();
         return GatewayImportResult.success(devices);
+      }
+
+      // ── iRobot (Roomba / Braava) ─────────────────────────────────────────────
+      case GatewayType.irobot: {
+        final ip       = _str('ip');
+        final blid     = _str('blid');
+        final password = _str('password');
+        if (ip.isEmpty || blid.isEmpty || password.isEmpty) {
+          return const GatewayImportResult.failure('Missing iRobot credentials');
+        }
+        return GatewayImportResult.success([
+          Device(
+            id:         'irobot_$blid',
+            name:       'iRobot',
+            type:       DeviceType.robotVacuum,
+            status:     DeviceStatus.online,
+            attributes: {'ip': ip, 'blid': blid, 'password': password},
+            room:       '',
+            source:     'gateway',
+          ),
+        ]);
+      }
+
+      // ── Xiaomi / Mi Robot Vacuum ───────────────────────────────────────────
+      case GatewayType.xiaomiVacuum: {
+        final ip       = _str('ip');
+        final vacToken = _str('token');
+        if (ip.isEmpty || vacToken.isEmpty) {
+          return const GatewayImportResult.failure('Missing Xiaomi Vacuum credentials');
+        }
+        return GatewayImportResult.success([
+          Device(
+            id:         'xiaomi_vacuum_${ip.replaceAll('.', '_')}',
+            name:       'Xiaomi Vacuum',
+            type:       DeviceType.robotVacuum,
+            status:     DeviceStatus.online,
+            attributes: {'ip': ip, 'token': vacToken},
+            room:       '',
+            source:     'gateway',
+          ),
+        ]);
       }
 
       // ── Ajax Systems ─────────────────────────────────────────────────────────

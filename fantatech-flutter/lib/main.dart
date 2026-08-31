@@ -305,12 +305,21 @@ class _AuthGateState extends State<AuthGate> {
     final bioReady = bioAvailable && hasUsers;
     if (mounted) setState(() => _bioReady = bioReady);
 
+    if (BiometricService.unlockedThisSession) {
+      // Already passed a biometric check during this app process — Android
+      // recreates the Activity (re-running this) on a plain background/
+      // foreground cycle, which must not re-prompt for an active session.
+      if (mounted) setState(() => _checkingBiometric = false);
+      return;
+    }
+
     if (bioEnabled && bioReady) {
       final reason = context.mounted
           ? context.read<AppState>().strings.bioReason
           : 'Authenticate to sign in';
       final ok = await BiometricService.authenticate(reason);
       if (ok) {
+        BiometricService.unlockedThisSession = true;
         if (!_loggedIn) {
           // No active session — restore last user via biometric.
           final user = await UserService.signInWithBiometric();
@@ -336,6 +345,7 @@ class _AuthGateState extends State<AuthGate> {
     final reason = context.read<AppState>().strings.bioReason;
     final ok = await BiometricService.authenticate(reason);
     if (!ok || !mounted) return;
+    BiometricService.unlockedThisSession = true;
     // Auto-enable biometric for future logins (first tap = implicit opt-in).
     await BiometricService.setEnabled(true);
     await BiometricService.markAsked();

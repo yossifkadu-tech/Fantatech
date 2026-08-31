@@ -29,6 +29,8 @@ import '../gateways/clients/z2m_client.dart';
 import '../gateways/clients/hue_client.dart';
 import '../gateways/clients/ha_gateway_client.dart';
 import '../gateways/clients/aqara_hub_client.dart';
+import '../gateways/clients/irobot_client.dart';
+import '../gateways/clients/xiaomi_vacuum_client.dart';
 import '../switches/switch_controller.dart';
 import '../switches/smart_switch_models.dart';
 import '../lights/govee_lan_controller.dart';
@@ -269,27 +271,61 @@ class DeviceCommander {
     return false;
   }
 
-  /// Send a robot-vacuum command (start / pause / return to dock). HA only —
-  /// vacuums are synced in via the `vacuum` domain, no local pairing flow.
+  /// Send a robot-vacuum command (start / pause / return to dock).
+  /// Supports direct-LAN iRobot and Xiaomi vacuums, plus any vacuum synced
+  /// in via Home Assistant's `vacuum` domain.
   static Future<bool> vacuumCommand(
     Device device,
     VacuumAction action, {
     required GatewayManager gateways,
   }) async {
-    if (!device.id.startsWith('ha_')) return false;
-    final gw = _gateway(gateways, GatewayType.homeAssistant);
-    if (gw == null) return false;
-    final ip       = gw.credentials['ip'];
-    final token    = gw.credentials['token'];
-    final entityId = device.attributes['entityId'] as String?;
-    if (ip == null || token == null || entityId == null) return false;
+    final id = device.id;
 
-    final service = switch (action) {
-      VacuumAction.start => 'start',
-      VacuumAction.pause => 'pause',
-      VacuumAction.dock  => 'return_to_base',
-    };
-    return HaGatewayClient.callService(ip, token, 'vacuum', service, entityId);
+    // ── iRobot (Roomba / Braava) — local MQTT ──────────────────────────────
+    if (id.startsWith('irobot_')) {
+      final ip       = device.attributes['ip'] as String?;
+      final blid     = device.attributes['blid'] as String?;
+      final password = device.attributes['password'] as String?;
+      if (ip == null || blid == null || password == null) return false;
+      final client = IRobotClient(ip: ip, blid: blid, password: password);
+      return switch (action) {
+        VacuumAction.start => client.start(),
+        VacuumAction.pause => client.pause(),
+        VacuumAction.dock  => client.dock(),
+      };
+    }
+
+    // ── Xiaomi / Mi Robot Vacuum — local miIO ──────────────────────────────
+    if (id.startsWith('xiaomi_vacuum_')) {
+      final ip       = device.attributes['ip'] as String?;
+      final vacToken = device.attributes['token'] as String?;
+      if (ip == null || vacToken == null) return false;
+      final client = XiaomiVacuumClient(ip: ip, token: vacToken);
+      return switch (action) {
+        VacuumAction.start => client.start(),
+        VacuumAction.pause => client.pause(),
+        VacuumAction.dock  => client.dock(),
+      };
+    }
+
+    // ── Home Assistant `vacuum` domain ──────────────────────────────────────
+    if (id.startsWith('ha_')) {
+      final gw = _gateway(gateways, GatewayType.homeAssistant);
+      if (gw == null) return false;
+      final ip       = gw.credentials['ip'];
+      final token    = gw.credentials['token'];
+      final entityId = device.attributes['entityId'] as String?;
+      if (ip == null || token == null || entityId == null) return false;
+
+      final service = switch (action) {
+        VacuumAction.start => 'start',
+        VacuumAction.pause => 'pause',
+        VacuumAction.dock  => 'return_to_base',
+      };
+      return HaGatewayClient.callService(ip, token, 'vacuum', service, entityId);
+    }
+
+    return false;
   }
 
   /// Set brightness 0..100 for a dimmable light. Returns true on success.

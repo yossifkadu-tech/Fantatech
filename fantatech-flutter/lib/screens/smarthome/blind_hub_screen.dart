@@ -7,6 +7,7 @@ import '../../models/device.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/device_edit_sheet.dart';
 import '../../widgets/ft_nav.dart';
+import '../../widgets/state_views.dart';
 import '../../l10n/strings.dart';
 
 class BlindHubScreen extends StatelessWidget {
@@ -91,7 +92,7 @@ class BlindHubScreen extends StatelessWidget {
 
             Expanded(
               child: blinds.isEmpty
-                  ? _EmptyState(s: s)
+                  ? EmptyState(icon: Symbols.blinds, title: s.noBlindsFound, subtitle: s.blindsHint)
                   : ListView.separated(
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                       addAutomaticKeepAlives: false,
@@ -535,46 +536,3 @@ class _CtrlBtn extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────
 // Empty state
 // ─────────────────────────────────────────────────────────────
-class _EmptyState extends StatelessWidget {
-  final S s;
-  const _EmptyState({required this.s});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(40),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 80, height: 80,
-              decoration: BoxDecoration(
-                color: context.tText2(0.06),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Symbols.blinds,
-                size: 38,
-                color: context.tText2(0.3),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text(s.noBlindsFound,
-                style: TextStyle(
-                    color: context.tText,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600)),
-            const SizedBox(height: 8),
-            Text(s.blindsHint,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    color: context.tText2(0.45),
-                    fontSize: 13,
-                    height: 1.5)),
-          ],
-        ),
-      ),
-    );
-  }
-}

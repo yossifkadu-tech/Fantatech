@@ -6,6 +6,7 @@ import '../../models/device.dart';
 import '../../l10n/strings.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/device_icons.dart';
+import '../../widgets/state_views.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -141,7 +142,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
 
             Expanded(
               child: filtered.isEmpty
-                  ? _EmptyState()
+                  ? EmptyState(icon: Symbols.notifications_none, title: s.noNotifications)
                   : ListView.separated(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       itemCount: filtered.length,
@@ -573,32 +574,6 @@ class _BadgeWidget extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────
 // Empty state
 // ─────────────────────────────────────────────────────────────
-class _EmptyState extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final s = context.select((AppState st) => st.strings);
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Symbols.notifications_none,
-            color: context.tText2(0.2),
-            size: 56,
-          ),
-          const SizedBox(height: 14),
-          Text(
-            s.noNotifications,
-            style: TextStyle(
-              color: context.tText2(0.35),
-              fontSize: 16,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 // ─────────────────────────────────────────────────────────────
 // Bottom menu option

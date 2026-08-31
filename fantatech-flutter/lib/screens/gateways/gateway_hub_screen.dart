@@ -18,6 +18,7 @@ import '../../services/gateways/gateway_manager.dart';
 import '../../services/gateways/gateway_model.dart';
 import '../../services/gateways/gateway_types.dart';
 import '../../services/gateways/clients/dirigera_client.dart';
+import '../../services/gateways/clients/tuya_cloud_client.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/ft_button.dart';
 import 'gateway_connect_sheet.dart';
@@ -221,6 +222,33 @@ class GatewayHubScreen extends StatelessWidget {
               style: TextStyle(color: context.tText, fontSize: 16, fontWeight: FontWeight.bold)),
           content: SingleChildScrollView(
             child: Text(DIRIGERAGatewayClient.lastRawSummary,
+                style: TextStyle(color: context.tText2(0.8), fontSize: 13, height: 1.5)),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(s.close),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Diagnostic: show exactly what Tuya's API returned for each device
+    // (name, category, and whether it was hidden as a hub) — pinpoints
+    // whether the problem is the cloud link, an unmapped category, or
+    // devices that were already imported previously.
+    if (conn.type == GatewayType.tuyaSmart &&
+        TuyaCloudClient.lastRawSummary.isNotEmpty) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: context.tCard,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text(s.diagnosisTitle,
+              style: TextStyle(color: context.tText, fontSize: 16, fontWeight: FontWeight.bold)),
+          content: SingleChildScrollView(
+            child: Text(TuyaCloudClient.lastRawSummary,
                 style: TextStyle(color: context.tText2(0.8), fontSize: 13, height: 1.5)),
           ),
           actions: [

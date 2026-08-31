@@ -116,6 +116,16 @@ class SwitchScanEngine extends ChangeNotifier {
     notifyListeners();
   }
 
+  @override
+  void dispose() {
+    // Stop any in-flight subnet probes immediately — without this, navigating
+    // away mid-scan leaves dozens of concurrent HTTP/TCP connections running
+    // against the LAN with nothing left to consume the results.
+    _cancelled = true;
+    _debounce?.cancel();
+    super.dispose();
+  }
+
   // ── WiFi / LAN scan ────────────────────────────────────────────────────────
 
   Future<void> _runWifiScan(String prefix) async {

@@ -10,6 +10,7 @@ import '../../services/gateways/gateway_types.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/device_edit_sheet.dart';
 import '../../widgets/ft_nav.dart';
+import '../../widgets/state_views.dart';
 
 class LightsHubScreen extends StatelessWidget {
   const LightsHubScreen({super.key});
@@ -162,7 +163,7 @@ class _LightsHubViewState extends State<_LightsHubView> {
             // ── List ──────────────────────────────────────────────
             Expanded(
               child: lights.isEmpty
-                  ? _EmptyState(s: s)
+                  ? EmptyState(icon: Symbols.lightbulb, title: s.noLightsFound, subtitle: s.lightsHint)
                   : ListView.separated(
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                       addAutomaticKeepAlives: false,
@@ -370,35 +371,6 @@ class _ActionBtn extends StatelessWidget {
                     color: color,
                     fontSize: 13,
                     fontWeight: FontWeight.w600)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _EmptyState extends StatelessWidget {
-  final dynamic s;
-  const _EmptyState({required this.s});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(40),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Symbols.lightbulb,
-                size: 64, color: context.tText2(0.18)),
-            const SizedBox(height: 20),
-            Text(s.noLightsFound,
-                style: TextStyle(
-                    color: context.tText, fontSize: 16, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 8),
-            Text(s.lightsHint,
-                textAlign: TextAlign.center,
-                style: TextStyle(color: context.tText2(0.45), fontSize: 13)),
           ],
         ),
       ),

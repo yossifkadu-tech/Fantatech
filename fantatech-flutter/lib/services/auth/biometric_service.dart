@@ -13,6 +13,15 @@ class BiometricService {
   static const _enabledKey = 'biometric_enabled';
   static const _askedKey = 'biometric_asked';
 
+  /// In-memory only — true once the user has passed a biometric check
+  /// during this app process. Android frequently recreates the Activity
+  /// (and re-runs AuthGate.initState) on a plain background/foreground
+  /// cycle without a real cold start; without this flag that recreation
+  /// re-prompts for a fingerprint the user already gave a moment earlier.
+  /// Intentionally not persisted — a genuine cold start / process kill
+  /// still asks again, which is the correct security behavior.
+  static bool unlockedThisSession = false;
+
   /// True if the device supports biometric or PIN authentication.
   static Future<bool> isAvailable() async {
     try {

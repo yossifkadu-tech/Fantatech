@@ -1034,6 +1034,11 @@ class S {
   final String pickHebrewDate;
   final String hebrewDateFmt;    // {date}
   final String hebrewCalendarChip;
+  final String holidayEve;
+  final String holidayChag;
+  final String roshChodesh;
+  final String cholHamoed;
+  final String hebrewMonthsCsv; // comma-separated, 14 names (incl. Adar I/II)
 
   // Scan discovery screen
   final String scanNetworkTitle;
@@ -1470,6 +1475,11 @@ class S {
     this.pickHebrewDate      = 'Choose Hebrew date',
     this.hebrewDateFmt       = 'Hebrew date: {date}',
     this.hebrewCalendarChip  = 'Hebrew date…',
+    this.holidayEve            = 'Holiday eve',
+    this.holidayChag           = 'Holiday',
+    this.roshChodesh           = 'Rosh Chodesh',
+    this.cholHamoed            = 'Chol HaMoed',
+    this.hebrewMonthsCsv       = 'Tishrei,Cheshvan,Kislev,Tevet,Shevat,Adar,Adar I,Adar II,Nissan,Iyar,Sivan,Tammuz,Av,Elul',
     this.sensorHubTitle       = 'Sensors & Shutters',
     this.sensorHubFoundFmt    = '{sensors} sensors · {covers} shutters',
     this.sensorsTab           = 'Sensors',
@@ -2541,6 +2551,9 @@ class S {
     pickHebrewDate: 'בחר תאריך עברי',
     hebrewDateFmt: 'תאריך עברי: {date}',
     hebrewCalendarChip: 'תאריך עברי…',
+    holidayEve: 'ערב חג', holidayChag: 'חג / יום טוב',
+    roshChodesh: 'ראש חודש', cholHamoed: 'חול המועד',
+    hebrewMonthsCsv: 'תשרי,חשוון,כסלו,טבת,שבט,אדר,אדר א׳,אדר ב׳,ניסן,אייר,סיוון,תמוז,אב,אלול',
     storeBuyAt: 'קנה ב-',
     loginBiometric: 'כניסה עם טביעת אצבע / פנים',
     errInvalidEmail: 'כתובת אימייל לא תקינה',
@@ -3313,6 +3326,9 @@ class S {
     confirm: 'تأكيد', pickDay: 'يوم', pickMonth: 'شهر',
     pickHebrewDate: 'اختر تاريخاً عبرياً',
     hebrewDateFmt: 'التاريخ العبري: {date}', hebrewCalendarChip: 'التاريخ العبري…',
+    holidayEve: 'ليلة عيد', holidayChag: 'عيد يهودي',
+    roshChodesh: 'رأس الشهر العبري', cholHamoed: 'أيام العيد المتوسطة',
+    hebrewMonthsCsv: 'تشري,حشوان,كسلو,طيبت,شباط,أدار,أدار الأول,أدار الثاني,نيسان,أيار,سيفان,تموز,آب,أيلول',
     storeBuyAt: 'شراء من ',
     loginBiometric: 'الدخول ببصمة / الوجه',
     errInvalidEmail: 'عنوان البريد الإلكتروني غير صحيح',
@@ -3770,6 +3786,9 @@ class S {
     confirm: 'አረጋግጥ', pickDay: 'ቀን', pickMonth: 'ወር',
     pickHebrewDate: 'የዕብራይስጥ ቀን ምረጥ',
     hebrewDateFmt: 'የዕብራይስጥ: {date}', hebrewCalendarChip: 'የዕብራይስጥ ቀን…',
+    holidayEve: 'የበዓል ዋዜማ', holidayChag: 'በዓል',
+    roshChodesh: 'ራሽ ኮዴሽ', cholHamoed: 'የበዓል መካከለኛ ቀናት',
+    hebrewMonthsCsv: 'ትሽሬ,ሔሽዋን,ክስሌው,ጤቬት,ሽቫጥ,አዳር,አዳር 1,አዳር 2,ኒሳን,እያር,ሲቫን,ታሙዝ,አብ,ኤሉል',
     storeBuyAt: 'ይግዙ ',
     loginBiometric: 'በጣት አሻራ / ፊት ይግቡ',
     errInvalidEmail: 'ልክ ያልሆነ ኢሜይል',
@@ -4216,6 +4235,9 @@ class S {
     confirm: 'Confirmar', pickDay: 'Día', pickMonth: 'Mes',
     pickHebrewDate: 'Seleccionar fecha hebrea',
     hebrewDateFmt: 'Fecha hebrea: {date}', hebrewCalendarChip: 'Fecha hebrea…',
+    holidayEve: 'Víspera de festividad', holidayChag: 'Festividad judía',
+    roshChodesh: 'Rosh Jodesh', cholHamoed: 'Jol HaMoed',
+    hebrewMonthsCsv: 'Tishrei,Jeshván,Kislev,Tevet,Shevat,Adar,Adar I,Adar II,Nisán,Iyar,Sivan,Tamuz,Av,Elul',
     storeBuyAt: 'Comprar en ',
     loginBiometric: 'Entrar con huella / rostro',
     errInvalidEmail: 'Correo electrónico no válido',
@@ -4663,6 +4685,9 @@ class S {
     confirm: 'Подтвердить', pickDay: 'День', pickMonth: 'Месяц',
     pickHebrewDate: 'Выбрать еврейскую дату',
     hebrewDateFmt: 'Еврейская дата: {date}', hebrewCalendarChip: 'Еврейская дата…',
+    holidayEve: 'Канун праздника', holidayChag: 'Праздник',
+    roshChodesh: 'Рош Ходеш', cholHamoed: 'Холь а-Моэд',
+    hebrewMonthsCsv: 'Тишрей,Хешван,Кислев,Тевет,Шват,Адар,Адар I,Адар II,Нисан,Ияр,Сиван,Таммуз,Ав,Элул',
     storeBuyAt: 'Купить у ',
     loginBiometric: 'Войти по отпечатку / лицу',
     errInvalidEmail: 'Неверный адрес электронной почты',
@@ -5120,6 +5145,9 @@ class S {
     confirm: 'Confirmer', pickDay: 'Jour', pickMonth: 'Mois',
     pickHebrewDate: 'Choisir une date hébraïque',
     hebrewDateFmt: 'Date hébraïque : {date}', hebrewCalendarChip: 'Date hébraïque…',
+    holidayEve: 'Veille de fête', holidayChag: 'Fête juive',
+    roshChodesh: 'Roch \'Hodech', cholHamoed: 'Hol Hamoëd',
+    hebrewMonthsCsv: 'Tichri,Hechvan,Kislev,Tevet,Chevat,Adar,Adar I,Adar II,Nissan,Iyar,Sivan,Tamouz,Av,Eloul',
     storeBuyAt: 'Acheter chez ',
     loginBiometric: 'Se connecter par empreinte / visage',
     errInvalidEmail: 'Adresse e-mail invalide',

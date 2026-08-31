@@ -12,6 +12,7 @@ import '../../models/app_state.dart';
 import '../../models/device.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/device_edit_sheet.dart';
+import '../../widgets/state_views.dart';
 import '../cameras/mjpeg_view.dart';
 
 class IntercomHubScreen extends StatelessWidget {
@@ -138,7 +139,7 @@ class _IntercomViewState extends State<_IntercomView> {
             // ── Device list ────────────────────────────────────────────────
             Expanded(
               child: intercoms.isEmpty
-                  ? _EmptyState(hint: s.intercomHint, label: s.intercomNoDevices)
+                  ? EmptyState(icon: Symbols.doorbell, title: s.intercomNoDevices, subtitle: s.intercomHint)
                   : ListView.builder(
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                       itemCount: intercoms.length,
@@ -522,45 +523,3 @@ class _ActionButton extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Empty state
-// ─────────────────────────────────────────────────────────────────────────────
-class _EmptyState extends StatelessWidget {
-  final String label;
-  final String hint;
-  const _EmptyState({required this.label, required this.hint});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 40),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Symbols.doorbell,
-              size: 64,
-              color: context.tText2(0.18),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              label,
-              style: TextStyle(
-                color: context.tText2(0.55),
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              hint,
-              style: TextStyle(color: context.tText2(0.35), fontSize: 12),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

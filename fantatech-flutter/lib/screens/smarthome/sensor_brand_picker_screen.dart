@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../models/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/ft_button.dart';
+import '../../widgets/ft_search_bar.dart';
 import '../../services/discovery/real_discovery_engine.dart';
 import '../../services/discovery/discovery_models.dart';
 
@@ -707,6 +708,110 @@ const _smokeBrands = <_Brand>[
 ];
 
 // ─────────────────────────────────────────────────────────────
+// Water-leak sensor brands
+// ─────────────────────────────────────────────────────────────
+const _leakBrands = <_Brand>[
+  // ── Zigbee ────────────────────────────────────────────────
+  _Brand(
+    id: 'aqara_leak',
+    name: 'Aqara',
+    model: 'Water Leak Sensor',
+    protocol: _Protocol.zigbee,
+    requiresHub: true,
+    hubNote: 'DIRIGERA · deCONZ · Z2M',
+    accentColor: _kZigbee,
+    steps: [
+      _PairingStep(Symbols.hub,                'ודא שה-Hub Zigbee מחובר ל-FantaTech'),
+      _PairingStep(Symbols.add_circle,          'ב-Hub — הפעל "הוסף מכשיר / Add device"'),
+      _PairingStep(Symbols.battery_charging_full, 'הכנס סוללת CR2032 לחיישן'),
+      _PairingStep(Symbols.touch_app,          'החזק כפתור Reset 5 שניות עד הבהוב LED', isAction: true),
+      _PairingStep(Symbols.sensors,            'המתן לזיהוי ב-FantaTech (עד 30 שניות)'),
+    ],
+  ),
+  _Brand(
+    id: 'sonoff_snzb05',
+    name: 'Sonoff',
+    model: 'SNZB-05 Water Leak Sensor',
+    protocol: _Protocol.zigbee,
+    requiresHub: true,
+    hubNote: 'DIRIGERA · deCONZ · Z2M',
+    accentColor: _kZigbee,
+    steps: [
+      _PairingStep(Symbols.hub,                'ודא שה-Hub Zigbee מחובר ל-FantaTech'),
+      _PairingStep(Symbols.add_circle,          'ב-Hub — הפעל מצב הוספת מכשיר'),
+      _PairingStep(Symbols.battery_charging_full, 'הכנס סוללת CR2032'),
+      _PairingStep(Symbols.touch_app,          'החזק כפתור 5 שניות עד הבהוב', isAction: true),
+      _PairingStep(Symbols.sensors,            'המתן לזיהוי (עד 30 שניות)'),
+    ],
+  ),
+  _Brand(
+    id: 'tuya_leak',
+    name: 'Tuya',
+    model: 'Water Leak Detector',
+    protocol: _Protocol.zigbee,
+    requiresHub: true,
+    hubNote: 'deCONZ · Z2M · ZHA',
+    accentColor: _kZigbee,
+    steps: [
+      _PairingStep(Symbols.hub,                'ודא שה-Hub Zigbee מחובר ל-FantaTech'),
+      _PairingStep(Symbols.add_circle,          'ב-Hub — הפעל מצב הוספת מכשיר'),
+      _PairingStep(Symbols.battery_charging_full, 'הכנס סוללת CR2032 לחיישן'),
+      _PairingStep(Symbols.touch_app,          'לחץ 3 פעמים מהיר על כפתור ה-Pair', isAction: true),
+      _PairingStep(Symbols.sensors,            'המתן לזיהוי (עד 30 שניות)'),
+    ],
+  ),
+  // ── WiFi ──────────────────────────────────────────────────
+  _Brand(
+    id: 'shelly_flood',
+    name: 'Shelly',
+    model: 'Flood',
+    protocol: _Protocol.wifi,
+    requiresHub: false,
+    accentColor: _kWifi,
+    steps: [
+      _PairingStep(Symbols.battery_charging_full, 'הכנס סוללות AA להפעלה ראשונה'),
+      _PairingStep(Symbols.wifi,               'ב-Wi-Fi הטלפון: התחבר ל-"ShellyFlood-XXXXXX"'),
+      _PairingStep(Symbols.language,           'פתח דפדפן → 192.168.33.1 → הגדר WiFi ביתי', isAction: true),
+      _PairingStep(Symbols.check_circle,        'המכשיר יצטרף לרשת הביתית'),
+      _PairingStep(Symbols.add_link,                    'הוסף ב-FantaTech עם כתובת ה-IP שהוקצה'),
+    ],
+  ),
+  // ── Z-Wave ────────────────────────────────────────────────
+  _Brand(
+    id: 'fibaro_flood',
+    name: 'Fibaro',
+    model: 'Flood Sensor',
+    protocol: _Protocol.zwave,
+    requiresHub: true,
+    hubNote: 'Z-Wave Controller',
+    accentColor: _kZwave,
+    steps: [
+      _PairingStep(Symbols.hub,                'ודא ש-Controller Z-Wave מחובר ל-FantaTech'),
+      _PairingStep(Symbols.add_circle,          'ב-Controller — הפעל מצב Include'),
+      _PairingStep(Symbols.battery_charging_full, 'הכנס סוללת CR123A לחיישן'),
+      _PairingStep(Symbols.touch_app,          'לחץ 3 פעמים מהיר על כפתור ה-B', isAction: true),
+      _PairingStep(Symbols.sensors,            'המתן לסיום ה-Include (נורה ירוקה)'),
+    ],
+  ),
+  _Brand(
+    id: 'aeotec_water',
+    name: 'Aeotec',
+    model: 'Water Sensor 6',
+    protocol: _Protocol.zwave,
+    requiresHub: true,
+    hubNote: 'Z-Wave Controller',
+    accentColor: _kZwave,
+    steps: [
+      _PairingStep(Symbols.hub,                'ודא ש-Controller Z-Wave מחובר ל-FantaTech'),
+      _PairingStep(Symbols.add_circle,          'ב-Controller — הפעל מצב Include'),
+      _PairingStep(Symbols.battery_charging_full, 'הכנס סוללות AAA לחיישן'),
+      _PairingStep(Symbols.touch_app,          'לחץ פעם אחת על כפתור ה-Action', isAction: true),
+      _PairingStep(Symbols.sensors,            'המתן לסיום ה-Include (LED כחול)'),
+    ],
+  ),
+];
+
+// ─────────────────────────────────────────────────────────────
 // Main screen
 // ─────────────────────────────────────────────────────────────
 class SensorBrandPickerScreen extends StatefulWidget {
@@ -732,6 +837,21 @@ class SensorBrandPickerScreen extends StatefulWidget {
 
 class _SensorBrandPickerScreenState extends State<SensorBrandPickerScreen> {
   _Protocol? _filter;
+  final TextEditingController _searchCtrl = TextEditingController();
+  String _query = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _searchCtrl.addListener(
+        () => setState(() => _query = _searchCtrl.text.trim().toLowerCase()));
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
 
   List<_Brand> get _brands {
     switch (widget.deviceId) {
@@ -742,6 +862,7 @@ class _SensorBrandPickerScreenState extends State<SensorBrandPickerScreen> {
       case 'switch1':
       case 'dimmer': return _switchBrands;
       case 'smoke':  return _smokeBrands;
+      case 'leak':   return _leakBrands;
       default:       return _motionBrands;
     }
   }
@@ -754,8 +875,13 @@ class _SensorBrandPickerScreenState extends State<SensorBrandPickerScreen> {
         .toList();
   }
 
-  List<_Brand> get _filtered =>
-      _filter == null ? _brands : _brands.where((b) => b.protocol == _filter).toList();
+  List<_Brand> get _filtered => _brands.where((b) {
+        final matchesProtocol = _filter == null || b.protocol == _filter;
+        final matchesQuery = _query.isEmpty ||
+            b.name.toLowerCase().contains(_query) ||
+            b.model.toLowerCase().contains(_query);
+        return matchesProtocol && matchesQuery;
+      }).toList();
 
   static String _protocolLabel(_Protocol p) => switch (p) {
     _Protocol.zigbee => 'Zigbee',
@@ -860,6 +986,13 @@ class _SensorBrandPickerScreenState extends State<SensorBrandPickerScreen> {
             ),
             const SizedBox(height: 12),
 
+            // ── Search bar ────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: FtSearchBar(controller: _searchCtrl, hintText: s.searchHint),
+            ),
+            const SizedBox(height: 10),
+
             // ── Protocol filter chips (dynamic per device type) ──
             SizedBox(
               height: 36,
@@ -888,15 +1021,29 @@ class _SensorBrandPickerScreenState extends State<SensorBrandPickerScreen> {
 
             // ── Brand list ────────────────────────────────────
             Expanded(
-              child: ListView.separated(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 30),
-                itemCount: _filtered.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 10),
-                itemBuilder: (ctx, i) => _BrandCard(
-                  brand: _filtered[i],
-                  onTap: () => _showPairingSheet(_filtered[i]),
-                ),
-              ),
+              child: _filtered.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Symbols.search_off,
+                              color: context.tText2(0.22), size: 48),
+                          const SizedBox(height: 12),
+                          Text(s.noResults,
+                              style: TextStyle(
+                                  color: context.tText2(0.38), fontSize: 14)),
+                        ],
+                      ),
+                    )
+                  : ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 30),
+                      itemCount: _filtered.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 10),
+                      itemBuilder: (ctx, i) => _BrandCard(
+                        brand: _filtered[i],
+                        onTap: () => _showPairingSheet(_filtered[i]),
+                      ),
+                    ),
             ),
           ],
         ),
@@ -1108,6 +1255,9 @@ class _BrandPairingSheetState extends State<_BrandPairingSheet>
             dt == DiscoveredDeviceType.socket;
       case 'smoke':
         return dt == DiscoveredDeviceType.smokeSensor ||
+            dt == DiscoveredDeviceType.sensor;
+      case 'leak':
+        return dt == DiscoveredDeviceType.waterLeak ||
             dt == DiscoveredDeviceType.sensor;
       default:
         return false;

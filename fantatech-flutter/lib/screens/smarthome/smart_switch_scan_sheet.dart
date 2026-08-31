@@ -14,6 +14,7 @@ import '../../models/device.dart';
 import '../../services/discovery/smart_switch_scanner.dart';
 import '../../services/discovery/discovery_models.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/state_views.dart';
 
 void showSmartSwitchScanSheet(BuildContext context) {
   showModalBottomSheet(
@@ -252,7 +253,7 @@ class _SmartSwitchScanSheetState extends State<SmartSwitchScanSheet> {
             // Results list
             Expanded(
               child: _found.isEmpty && _done
-                  ? _EmptyState()
+                  ? EmptyState(icon: Symbols.search_off, title: s.switchNoFound, subtitle: s.switchHint)
                   : ListView.builder(
                       controller: ctrl,
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
@@ -409,30 +410,3 @@ class _Tag extends StatelessWidget {
   }
 }
 
-class _EmptyState extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final s = context.select((AppState st) => st.strings);
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Symbols.search_off,
-              color: context.tText2(0.15), size: 48),
-          const SizedBox(height: 12),
-          Text(s.switchNoFound,
-              style: TextStyle(color: context.tText2(0.38), fontSize: 14)),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 40),
-            child: Text(
-              s.switchHint,
-              style: TextStyle(color: context.tText2(0.24), fontSize: 11),
-              textAlign: TextAlign.center,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}

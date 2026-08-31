@@ -791,7 +791,7 @@ class _StatsGrid extends StatelessWidget {
           icon: Symbols.home,
           color: AppColors.primary,
           value: '$rooms',
-          label: s.statHomesLabel,
+          label: s.roomsHeader,
         ),
         _StatCard(
           icon: Symbols.devices,

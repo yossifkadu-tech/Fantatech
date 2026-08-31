@@ -9,6 +9,7 @@ import '../../models/device.dart';
 import '../../l10n/strings.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/ft_button.dart';
+import '../../widgets/ft_search_bar.dart';
 import '../../services/discovery/real_discovery_engine.dart';
 import '../../services/discovery/discovery_models.dart';
 import 'scan_discovery_screen.dart';
@@ -82,6 +83,7 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
       _DeviceItem(id: 'door',   icon: Symbols.sensor_door,  name: s.devDoorSensor,    category: s.catSensor, color: AppColors.motionColor),
       _DeviceItem(id: 'window', icon: Symbols.window,       name: s.devWindowSensor,  category: s.catSensor, color: AppColors.motionColor),
       _DeviceItem(id: 'smoke',  icon: Symbols.crisis_alert, name: s.devSmokeDetector, category: s.catSensor, color: AppColors.unsecured),
+      _DeviceItem(id: 'leak',   icon: Symbols.water_damage, name: s.waterLeakSensor,  category: s.catSensor, color: const Color(0xFF42A5F5)),
     ]),
     _CatalogSection(title: s.catalogCameras, categoryKey: 'cameras', items: [
       _DeviceItem(id: 'cam_in',  icon: Symbols.videocam,       name: s.devIndoorCam,  category: s.catCamera, color: AppColors.cameraColor),
@@ -121,6 +123,7 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
       case 'ac_wifi':    return DeviceType.smartPlug;
       case 'motion':     return DeviceType.motionSensor;
       case 'smoke':      return DeviceType.smokeSensor;
+      case 'leak':       return DeviceType.waterLeakSensor;
       case 'door':       return DeviceType.doorSensor;
       case 'window':     return DeviceType.windowSensor;
       case 'cam_in':
@@ -153,7 +156,8 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
       case 'motion':
       case 'door':
       case 'window':
-      case 'smoke':       return 'Zigbee 3.0';
+      case 'smoke':
+      case 'leak':        return 'Zigbee 3.0';
       default:            return 'WiFi / BLE';
     }
   }
@@ -278,8 +282,8 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
 
     // Sensors, plugs, and switches → brand/protocol picker
     if (item.id == 'motion' || item.id == 'door' || item.id == 'window' ||
-        item.id == 'smoke' || item.id == 'plug' || item.id == 'switch1' ||
-        item.id == 'dimmer') {
+        item.id == 'smoke' || item.id == 'leak' || item.id == 'plug' ||
+        item.id == 'switch1' || item.id == 'dimmer') {
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -438,7 +442,7 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
               child:
-                  _SearchBar(controller: _searchCtrl, hintText: s.searchHint),
+                  FtSearchBar(controller: _searchCtrl, hintText: s.searchHint),
             ),
 
             // ── Scan Network banner ───────────────────────────
@@ -1645,49 +1649,6 @@ class _TopBar extends StatelessWidget {
           ),
           const SizedBox(width: 36),
         ],
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────
-// Search bar
-// ─────────────────────────────────────────────────────────────
-class _SearchBar extends StatelessWidget {
-  final TextEditingController controller;
-  final String hintText;
-  const _SearchBar({required this.controller, required this.hintText});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 42,
-      decoration: BoxDecoration(
-        color: context.tCard,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.tText2(0.09)),
-      ),
-      child: TextField(
-        controller: controller,
-        style: TextStyle(color: context.tText, fontSize: 13),
-        textDirection: context.select((AppState st) => st.isRtl)
-            ? TextDirection.rtl : TextDirection.ltr,
-        decoration: InputDecoration(
-          hintText: hintText,
-          hintStyle: TextStyle(
-              color: context.tText2(0.30), fontSize: 13),
-          prefixIcon: Icon(Symbols.search,
-              color: context.tText2(0.35), size: 18),
-          suffixIcon: controller.text.isNotEmpty
-              ? GestureDetector(
-                  onTap: () => controller.clear(),
-                  child: Icon(Symbols.close,
-                      color: context.tText2(0.35), size: 16))
-              : null,
-          border: InputBorder.none,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        ),
       ),
     );
   }

@@ -299,31 +299,10 @@ class _SecurityScreenState extends State<SecurityScreen>
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _WelcomeGuestButton(
-                      label: s.welcomeGuestBtn,
-                      hint: s.welcomeGuestHint,
-                      isActive: state.isGuestMode,
-                      onTap: () {
-                        if (state.isGuestMode) {
-                          state.cancelGuestMode();
-                        } else {
-                          _showGuestOptions(context, state, s);
-                        }
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _PanicButton(
-                      onLongPress: () => _showPanicConfirm(context, state, s),
-                      panicLabel: s.panicLabel,
-                      warningLabel: s.panicWarning,
-                    ),
-                  ),
-                ],
+              child: _PanicButton(
+                onLongPress: () => _showPanicConfirm(context, state, s),
+                panicLabel: s.panicLabel,
+                warningLabel: s.panicWarning,
               ),
             ),
           ],

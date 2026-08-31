@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../../models/app_state.dart';
 import '../../models/face_analysis.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/state_views.dart';
 
 class FaceAnalysisScreen extends StatelessWidget {
   const FaceAnalysisScreen({super.key});
@@ -85,7 +86,7 @@ class FaceAnalysisScreen extends StatelessWidget {
             // ── List ─────────────────────────────────────────────
             Expanded(
               child: history.isEmpty
-                  ? _EmptyState()
+                  ? EmptyState(icon: Symbols.face, title: s.noAnalysesYet, subtitle: s.faceAnalysisHint)
                   : ListView.separated(
                       padding:
                           const EdgeInsets.symmetric(horizontal: 16),
@@ -404,39 +405,3 @@ class _FaceTag extends StatelessWidget {
 
 // ── Empty state ───────────────────────────────────────────────────────────────
 
-class _EmptyState extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final s = context.select((AppState st) => st.strings);
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 80, height: 80,
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.08),
-              shape: BoxShape.circle,
-              border: Border.all(
-                  color: AppColors.primary.withValues(alpha: 0.2)),
-            ),
-            child: const Icon(Symbols.face,
-                color: AppColors.primary, size: 38),
-          ),
-          const SizedBox(height: 16),
-          Text(s.noAnalysesYet,
-              style: TextStyle(
-                  color: context.tText2(0.6),
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600)),
-          const SizedBox(height: 6),
-          Text(
-            s.faceAnalysisHint,
-            textAlign: TextAlign.center,
-            style: TextStyle(color: context.tText2(0.3), fontSize: 13),
-          ),
-        ],
-      ),
-    );
-  }
-}
