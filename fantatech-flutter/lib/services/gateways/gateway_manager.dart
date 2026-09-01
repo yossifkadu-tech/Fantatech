@@ -326,15 +326,37 @@ class GatewayManager extends ChangeNotifier {
       }
 
       // ── Smart Life / Tuya IoT ─────────────────────────────────────────────────
+      // Smart Life and Tuya/Moes are the same underlying Tuya OpenAPI project —
+      // this card exists as an alternate entry point for users coming from the
+      // Smart Life consumer app, not a separate integration. It must validate
+      // and import exactly like GatewayType.tuyaSmart, not just mark itself
+      // connected on any non-empty input.
       case GatewayType.smartLife: {
         final clientId     = fields['clientId']     ?? '';
         final clientSecret = fields['clientSecret'] ?? '';
+        final region       = TuyaRegionHost.fromName(fields['region']);
+
+        _setPairStatus('Connecting to Tuya Cloud…', 0);
+        final ok = await TuyaCloudClient.testConnection(
+          clientId:     clientId,
+          clientSecret: clientSecret,
+          region:       region,
+        );
+        if (!ok) {
+          return const GatewayConnectResult.fail(
+              'Tuya authentication failed — check Access ID / Secret and region');
+        }
+
         _addConnection(GatewayConnection(
           id:          _uuid.v4(),
           type:        type,
           displayName: 'Smart Life',
-          credentials: {'clientId': clientId, 'clientSecret': clientSecret},
-          isConnected: clientId.isNotEmpty,
+          credentials: {
+            'clientId':     clientId,
+            'clientSecret': clientSecret,
+            'region':       region.name,
+          },
+          isConnected: true,
           lastSync:    DateTime.now(),
         ));
         return GatewayConnectResult.ok({'clientId': clientId});
@@ -669,7 +691,10 @@ class GatewayManager extends ChangeNotifier {
         return SmartThingsClient.fetchDevices(token);
       }
 
-      case GatewayType.tuyaSmart: {
+      case GatewayType.tuyaSmart:
+      case GatewayType.smartLife: {
+        // Same underlying Tuya OpenAPI project either way — see the
+        // GatewayType.smartLife case in _doConnect for why these share code.
         final id = _str('clientId'); final secret = _str('clientSecret');
         if (id.isEmpty || secret.isEmpty) {
           return const GatewayImportResult.failure('Missing Tuya credentials');

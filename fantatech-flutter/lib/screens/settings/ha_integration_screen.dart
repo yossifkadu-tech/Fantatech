@@ -78,8 +78,13 @@ class _HaIntegrationScreenState extends State<HaIntegrationScreen> {
     final states = await HaGatewayClient.fetchAllStates(ip, token);
     if (!mounted) return;
 
-    // 3. Fetch areas (best-effort)
-    final areas = await HaGatewayClient.fetchAreas(ip, token);
+    // 3. Fetch areas (best-effort) + the per-entity registry info that
+    //    resolves which area each entity belongs to and whether it's a real
+    //    controllable entity at all — neither area_id nor entity_category is
+    //    present in /api/states' attributes (see fetchEntityRegistryInfo).
+    final areas    = await HaGatewayClient.fetchAreas(ip, token);
+    if (!mounted) return;
+    final registry = await HaGatewayClient.fetchEntityRegistryInfo(ip, token);
     if (!mounted) return;
 
     // 4. Save credentials (encrypted) — store as full URL so startup restore works
@@ -88,7 +93,7 @@ class _HaIntegrationScreenState extends State<HaIntegrationScreen> {
 
     // 5. Import into AppState
     final appState = context.read<AppState>();
-    final stats    = _importIntoApp(appState, states, areas, ip);
+    final stats    = _importIntoApp(appState, states, areas, registry, ip);
 
     // 6. Register in GatewayManager so DeviceCommander can route commands
     //    and so the live service reconnects automatically on app restart.
@@ -114,6 +119,7 @@ class _HaIntegrationScreenState extends State<HaIntegrationScreen> {
     AppState state,
     List<Map<String, dynamic>> states,
     List<Map<String, dynamic>> areas,
+    Map<String, HaEntityRegistryInfo> registry,
     String ip,
   ) {
     // Create room groups from HA areas
@@ -139,9 +145,18 @@ class _HaIntegrationScreenState extends State<HaIntegrationScreen> {
       final domain   = entityId.split('.').first;
       final friendly = (attrs['friendly_name'] as String?) ?? entityId;
 
-      // Area mapping
-      final areaId = (attrs['area_id']  as String?) ??
-                     (entity['area_id'] as String?);
+      // Skip HA's own internal bookkeeping entities (diagnostic/config, or
+      // disabled) — e.g. "Backup: Last successful backup", "Sun: Next dawn",
+      // a device's WiFi-signal sensor. These aren't physical smart-home
+      // devices; importing them just added inert toggles that did nothing
+      // when tapped. An entity absent from the registry (rare) is still
+      // imported — absence isn't evidence it's diagnostic.
+      final regInfo = registry[entityId];
+      if (regInfo != null && !regInfo.isImportable) continue;
+
+      // Area mapping — /api/states never carries area_id in attributes;
+      // resolve via the entity/device registry fetched separately.
+      final areaId = regInfo?.areaId;
 
       DeviceType? type;
       switch (domain) {

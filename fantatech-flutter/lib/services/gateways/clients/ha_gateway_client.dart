@@ -404,23 +404,73 @@ class HaGatewayClient {
     }
   }
 
-  /// Fetch HA areas from /api/areas (requires HA 2022.4+).
+  /// Fetch HA's Area registry.
   /// Returns a list of area objects [{area_id, name, icon?}] or empty list.
+  ///
+  /// `config/area_registry/list` is a WebSocket-only admin command — HA does
+  /// not expose it over REST. An earlier version of this method called it via
+  /// `_get()` against a REST path that doesn't exist, so it silently always
+  /// returned [] (caught by the try/catch) and no area ever imported.
   static Future<List<Map<String, dynamic>>> fetchAreas(
     String ip,
     String token,
   ) async {
-    try {
-      // Areas are fetched via the WebSocket template API; fall back to empty
-      // for LAN installs that don't expose the REST area endpoint.
-      final raw = await _get(ip, '/api/config/area_registry/list', token);
-      if (raw == null) return [];
-      final list = jsonDecode(raw);
-      if (list is! List) return [];
-      return list.whereType<Map<String, dynamic>>().toList();
-    } catch (_) {
-      return [];
+    final result =
+        await _wsCommand(ip, token, {'type': 'config/area_registry/list'});
+    if (result is! List) return [];
+    return result.whereType<Map>().map((m) => m.cast<String, dynamic>()).toList();
+  }
+
+  /// Fetches, per entity_id, the registry info needed to import it sensibly:
+  /// its area (for room assignment) and whether it's a diagnostic/config/
+  /// disabled entity that should be excluded from import entirely.
+  ///
+  /// `/api/states` (used by [fetchAllStates]) never includes `area_id` or
+  /// `entity_category` in an entity's `attributes` — neither is part of that
+  /// endpoint's payload. Both live only in the entity/device registry.
+  ///
+  /// Area resolves through the device registry when set on the device rather
+  /// than the entity directly (the common case — HA shows an entity as
+  /// "inheriting" its device's area unless overridden per-entity).
+  ///
+  /// `entity_category` of "diagnostic" or "config" marks HA's own internal
+  /// bookkeeping entities (e.g. "Backup: Last successful backup", "Sun: Next
+  /// dawn", a device's WiFi signal/uptime sensor) — these are not physical
+  /// smart-home devices and were previously imported alongside real ones,
+  /// showing up as inert toggles that do nothing.
+  static Future<Map<String, HaEntityRegistryInfo>> fetchEntityRegistryInfo(
+    String ip,
+    String token,
+  ) async {
+    final entities =
+        await _wsCommand(ip, token, {'type': 'config/entity_registry/list'});
+    final devices =
+        await _wsCommand(ip, token, {'type': 'config/device_registry/list'});
+    if (entities is! List) return {};
+
+    final deviceArea = <String, String>{};
+    if (devices is List) {
+      for (final d in devices.whereType<Map>()) {
+        final id   = d['id']      as String?;
+        final area = d['area_id'] as String?;
+        if (id != null && area != null) deviceArea[id] = area;
+      }
     }
+
+    final result = <String, HaEntityRegistryInfo>{};
+    for (final e in entities.whereType<Map>()) {
+      final entityId = e['entity_id'] as String?;
+      if (entityId == null) continue;
+      final directArea = e['area_id']   as String?;
+      final deviceId   = e['device_id'] as String?;
+      final area = directArea ?? (deviceId != null ? deviceArea[deviceId] : null);
+      result[entityId] = HaEntityRegistryInfo(
+        areaId:         area,
+        entityCategory: e['entity_category'] as String?,
+        disabledBy:     e['disabled_by'] as String?,
+      );
+    }
+    return result;
   }
 
   /// Ping the HA REST API — returns true if reachable and token is valid.
@@ -483,6 +533,31 @@ class HaGatewayClient {
     } catch (_) {}
     return null;
   }
+}
+
+// ── Entity registry info ─────────────────────────────────────────────────
+
+/// Per-entity registry data used to decide whether/where to import it.
+class HaEntityRegistryInfo {
+  final String? areaId;
+  final String? entityCategory; // 'diagnostic' | 'config' | null (primary)
+  final String? disabledBy;     // non-null if the entity is disabled in HA
+
+  const HaEntityRegistryInfo({
+    this.areaId,
+    this.entityCategory,
+    this.disabledBy,
+  });
+
+  /// False for HA's own internal bookkeeping entities (diagnostic/config —
+  /// e.g. "Backup: Last successful backup", "Sun: Next dawn", a device's
+  /// WiFi-signal sensor) and for entities disabled in HA — neither is a
+  /// controllable physical device and importing them just adds inert
+  /// toggles that do nothing when tapped.
+  bool get isImportable =>
+      disabledBy == null &&
+      entityCategory != 'diagnostic' &&
+      entityCategory != 'config';
 }
 
 // ── Live connection handle ─────────────────────────────────────────────────
