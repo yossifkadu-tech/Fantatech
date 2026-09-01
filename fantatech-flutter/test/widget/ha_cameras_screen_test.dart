@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:provider/provider.dart';
 
 import 'package:fantatech/models/app_state.dart';
 import 'package:fantatech/l10n/strings.dart';
+import 'package:fantatech/providers/layout_provider.dart';
 import 'package:fantatech/screens/ha/ha_cameras_screen.dart';
 import 'package:fantatech/services/ha/ha_provider.dart';
 
@@ -15,12 +17,15 @@ import '../helpers/fake_ha_provider.dart';
 class MockAppState extends Mock implements AppState {}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+// HaCamerasScreen renders through ReorderableDashboard, which reads
+// LayoutProvider — must be supplied here or it throws ProviderNotFoundException.
 
 Widget _harness(FakeHaProvider haProvider, AppState appState) =>
     MultiProvider(
       providers: [
         ChangeNotifierProvider<HaProvider>.value(value: haProvider),
         ChangeNotifierProvider<AppState>.value(value: appState),
+        ChangeNotifierProvider<LayoutProvider>(create: (_) => LayoutProvider()),
       ],
       child: const MaterialApp(
         home: Scaffold(body: HaCamerasScreen()),
@@ -43,7 +48,7 @@ void main() {
         _harness(FakeHaProvider(), _mockAppState()),
       );
 
-      expect(find.byIcon(Icons.videocam_off_rounded), findsOneWidget);
+      expect(find.byIcon(Symbols.videocam_off), findsOneWidget);
       expect(
         find.text('אין מצלמות מחוברות ב-Home Assistant'),
         findsOneWidget,

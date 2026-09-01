@@ -1,16 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import 'package:fantatech/providers/layout_provider.dart';
 import 'package:fantatech/screens/ha/ha_automations_screen.dart';
 import 'package:fantatech/services/ha/ha_provider.dart';
 
 import '../helpers/fake_ha_provider.dart';
 
 // ── Test harness ──────────────────────────────────────────────────────────────
+// HaAutomationsScreen's search bar row also hosts an EditModeButton, and its
+// list renders through ReorderableDashboard — both read LayoutProvider, so it
+// must be supplied here or they throw ProviderNotFoundException during build.
 
-Widget _harness(FakeHaProvider provider) => ChangeNotifierProvider<HaProvider>.value(
-      value: provider,
+Widget _harness(FakeHaProvider provider) => MultiProvider(
+      providers: [
+        ChangeNotifierProvider<HaProvider>.value(value: provider),
+        ChangeNotifierProvider<LayoutProvider>(create: (_) => LayoutProvider()),
+      ],
       child: const MaterialApp(
         home: Scaffold(body: HaAutomationsScreen()),
       ),
@@ -26,7 +34,7 @@ void main() {
         (tester) async {
       await tester.pumpWidget(_harness(FakeHaProvider()));
 
-      expect(find.byIcon(Icons.auto_awesome_rounded), findsOneWidget);
+      expect(find.byIcon(Symbols.auto_awesome), findsOneWidget);
       expect(find.text('אין אוטומציות ב-Home Assistant'), findsOneWidget);
     });
 
@@ -36,7 +44,7 @@ void main() {
         _harness(FakeHaProvider(connected: false)),
       );
 
-      expect(find.byIcon(Icons.wifi_off_rounded), findsOneWidget);
+      expect(find.byIcon(Symbols.wifi_off), findsOneWidget);
       expect(find.text('לא מחובר ל-Home Assistant'), findsOneWidget);
     });
 
@@ -91,7 +99,7 @@ void main() {
       ]);
       await tester.pumpWidget(_harness(provider));
 
-      expect(find.byIcon(Icons.play_arrow_rounded), findsNWidgets(2));
+      expect(find.byIcon(Symbols.play_arrow), findsNWidgets(2));
     });
 
     // ── Search ───────────────────────────────────────────────────────────────

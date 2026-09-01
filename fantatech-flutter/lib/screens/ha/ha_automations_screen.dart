@@ -63,12 +63,17 @@ class _HaAutomationsScreenState extends State<HaAutomationsScreen> {
       });
 
     // Build default layout items from the current (filtered) automation list.
+    // NOTE: config only carries 'entityId' here — no 'label'. LayoutProvider
+    // treats config['label'] as a user-set rename override (see
+    // LayoutProvider.renameItem); pre-seeding it with the automation's own
+    // name would make _CustomizedItem think every card was renamed and draw
+    // a redundant name badge over it. nameResolver below supplies the live
+    // friendly name as the *default*, independent of any override.
     final defaultItems = filtered.asMap().entries.map((e) => LayoutItem(
           id: 'auto_${e.value.entityId}',
           type: 'automation',
           config: {
             'entityId': e.value.entityId,
-            'label': e.value.friendlyName,
           },
           order: e.key,
         )).toList();
@@ -123,17 +128,27 @@ class _HaAutomationsScreenState extends State<HaAutomationsScreen> {
                     : ReorderableDashboard(
                         dashboardId: 'ha_automations',
                         defaultItems: defaultItems,
-                        nameResolver: (item) =>
-                            item.config['label'] as String? ?? item.type,
+                        nameResolver: (item) {
+                          final custom = item.config['label'] as String?;
+                          if (custom != null && custom.isNotEmpty) return custom;
+                          final entityId = item.config['entityId'] as String?;
+                          final match = list.where((a) => a.entityId == entityId);
+                          return match.isNotEmpty ? match.first.friendlyName : item.type;
+                        },
                         iconResolver: (_) => Symbols.auto_awesome,
                         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                         itemBuilder: (ctx, item) {
                           final entityId =
                               item.config['entityId'] as String?;
-                          final auto = filtered.firstWhere(
-                            (a) => a.entityId == entityId,
-                            orElse: () => filtered.first,
-                          );
+                          // ReorderableDashboard renders from the persisted
+                          // layout, not from `filtered` directly — an item
+                          // excluded by the current search query must be
+                          // hidden here rather than falling back to some
+                          // other automation's data.
+                          final matches =
+                              filtered.where((a) => a.entityId == entityId);
+                          if (matches.isEmpty) return const SizedBox.shrink();
+                          final auto = matches.first;
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 8),
                             child: _AutomationRow(auto: auto),

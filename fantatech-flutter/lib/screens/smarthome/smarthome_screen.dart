@@ -90,10 +90,16 @@ class _SmartHomeScreenState extends State<SmartHomeScreen> {
     // Build default layout items from the full device list (all rooms).
     // Seeded once; room filtering is applied in the itemBuilder below.
     final allDevices = state.devices;
+    // NOTE: config only carries 'deviceId' — no 'label'. LayoutProvider
+    // treats config['label'] as a user-set rename override (see
+    // LayoutProvider.renameItem); pre-seeding it with the device's own name
+    // would make _CustomizedItem think every card was renamed and draw a
+    // redundant name badge over it. nameResolver below supplies the live
+    // device name as the *default*, independent of any override.
     final defaultItems = allDevices.asMap().entries.map((e) => LayoutItem(
       id: 'device_${e.value.id}',
       type: 'device',
-      config: {'deviceId': e.value.id, 'label': e.value.name},
+      config: {'deviceId': e.value.id},
       order: e.key,
     )).toList();
 
@@ -279,8 +285,13 @@ class _SmartHomeScreenState extends State<SmartHomeScreen> {
                       dashboardId: DashboardId.smarthome,
                       defaultItems: defaultItems,
                       showEditButton: false,
-                      nameResolver: (item) =>
-                          item.config['label'] as String? ?? item.type,
+                      nameResolver: (item) {
+                        final custom = item.config['label'] as String?;
+                        if (custom != null && custom.isNotEmpty) return custom;
+                        final deviceId = item.config['deviceId'] as String?;
+                        final match = allDevices.where((d) => d.id == deviceId);
+                        return match.isNotEmpty ? match.first.name : item.type;
+                      },
                       iconResolver: (_) => Symbols.devices,
                       padding: const EdgeInsets.fromLTRB(20, 0, 20, 80),
                       itemBuilder: (ctx, item) {
