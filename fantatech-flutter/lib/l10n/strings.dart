@@ -275,6 +275,7 @@ class S {
   // Add device
   final String addDeviceTitle;
   final String autoScan;
+  final String orManualSearch;
   final String deviceCatalog;
   final String searchHint;
   final String searching;
@@ -1992,6 +1993,7 @@ class S {
     required this.aiReplyDefault,
     required this.addDeviceTitle,
     required this.autoScan,
+    required this.orManualSearch,
     required this.deviceCatalog,
     required this.searchHint,
     required this.searching,
@@ -2361,7 +2363,7 @@ class S {
     aiReply3: 'מצב לילה הופעל 🌙\nכל האורות כובו, התריסים נסגרו.',
     aiReply4: 'בדיקת מערכת האבטחה... 🔍\nאין התראות פעילות. כל החיישנים תקינים.',
     aiReplyDefault: 'הבנתי! אני מטפל בזה עכשיו... 🤖\nנשלח עדכון בקרוב.',
-    addDeviceTitle: 'הוסף מכשיר', autoScan: 'סריקה אוטומטית', deviceCatalog: 'קטלוג מכשירים',
+    addDeviceTitle: 'הוסף מכשיר', autoScan: 'סריקה אוטומטית', orManualSearch: 'או חיפוש ידני', deviceCatalog: 'קטלוג מכשירים',
     searchHint: 'חפש מכשיר או מפסק...', searching: 'מחפש מכשירים...', devicesFound: 'מכשירים שנמצאו', noResults: 'לא נמצאו תוצאות',
     navDevices: 'מכשירים',
     subscriptionPro: 'מנוי Pro', subscriptionValid: 'פעיל עד 31/12/2025', subscriptionRenew: 'חדש מנוי',
@@ -2858,7 +2860,7 @@ class S {
     aiReply3: 'Night mode activated 🌙\nAll lights off, blinds closed.',
     aiReply4: 'Checking security system... 🔍\nNo active alerts. All sensors normal.',
     aiReplyDefault: 'Got it! Working on that now... 🤖\nUpdate coming soon.',
-    addDeviceTitle: 'Add Device', autoScan: 'Auto Scan', deviceCatalog: 'Device Catalog',
+    addDeviceTitle: 'Add Device', autoScan: 'Auto Scan', orManualSearch: 'or search manually', deviceCatalog: 'Device Catalog',
     searchHint: 'Search device or switch...', searching: 'Searching devices...', devicesFound: 'Devices Found', noResults: 'No results found',
     navDevices: 'Devices',
     subscriptionPro: 'Pro Subscription', subscriptionValid: 'Active until 31/12/2025', subscriptionRenew: 'Renew Subscription',
@@ -3140,7 +3142,7 @@ class S {
     aiReply3: 'وضع الليل مفعّل 🌙\nتم إطفاء الأضواء وإغلاق الستائر.',
     aiReply4: 'فحص نظام الأمان... 🔍\nلا تنبيهات نشطة حالياً. كل الحساسات سليمة.',
     aiReplyDefault: 'فهمت! أعمل على ذلك الآن... 🤖\nسيصلك تحديث قريباً.',
-    addDeviceTitle: 'إضافة جهاز', autoScan: 'مسح تلقائي', deviceCatalog: 'كتالوج الأجهزة',
+    addDeviceTitle: 'إضافة جهاز', autoScan: 'مسح تلقائي', orManualSearch: 'أو بحث يدوي', deviceCatalog: 'كتالوج الأجهزة',
     searchHint: 'ابحث عن جهاز...', searching: 'جارٍ البحث...', devicesFound: 'الأجهزة المكتشفة', noResults: 'لا توجد نتائج',
     navDevices: 'الأجهزة',
     subscriptionPro: 'اشتراك Pro', subscriptionValid: 'نشط حتى 31/12/2025', subscriptionRenew: 'تجديد الاشتراك',
@@ -3600,7 +3602,7 @@ class S {
     aiReply3: 'የሌሊት ሁነታ ተነቃ 🌙\nሁሉም መብራቶች ጠፍቷ፣ ቅጠሎች ተዘጉ።',
     aiReply4: 'የደህንነት ስርዓት እየተፈተሸ... 🔍\nምንም ንቁ ማስጠንቀቂያ የለም። ሁሉም ሴንሰሮች ይሰራሉ።',
     aiReplyDefault: 'ገባኝ! አሁን እየሰራሁ ነው... 🤖\nሪፖርት ይደርሳል።',
-    addDeviceTitle: 'መሳሪያ ጨምር', autoScan: 'አውቶ ቅኝት', deviceCatalog: 'የመሳሪያ ዝርዝር',
+    addDeviceTitle: 'መሳሪያ ጨምር', autoScan: 'አውቶ ቅኝት', orManualSearch: 'ወይም በእጅ ፈልግ', deviceCatalog: 'የመሳሪያ ዝርዝር',
     searchHint: 'መሳሪያ ፈልግ...', searching: 'መሳሪያዎች እየተፈለጉ...', devicesFound: 'የተገኙ መሳሪያዎች', noResults: 'ምንም አልተገኘም',
     navDevices: 'መሳሪያዎች',
     subscriptionPro: 'Pro ምዝገባ', subscriptionValid: 'እስከ 31/12/2025', subscriptionRenew: 'ምዝገባ አድስ',
@@ -4049,7 +4051,7 @@ class S {
     aiReply3: 'Modo noche activado 🌙\nLuces apagadas, persianas cerradas.',
     aiReply4: 'Revisando seguridad... 🔍\nSin alertas activas. Todo normal.',
     aiReplyDefault: '¡Entendido! Trabajando en eso... 🤖\nActualización próxima.',
-    addDeviceTitle: 'Agregar dispositivo', autoScan: 'Escaneo auto', deviceCatalog: 'Catálogo',
+    addDeviceTitle: 'Agregar dispositivo', autoScan: 'Escaneo auto', orManualSearch: 'o búsqueda manual', deviceCatalog: 'Catálogo',
     searchHint: 'Buscar dispositivo...', searching: 'Buscando dispositivos...', devicesFound: 'Dispositivos encontrados', noResults: 'Sin resultados',
     navDevices: 'Dispositivos',
     subscriptionPro: 'Suscripción Pro', subscriptionValid: 'Activa hasta 31/12/2025', subscriptionRenew: 'Renovar suscripción',
@@ -4499,7 +4501,7 @@ class S {
     aiReply3: 'Ночной режим активирован 🌙\nСвет выключен, шторы закрыты.',
     aiReply4: 'Проверка системы охраны... 🔍\nАктивных оповещений нет. Все датчики в норме.',
     aiReplyDefault: 'Понял! Работаю над этим... 🤖\nОбновление придёт скоро.',
-    addDeviceTitle: 'Добавить устройство', autoScan: 'Авто поиск', deviceCatalog: 'Каталог устройств',
+    addDeviceTitle: 'Добавить устройство', autoScan: 'Авто поиск', orManualSearch: 'или поиск вручную', deviceCatalog: 'Каталог устройств',
     searchHint: 'Поиск устройства...', searching: 'Поиск устройств...', devicesFound: 'Найденные устройства', noResults: 'Ничего не найдено',
     navDevices: 'Устройства',
     subscriptionPro: 'Pro Подписка', subscriptionValid: 'Активна до 31/12/2025', subscriptionRenew: 'Продлить подписку',
@@ -4954,7 +4956,7 @@ class S {
     aiReply3: 'Mode nuit activé 🌙\nToutes les lumières éteintes, volets fermés.',
     aiReply4: 'Vérification du système de sécurité... 🔍\nAucune alerte active. Tous les capteurs sont normaux.',
     aiReplyDefault: 'Compris ! Je m\'en occupe... 🤖\nMise à jour à venir.',
-    addDeviceTitle: 'Ajouter un appareil', autoScan: 'Analyse automatique', deviceCatalog: 'Catalogue d\'appareils',
+    addDeviceTitle: 'Ajouter un appareil', autoScan: 'Analyse automatique', orManualSearch: 'ou recherche manuelle', deviceCatalog: 'Catalogue d\'appareils',
     searchHint: 'Rechercher un appareil ou un interrupteur...', searching: 'Recherche d\'appareils...', devicesFound: 'Appareils trouvés', noResults: 'Aucun résultat',
     navDevices: 'Appareils',
     subscriptionPro: 'Abonnement Pro', subscriptionValid: 'Actif jusqu\'au 31/12/2025', subscriptionRenew: 'Renouveler l\'abonnement',

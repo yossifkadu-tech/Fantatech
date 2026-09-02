@@ -12,11 +12,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../models/app_state.dart';
-import '../../models/device.dart';
 import '../../services/gateways/clients/ha_gateway_client.dart';
 import '../../services/gateways/gateway_manager.dart';
 import '../../services/ha/ha_config.dart';
 import '../../services/ha/ha_provider.dart';
+import '../../services/ha/ha_import_service.dart';
 import '../../services/storage/secure_cred_service.dart';
 import '../../theme/app_theme.dart';
 import '../ha/ha_shell.dart';
@@ -37,7 +37,7 @@ class _HaIntegrationScreenState extends State<HaIntegrationScreen> {
   bool _connected    = false;
   bool _tokenVisible = false;
   String? _error;
-  _ImportStats? _stats;
+  HaImportStats? _stats;
 
   @override
   void initState() {
@@ -59,7 +59,7 @@ class _HaIntegrationScreenState extends State<HaIntegrationScreen> {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     setState(() { _loading = true; _error = null; _stats = null; });
 
-    final ip    = _normalizeUrl(_urlCtrl.text.trim());
+    final ip    = HaImportService.normalizeUrl(_urlCtrl.text.trim());
     final token = _tokenCtrl.text.trim();
 
     // 1. Ping
@@ -93,7 +93,7 @@ class _HaIntegrationScreenState extends State<HaIntegrationScreen> {
 
     // 5. Import into AppState
     final appState = context.read<AppState>();
-    final stats    = _importIntoApp(appState, states, areas, registry, ip);
+    final stats    = HaImportService.importFromHa(appState, states, areas, registry, ip);
 
     // 6. Register in GatewayManager so DeviceCommander can route commands
     //    and so the live service reconnects automatically on app restart.
@@ -113,162 +113,6 @@ class _HaIntegrationScreenState extends State<HaIntegrationScreen> {
       _connected = true;
       _stats     = stats;
     });
-  }
-
-  _ImportStats _importIntoApp(
-    AppState state,
-    List<Map<String, dynamic>> states,
-    List<Map<String, dynamic>> areas,
-    Map<String, HaEntityRegistryInfo> registry,
-    String ip,
-  ) {
-    // Create room groups from HA areas
-    for (final area in areas) {
-      final id   = (area['area_id'] as String?)   ?? '';
-      final name = (area['name']    as String?)   ?? '';
-      final icon = _iconForAreaName(name);
-      if (id.isNotEmpty && name.isNotEmpty) {
-        state.addRoomGroup(id, name, icon);
-        // Add a room for the area if one doesn't already exist
-        final exists = state.rooms.any((r) => r['name'] == name);
-        if (!exists) state.addRoom(name, icon, parentGroupId: id);
-      }
-    }
-
-    int lights = 0, switches = 0, sensors = 0, others = 0;
-
-    for (final entity in states) {
-      final entityId = (entity['entity_id'] as String?) ?? '';
-      final attrs    = (entity['attributes'] as Map<String, dynamic>?) ?? {};
-      final stateStr = (entity['state'] as String?) ?? 'off';
-
-      final domain   = entityId.split('.').first;
-      final friendly = (attrs['friendly_name'] as String?) ?? entityId;
-
-      // Skip HA's own internal bookkeeping entities (diagnostic/config, or
-      // disabled) — e.g. "Backup: Last successful backup", "Sun: Next dawn",
-      // a device's WiFi-signal sensor. These aren't physical smart-home
-      // devices; importing them just added inert toggles that did nothing
-      // when tapped. An entity absent from the registry (rare) is still
-      // imported — absence isn't evidence it's diagnostic.
-      final regInfo = registry[entityId];
-      if (regInfo != null && !regInfo.isImportable) continue;
-
-      // Area mapping — /api/states never carries area_id in attributes;
-      // resolve via the entity/device registry fetched separately.
-      final areaId = regInfo?.areaId;
-
-      DeviceType? type;
-      switch (domain) {
-        case 'light':  type = DeviceType.light;       lights++;   break;
-        case 'switch': type = DeviceType.smartSwitch; switches++; break;
-        case 'input_boolean':
-                       type = DeviceType.smartSwitch; switches++; break;
-        case 'binary_sensor':
-          type = _sensorType(entityId, attrs);
-          sensors++;
-          break;
-        case 'sensor':
-          type = _sensorType(entityId, attrs, fallback: DeviceType.energyMeter);
-          sensors++;
-          break;
-        case 'cover':  type = DeviceType.blind;       others++;   break;
-        case 'lock':   type = DeviceType.smartLock;   others++;   break;
-        case 'climate':type = DeviceType.airConditioner; others++; break;
-        default:       others++; break;
-      }
-
-      if (type == null) continue;
-
-      // Skip if already imported
-      if (state.devices.any((d) => d.attributes['entityId'] == entityId)) {
-        continue;
-      }
-
-      // Find room name from area
-      String roomName = '';
-      if (areaId != null) {
-        final area = state.roomGroups.where((g) => g['id'] == areaId).firstOrNull;
-        roomName = (area?['name'] as String?) ?? '';
-      }
-
-      final isOn = _stateIsOn(stateStr);
-      final brightness = attrs['brightness'];
-
-      state.upsertDevice(Device(
-        id:         'ha_${entityId.replaceAll('.', '_')}',
-        name:       friendly,
-        type:       type,
-        isOn:       isOn,
-        room:       roomName,
-        attributes: {
-          'entityId':    entityId,
-          'deviceClass': (attrs['device_class'] as String?) ?? '',
-          'domain':      domain,
-          'haIp':        ip,
-          if (brightness != null)
-            'brightness': ((brightness as num) / 2.55).round(),
-          if (attrs['temperature'] != null)
-            'temperature': attrs['temperature'],
-          // State fields read by the security screen
-          if (type == DeviceType.waterLeakSensor) 'water_leak': isOn,
-          if (type == DeviceType.smokeSensor)      'smoke':      isOn,
-          if (type == DeviceType.motionSensor)     'detected':   isOn,
-          if (type == DeviceType.doorSensor)       'open':       isOn,
-          if (type == DeviceType.windowSensor)     'open':       isOn,
-        },
-      ));
-    }
-
-    return _ImportStats(
-      lights:   lights,
-      switches: switches,
-      sensors:  sensors,
-      others:   others,
-      areas:    areas.length,
-    );
-  }
-
-  // ── Helpers ──────────────────────────────────────────────────────────────
-
-  static String _normalizeUrl(String raw) {
-    var url = raw.replaceAll(RegExp(r'^https?://'), '');
-    url = url.split('/').first; // strip path
-    url = url.split(':').first; // strip port (we use fixed 8123)
-    return url;
-  }
-
-  static bool _stateIsOn(String state) =>
-      const {'on','open','unlocked','heat','cool','auto'}.contains(state.toLowerCase());
-
-  static DeviceType _sensorType(
-    String entityId,
-    Map attrs, {
-    DeviceType fallback = DeviceType.motionSensor,
-  }) {
-    final dc = (attrs['device_class'] as String?) ?? '';
-    final id = entityId.toLowerCase();
-    if (dc == 'motion'   || dc == 'occupancy' || id.contains('motion') || id.contains('occupancy')) return DeviceType.motionSensor;
-    if (dc == 'door'     || id.contains('door'))                                                     return DeviceType.doorSensor;
-    if (dc == 'window'   || dc == 'opening'   || id.contains('window'))                             return DeviceType.windowSensor;
-    if (dc == 'smoke'    || id.contains('smoke'))                                                    return DeviceType.smokeSensor;
-    if (dc == 'moisture' || dc == 'water'     || id.contains('water') || id.contains('leak') || id.contains('moisture')) return DeviceType.waterLeakSensor;
-    if (dc == 'gas'      || id.contains('gas') || id.contains('co2') || id.contains('co_'))         return DeviceType.gasSensor;
-    if (dc == 'vibration' || id.contains('vibration') || id.contains('glass'))                      return DeviceType.glassBreakSensor;
-    if (dc == 'energy'   || dc == 'power'     || id.contains('energy') || id.contains('power'))     return DeviceType.energyMeter;
-    return fallback;
-  }
-
-  static int _iconForAreaName(String name) {
-    final k = name.toLowerCase();
-    if (k.contains('bed')  || k.contains('sleep')) return 0xe239;  // bed
-    if (k.contains('bath') || k.contains('wc'))    return 0xe63d;  // wc
-    if (k.contains('kit')  || k.contains('cook'))  return 0xf04c3; // kitchen
-    if (k.contains('liv')  || k.contains('salon')) return 0xe318;  // weekend
-    if (k.contains('garden')|| k.contains('yard')) return 0xf08d8; // yard
-    if (k.contains('garage'))                       return 0xe1b3;  // garage
-    if (k.contains('office')|| k.contains('study')) return 0xef53;  // desk
-    return 0xe88a; // home
   }
 
   @override
@@ -774,7 +618,7 @@ class _Field extends StatelessWidget {
 }
 
 class _StatsCard extends StatelessWidget {
-  final _ImportStats stats;
+  final HaImportStats stats;
   const _StatsCard({required this.stats});
 
   @override
@@ -869,16 +713,4 @@ class _InfoNote extends StatelessWidget {
       ],
     ),
   );
-}
-
-// ── Data class ────────────────────────────────────────────────────────────────
-class _ImportStats {
-  final int lights, switches, sensors, others, areas;
-  const _ImportStats({
-    required this.lights,
-    required this.switches,
-    required this.sensors,
-    required this.others,
-    required this.areas,
-  });
 }

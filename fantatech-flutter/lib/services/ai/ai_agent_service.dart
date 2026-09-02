@@ -77,20 +77,22 @@ class AiAgentService {
         }
 
         // Execute every requested tool for real, then report the true
-        // outcome back — the agent must never assume success.
-        final toolResults = <Map<String, dynamic>>[];
-        for (final call in toolUses) {
+        // outcome back — the agent must never assume success. Run them
+        // concurrently: a multi-device command (e.g. "turn off all
+        // lights") otherwise pays for N sequential device round-trips
+        // before the agent can even reply.
+        final toolResults = await Future.wait(toolUses.map((call) async {
           final outcome = await _executeTool(
             call['name'] as String? ?? '',
             (call['input'] as Map?)?.cast<String, dynamic>() ?? const {},
             state,
           );
-          toolResults.add({
+          return {
             'type': 'tool_result',
             'tool_use_id': call['id'],
             'content': outcome,
-          });
-        }
+          };
+        }));
         _history.add({'role': 'user', 'content': toolResults});
       }
       return AgentReply(state.strings.aiTooManySteps);

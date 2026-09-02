@@ -8,6 +8,7 @@ import '../../widgets/ft_button.dart';
 import '../../widgets/ft_search_bar.dart';
 import '../../services/discovery/real_discovery_engine.dart';
 import '../../services/discovery/discovery_models.dart';
+import 'scan_discovery_screen.dart';
 
 // ─────────────────────────────────────────────────────────────
 // Data models
@@ -986,7 +987,56 @@ class _SensorBrandPickerScreenState extends State<SensorBrandPickerScreen> {
             ),
             const SizedBox(height: 12),
 
-            // ── Search bar ────────────────────────────────────
+            // ── Auto network scan (primary path) ───────────────
+            // Runs the real multi-protocol scanner and lets the user pick
+            // a found device directly, instead of hunting through the
+            // manufacturer list by hand. Manual search below stays as a
+            // fallback for devices the scan can't see (e.g. Zigbee behind
+            // a hub) or when the user prefers to look it up themselves.
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const ScanDiscoveryScreen(),
+                    ),
+                  ),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: widget.deviceColor,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  icon: const Icon(Symbols.wifi_find, size: 20),
+                  label: Text(s.autoScan,
+                      style: const TextStyle(
+                          fontSize: 15, fontWeight: FontWeight.w700)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  Expanded(child: Divider(color: context.tText2(0.12))),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: Text(s.orManualSearch,
+                        style: TextStyle(
+                            color: context.tText2(0.5), fontSize: 12)),
+                  ),
+                  Expanded(child: Divider(color: context.tText2(0.12))),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            // ── Search bar (manual fallback) ────────────────────
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: FtSearchBar(controller: _searchCtrl, hintText: s.searchHint),

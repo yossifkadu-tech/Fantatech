@@ -1323,8 +1323,11 @@ class _SmartHomeBanner extends StatelessWidget {
     final lightsOn    = devices.where((d) => isGw(d) && d.type == DeviceType.light && d.isOn).length;
     final lightsAll   = devices.where((d) => isGw(d) && d.type == DeviceType.light).length;
     final switchesOn  = devices.where((d) => isGw(d) && d.type == DeviceType.smartSwitch && d.isOn).length;
+    final switchesAll = devices.where((d) => isGw(d) && d.type == DeviceType.smartSwitch).length;
     final plugsOn     = devices.where((d) => isGw(d) && d.type == DeviceType.smartPlug && d.isOn).length;
+    final plugsAll    = devices.where((d) => isGw(d) && d.type == DeviceType.smartPlug).length;
     final heaterOn    = devices.where((d) => isGw(d) && d.type == DeviceType.waterHeater && d.isOn).length;
+    final heaterAll   = devices.where((d) => isGw(d) && d.type == DeviceType.waterHeater).length;
 
     final totalAll    = devices.where(isGw).length;
     final totalActive = lightsOn + switchesOn + plugsOn + heaterOn;
@@ -1479,7 +1482,7 @@ class _SmartHomeBanner extends StatelessWidget {
                       const _ShDivider(),
                       _ShStat(
                           icon: Symbols.toggle_on,
-                          value: '$switchesOn',
+                          value: '$switchesOn/$switchesAll',
                           label: s.switchesCategory,
                           color: AppColors.plugColor,
                           onTap: () => Navigator.push(context,
@@ -1487,7 +1490,7 @@ class _SmartHomeBanner extends StatelessWidget {
                       const _ShDivider(),
                       _ShStat(
                           icon: Symbols.power,
-                          value: '$plugsOn',
+                          value: '$plugsOn/$plugsAll',
                           label: s.qaPlugs,
                           color: AppColors.plugColor,
                           onTap: () => Navigator.push(context,
@@ -1495,7 +1498,7 @@ class _SmartHomeBanner extends StatelessWidget {
                       const _ShDivider(),
                       _ShStat(
                           icon: Symbols.water_drop,
-                          value: '$heaterOn',
+                          value: '$heaterOn/$heaterAll',
                           label: s.qaWaterHeater,
                           color: AppColors.networkColor,
                           onTap: () => Navigator.push(context,

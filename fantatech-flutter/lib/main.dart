@@ -14,8 +14,8 @@ import 'models/app_user.dart';
 import 'services/auth/user_service.dart';
 import 'services/ha/ha_config.dart';
 import 'services/ha/ha_provider.dart';
+import 'services/ha/ha_import_service.dart';
 import 'services/ha/ha_token_receiver.dart';
-import 'services/storage/secure_cred_service.dart';
 import 'backend/backend_service.dart';
 import 'services/auth/biometric_service.dart';
 import 'services/discovery/real_discovery_engine.dart';
@@ -59,14 +59,12 @@ void main() async {
   // Attach push service to HaProvider so it can subscribe to WS events.
   HaPushService.instance.attachHaProvider(haProvider);
 
-  // Auto-connect HA from credentials saved in the previous session.
-  final savedIp    = await SecureCredService.readHaIp();
-  final savedToken = await SecureCredService.readHaToken();
-  if (savedIp != null && savedIp.isNotEmpty &&
-      savedToken != null && savedToken.isNotEmpty) {
-    final haUrl = savedIp.startsWith('http') ? savedIp : 'http://$savedIp:8123';
-    unawaited(haProvider.connect(HaConfig(baseUrl: haUrl, token: savedToken)));
-  }
+  // Auto-sync HA on startup: re-imports devices from credentials saved in
+  // the previous session (picks up anything paired since last launch, e.g.
+  // in Home Assistant directly) and opens the live WebSocket — fire-and-
+  // forget so the first frame isn't held up waiting on the network; a
+  // silent no-op when nothing is saved or HA can't be reached right now.
+  unawaited(HaImportService.syncFromSaved(appState, gateways, haProvider));
 
   // כשרץ כ-Flutter Web בתוך HA iframe — קבל token אוטומטית
   if (kIsWeb) {

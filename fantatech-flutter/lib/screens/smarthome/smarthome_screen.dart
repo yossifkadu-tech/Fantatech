@@ -284,7 +284,10 @@ class _SmartHomeScreenState extends State<SmartHomeScreen> {
                   : ReorderableDashboard(
                       dashboardId: DashboardId.smarthome,
                       defaultItems: defaultItems,
-                      showEditButton: false,
+                      // Exposes the existing edit-mode toolbar so the user
+                      // can resize (S/M/L) or rename each device card via
+                      // its "..." action sheet — was off by default here.
+                      showEditButton: true,
                       nameResolver: (item) {
                         final custom = item.config['label'] as String?;
                         if (custom != null && custom.isNotEmpty) return custom;

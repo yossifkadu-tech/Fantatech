@@ -333,7 +333,13 @@ class _ScanDiscoveryScreenState extends State<ScanDiscoveryScreen>
               child: filtered.isEmpty
                   ? _EmptyState(isScanning: isScanning, filter: _filter, s: s)
                   : ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                      // Bottom padding clears the floating action buttons
+                      // (switches / sensors shortcuts) so the last rows in
+                      // a long scan result aren't permanently hidden behind
+                      // them — the FAB floats over the list, it doesn't
+                      // reserve layout space on its own.
+                      padding: EdgeInsets.fromLTRB(
+                          16, 0, 16, widget.cameraOnly ? 24 : 100),
                       itemCount: filtered.length,
                       itemBuilder: (ctx, i) {
                         final d = filtered[i];
