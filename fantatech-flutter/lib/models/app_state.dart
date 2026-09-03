@@ -1726,19 +1726,6 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Links an already-existing room (matched by its raw stored name) into
-  /// a room group, without touching any of its other fields (icon,
-  /// occupant, haAreaId, …) or its raw name — so devices already assigned
-  /// via `d.room == rawName` stay correctly matched. No-op if the room is
-  /// already linked to this group or doesn't exist.
-  void linkRoomToGroup(String rawName, String groupId) {
-    final idx = _rooms.indexWhere((r) => r['name'] == rawName);
-    if (idx == -1) return;
-    if (_rooms[idx]['parentGroupId'] == groupId) return;
-    _rooms[idx] = {..._rooms[idx], 'parentGroupId': groupId};
-    notifyListeners();
-  }
-
   void editRoom(int index, String name, int iconCodePoint,
       {String? occupant, String? parentGroupId}) {
     if (index >= 0 && index < _rooms.length) {

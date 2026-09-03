@@ -84,37 +84,34 @@ class HaImportService {
     Map<String, HaEntityRegistryInfo> registry,
     String ip,
   ) {
-    // Create room groups from HA areas
+    // An HA "area" maps 1:1 to a FantaTech room — it is NOT wrapped in a
+    // room-group. (Room groups in this app are meant for HA's separate,
+    // optional "Floors" feature — see AppState._syncHaRooms — which can
+    // genuinely contain several differently-named rooms. Wrapping every
+    // single-room area in its own identically-named group just showed the
+    // same name twice in the UI: a "Kitchen" group containing one room
+    // also called "Kitchen".) Build a local area-id → area-name lookup for
+    // resolving each device's room below, without touching state.roomGroups.
+    final areaNameById = <String, String>{};
     for (final area in areas) {
-      final id   = (area['area_id'] as String?)   ?? '';
-      final name = (area['name']    as String?)   ?? '';
+      final id   = (area['area_id'] as String?) ?? '';
+      final name = (area['name']    as String?) ?? '';
+      if (id.isEmpty || name.isEmpty) continue;
+      areaNameById[id] = name;
+
       final icon = _iconForAreaName(name);
-      if (id.isNotEmpty && name.isNotEmpty) {
-        state.addRoomGroup(id, name, icon);
-        // The app's default seed rooms are stored as internal keys
-        // (e.g. '__living__') and only translated to a display name like
-        // "סלון" at render time (S.translateRoomKey) — comparing raw
-        // stored names against HA's literal area name ("סלון") would never
-        // match a default room, always creating a same-looking duplicate.
-        // Compare against each existing room's *translated* display name
-        // instead, case/whitespace-insensitively, so a default "__living__"
-        // room is correctly recognized as the same place as HA's "סלון".
-        final normalized = name.trim().toLowerCase();
-        final match = state.rooms.where((r) => state.strings
-            .translateRoomKey(r['name'] as String? ?? '')
-            .trim()
-            .toLowerCase() ==
-            normalized).firstOrNull;
-        if (match == null) {
-          state.addRoom(name, icon, parentGroupId: id);
-        } else {
-          // A pre-existing default room (e.g. '__living__') already
-          // represents this area — link it into the group instead of
-          // leaving it as a same-named orphan under "Other Rooms" while
-          // the group shows an empty, unlinked card.
-          state.linkRoomToGroup(match['name'] as String, id);
-        }
-      }
+      // The app's default seed rooms are stored as internal keys (e.g.
+      // '__living__') and only translated to a display name like "סלון"
+      // at render time (S.translateRoomKey) — comparing raw stored names
+      // against HA's literal area name ("סלון") would never match a
+      // default room, always creating a same-looking duplicate room.
+      final normalized = name.trim().toLowerCase();
+      final exists = state.rooms.any((r) => state.strings
+          .translateRoomKey(r['name'] as String? ?? '')
+          .trim()
+          .toLowerCase() ==
+          normalized);
+      if (!exists) state.addRoom(name, icon);
     }
 
     int lights = 0, switches = 0, sensors = 0, others = 0;
@@ -173,8 +170,7 @@ class HaImportService {
       // on resync instead of it snapping back to HA's area on every sync.
       String roomName = existing?.room ?? '';
       if (roomName.isEmpty && areaId != null) {
-        final area = state.roomGroups.where((g) => g['id'] == areaId).firstOrNull;
-        roomName = (area?['name'] as String?) ?? '';
+        roomName = areaNameById[areaId] ?? '';
       }
 
       final isOn = _stateIsOn(stateStr);
