@@ -1327,6 +1327,7 @@ class _SmartHomeBanner extends StatelessWidget {
     final plugsOn     = devices.where((d) => isGw(d) && d.type == DeviceType.smartPlug && d.isOn).length;
     final plugsAll    = devices.where((d) => isGw(d) && d.type == DeviceType.smartPlug).length;
     final heaterOn    = devices.where((d) => isGw(d) && d.type == DeviceType.waterHeater && d.isOn).length;
+    final heaterAll   = devices.where((d) => isGw(d) && d.type == DeviceType.waterHeater).length;
 
     final totalAll    = devices.where(isGw).length;
     final totalActive = lightsOn + switchesOn + plugsOn + heaterOn;
@@ -1494,6 +1495,15 @@ class _SmartHomeBanner extends StatelessWidget {
                           color: AppColors.plugColor,
                           onTap: () => Navigator.push(context,
                               MaterialPageRoute(builder: (_) => const PlugsHubScreen()))),
+                      const _ShDivider(),
+                      _ShStat(
+                          icon: Symbols.water_drop,
+                          value: '$heaterOn/$heaterAll',
+                          label: s.qaWaterHeater,
+                          color: AppColors.networkColor,
+                          onTap: () => Navigator.push(context,
+                              MaterialPageRoute(builder: (_) => const DevicesScreen(
+                                  initialCategory: DeviceType.waterHeater)))),
                     ],
                   ),
                 ),
