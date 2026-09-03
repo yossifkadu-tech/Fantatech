@@ -98,7 +98,11 @@ class _SmartSwitchHubViewState extends State<_SmartSwitchHubView> {
   @override
   Widget build(BuildContext context) {
     final engine = context.watch<SwitchScanEngine>();
+    final state  = context.watch<AppState>();
     final s      = context.select((AppState st) => st.strings);
+    final waterHeaters = state.devices
+        .where((d) => d.type == DeviceType.waterHeater)
+        .toList();
     // Build filtered list
     final allDevices  = engine.devices;
     final filtered    = _filter == null
@@ -123,6 +127,11 @@ class _SmartSwitchHubViewState extends State<_SmartSwitchHubView> {
               isScanning: engine.isScanning,
               foundCount: allDevices.length,
             ),
+
+            // ── Water heater — already-imported devices (not part of the
+            // LAN/Zigbee switch scan below), grouped in here per request.
+            if (waterHeaters.isNotEmpty)
+              _WaterHeaterSection(devices: waterHeaters, label: s.qaWaterHeater),
 
             // ── Prominent scan/stop button — the single action for finding
             // devices. While scanning it doubles as a stop control instead
@@ -179,6 +188,69 @@ class _SmartSwitchHubViewState extends State<_SmartSwitchHubView> {
                           ),
                     ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Water heater section ──────────────────────────────────────────────────────
+
+class _WaterHeaterSection extends StatelessWidget {
+  final List<Device> devices;
+  final String label;
+  const _WaterHeaterSection({required this.devices, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.read<AppState>();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        decoration: BoxDecoration(
+          color: context.tCard,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: context.tText2(0.08)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                children: [
+                  Icon(Symbols.water_drop, size: 15, color: context.tText2(0.5)),
+                  const SizedBox(width: 6),
+                  Text(label,
+                      style: TextStyle(
+                          color: context.tText2(0.5),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.6)),
+                ],
+              ),
+            ),
+            for (final d in devices) ...[
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(d.name,
+                        style: TextStyle(
+                            color: context.tText, fontSize: 14, fontWeight: FontWeight.w500)),
+                  ),
+                  Switch(
+                    value: d.isOn,
+                    activeThumbColor: context.tText,
+                    activeTrackColor: AppColors.primary,
+                    onChanged: (v) => state.setDevicePower(d.id, v),
+                  ),
+                ],
+              ),
+              if (d != devices.last) const SizedBox(height: 2),
+            ],
+            const SizedBox(height: 4),
           ],
         ),
       ),
