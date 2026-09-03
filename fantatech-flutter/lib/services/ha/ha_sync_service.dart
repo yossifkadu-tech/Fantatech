@@ -103,6 +103,14 @@ class HaSyncService {
     double? siblingTemperature,
     String? areaName,
   }) {
+    // Home Assistant OS/Supervisor housekeeping entities (CPU/disk/memory
+    // usage, "Raspberry Pi Power status", update-available sensors, …) —
+    // never a physical smart-home device. HaEntity doesn't carry the HA
+    // entity registry's entity_category here (unlike the bulk-import path
+    // in HaImportService, which can check that directly), so this is a
+    // known-name fallback for the same class of junk entity.
+    if (_isKnownSystemEntity(e.entityId)) return null;
+
     final type = _domainToType(e);
     if (type == null) return null;
 
@@ -173,6 +181,32 @@ class HaSyncService {
   /// conversion — used to detect stale/phantom devices from before a
   /// classification-logic fix.
   static DeviceType? classify(HaEntity e) => _domainToType(e);
+
+  // Kept in sync with the identical list in HaImportService — both paths
+  // classify HA entities into Devices independently (see that file's
+  // doc comment for why) and both need this same junk-entity fallback.
+  static const _systemEntitySubstrings = [
+    'raspberry_pi_power',
+    'supervisor_',
+    'core_update',
+    'os_update',
+    'operating_system_update',
+    'hassio_',
+    'addon_',
+    'cpu_percent',
+    'disk_free',
+    'disk_use',
+    'memory_use',
+    'memory_free',
+    'load_1m', 'load_5m', 'load_15m',
+    'swap_',
+    'system_health',
+  ];
+
+  static bool _isKnownSystemEntity(String entityId) {
+    final id = entityId.toLowerCase();
+    return _systemEntitySubstrings.any(id.contains);
+  }
 
   static DeviceType? _domainToType(HaEntity e) {
     switch (e.domain) {

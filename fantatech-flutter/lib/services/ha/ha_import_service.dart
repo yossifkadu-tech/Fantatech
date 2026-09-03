@@ -131,6 +131,14 @@ class HaImportService {
       final regInfo = registry[entityId];
       if (regInfo != null && !regInfo.isImportable) continue;
 
+      // Fallback for well-known Home Assistant OS/Supervisor system
+      // entities that this particular HA installation isn't tagging with
+      // entity_category: 'diagnostic' in its registry (so the check above
+      // doesn't catch them) — e.g. "Raspberry Pi Power status", CPU/disk/
+      // memory usage, update-available sensors. These are HA housekeeping,
+      // never a physical smart-home device.
+      if (_isKnownSystemEntity(entityId)) continue;
+
       // Area mapping — /api/states never carries area_id in attributes;
       // resolve via the entity/device registry fetched separately.
       final areaId = regInfo?.areaId;
@@ -215,6 +223,32 @@ class HaImportService {
   }
 
   // ── Helpers ──────────────────────────────────────────────────────────────
+
+  /// Entity-id substrings that identify Home Assistant's own OS/Supervisor
+  /// housekeeping entities — never worth importing as a "device", but not
+  /// reliably tagged `entity_category: diagnostic` on every HA install.
+  static const _systemEntitySubstrings = [
+    'raspberry_pi_power',
+    'supervisor_',
+    'core_update',
+    'os_update',
+    'operating_system_update',
+    'hassio_',
+    'addon_',
+    'cpu_percent',
+    'disk_free',
+    'disk_use',
+    'memory_use',
+    'memory_free',
+    'load_1m', 'load_5m', 'load_15m',
+    'swap_',
+    'system_health',
+  ];
+
+  static bool _isKnownSystemEntity(String entityId) {
+    final id = entityId.toLowerCase();
+    return _systemEntitySubstrings.any(id.contains);
+  }
 
   static String normalizeUrl(String raw) {
     var url = raw.replaceAll(RegExp(r'^https?://'), '');
