@@ -13,6 +13,7 @@ import '../../widgets/edit_mode/reorderable_dashboard.dart';
 import '../../widgets/ft_button.dart';
 import '../cyber/cyber_screen.dart';
 import '../smarthome/sensor_brand_picker_screen.dart';
+import '../smarthome/intercom_hub_screen.dart';
 import 'smart_lock_hub_screen.dart';
 
 class SecurityScreen extends StatefulWidget {
@@ -73,6 +74,9 @@ class _SecurityScreenState extends State<SecurityScreen>
     final locks = state.devices
         .where((d) => d.type == DeviceType.smartLock)
         .toList();
+    final intercomDevice = state.devices
+        .where((d) => d.type == DeviceType.intercom)
+        .firstOrNull;
 
     final allOk = state.isSecured &&
         (doorSensor?.attributes['open'] != true) &&
@@ -83,7 +87,17 @@ class _SecurityScreenState extends State<SecurityScreen>
 
     // ── Section widgets ────────────────────────────────────────────
     final zonesSection = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Padding(
+          padding: const EdgeInsetsDirectional.only(start: 4, bottom: 8),
+          child: Text(s.qaLock,
+              style: TextStyle(
+                  color: context.tText2(0.5),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.6)),
+        ),
         _SensorRow(
           icon: Symbols.lock,
           label: s.doorSensor,
@@ -106,6 +120,18 @@ class _SecurityScreenState extends State<SecurityScreen>
               _sensorStatusLabel(windowSensor, s),
               _sensorColor(windowSensor), Symbols.window,
               windowSensor, 'window'),
+        ),
+        const SizedBox(height: 10),
+        _SensorRow(
+          icon: Symbols.doorbell,
+          label: s.planIntercomLabel,
+          status: intercomDevice != null ? s.normalStatus : s.offlineLabel,
+          color: intercomDevice != null
+              ? AppColors.secured
+              : AppColors.statusOffline,
+          statusIcon: intercomDevice != null ? Symbols.doorbell : Symbols.link_off,
+          onTap: () => Navigator.push(context,
+              MaterialPageRoute(builder: (_) => const IntercomHubScreen())),
         ),
       ],
     );

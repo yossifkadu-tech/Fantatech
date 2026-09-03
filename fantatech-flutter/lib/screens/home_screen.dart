@@ -18,7 +18,7 @@ import 'smarthome/lights_hub_screen.dart';
 import 'smarthome/plugs_hub_screen.dart';
 import 'smarthome/smart_switch_hub_screen.dart';
 import 'smarthome/sensor_hub_screen.dart';
-import 'smarthome/intercom_hub_screen.dart';
+import 'smarthome/blind_hub_screen.dart';
 import 'security/smart_lock_hub_screen.dart';
 import 'energy/energy_screen.dart';
 import 'profile/profile_screen.dart' show showHomeManagementSheet;
@@ -1067,7 +1067,7 @@ class _SecurityBanner extends StatelessWidget {
         d.type == DeviceType.glassBreakSensor).length;
     final locks       = devices.where((d) => d.type == DeviceType.smartLock).length;
     final cameras     = state.cameras.where((c) => c.isOnline).length;
-    final intercoms   = devices.where((d) => d.type == DeviceType.intercom).length;
+    final blinds      = devices.where((d) => d.type == DeviceType.blind).length;
 
     const securityTypes = {
       DeviceType.smartLock, DeviceType.doorSensor, DeviceType.windowSensor,
@@ -1239,11 +1239,11 @@ class _SecurityBanner extends StatelessWidget {
                             MaterialPageRoute(builder: (_) => const CamerasScreen()))),
                     const _SecurityDivider(),
                     _SecurityStat(
-                        icon: Symbols.doorbell,
-                        value: '$intercoms',
-                        label: s.planIntercomLabel,
+                        icon: Symbols.blinds,
+                        value: '$blinds',
+                        label: s.blindsCategory,
                         onTap: () => Navigator.push(context,
-                            MaterialPageRoute(builder: (_) => const IntercomHubScreen()))),
+                            MaterialPageRoute(builder: (_) => const BlindHubScreen()))),
                   ],
                 ),
               ),
