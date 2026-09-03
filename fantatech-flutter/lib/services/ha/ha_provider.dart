@@ -745,10 +745,23 @@ class HaProvider extends ChangeNotifier with WidgetsBindingObserver {
       case AppLifecycleState.resumed:
         _onAppResumed();
       case AppLifecycleState.paused:
-        HaLogger.d('HaProvider', 'App paused — WebSocket may disconnect');
+        _onAppPaused();
       default:
         break;
     }
+  }
+
+  /// Battery/network saving: actively close the live WebSocket while the
+  /// app is backgrounded instead of leaving it idling. `_service` (the
+  /// saved config) is deliberately kept, and `_status` is left as-is
+  /// (not `disconnected`) so [_onAppResumed] treats this the same as a
+  /// dead socket and reconnects automatically — this is not the user
+  /// choosing to disconnect.
+  void _onAppPaused() {
+    if (_ws == null) return; // never connected — nothing to pause
+    HaLogger.d('HaProvider', 'App paused — closing WebSocket to save battery');
+    _cancelReconnect();
+    _ws?.disconnect();
   }
 
   void _onAppResumed() {

@@ -22,8 +22,6 @@ import '../../services/discovery/device_classifier.dart';
 import '../../services/discovery/discovery_manager.dart';
 import '../../services/discovery/discovery_models.dart';
 import '../../theme/app_theme.dart';
-import 'sensor_hub_screen.dart';
-import 'smart_switch_hub_screen.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Protocol tabs
@@ -192,44 +190,6 @@ class _ScanDiscoveryScreenState extends State<ScanDiscoveryScreen>
 
     return Scaffold(
       backgroundColor: context.tBg,
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: widget.cameraOnly ? null : Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Smart switches
-            Expanded(
-              child: FloatingActionButton.extended(
-                heroTag: 'smart_switch',
-                onPressed: () => Navigator.push(context,
-                    MaterialPageRoute(
-                        builder: (_) => const SmartSwitchHubScreen())),
-                backgroundColor: const Color(0xFF00B4D8),
-                icon: Icon(Symbols.power_settings_new, size: 18),
-                label: Text(s.switchesCategory,
-                    style: TextStyle(
-                        fontSize: 12, fontWeight: FontWeight.w700)),
-              ),
-            ),
-            const SizedBox(width: 10),
-            // Sensors & shutters
-            Expanded(
-              child: FloatingActionButton.extended(
-                heroTag: 'sensor_hub',
-                onPressed: () => Navigator.push(context,
-                    MaterialPageRoute(
-                        builder: (_) => const SensorHubScreen())),
-                backgroundColor: const Color(0xFFFF6B35),
-                icon: Icon(Symbols.sensors, size: 18),
-                label: Text(s.scanSensorsShutters,
-                    style: TextStyle(
-                        fontSize: 12, fontWeight: FontWeight.w700)),
-              ),
-            ),
-          ],
-        ),
-      ),
       body: SafeArea(
         child: Column(
           children: [
@@ -333,13 +293,7 @@ class _ScanDiscoveryScreenState extends State<ScanDiscoveryScreen>
               child: filtered.isEmpty
                   ? _EmptyState(isScanning: isScanning, filter: _filter, s: s)
                   : ListView.builder(
-                      // Bottom padding clears the floating action buttons
-                      // (switches / sensors shortcuts) so the last rows in
-                      // a long scan result aren't permanently hidden behind
-                      // them — the FAB floats over the list, it doesn't
-                      // reserve layout space on its own.
-                      padding: EdgeInsets.fromLTRB(
-                          16, 0, 16, widget.cameraOnly ? 24 : 100),
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                       itemCount: filtered.length,
                       itemBuilder: (ctx, i) {
                         final d = filtered[i];
@@ -846,6 +800,20 @@ class _DeviceResultCard extends StatelessWidget {
     _                        => 'Unknown',
   };
 
+  /// One-line summary of decoded BTHome readings (temperature/humidity/
+  /// battery), if this scan result carries any — lets the user visually
+  /// confirm live sensor data is actually being read, not just detected.
+  static String? _bthomeSummary(DiscoveredDevice d) {
+    final bthome = d.metadata['bthome'] as Map<String, dynamic>?;
+    if (bthome == null) return null;
+    if (bthome['encrypted'] == true) return null;
+    final parts = <String>[];
+    if (bthome['temperature'] case final num t) parts.add('${t.toStringAsFixed(1)}°C');
+    if (bthome['humidity'] case final num h) parts.add('${h.toStringAsFixed(0)}%');
+    if (bthome['battery'] case final num b) parts.add('🔋${b.toStringAsFixed(0)}%');
+    return parts.isEmpty ? null : parts.join(' · ');
+  }
+
   @override
   Widget build(BuildContext context) {
     final iconData  = _icon(device.type);
@@ -952,6 +920,17 @@ class _DeviceResultCard extends StatelessWidget {
                     ),
                   ],
                 ),
+                if (_bthomeSummary(device) case final summary?) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    summary,
+                    style: TextStyle(
+                      color: AppColors.primary,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

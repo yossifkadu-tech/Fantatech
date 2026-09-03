@@ -91,8 +91,29 @@ class HaImportService {
       final icon = _iconForAreaName(name);
       if (id.isNotEmpty && name.isNotEmpty) {
         state.addRoomGroup(id, name, icon);
-        final exists = state.rooms.any((r) => r['name'] == name);
-        if (!exists) state.addRoom(name, icon, parentGroupId: id);
+        // The app's default seed rooms are stored as internal keys
+        // (e.g. '__living__') and only translated to a display name like
+        // "סלון" at render time (S.translateRoomKey) — comparing raw
+        // stored names against HA's literal area name ("סלון") would never
+        // match a default room, always creating a same-looking duplicate.
+        // Compare against each existing room's *translated* display name
+        // instead, case/whitespace-insensitively, so a default "__living__"
+        // room is correctly recognized as the same place as HA's "סלון".
+        final normalized = name.trim().toLowerCase();
+        final match = state.rooms.where((r) => state.strings
+            .translateRoomKey(r['name'] as String? ?? '')
+            .trim()
+            .toLowerCase() ==
+            normalized).firstOrNull;
+        if (match == null) {
+          state.addRoom(name, icon, parentGroupId: id);
+        } else {
+          // A pre-existing default room (e.g. '__living__') already
+          // represents this area — link it into the group instead of
+          // leaving it as a same-named orphan under "Other Rooms" while
+          // the group shows an empty, unlinked card.
+          state.linkRoomToGroup(match['name'] as String, id);
+        }
       }
     }
 

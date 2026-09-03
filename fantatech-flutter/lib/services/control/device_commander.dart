@@ -167,8 +167,11 @@ class DeviceCommander {
     }
 
     // ── Aqara Hub ─────────────────────────────────────────────────────────────
-    if (id.startsWith('aqara_')) {
-      final ip    = device.attributes['ip'] as String?;
+    // Aqara devices are created with a dash prefix ('aqara-...') and store
+    // credentials as 'aqaraIp'/'aqaraToken', not 'ip'/'token' — see
+    // gateway_manager.dart and sensor_scan_engine.dart's Aqara import paths.
+    if (id.startsWith('aqara-')) {
+      final ip    = device.attributes['aqaraIp'] as String?;
       final token = device.attributes['aqaraToken'] as String?;
       final did   = device.attributes['did'] as String? ?? id.substring(6);
       if (ip == null || token == null) return false;
@@ -227,8 +230,8 @@ class DeviceCommander {
     return false;
   }
 
-  /// Set cover/blind/valve position 0–100 (100 = fully open). HA only for
-  /// now. A [DeviceType.blind] can back either a real cover or an HA `valve`
+  /// Set cover/blind/valve position 0–100 (100 = fully open). A
+  /// [DeviceType.blind] can back either a real cover or an HA `valve`
   /// entity (smart water/gas valve) — routed by the entity's own domain
   /// attribute, since HA exposes them as separate service families.
   static Future<bool> setCoverPosition(
@@ -248,10 +251,26 @@ class DeviceCommander {
       }
       return HaGatewayClient.setCoverPosition(ip, token, entityId, position);
     }
+
+    // ── IKEA DIRIGERA ──────────────────────────────────────────────────────
+    if (device.id.startsWith('dirigera_')) {
+      final gw = _gateway(gateways, GatewayType.dirigera);
+      if (gw == null) return false;
+      final ip    = gw.credentials['ip'];
+      final token = gw.credentials['token'];
+      if (ip == null || token == null) return false;
+      // DIRIGERA's own blindsTargetLevel is inverted (0=open, 100=closed)
+      // vs. FantaTech's convention (100=open) used everywhere else here.
+      return DIRIGERAGatewayClient.setBlindLevel(
+          ip, token, device.id, 100 - position.clamp(0, 100));
+    }
+
     return false;
   }
 
-  /// Stop a moving cover/blind/valve.
+  /// Stop a moving cover/blind/valve. HA only — DIRIGERA's local REST API
+  /// doesn't expose a "stop mid-motion" endpoint (only target position),
+  /// unlike setCoverPosition above which DIRIGERA does support directly.
   static Future<bool> stopCover(
     Device device, {
     required GatewayManager gateways,
@@ -431,8 +450,8 @@ class DeviceCommander {
     }
 
     // ── Aqara Hub brightness ──────────────────────────────────────────────────
-    if (id.startsWith('aqara_')) {
-      final ip    = device.attributes['ip'] as String?;
+    if (id.startsWith('aqara-')) {
+      final ip    = device.attributes['aqaraIp'] as String?;
       final token = device.attributes['aqaraToken'] as String?;
       final did   = device.attributes['did'] as String? ?? id.substring(6);
       if (ip == null || token == null) return false;

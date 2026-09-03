@@ -98,6 +98,7 @@ class _SmartSwitchHubViewState extends State<_SmartSwitchHubView> {
   @override
   Widget build(BuildContext context) {
     final engine = context.watch<SwitchScanEngine>();
+    final s      = context.select((AppState st) => st.strings);
     // Build filtered list
     final allDevices  = engine.devices;
     final filtered    = _filter == null
@@ -121,7 +122,33 @@ class _SmartSwitchHubViewState extends State<_SmartSwitchHubView> {
             _Header(
               isScanning: engine.isScanning,
               foundCount: allDevices.length,
-              onScan:     engine.isScanning ? null : _startScan,
+            ),
+
+            // ── Prominent scan/stop button — the single action for finding
+            // devices. While scanning it doubles as a stop control instead
+            // of just sitting there disabled with a spinner.
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+              child: SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: engine.isScanning ? engine.stopScan : _startScan,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: engine.isScanning ? AppColors.alert : null,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  icon: engine.isScanning
+                      ? const Icon(Symbols.stop_circle, size: 20)
+                      : const Icon(Symbols.radar, size: 20),
+                  label: Text(
+                    engine.isScanning ? s.stopScanning : s.rescan,
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ),
             ),
 
             // ── Protocol progress row ─────────────────────────────────────────
@@ -164,12 +191,10 @@ class _SmartSwitchHubViewState extends State<_SmartSwitchHubView> {
 class _Header extends StatelessWidget {
   final bool isScanning;
   final int  foundCount;
-  final VoidCallback? onScan;
 
   const _Header({
     required this.isScanning,
     required this.foundCount,
-    required this.onScan,
   });
 
   @override
@@ -206,22 +231,8 @@ class _Header extends StatelessWidget {
               ],
             ),
           ),
-          if (isScanning)
-            const SizedBox(
-              width: 20, height: 20,
-              child: CircularProgressIndicator(
-                  strokeWidth: 2, color: AppColors.primary),
-            )
-          else
-            TextButton.icon(
-              onPressed: onScan,
-              icon: const Icon(Symbols.radar, size: 16),
-              label: Text(s.rescan, style: const TextStyle(fontSize: 13)),
-              style: TextButton.styleFrom(
-                  foregroundColor: AppColors.primary,
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 6)),
-            ),
+          // The scan/stop control lives in the prominent button below the
+          // header now — no duplicate action up here.
         ],
       ),
     );

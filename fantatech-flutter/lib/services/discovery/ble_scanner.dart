@@ -7,6 +7,7 @@ import 'dart:async';
 
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
+import 'bthome_decoder.dart';
 import 'discovery_models.dart';
 
 /// How long to actively scan for BLE advertisements.
@@ -29,6 +30,9 @@ const _knownServiceUuids = {
   'fe59',
   // Shelly BLU
   '1800',
+  // BTHome v2 — open standard used by Shelly BLU and BTHome-flashed
+  // Xiaomi/Mijia sensors (ATC_MiThermometer/pvvx custom firmware)
+  'fcd2',
 };
 
 /// Name prefixes that strongly suggest smart home hardware.
@@ -123,7 +127,7 @@ class BLEScanner {
     final mac = r.device.remoteId.str;
 
     final manufacturer = _resolveManufacturer(r);
-    final type = _inferType(r, manufacturer);
+    var type = _inferType(r, manufacturer);
 
     // Collect service UUIDs as strings
     final serviceUuids =
@@ -134,6 +138,34 @@ class BLEScanner {
         .map((e) =>
             '${e.key.toRadixString(16).padLeft(4, '0')}: ${e.value.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ')}')
         .join(', ');
+
+    // BTHome v2 (open standard — Shelly BLU, BTHome-flashed Xiaomi/Mijia
+    // sensors) — decode real readings straight out of the advertisement,
+    // no pairing/connection needed.
+    Map<String, dynamic>? bthome;
+    for (final entry in r.advertisementData.serviceData.entries) {
+      if (entry.key.str.toLowerCase() != BtHomeDecoder.serviceUuid) continue;
+      final decoded = BtHomeDecoder.decode(entry.value);
+      if (decoded == null) break;
+      if (decoded.encrypted) {
+        bthome = {'encrypted': true};
+        break;
+      }
+      bthome = {
+        for (final reading in decoded.readings)
+          reading.key: reading.value,
+      };
+      // A decoded door/window/temperature reading is a much more specific
+      // and reliable type signal than a name-prefix guess.
+      if (bthome.containsKey('door') || bthome.containsKey('window')) {
+        type = bthome.containsKey('door')
+            ? DiscoveredDeviceType.doorSensor
+            : DiscoveredDeviceType.windowSensor;
+      } else if (bthome.containsKey('temperature') || bthome.containsKey('humidity')) {
+        type = DiscoveredDeviceType.sensor;
+      }
+      break;
+    }
 
     return DiscoveredDevice(
       id: 'ble_$mac',
@@ -147,6 +179,7 @@ class BLEScanner {
         'serviceUuids': serviceUuids,
         if (mfData.isNotEmpty) 'manufacturerData': mfData,
         'connectable': r.advertisementData.connectable,
+        if (bthome != null) 'bthome': bthome,
       },
     );
   }

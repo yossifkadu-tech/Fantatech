@@ -67,6 +67,16 @@ void main() {
       expect(result, isFalse);
     });
 
+    test('aqara- (dash prefix) device with no credentials returns false', () async {
+      final gateways = GatewayManager();
+      final result = await DeviceCommander.setOnOff(
+        device('aqara-abc123'),
+        true,
+        gateways: gateways,
+      );
+      expect(result, isFalse);
+    });
+
     test('govee_ device with no ip attribute returns false', () async {
       final gateways = GatewayManager();
       final result = await DeviceCommander.setOnOff(
@@ -117,10 +127,20 @@ void main() {
   });
 
   group('DeviceCommander.setCoverPosition / stopCover', () {
-    test('setCoverPosition on non-ha_ device returns false', () async {
+    test('setCoverPosition on non-ha_/dirigera_ device returns false', () async {
       final gateways = GatewayManager();
       final result = await DeviceCommander.setCoverPosition(
         device('z2m_blind1'),
+        50,
+        gateways: gateways,
+      );
+      expect(result, isFalse);
+    });
+
+    test('setCoverPosition on dirigera_ device with no connected gateway returns false', () async {
+      final gateways = GatewayManager();
+      final result = await DeviceCommander.setCoverPosition(
+        device('dirigera_blind1'),
         50,
         gateways: gateways,
       );

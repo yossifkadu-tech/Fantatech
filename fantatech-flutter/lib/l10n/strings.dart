@@ -349,6 +349,7 @@ class S {
   final String scanComplete;
   final String scanError;
   final String rescan;
+  final String stopScanning;
   final String noDevicesOnNetwork;
   final String sameWifiHint;
   final String connectedStatus;
@@ -2055,6 +2056,7 @@ class S {
     required this.scanComplete,
     required this.scanError,
     required this.rescan,
+    required this.stopScanning,
     required this.noDevicesOnNetwork,
     required this.sameWifiHint,
     required this.connectedStatus,
@@ -2382,7 +2384,7 @@ class S {
     catClimate: 'מיזוג', catBlind: 'תריס', catGate: 'שער', catRouter: 'ראוטר', catGateway: 'גייטוויי',
     networkLabel: 'רשת', wifiNotConnected: 'לא מחובר לרשת WiFi',
     connectWifiHint: 'התחבר לרשת WiFi ביתית ונסה שוב',
-    scanComplete: 'סריקה הושלמה', scanError: 'שגיאה בסריקה', rescan: 'סרוק מחדש',
+    scanComplete: 'סריקה הושלמה', scanError: 'שגיאה בסריקה', rescan: 'סרוק מחדש', stopScanning: 'עצור סריקה',
     noDevicesOnNetwork: 'לא נמצאו מכשירים ברשת',
     sameWifiHint: 'ודא שהמכשירים מחוברים לאותה רשת WiFi',
     connectedStatus: 'מחובר', noDevicesConnected: 'אין מכשירים מחוברים',
@@ -2879,7 +2881,7 @@ class S {
     catClimate: 'Climate', catBlind: 'Blind', catGate: 'Gate', catRouter: 'Router', catGateway: 'Gateway',
     networkLabel: 'Network', wifiNotConnected: 'Not connected to WiFi',
     connectWifiHint: 'Connect to your home WiFi and try again',
-    scanComplete: 'Scan complete', scanError: 'Scan error', rescan: 'Scan again',
+    scanComplete: 'Scan complete', scanError: 'Scan error', rescan: 'Scan again', stopScanning: 'Stop scanning',
     noDevicesOnNetwork: 'No devices found on network',
     sameWifiHint: 'Make sure devices are connected to the same WiFi',
     connectedStatus: 'Connected', noDevicesConnected: 'No devices connected',
@@ -3161,7 +3163,7 @@ class S {
     catClimate: 'مناخ', catBlind: 'ستارة', catGate: 'بوابة', catRouter: 'راوتر', catGateway: 'بوابة',
     networkLabel: 'شبكة', wifiNotConnected: 'غير متصل بشبكة WiFi',
     connectWifiHint: 'اتصل بشبكة WiFi المنزلية وحاول مرة أخرى',
-    scanComplete: 'اكتمل الفحص', scanError: 'خطأ في الفحص', rescan: 'فحص مجدداً',
+    scanComplete: 'اكتمل الفحص', scanError: 'خطأ في الفحص', rescan: 'فحص مجدداً', stopScanning: 'إيقاف الفحص',
     noDevicesOnNetwork: 'لم يتم العثور على أجهزة في الشبكة',
     sameWifiHint: 'تأكد أن الأجهزة متصلة بنفس شبكة WiFi',
     connectedStatus: 'متصل', noDevicesConnected: 'لا توجد أجهزة متصلة',
@@ -3621,7 +3623,7 @@ class S {
     catClimate: 'ማቀዝቀዣ', catBlind: 'ቅጠል', catGate: 'በር', catRouter: 'ራውተር', catGateway: 'ጌትዌይ',
     networkLabel: 'ኔትወርክ', wifiNotConnected: 'ወደ WiFi አልተገናኘም',
     connectWifiHint: 'ወደ ቤት WiFi ይገናኙ እና እንደገና ይሞክሩ',
-    scanComplete: 'ቅኝት ተጠናቅቋ', scanError: 'የቅኝት ስህተት', rescan: 'እንደገና ቅኝ',
+    scanComplete: 'ቅኝት ተጠናቅቋ', scanError: 'የቅኝት ስህተት', rescan: 'እንደገና ቅኝ', stopScanning: 'ቅኝት አቁም',
     noDevicesOnNetwork: 'በኔትወርክ ላይ ምንም መሣሪያ አልተገኘም',
     sameWifiHint: 'መሣሪያዎቹ ወደ ተመሳሳይ WiFi መገናኘታቸውን ያረጋግጡ',
     connectedStatus: 'ተገናኝቷ', noDevicesConnected: 'ምንም መሳሪያ አልተገናኘም',
@@ -4070,7 +4072,7 @@ class S {
     catClimate: 'Clima', catBlind: 'Persiana', catGate: 'Portón', catRouter: 'Router', catGateway: 'Pasarela',
     networkLabel: 'Red', wifiNotConnected: 'Sin conexión WiFi',
     connectWifiHint: 'Conéctate a tu WiFi doméstica e inténtalo de nuevo',
-    scanComplete: 'Escaneo completo', scanError: 'Error de escaneo', rescan: 'Escanear de nuevo',
+    scanComplete: 'Escaneo completo', scanError: 'Error de escaneo', rescan: 'Escanear de nuevo', stopScanning: 'Detener escaneo',
     noDevicesOnNetwork: 'No se encontraron dispositivos en la red',
     sameWifiHint: 'Asegúrate de que los dispositivos estén en la misma red WiFi',
     connectedStatus: 'Conectado', noDevicesConnected: 'Sin dispositivos conectados',
@@ -4520,7 +4522,7 @@ class S {
     catClimate: 'Климат', catBlind: 'Жалюзи', catGate: 'Ворота', catRouter: 'Роутер', catGateway: 'Шлюз',
     networkLabel: 'Сеть', wifiNotConnected: 'Нет подключения к WiFi',
     connectWifiHint: 'Подключитесь к домашней WiFi и попробуйте снова',
-    scanComplete: 'Сканирование завершено', scanError: 'Ошибка сканирования', rescan: 'Сканировать снова',
+    scanComplete: 'Сканирование завершено', scanError: 'Ошибка сканирования', rescan: 'Сканировать снова', stopScanning: 'Остановить сканирование',
     noDevicesOnNetwork: 'Устройства в сети не найдены',
     sameWifiHint: 'Убедитесь, что устройства подключены к той же WiFi',
     connectedStatus: 'Подключено', noDevicesConnected: 'Нет подключённых устройств',
@@ -4975,7 +4977,7 @@ class S {
     catClimate: 'Climat', catBlind: 'Volet', catGate: 'Portail', catRouter: 'Routeur', catGateway: 'Passerelle',
     networkLabel: 'Réseau', wifiNotConnected: 'Non connecté au WiFi',
     connectWifiHint: 'Connectez-vous au WiFi de votre maison et réessayez',
-    scanComplete: 'Analyse terminée', scanError: 'Erreur d\'analyse', rescan: 'Analyser à nouveau',
+    scanComplete: 'Analyse terminée', scanError: 'Erreur d\'analyse', rescan: 'Analyser à nouveau', stopScanning: 'Arrêter l\'analyse',
     noDevicesOnNetwork: 'Aucun appareil trouvé sur le réseau',
     sameWifiHint: 'Assurez-vous que les appareils sont sur le même WiFi',
     connectedStatus: 'Connecté', noDevicesConnected: 'Aucun appareil connecté',

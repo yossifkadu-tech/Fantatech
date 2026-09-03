@@ -237,8 +237,14 @@ class DiscoveryManager extends ChangeNotifier {
   void _handleEvent(ScannerEvent event, String source) {
     switch (event) {
       case DeviceFoundEvent():
-        final existing = _devices.indexWhere(
-            (d) => d.id == event.device.id || d.ip == event.device.ip);
+        // BLE-found devices never set `ip` (it's null), so comparing
+        // `d.ip == event.device.ip` for two different BLE devices compares
+        // null == null → true, silently collapsing every BLE device found
+        // in a scan into the first one. Only match on ip when both sides
+        // actually have one.
+        final existing = _devices.indexWhere((d) =>
+            d.id == event.device.id ||
+            (d.ip != null && event.device.ip != null && d.ip == event.device.ip));
         if (existing >= 0) {
           // Merge: gateway probe may enrich a WiFi-found device
           _devices[existing] = _merge(_devices[existing], event.device);

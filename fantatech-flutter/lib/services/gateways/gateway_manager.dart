@@ -737,7 +737,7 @@ class GatewayManager extends ChangeNotifier {
             name:       name,
             type:       _aqaraModelToDeviceType(model),
             status:     DeviceStatus.online,
-            attributes: {'model': model, 'did': did, 'aqaraIp': ip},
+            attributes: {'model': model, 'did': did, 'aqaraIp': ip, 'aqaraToken': token},
             room:       '',
             source:     'gateway',
           );

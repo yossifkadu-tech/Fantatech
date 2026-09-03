@@ -324,9 +324,31 @@ class AppState extends ChangeNotifier {
       final gid = a.floorId != null ? 'ha_floor_${a.floorId}' : null;
       final idx = _rooms.indexWhere((r) => r['haAreaId'] == a.id);
       if (idx == -1) {
-        // Skip if a user/predefined room already uses this exact name —
-        // devices will group under it anyway.
-        if (_rooms.any((r) => r['name'] == a.name)) continue;
+        // Skip if a user/predefined room already represents this same
+        // place. Predefined rooms are stored as internal keys (e.g.
+        // '__living__') and only turned into a display name like "סלון"
+        // via translateRoomKey — comparing raw names would never match a
+        // predefined room against HA's literal area name, always creating
+        // a same-looking duplicate room card.
+        final wanted = a.name.trim().toLowerCase();
+        final matchIdx = _rooms.indexWhere((r) =>
+            strings.translateRoomKey(r['name'] as String? ?? '')
+                .trim()
+                .toLowerCase() ==
+            wanted);
+        if (matchIdx != -1) {
+          // A pre-existing default room (e.g. '__living__') already
+          // represents this area — tag it so future syncs recognize it
+          // via haAreaId directly, and link it into the floor group (if
+          // any) instead of leaving it a same-named orphan.
+          _rooms[matchIdx] = {
+            ..._rooms[matchIdx],
+            'haAreaId': a.id,
+            if (gid != null) 'parentGroupId': gid,
+          };
+          changed = true;
+          continue;
+        }
         _rooms.add({
           'name': a.name,
           'icon': 0xe318,
@@ -1701,6 +1723,19 @@ class AppState extends ChangeNotifier {
     } else {
       _rooms.add(newRoom);
     }
+    notifyListeners();
+  }
+
+  /// Links an already-existing room (matched by its raw stored name) into
+  /// a room group, without touching any of its other fields (icon,
+  /// occupant, haAreaId, …) or its raw name — so devices already assigned
+  /// via `d.room == rawName` stay correctly matched. No-op if the room is
+  /// already linked to this group or doesn't exist.
+  void linkRoomToGroup(String rawName, String groupId) {
+    final idx = _rooms.indexWhere((r) => r['name'] == rawName);
+    if (idx == -1) return;
+    if (_rooms[idx]['parentGroupId'] == groupId) return;
+    _rooms[idx] = {..._rooms[idx], 'parentGroupId': groupId};
     notifyListeners();
   }
 
