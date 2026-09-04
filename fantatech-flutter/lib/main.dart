@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'models/app_state.dart';
+import 'models/device.dart';
 import 'providers/layout_provider.dart';
 import 'models/app_user.dart';
 import 'services/auth/user_service.dart';
@@ -78,7 +79,7 @@ void main() async {
   // they open those screens. Fire-and-forget — runs alongside HA sync above,
   // and the results live on these app-level engines for the whole session
   // (re-opening the screen later doesn't lose them or re-trigger a scan).
-  unawaited(_autoScanLan(gateways, switchScanEngine, sensorScanEngine));
+  unawaited(_autoScanLan(appState, gateways, switchScanEngine, sensorScanEngine));
 
   // כשרץ כ-Flutter Web בתוך HA iframe — קבל token אוטומטית
   if (kIsWeb) {
@@ -111,6 +112,7 @@ void main() async {
 /// Gathers the same credentials SmartSwitchHubScreen/SensorHubScreen use for
 /// their manual "scan" button, and runs both scans once at app launch.
 Future<void> _autoScanLan(
+  AppState appState,
   GatewayManager gateways,
   SwitchScanEngine switchScanEngine,
   SensorScanEngine sensorScanEngine,
@@ -129,11 +131,20 @@ Future<void> _autoScanLan(
   final aqaraConn = gateways.connections.where((c) =>
       c.type == GatewayType.aqara && c.isConnected).firstOrNull;
 
+  // Scan ids that already have a Device in AppState (see _addToHome's
+  // '<scanId>_ch<index>' convention) — passed through so a rescan re-marks
+  // them isRegistered instead of resetting that flag to false.
+  final registeredSwitchIds = appState.devices
+      .where((d) => d.type == DeviceType.smartSwitch)
+      .map((d) => d.id.replaceFirst(RegExp(r'_ch\d+$'), ''))
+      .toSet();
+
   await Future.wait([
     switchScanEngine.startScan(
       haIp: haIp, haToken: haToken,
       mqttHost: mqttHost, mqttPort: mqttPort,
       mqttUser: mqttUser, mqttPass: mqttPass,
+      registeredIds: registeredSwitchIds,
     ),
     sensorScanEngine.startScan(
       haIp: haIp, haToken: haToken,

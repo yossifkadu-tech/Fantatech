@@ -88,6 +88,14 @@ class _SmartSwitchHubViewState extends State<_SmartSwitchHubView> {
     }
 
     if (!mounted) return;
+    // Scan ids that already have a Device in AppState — passed through so
+    // this rescan re-marks them isRegistered instead of resetting the flag
+    // to false (which would also silently disable the long-press edit sheet
+    // on already-added switches, since it's gated on isRegistered).
+    final registeredIds = context.read<AppState>().devices
+        .where((d) => d.type == DeviceType.smartSwitch)
+        .map((d) => d.id.replaceFirst(RegExp(r'_ch\d+$'), ''))
+        .toSet();
     engine.startScan(
       haIp:      haIp,
       haToken:   haToken,
@@ -95,6 +103,7 @@ class _SmartSwitchHubViewState extends State<_SmartSwitchHubView> {
       mqttPort:  mqttPort,
       mqttUser:  mqttUser,
       mqttPass:  mqttPass,
+      registeredIds: registeredIds,
     );
   }
 

@@ -53,6 +53,12 @@ class SwitchScanEngine extends ChangeNotifier {
     int     mqttPort = 1883,
     String? mqttUser,
     String? mqttPass,
+    // Scan ids (SmartSwitchDevice.id) that already have a Device added to
+    // AppState — re-marks matching fresh scan results as isRegistered so a
+    // rescan (including the automatic one on app launch) doesn't wipe the
+    // "already added" state and, with it, the long-press edit sheet that's
+    // gated on isRegistered.
+    Set<String> registeredIds = const {},
   }) async {
     if (isScanning) return;
 
@@ -104,6 +110,12 @@ class SwitchScanEngine extends ChangeNotifier {
     }
 
     await Future.wait(futures);
+
+    if (registeredIds.isNotEmpty) {
+      for (final d in devices) {
+        if (registeredIds.contains(d.id)) d.isRegistered = true;
+      }
+    }
 
     isScanning = false;
     overallProgress = 1.0;
