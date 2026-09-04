@@ -20,6 +20,7 @@ import '../../services/switches/smart_switch_models.dart';
 import '../../services/switches/switch_controller.dart';
 import '../../services/switches/switch_scan_engine.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/device_edit_sheet.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -710,6 +711,21 @@ class _SwitchCardState extends State<_SwitchCard> {
     );
   }
 
+  /// Opens the shared rename/delete/assign-room sheet for the [Device]
+  /// this channel became once added (id follows _addToHome's convention:
+  /// '<scanId>_ch<index>'). No-op for a channel not yet added — there's no
+  /// Device to edit until the user taps "add" on this card.
+  void _showEditSheet(int channelIndex) {
+    final appState = context.read<AppState>();
+    final deviceId = '${dev.id}_ch$channelIndex';
+    Device? device;
+    for (final d in appState.devices) {
+      if (d.id == deviceId) { device = d; break; }
+    }
+    if (device == null) return;
+    showDeviceEditSheet(context, device: device, state: appState);
+  }
+
   void _showError() {
     final s = context.read<AppState>().strings;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -846,6 +862,7 @@ class _SwitchCardState extends State<_SwitchCard> {
                   canControl: dev.protocol.canControl,
                   color:      brandColor,
                   onTap:      () => _toggle(i),
+                  onLongPress: dev.isRegistered ? () => _showEditSheet(i) : null,
                 );
               }).toList(),
             ),
@@ -864,6 +881,7 @@ class _ChannelToggle extends StatelessWidget {
   final bool          canControl;
   final Color         color;
   final VoidCallback  onTap;
+  final VoidCallback? onLongPress;
 
   const _ChannelToggle({
     required this.channel,
@@ -871,6 +889,7 @@ class _ChannelToggle extends StatelessWidget {
     required this.canControl,
     required this.color,
     required this.onTap,
+    this.onLongPress,
   });
 
   @override
@@ -880,6 +899,7 @@ class _ChannelToggle extends StatelessWidget {
 
     return GestureDetector(
       onTap: onTap,
+      onLongPress: onLongPress,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
