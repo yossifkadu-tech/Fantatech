@@ -17,6 +17,10 @@
 //
 // The live listener pushes state changes via [onStateChange] callback so
 // AppState can update devices without polling.
+//
+// TODO(remote-access): every method here hardcodes http:// and port 8123 —
+// LAN-only by design. See the TODO in lib/services/ha/ha_config.dart for the
+// planned scope of a future remote-access (Nabu Casa / VPN) pass.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import 'dart:async';
