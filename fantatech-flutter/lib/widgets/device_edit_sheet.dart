@@ -30,6 +30,9 @@ Future<void> showEntityEditSheet(
   List<String>? rooms,
   String? currentRoom,
   void Function(String room)? onAssignRoom,
+  // Optional — when provided, shows the device's real network address here
+  // (edit sheet only — the card itself stays free of raw IPs).
+  String? ipAddress,
 }) {
   HapticFeedback.mediumImpact();
   return showModalBottomSheet(
@@ -46,6 +49,7 @@ Future<void> showEntityEditSheet(
       rooms: rooms,
       currentRoom: currentRoom,
       onAssignRoom: onAssignRoom,
+      ipAddress: ipAddress,
     ),
   );
 }
@@ -69,6 +73,7 @@ Future<void> showDeviceEditSheet(
         .where((r) => r.isNotEmpty).toList(),
     currentRoom: device.room,
     onAssignRoom: (room) => state.updateDeviceRoom(device.id, room),
+    ipAddress: device.attributes['ip'] as String?,
   );
 }
 
@@ -100,6 +105,7 @@ class _EntityEditSheet extends StatefulWidget {
   final List<String>? rooms;
   final String? currentRoom;
   final void Function(String room)? onAssignRoom;
+  final String? ipAddress;
 
   const _EntityEditSheet({
     required this.currentName,
@@ -111,6 +117,7 @@ class _EntityEditSheet extends StatefulWidget {
     this.rooms,
     this.currentRoom,
     this.onAssignRoom,
+    this.ipAddress,
   });
 
   @override
@@ -221,6 +228,20 @@ class _EntityEditSheetState extends State<_EntityEditSheet> {
               ),
             ),
           ]),
+          if (widget.ipAddress != null && widget.ipAddress!.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Row(children: [
+              Icon(Symbols.lan, color: context.tText2(0.4), size: 15),
+              const SizedBox(width: 6),
+              Text('${s.ipAddressLabel}: ',
+                  style: TextStyle(color: context.tText2(0.45), fontSize: 12)),
+              Text(widget.ipAddress!,
+                  style: TextStyle(
+                      color: context.tText2(0.7),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600)),
+            ]),
+          ],
           const SizedBox(height: 16),
           TextField(
             controller: _ctrl,

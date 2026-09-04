@@ -808,14 +808,15 @@ class _SwitchCardState extends State<_SwitchCard> {
                               color: context.tText,
                               fontSize: 14,
                               fontWeight: FontWeight.w600)),
-                      Text(
-                        [
-                          if (dev.ip != null) dev.ip!,
-                          if (dev.model != null) dev.model!,
-                        ].join(' · '),
-                        style: TextStyle(
-                            color: context.tText2(0.54), fontSize: 11),
-                      ),
+                      // IP address intentionally left off this card — it's
+                      // internal network info, not something to show at a
+                      // glance. Still visible in the edit sheet (long-press).
+                      if (dev.model != null)
+                        Text(
+                          dev.model!,
+                          style: TextStyle(
+                              color: context.tText2(0.54), fontSize: 11),
+                        ),
                     ],
                   ),
                 ),
