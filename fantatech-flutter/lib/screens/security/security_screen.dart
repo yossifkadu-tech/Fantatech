@@ -74,8 +74,17 @@ class _SecurityScreenState extends State<SecurityScreen>
     final gasSensors = state.devices
         .where((d) => d.type == DeviceType.gasSensor)
         .toList();
-    final odorSensors = state.devices
-        .where((d) => d.type == DeviceType.odorSensor)
+    final co2Sensors = state.devices
+        .where((d) => d.type == DeviceType.co2Sensor)
+        .toList();
+    final freezeSensors = state.devices
+        .where((d) => d.type == DeviceType.freezeSensor)
+        .toList();
+    final tamperSensors = state.devices
+        .where((d) => d.type == DeviceType.tamperSensor)
+        .toList();
+    final mailboxSensors = state.devices
+        .where((d) => d.type == DeviceType.mailboxSensor)
         .toList();
     final locks = state.devices
         .where((d) => d.type == DeviceType.smartLock)
@@ -260,23 +269,86 @@ class _SecurityScreenState extends State<SecurityScreen>
         const SizedBox(height: 10),
         _SensorRow(
           icon: Symbols.air,
-          label: s.odorDetector,
-          status: odorSensors.isEmpty
+          label: s.co2Detector,
+          status: co2Sensors.isEmpty
               ? s.offlineLabel
-              : odorSensors.any((m) => m.isOn)
+              : co2Sensors.any((m) => m.isOn)
                   ? s.activeStatus
                   : s.normalStatus,
-          color: odorSensors.any((m) => m.isOn)
+          color: co2Sensors.any((m) => m.isOn)
               ? AppColors.unsecured
               : AppColors.secured,
-          statusIcon: odorSensors.any((m) => m.isOn)
+          statusIcon: co2Sensors.any((m) => m.isOn)
               ? Symbols.warning_amber
               : Symbols.verified,
           onTap: () => _showSensorDetail(
-              context, s, s.odorDetector,
-              odorSensors.isEmpty ? s.offlineLabel : s.normalStatus,
+              context, s, s.co2Detector,
+              co2Sensors.isEmpty ? s.offlineLabel : s.normalStatus,
               AppColors.secured, Symbols.air,
-              odorSensors.isEmpty ? null : odorSensors.first),
+              co2Sensors.isEmpty ? null : co2Sensors.first),
+        ),
+        const SizedBox(height: 10),
+        _SensorRow(
+          icon: Symbols.ac_unit,
+          label: s.freezeDetector,
+          status: freezeSensors.isEmpty
+              ? s.offlineLabel
+              : freezeSensors.any((m) => m.isOn)
+                  ? s.activeStatus
+                  : s.normalStatus,
+          color: freezeSensors.any((m) => m.isOn)
+              ? AppColors.unsecured
+              : AppColors.secured,
+          statusIcon: freezeSensors.any((m) => m.isOn)
+              ? Symbols.warning_amber
+              : Symbols.verified,
+          onTap: () => _showSensorDetail(
+              context, s, s.freezeDetector,
+              freezeSensors.isEmpty ? s.offlineLabel : s.normalStatus,
+              AppColors.secured, Symbols.ac_unit,
+              freezeSensors.isEmpty ? null : freezeSensors.first),
+        ),
+        const SizedBox(height: 10),
+        _SensorRow(
+          icon: Symbols.warning,
+          label: s.tamperDetector,
+          status: tamperSensors.isEmpty
+              ? s.offlineLabel
+              : tamperSensors.any((m) => m.isOn)
+                  ? s.activeStatus
+                  : s.normalStatus,
+          color: tamperSensors.any((m) => m.isOn)
+              ? AppColors.unsecured
+              : AppColors.secured,
+          statusIcon: tamperSensors.any((m) => m.isOn)
+              ? Symbols.warning_amber
+              : Symbols.verified,
+          onTap: () => _showSensorDetail(
+              context, s, s.tamperDetector,
+              tamperSensors.isEmpty ? s.offlineLabel : s.normalStatus,
+              AppColors.secured, Symbols.warning,
+              tamperSensors.isEmpty ? null : tamperSensors.first),
+        ),
+        const SizedBox(height: 10),
+        _SensorRow(
+          icon: Symbols.mail,
+          label: s.mailboxDetector,
+          status: mailboxSensors.isEmpty
+              ? s.offlineLabel
+              : mailboxSensors.any((m) => m.isOn)
+                  ? s.activeStatus
+                  : s.normalStatus,
+          color: mailboxSensors.any((m) => m.isOn)
+              ? AppColors.unsecured
+              : AppColors.secured,
+          statusIcon: mailboxSensors.any((m) => m.isOn)
+              ? Symbols.mail
+              : Symbols.mail_outline,
+          onTap: () => _showSensorDetail(
+              context, s, s.mailboxDetector,
+              mailboxSensors.isEmpty ? s.offlineLabel : s.normalStatus,
+              AppColors.secured, Symbols.mail,
+              mailboxSensors.isEmpty ? null : mailboxSensors.first),
         ),
       ],
     );
