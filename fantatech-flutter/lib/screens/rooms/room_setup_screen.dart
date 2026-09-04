@@ -135,7 +135,6 @@ class RoomSetupScreen extends StatelessWidget {
     final state = context.watch<AppState>();
     final s = state.strings;
     final he = state.locale == AppLocale.hebrew;
-    final caps = _capsFor(roomKey);
     final roomDevices =
         state.devices.where((d) => d.room == roomKey).toList();
 
@@ -153,6 +152,18 @@ class RoomSetupScreen extends StatelessWidget {
     final sectioned = {...climate, ...lights, ...switches, ...sensors};
     final others =
         roomDevices.where((d) => !sectioned.contains(d)).toList();
+
+    // Switches/plugs tile ("מפסקים חכמים"/"שקעים חכמים") only shows once
+    // the user has actually assigned a device here (via the switch card's
+    // long-press "assign room") — otherwise every room showed the same
+    // tile regardless of what's really in it, all routing to the same
+    // global, unfiltered switches screen. An empty room still shows every
+    // OTHER tile as a starting point (nothing to filter them by yet).
+    final caps = roomDevices.isEmpty
+        ? _capsFor(roomKey)
+        : _capsFor(roomKey)
+            .where((cap) => cap.dest != _Dest.switches || switches.isNotEmpty)
+            .toList();
 
     return Scaffold(
       backgroundColor: _kBg,
