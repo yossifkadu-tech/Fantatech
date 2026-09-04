@@ -26,6 +26,10 @@ Future<void> showEntityEditSheet(
   required S s,
   required void Function(String newName) onRename,
   required VoidCallback onDelete,
+  // Optional — when provided, an "assign room" option appears in the sheet.
+  List<String>? rooms,
+  String? currentRoom,
+  void Function(String room)? onAssignRoom,
 }) {
   HapticFeedback.mediumImpact();
   return showModalBottomSheet(
@@ -39,6 +43,9 @@ Future<void> showEntityEditSheet(
       s: s,
       onRename: onRename,
       onDelete: onDelete,
+      rooms: rooms,
+      currentRoom: currentRoom,
+      onAssignRoom: onAssignRoom,
     ),
   );
 }
@@ -58,6 +65,10 @@ Future<void> showDeviceEditSheet(
     s: state.strings,
     onRename: (name) => state.updateDeviceName(device.id, name),
     onDelete: () => state.removeDevice(device.id),
+    rooms: state.rooms.map((r) => r['name'] as String? ?? '')
+        .where((r) => r.isNotEmpty).toList(),
+    currentRoom: device.room,
+    onAssignRoom: (room) => state.updateDeviceRoom(device.id, room),
   );
 }
 
@@ -86,6 +97,9 @@ class _EntityEditSheet extends StatefulWidget {
   final S s;
   final void Function(String newName) onRename;
   final VoidCallback onDelete;
+  final List<String>? rooms;
+  final String? currentRoom;
+  final void Function(String room)? onAssignRoom;
 
   const _EntityEditSheet({
     required this.currentName,
@@ -94,6 +108,9 @@ class _EntityEditSheet extends StatefulWidget {
     required this.s,
     required this.onRename,
     required this.onDelete,
+    this.rooms,
+    this.currentRoom,
+    this.onAssignRoom,
   });
 
   @override
@@ -137,6 +154,24 @@ class _EntityEditSheetState extends State<_EntityEditSheet> {
     if (confirmed == true) {
       widget.onDelete();
       if (sheetContext.mounted) Navigator.pop(sheetContext);
+    }
+  }
+
+  Future<void> _showRoomPicker(BuildContext sheetContext) async {
+    final s = widget.s;
+    final rooms = widget.rooms ?? const [];
+    final picked = await showModalBottomSheet<String>(
+      context: sheetContext,
+      backgroundColor: sheetContext.tCard,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(22))),
+      builder: (_) => _RoomPickerSheet(
+          s: s, rooms: rooms, currentRoom: widget.currentRoom ?? ''),
+    );
+    if (picked != null && sheetContext.mounted) {
+      widget.onAssignRoom?.call(picked);
+      Navigator.pop(sheetContext);
     }
   }
 
@@ -254,6 +289,40 @@ class _EntityEditSheetState extends State<_EntityEditSheet> {
               ),
             ),
           ]),
+          if (widget.onAssignRoom != null) ...[
+            const SizedBox(height: 10),
+            GestureDetector(
+              onTap: () => _showRoomPicker(context),
+              child: Container(
+                height: 44,
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                decoration: BoxDecoration(
+                  color: context.tText2(0.05),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Symbols.meeting_room, color: context.tText2(0.6), size: 18),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(s.assignRoom,
+                          style: TextStyle(
+                              color: context.tText,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600)),
+                    ),
+                    Text(
+                      (widget.currentRoom == null || widget.currentRoom!.isEmpty)
+                          ? s.noRoom
+                          : s.translateRoomKey(widget.currentRoom!),
+                      style: TextStyle(color: context.tText2(0.45), fontSize: 13),
+                    ),
+                    Icon(Symbols.chevron_right, color: context.tText2(0.35), size: 16),
+                  ],
+                ),
+              ),
+            ),
+          ],
           const SizedBox(height: 10),
           GestureDetector(
             onTap: () => _confirmDelete(context),
@@ -279,6 +348,175 @@ class _EntityEditSheetState extends State<_EntityEditSheet> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// _RoomPickerSheet — bottom sheet listing existing rooms plus a "new room"
+// entry, used by the "assign room" option above.
+// ─────────────────────────────────────────────────────────────────────────────
+class _RoomPickerSheet extends StatefulWidget {
+  final S s;
+  final List<String> rooms;
+  final String currentRoom;
+  const _RoomPickerSheet(
+      {required this.s, required this.rooms, required this.currentRoom});
+
+  @override
+  State<_RoomPickerSheet> createState() => _RoomPickerSheetState();
+}
+
+class _RoomPickerSheetState extends State<_RoomPickerSheet> {
+  bool _addingNew = false;
+  final _newCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _newCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = widget.s;
+    return Padding(
+      padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+          left: 20, right: 20, top: 16),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Container(width: 36, height: 4,
+            decoration: BoxDecoration(
+                color: context.tText2(0.22),
+                borderRadius: BorderRadius.circular(2))),
+        const SizedBox(height: 14),
+        Text(s.assignRoom,
+            style: TextStyle(
+                color: context.tText,
+                fontSize: 16,
+                fontWeight: FontWeight.bold)),
+        const SizedBox(height: 16),
+
+        // No-room option
+        _RoomTile(
+          label: s.noRoom,
+          icon: Symbols.cancel,
+          selected: widget.currentRoom.isEmpty,
+          onTap: () => Navigator.pop(context, ''),
+        ),
+        const SizedBox(height: 8),
+
+        // Existing rooms
+        ...widget.rooms.map((r) => Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: _RoomTile(
+            label: s.translateRoomKey(r),
+            icon: Symbols.meeting_room,
+            selected: widget.currentRoom == r,
+            onTap: () => Navigator.pop(context, r),
+          ),
+        )),
+
+        // Add new room
+        if (_addingNew) ...[
+          const SizedBox(height: 4),
+          Row(children: [
+            Expanded(
+              child: TextField(
+                controller: _newCtrl,
+                autofocus: true,
+                style: TextStyle(color: context.tText, fontSize: 15),
+                decoration: InputDecoration(
+                  hintText: s.roomNameHint,
+                  hintStyle: TextStyle(color: context.tText2(0.3)),
+                  filled: true,
+                  fillColor: context.tText2(0.05),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none),
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 12),
+                ),
+                onSubmitted: (v) {
+                  final name = v.trim();
+                  if (name.isNotEmpty) Navigator.pop(context, name);
+                },
+              ),
+            ),
+            const SizedBox(width: 10),
+            GestureDetector(
+              onTap: () {
+                final name = _newCtrl.text.trim();
+                if (name.isNotEmpty) Navigator.pop(context, name);
+              },
+              child: Container(
+                width: 42, height: 42,
+                decoration: BoxDecoration(
+                    color: AppColors.secured.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12)),
+                child: Icon(Symbols.check, color: AppColors.secured, size: 20),
+              ),
+            ),
+          ]),
+          const SizedBox(height: 8),
+        ] else ...[
+          _RoomTile(
+            label: s.newRoom,
+            icon: Symbols.add_circle,
+            selected: false,
+            iconColor: AppColors.primary,
+            onTap: () => setState(() => _addingNew = true),
+          ),
+          const SizedBox(height: 6),
+        ],
+      ]),
+    );
+  }
+}
+
+class _RoomTile extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+  final Color? iconColor;
+  const _RoomTile(
+      {required this.label, required this.icon, required this.selected,
+       required this.onTap, this.iconColor});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = iconColor ??
+        (selected ? AppColors.primary : context.tText2(0.45));
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+            color: selected
+                ? AppColors.primary.withValues(alpha: 0.10)
+                : context.tText2(0.04),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+                color: selected
+                    ? AppColors.primary.withValues(alpha: 0.35)
+                    : context.tText2(0.08))),
+        child: Row(children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(label,
+                style: TextStyle(
+                    color: selected ? context.tText : context.tText2(0.7),
+                    fontSize: 14,
+                    fontWeight:
+                        selected ? FontWeight.w600 : FontWeight.normal)),
+          ),
+          if (selected)
+            Icon(Symbols.check_circle,
+                color: AppColors.primary, size: 18),
+        ]),
       ),
     );
   }
