@@ -569,33 +569,53 @@ class GatewayManager extends ChangeNotifier {
   /// Gateway types whose `_doImport` has a side effect that's fine for an
   /// explicit user-triggered import but wrong to repeat silently every
   /// 60s forever: deCONZ opens the Zigbee pairing window and blocks 20s
-  /// every call, and MQTT/Z2M open a brand-new broker connection instead
-  /// of reusing the already-live one — see fetchAllCurrentDevices below.
+  /// every call. (MQTT/Z2M do open a fresh broker connection per poll too,
+  /// but that's a cheap connect/publish/disconnect cycle, not a real side
+  /// effect on the mesh — worth it so devices on those gateways still get
+  /// live status without the user manually refreshing.)
   static const _noisyBackgroundImportTypes = {
     GatewayType.deconz,
-    GatewayType.mqtt,
-    GatewayType.zigbee2mqtt,
   };
 
   /// Quietly re-fetches devices from every connected gateway (no UI status
   /// changes). Used by the background leak/state monitor. Runs concurrently
-  /// rather than one gateway at a time, and skips gateway types whose
-  /// import path has side effects unsuitable for a silent, repeating
-  /// background poll (see [_noisyBackgroundImportTypes]) — those still get
-  /// refreshed normally via their own live-update mechanism or an explicit
-  /// user-triggered import.
+  /// rather than one gateway at a time. Gateway types whose import path has
+  /// side effects unsuitable for a silent, repeating background poll (see
+  /// [_noisyBackgroundImportTypes]) go through a lighter direct-fetch call
+  /// instead of the full `_doImport` (e.g. deCONZ skips the permitJoin
+  /// pairing-window reopen and just reads current device state).
   Future<List<Device>> fetchAllCurrentDevices() async {
-    final targets = connections.where(
-        (c) => c.isConnected && !_noisyBackgroundImportTypes.contains(c.type));
+    final targets = connections.where((c) => c.isConnected);
     final results = await Future.wait(targets.map((conn) async {
       try {
-        final result = await _doImport(conn);
+        final result = _noisyBackgroundImportTypes.contains(conn.type)
+            ? await _doQuietPoll(conn)
+            : await _doImport(conn);
         return result.isSuccess ? result.devices : const <Device>[];
       } catch (_) {
         return const <Device>[]; // best-effort poll
       }
     }));
     return results.expand((d) => d).toList();
+  }
+
+  /// Lightweight state-only fetch for gateway types whose full `_doImport`
+  /// has side effects (see [_noisyBackgroundImportTypes]) — reads current
+  /// device state without touching pairing mode or opening new windows.
+  Future<GatewayImportResult> _doQuietPoll(GatewayConnection conn) async {
+    final creds = conn.credentials;
+    String str(String key) => (creds[key] as String?) ?? '';
+    switch (conn.type) {
+      case GatewayType.deconz:
+        final ip = str('ip'); final key = str('apiKey');
+        if (ip.isEmpty || key.isEmpty) {
+          return const GatewayImportResult.failure('Missing deCONZ credentials');
+        }
+        final port = int.tryParse(creds['port'] ?? '80') ?? 80;
+        return DeCONZGatewayClient.fetchDevices(ip, port, key);
+      default:
+        return _doImport(conn);
+    }
   }
 
   Future<List<Device>> importDevices(String gatewayId) async {

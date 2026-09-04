@@ -19,7 +19,11 @@ import 'services/ha/ha_token_receiver.dart';
 import 'backend/backend_service.dart';
 import 'services/auth/biometric_service.dart';
 import 'services/discovery/real_discovery_engine.dart';
+import 'services/discovery/ha_client.dart';
 import 'services/gateways/gateway_manager.dart';
+import 'services/gateways/gateway_types.dart';
+import 'services/switches/switch_scan_engine.dart';
+import 'services/sensors/sensor_scan_engine.dart';
 import 'theme/app_theme.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/onboarding/splash_screen.dart';
@@ -51,6 +55,8 @@ void main() async {
   final appState      = AppState()..attachGateways(gateways);
   final haProvider    = HaProvider();
   final layoutProvider = LayoutProvider();
+  final switchScanEngine = SwitchScanEngine();
+  final sensorScanEngine = SensorScanEngine();
   await layoutProvider.init(); // load persisted layouts before first frame
 
   // Wire AppState to receive live entity updates from HaProvider.
@@ -65,6 +71,14 @@ void main() async {
   // forget so the first frame isn't held up waiting on the network; a
   // silent no-op when nothing is saved or HA can't be reached right now.
   unawaited(HaImportService.syncFromSaved(appState, gateways, haProvider));
+
+  // Auto-scan the LAN once on launch for local switches/sensors (Shelly,
+  // Tuya, ESPHome, etc.) so SmartSwitchHubScreen / SensorHubScreen already
+  // show found devices instead of the user having to tap "scan" every time
+  // they open those screens. Fire-and-forget — runs alongside HA sync above,
+  // and the results live on these app-level engines for the whole session
+  // (re-opening the screen later doesn't lose them or re-trigger a scan).
+  unawaited(_autoScanLan(gateways, switchScanEngine, sensorScanEngine));
 
   // כשרץ כ-Flutter Web בתוך HA iframe — קבל token אוטומטית
   if (kIsWeb) {
@@ -86,10 +100,48 @@ void main() async {
         ChangeNotifierProvider.value(value: gateways),
         ChangeNotifierProvider.value(value: haProvider),
         ChangeNotifierProvider.value(value: HaPushService.instance),
+        ChangeNotifierProvider.value(value: switchScanEngine),
+        ChangeNotifierProvider.value(value: sensorScanEngine),
       ],
       child: const FantaTechApp(),
     ),
   );
+}
+
+/// Gathers the same credentials SmartSwitchHubScreen/SensorHubScreen use for
+/// their manual "scan" button, and runs both scans once at app launch.
+Future<void> _autoScanLan(
+  GatewayManager gateways,
+  SwitchScanEngine switchScanEngine,
+  SensorScanEngine sensorScanEngine,
+) async {
+  final haIp    = await HaClient.savedIp();
+  final haToken = await HaClient.savedToken();
+
+  final mqttConn = gateways.connections.where((c) =>
+      (c.type == GatewayType.mqtt || c.type == GatewayType.zigbee2mqtt) &&
+      c.isConnected).firstOrNull;
+  final mqttHost = mqttConn?.credentials['host'] ?? mqttConn?.ip;
+  final mqttPort = int.tryParse(mqttConn?.credentials['port'] ?? '1883') ?? 1883;
+  final mqttUser = mqttConn?.credentials['username'];
+  final mqttPass = mqttConn?.credentials['password'];
+
+  final aqaraConn = gateways.connections.where((c) =>
+      c.type == GatewayType.aqara && c.isConnected).firstOrNull;
+
+  await Future.wait([
+    switchScanEngine.startScan(
+      haIp: haIp, haToken: haToken,
+      mqttHost: mqttHost, mqttPort: mqttPort,
+      mqttUser: mqttUser, mqttPass: mqttPass,
+    ),
+    sensorScanEngine.startScan(
+      haIp: haIp, haToken: haToken,
+      mqttHost: mqttHost, mqttPort: mqttPort,
+      mqttUser: mqttUser, mqttPass: mqttPass,
+      aqaraIp: aqaraConn?.ip, aqaraToken: aqaraConn?.token,
+    ),
+  ]);
 }
 
 class FantaTechApp extends StatelessWidget {

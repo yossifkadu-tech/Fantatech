@@ -412,14 +412,18 @@ class AppState extends ChangeNotifier {
   /// sensors (e.g. water-leak) raise an alert the moment they trigger.
   void _startDeviceMonitor() {
     _monitorTimer?.cancel();
-    _monitorTimer = Timer.periodic(const Duration(seconds: 60), (_) async {
+    Future<void> poll() async {
       final gw = _gateways;
       if (gw == null || gw.connections.where((c) => c.isConnected).isEmpty) {
         return;
       }
       final fresh = await gw.fetchAllCurrentDevices();
       _mergeFreshDevices(fresh);
-    });
+    }
+    // Fire once immediately on launch so already-added gateway devices show
+    // fresh status right away instead of waiting up to 60s for the first tick.
+    unawaited(poll());
+    _monitorTimer = Timer.periodic(const Duration(seconds: 60), (_) => poll());
   }
 
   void _mergeFreshDevices(List<Device> fresh) {

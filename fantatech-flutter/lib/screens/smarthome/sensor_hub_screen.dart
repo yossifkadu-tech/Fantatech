@@ -31,10 +31,10 @@ class SensorHubScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => SensorScanEngine(),
-      child: const _SensorHubView(),
-    );
+    // SensorScanEngine lives app-level (see main.dart) so the LAN scan that
+    // runs once automatically on launch keeps its found devices across
+    // screen visits instead of being recreated (and losing them) every time.
+    return const _SensorHubView();
   }
 }
 
@@ -55,10 +55,12 @@ class _SensorHubViewState extends State<_SensorHubView>
   void initState() {
     super.initState();
     _tabs = TabController(length: 2, vsync: this);
-    // No auto-scan on open — a full-subnet probe firing every time this
-    // screen is visited (not just when the user taps "scan") was flagged
-    // as a real source of unnecessary, repeated network load. Scanning is
-    // now purely user-initiated via the scan button.
+    // No scan triggered here — a full-subnet probe firing every time this
+    // screen is visited (not just when the user taps "scan") was flagged as
+    // unnecessary, repeated network load. The one scan that matters already
+    // ran once at app launch (see main.dart's _autoScanLan), and its results
+    // live on the app-level SensorScanEngine this screen reads from, so
+    // they're already here. The scan button re-runs it on demand.
   }
 
   @override
