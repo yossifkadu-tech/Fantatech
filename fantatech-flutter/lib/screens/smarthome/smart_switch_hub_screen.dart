@@ -507,6 +507,12 @@ class _SwitchCardState extends State<_SwitchCard> {
         type: DeviceType.smartSwitch,
         isOn: ch.isOn,
         status: DeviceStatus.online,
+        // 'gateway' (not the default 'manual') — this device was actually
+        // discovered on the network, not typed in by hand, and the home
+        // screen's category counts (isGw filter) only count 'gateway'
+        // devices. Without this, an added switch stays invisible there —
+        // shows 0 connected even while it's on and controllable.
+        source: 'gateway',
         attributes: {
           'ip':       dev.ip ?? '',
           'brand':    dev.brand,
