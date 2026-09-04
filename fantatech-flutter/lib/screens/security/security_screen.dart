@@ -71,6 +71,12 @@ class _SecurityScreenState extends State<SecurityScreen>
     final waterSensors = state.devices
         .where((d) => d.type == DeviceType.waterLeakSensor)
         .toList();
+    final gasSensors = state.devices
+        .where((d) => d.type == DeviceType.gasSensor)
+        .toList();
+    final odorSensors = state.devices
+        .where((d) => d.type == DeviceType.odorSensor)
+        .toList();
     final locks = state.devices
         .where((d) => d.type == DeviceType.smartLock)
         .toList();
@@ -132,6 +138,28 @@ class _SecurityScreenState extends State<SecurityScreen>
           statusIcon: intercomDevice != null ? Symbols.doorbell : Symbols.link_off,
           onTap: () => Navigator.push(context,
               MaterialPageRoute(builder: (_) => const IntercomHubScreen())),
+        ),
+        const SizedBox(height: 10),
+        _SensorRow(
+          icon: Symbols.lock,
+          label: s.smartLocksTitle,
+          status: locks.isEmpty
+              ? s.offlineLabel
+              : locks.every((d) => d.isOn)
+                  ? s.lockedStatus
+                  : s.unlockedStatus,
+          color: locks.isEmpty
+              ? AppColors.statusOffline
+              : locks.every((d) => d.isOn)
+                  ? AppColors.secured
+                  : AppColors.unsecured,
+          statusIcon: locks.isEmpty
+              ? Symbols.link_off
+              : locks.every((d) => d.isOn)
+                  ? Symbols.lock
+                  : Symbols.lock_open,
+          onTap: () => Navigator.push(context,
+              MaterialPageRoute(builder: (_) => const SmartLockHubScreen())),
         ),
       ],
     );
@@ -207,6 +235,48 @@ class _SecurityScreenState extends State<SecurityScreen>
               waterSensors.isEmpty ? s.offlineLabel : s.normalStatus,
               AppColors.secured, Symbols.water_damage,
               waterSensors.isEmpty ? null : waterSensors.first),
+        ),
+        const SizedBox(height: 10),
+        _SensorRow(
+          icon: Symbols.propane,
+          label: s.gasDetector,
+          status: gasSensors.isEmpty
+              ? s.offlineLabel
+              : gasSensors.any((m) => m.isOn)
+                  ? s.activeStatus
+                  : s.normalStatus,
+          color: gasSensors.any((m) => m.isOn)
+              ? AppColors.unsecured
+              : AppColors.secured,
+          statusIcon: gasSensors.any((m) => m.isOn)
+              ? Symbols.warning_amber
+              : Symbols.verified,
+          onTap: () => _showSensorDetail(
+              context, s, s.gasDetector,
+              gasSensors.isEmpty ? s.offlineLabel : s.normalStatus,
+              AppColors.secured, Symbols.propane,
+              gasSensors.isEmpty ? null : gasSensors.first),
+        ),
+        const SizedBox(height: 10),
+        _SensorRow(
+          icon: Symbols.air,
+          label: s.odorDetector,
+          status: odorSensors.isEmpty
+              ? s.offlineLabel
+              : odorSensors.any((m) => m.isOn)
+                  ? s.activeStatus
+                  : s.normalStatus,
+          color: odorSensors.any((m) => m.isOn)
+              ? AppColors.unsecured
+              : AppColors.secured,
+          statusIcon: odorSensors.any((m) => m.isOn)
+              ? Symbols.warning_amber
+              : Symbols.verified,
+          onTap: () => _showSensorDetail(
+              context, s, s.odorDetector,
+              odorSensors.isEmpty ? s.offlineLabel : s.normalStatus,
+              AppColors.secured, Symbols.air,
+              odorSensors.isEmpty ? null : odorSensors.first),
         ),
       ],
     );

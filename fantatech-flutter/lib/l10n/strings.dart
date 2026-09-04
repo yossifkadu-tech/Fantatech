@@ -169,6 +169,8 @@ class S {
   final String motionSensors;
   final String smokeDetector;
   final String waterLeakSensor;
+  final String gasDetector;
+  final String odorDetector;
   final String securedStatus;
   final String openStatus;
   final String activeStatus;
@@ -1839,6 +1841,8 @@ class S {
     required this.windowsSensor,
     required this.motionSensors,
     required this.smokeDetector,
+    required this.gasDetector,
+    required this.odorDetector,
     required this.waterLeakSensor,
     required this.securedStatus,
     required this.openStatus,
@@ -2317,7 +2321,7 @@ class S {
     editProfile: 'עריכת פרופיל', fullName: 'שם מלא', emailLabel: 'אימייל',
     profileUpdated: 'הפרופיל עודכן בהצלחה', signOutConfirm: 'יציאה מחשבון', signOutQuestion: 'האם לצאת מהחשבון?', confirmSignOut: 'יציאה',
     securityTitle: 'אבטחה', armedMode: 'מצב מוגן', disarmedMode: 'לא מוגן',
-    doorSensor: 'דלת כניסה', windowsSensor: 'חלונות', motionSensors: 'חיישני תנועה', smokeDetector: 'גלאי עשן', waterLeakSensor: 'גלאי נזילה',
+    doorSensor: 'דלת כניסה', windowsSensor: 'חלונות', motionSensors: 'חיישני תנועה', smokeDetector: 'גלאי עשן', waterLeakSensor: 'גלאי נזילה', gasDetector: 'גלאי גז', odorDetector: 'גלאי ריח',
     securedStatus: 'מאובטח', openStatus: 'פתוח', activeStatus: 'פעיל', normalStatus: 'תקין',
     panicButton: 'כפתור חירום', panicActivate: 'הפעל!', panicWarning: 'פעולה זו תשלח התראת חירום',
     welcomeGuestBtn: 'שלום אורח', welcomeGuestActive: 'מצב אורח פעיל', welcomeGuestTimer: 'נשאר {n} דקות', welcomeGuestCancel: 'בטל מצב אורח', welcomeGuestHint: 'מנטרל אבטחה לאורח · מתאזן מחדש אוטומטית',
@@ -2814,7 +2818,7 @@ class S {
     editProfile: 'Edit Profile', fullName: 'Full Name', emailLabel: 'Email',
     profileUpdated: 'Profile updated successfully', signOutConfirm: 'Sign Out', signOutQuestion: 'Are you sure you want to sign out?', confirmSignOut: 'Sign Out',
     securityTitle: 'Security', armedMode: 'Armed', disarmedMode: 'Disarmed',
-    doorSensor: 'Front Door', windowsSensor: 'Windows', motionSensors: 'Motion Sensors', smokeDetector: 'Smoke Detector', waterLeakSensor: 'Water Leak Sensor',
+    doorSensor: 'Front Door', windowsSensor: 'Windows', motionSensors: 'Motion Sensors', smokeDetector: 'Smoke Detector', waterLeakSensor: 'Water Leak Sensor', gasDetector: 'Gas Detector', odorDetector: 'Odor Detector',
     securedStatus: 'Secured', openStatus: 'Open', activeStatus: 'Active', normalStatus: 'Normal',
     panicButton: 'Panic Button', panicActivate: 'Activate!', panicWarning: 'This will send an emergency alert',
     welcomeGuestBtn: 'Welcome Guest', welcomeGuestActive: 'Guest Mode Active', welcomeGuestTimer: '{n} min remaining', welcomeGuestCancel: 'Cancel Guest Mode', welcomeGuestHint: 'Disarms security for a guest · auto re-arms',
@@ -3096,7 +3100,7 @@ class S {
     editProfile: 'تعديل الملف', fullName: 'الاسم الكامل', emailLabel: 'البريد الإلكتروني',
     profileUpdated: 'تم تحديث الملف بنجاح', signOutConfirm: 'تسجيل خروج', signOutQuestion: 'هل تريد تسجيل الخروج؟', confirmSignOut: 'خروج',
     securityTitle: 'الأمان', armedMode: 'مفعّل', disarmedMode: 'معطل',
-    doorSensor: 'باب الدخول', windowsSensor: 'النوافذ', motionSensors: 'كاشف الحركة', smokeDetector: 'كاشف الدخان', waterLeakSensor: 'كاشف تسرب الماء',
+    doorSensor: 'باب الدخول', windowsSensor: 'النوافذ', motionSensors: 'كاشف الحركة', smokeDetector: 'كاشف الدخان', waterLeakSensor: 'كاشف تسرب الماء', gasDetector: 'كاشف الغاز', odorDetector: 'كاشف الرائحة',
     securedStatus: 'مؤمّن', openStatus: 'مفتوح', activeStatus: 'نشط', normalStatus: 'طبيعي',
     panicButton: 'زر الطوارئ', panicActivate: 'تفعيل!', panicWarning: 'سيتم إرسال تنبيه طوارئ',
     welcomeGuestBtn: 'مرحباً بالضيف', welcomeGuestActive: 'وضع الضيف نشط', welcomeGuestTimer: 'دقيقة {n} متبقية', welcomeGuestCancel: 'إلغاء وضع الضيف', welcomeGuestHint: 'يوقف الأمان للضيف · يُعاد تلقائياً',
@@ -3556,7 +3560,7 @@ class S {
     editProfile: 'መገለጫ አርትዕ', fullName: 'ሙሉ ስም', emailLabel: 'ኢሜይል',
     profileUpdated: 'መገለጫ ተዘምኗ', signOutConfirm: 'ውጣ', signOutQuestion: 'ለመውጣት እርግጠኛ ነህ?', confirmSignOut: 'ውጣ',
     securityTitle: 'ደህንነት', armedMode: 'ታጥቋ', disarmedMode: ' አልታጠቀም',
-    doorSensor: 'የፊት ደጃፍ', windowsSensor: 'መስኮቶች', motionSensors: 'እንቅስቃሴ ዳሳሽ', smokeDetector: 'ጭስ ዳሳሽ', waterLeakSensor: 'የውሃ መፍሰስ ዳሳሽ',
+    doorSensor: 'የፊት ደጃፍ', windowsSensor: 'መስኮቶች', motionSensors: 'እንቅስቃሴ ዳሳሽ', smokeDetector: 'ጭስ ዳሳሽ', waterLeakSensor: 'የውሃ መፍሰስ ዳሳሽ', gasDetector: 'ጋዝ ዳሳሽ', odorDetector: 'ሽታ ዳሳሽ',
     securedStatus: 'ተጠብቋ', openStatus: 'ክፍት', activeStatus: 'ንቁ', normalStatus: 'መደበኛ',
     panicButton: 'አደጋ ቁልፍ', panicActivate: 'አንቃ!', panicWarning: 'የአደጋ ማንቂያ ይላካል',
     welcomeGuestBtn: 'እንኳን ደህና መጡ', welcomeGuestActive: 'የእንግዳ ሁናቴ ንቁ ነው', welcomeGuestTimer: '{n} ደቂቃ ቀሪ', welcomeGuestCancel: 'የእንግዳ ሁናቴ ሰርዝ', welcomeGuestHint: 'ለእንግዳ ደህንነትን ያጠፋል · ራሱን ያስቀምጣል',
@@ -4005,7 +4009,7 @@ class S {
     editProfile: 'Editar perfil', fullName: 'Nombre completo', emailLabel: 'Correo electrónico',
     profileUpdated: 'Perfil actualizado', signOutConfirm: 'Cerrar sesión', signOutQuestion: '¿Cerrar sesión?', confirmSignOut: 'Salir',
     securityTitle: 'Seguridad', armedMode: 'Armado', disarmedMode: 'Desarmado',
-    doorSensor: 'Puerta principal', windowsSensor: 'Ventanas', motionSensors: 'Sensores de movimiento', smokeDetector: 'Detector de humo', waterLeakSensor: 'Sensor de fuga de agua',
+    doorSensor: 'Puerta principal', windowsSensor: 'Ventanas', motionSensors: 'Sensores de movimiento', smokeDetector: 'Detector de humo', waterLeakSensor: 'Sensor de fuga de agua', gasDetector: 'Detector de gas', odorDetector: 'Detector de olor',
     securedStatus: 'Protegido', openStatus: 'Abierto', activeStatus: 'Activo', normalStatus: 'Normal',
     panicButton: 'Botón de pánico', panicActivate: '¡Activar!', panicWarning: 'Esto enviará una alerta de emergencia',
     welcomeGuestBtn: 'Bienvenido Invitado', welcomeGuestActive: 'Modo invitado activo', welcomeGuestTimer: '{n} min restantes', welcomeGuestCancel: 'Cancelar modo invitado', welcomeGuestHint: 'Desactiva la seguridad para invitado · se reactiva solo',
@@ -4455,7 +4459,7 @@ class S {
     editProfile: 'Редактировать', fullName: 'Полное имя', emailLabel: 'Эл. почта',
     profileUpdated: 'Профиль обновлён', signOutConfirm: 'Выйти', signOutQuestion: 'Вы уверены, что хотите выйти?', confirmSignOut: 'Выйти',
     securityTitle: 'Безопасность', armedMode: 'Вооружён', disarmedMode: 'Разоружён',
-    doorSensor: 'Входная дверь', windowsSensor: 'Окна', motionSensors: 'Датчики движения', smokeDetector: 'Датчик дыма', waterLeakSensor: 'Датчик протечки воды',
+    doorSensor: 'Входная дверь', windowsSensor: 'Окна', motionSensors: 'Датчики движения', smokeDetector: 'Датчик дыма', waterLeakSensor: 'Датчик протечки воды', gasDetector: 'Датчик газа', odorDetector: 'Датчик запаха',
     securedStatus: 'Защищён', openStatus: 'Открыт', activeStatus: 'Активен', normalStatus: 'Норма',
     panicButton: 'Тревога', panicActivate: 'Активировать!', panicWarning: 'Будет отправлен сигнал SOS',
     welcomeGuestBtn: 'Добро пожаловать, гость', welcomeGuestActive: 'Режим гостя активен', welcomeGuestTimer: 'осталось {n} мин', welcomeGuestCancel: 'Отменить режим гостя', welcomeGuestHint: 'Отключает охрану для гостя · автовосстановление',
@@ -4910,7 +4914,7 @@ class S {
     editProfile: 'Modifier le profil', fullName: 'Nom complet', emailLabel: 'E-mail',
     profileUpdated: 'Profil mis à jour avec succès', signOutConfirm: 'Se déconnecter', signOutQuestion: 'Voulez-vous vraiment vous déconnecter ?', confirmSignOut: 'Se déconnecter',
     securityTitle: 'Sécurité', armedMode: 'Armé', disarmedMode: 'Désarmé',
-    doorSensor: 'Porte d\'entrée', windowsSensor: 'Fenêtres', motionSensors: 'Détecteurs de mouvement', smokeDetector: 'Détecteur de fumée', waterLeakSensor: 'Détecteur de fuite d\'eau',
+    doorSensor: 'Porte d\'entrée', windowsSensor: 'Fenêtres', motionSensors: 'Détecteurs de mouvement', smokeDetector: 'Détecteur de fumée', waterLeakSensor: 'Détecteur de fuite d\'eau', gasDetector: 'Détecteur de gaz', odorDetector: 'Détecteur d\'odeur',
     securedStatus: 'Sécurisé', openStatus: 'Ouvert', activeStatus: 'Actif', normalStatus: 'Normal',
     panicButton: 'Bouton panique', panicActivate: 'Activer !', panicWarning: 'Cela enverra une alerte d\'urgence',
     welcomeGuestBtn: 'Bienvenue Invité', welcomeGuestActive: 'Mode invité actif', welcomeGuestTimer: '{n} min restantes', welcomeGuestCancel: 'Annuler mode invité', welcomeGuestHint: 'Désarme la sécurité pour l\'invité · réarmement auto',

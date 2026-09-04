@@ -19,6 +19,7 @@ enum DeviceType {
   gasSensor,        // gas / CO detector
   waterLeakSensor,   // water leak detector
   glassBreakSensor,  // glass-break / vibration sensor
+  odorSensor,        // smell / odor detector
   matterDevice,      // generic Matter/Thread device
   smartTv,           // smart television
   networkDevice,     // phones, laptops and other tracked network clients
