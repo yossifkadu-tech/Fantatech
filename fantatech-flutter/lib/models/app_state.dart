@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as _math;
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show mapEquals;
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'device.dart';
@@ -430,10 +431,19 @@ class AppState extends ChangeNotifier {
       final wasDetected = cur.attributes['detected'] == true;
       final nowDetected = f.attributes['detected'] == true;
 
-      cur.status     = f.status;
-      cur.isOn       = f.isOn;
-      cur.attributes = {...cur.attributes, ...f.attributes};
-      changed = true;
+      final mergedAttrs = {...cur.attributes, ...f.attributes};
+      // Only mark the poll as having changed anything when something
+      // actually differs — otherwise every 60s tick calls notifyListeners()
+      // even when every device is byte-for-byte identical to what's
+      // already stored, forcing an app-wide rebuild for nothing.
+      if (cur.status != f.status ||
+          cur.isOn != f.isOn ||
+          !mapEquals(cur.attributes, mergedAttrs)) {
+        cur.status     = f.status;
+        cur.isOn       = f.isOn;
+        cur.attributes = mergedAttrs;
+        changed = true;
+      }
 
       // Rising edge on a sensor → raise an alert.
       if (!wasDetected && nowDetected) {

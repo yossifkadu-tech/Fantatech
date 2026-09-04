@@ -497,7 +497,7 @@ class _CameraCard extends StatelessWidget {
                       url: camera.mjpegUrl ?? camera.snapshotUrl!,
                       username: camera.username,
                       password: camera.password,
-                      refreshMs: 2000,
+                      refreshMs: 12000,
                     )
                   : _NightSceneBackground(
                       camera: camera,

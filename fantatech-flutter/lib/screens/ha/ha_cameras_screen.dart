@@ -129,6 +129,9 @@ class _CameraCardState extends State<_CameraCard> {
   Uint8List? _thumb;
   bool       _thumbLoading = true;
   Timer?     _refreshTimer;
+  final HttpClient _client = HttpClient()
+    ..connectionTimeout = const Duration(seconds: 4)
+    ..idleTimeout       = const Duration(seconds: 4);
 
   String? get _thumbUrl {
     final pic = widget.camera.attributes['entity_picture'] as String?;
@@ -153,6 +156,7 @@ class _CameraCardState extends State<_CameraCard> {
   @override
   void dispose() {
     _refreshTimer?.cancel();
+    _client.close(force: true);
     super.dispose();
   }
 
@@ -163,21 +167,16 @@ class _CameraCardState extends State<_CameraCard> {
       return;
     }
     try {
-      final client = HttpClient()
-        ..connectionTimeout = const Duration(seconds: 4)
-        ..idleTimeout       = const Duration(seconds: 4);
-
-      final req = await client.getUrl(Uri.parse(url));
+      final req = await _client.getUrl(Uri.parse(url));
       final res = await req.close();
 
-      if (res.statusCode != 200) { client.close(); return; }
+      if (res.statusCode != 200) return;
 
       final bytes = <int>[];
       await for (final chunk in res) {
         bytes.addAll(chunk);
         if (bytes.length > 1024 * 1024) break;
       }
-      client.close();
 
       if (mounted) {
         setState(() {

@@ -254,9 +254,9 @@ class _TopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final state = context.watch<AppState>();
-    final s = state.strings;
-    final firstName = state.userFirstName.isNotEmpty ? state.userFirstName : 'FantaTech';
+    final s = context.select((AppState st) => st.strings);
+    final userFirstName = context.select((AppState st) => st.userFirstName);
+    final firstName = userFirstName.isNotEmpty ? userFirstName : 'FantaTech';
 
     void openAddDevice() => Navigator.push(context,
         MaterialPageRoute(builder: (_) => const AddDeviceScreen()));
@@ -535,9 +535,12 @@ class _EnergyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final state = context.watch<AppState>();
-    final s = state.strings;
-    final todayKwh = todayEnergyKwh(state);
+    final s = context.select((AppState st) => st.strings);
+    // Rebuild only when devices actually change; todayEnergyKwh only reads
+    // state.devices, so `read` here (no extra subscription) is safe once
+    // the `select` above/below is what actually gates the rebuild.
+    context.select((AppState st) => st.devices);
+    final todayKwh = todayEnergyKwh(context.read<AppState>());
     return GestureDetector(
       onTap: () => _openSheet(context),
       child: Container(
@@ -798,12 +801,12 @@ class _TodaysEnergyCards extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final state = context.watch<AppState>();
-    final s = state.strings;
+    final s = context.select((AppState st) => st.strings);
+    final devices = context.select((AppState st) => st.devices);
 
-    final switchDevices = state.devices.where((d) =>
+    final switchDevices = devices.where((d) =>
         d.type == DeviceType.smartSwitch || d.type == DeviceType.smartPlug).toList();
-    final todayKwh = todayEnergyKwh(state);
+    final todayKwh = todayEnergyKwh(context.read<AppState>());
 
     // Solar: no inverter integration is actually wired up yet (SolarScreen
     // itself only ever shows real data post-connection, currently never
@@ -987,7 +990,7 @@ class _AiHeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final s = context.watch<AppState>().strings;
+    final s = context.select((AppState st) => st.strings);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -1055,10 +1058,11 @@ class _SecurityBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final state       = context.watch<AppState>();
-    final s           = state.strings;
-    final armed       = state.isSecured;
-    final devices     = state.devices;
+    final s           = context.select((AppState st) => st.strings);
+    final armed       = context.select((AppState st) => st.isSecured);
+    final devices     = context.select((AppState st) => st.devices);
+    final cams        = context.select((AppState st) => st.cameras);
+    final notifications = context.select((AppState st) => st.notifications);
     final sensors     = devices.where((d) =>
         d.type == DeviceType.motionSensor ||
         d.type == DeviceType.doorSensor   ||
@@ -1066,7 +1070,7 @@ class _SecurityBanner extends StatelessWidget {
         d.type == DeviceType.smokeSensor  ||
         d.type == DeviceType.glassBreakSensor).length;
     final locks       = devices.where((d) => d.type == DeviceType.smartLock).length;
-    final cameras     = state.cameras.where((c) => c.isOnline).length;
+    final cameras     = cams.where((c) => c.isOnline).length;
     final blinds      = devices.where((d) => d.type == DeviceType.blind).length;
 
     const securityTypes = {
@@ -1076,7 +1080,7 @@ class _SecurityBanner extends StatelessWidget {
       DeviceType.camera, DeviceType.alarmPanel,
       DeviceType.intercom, DeviceType.garage,
     };
-    final unreadAlerts = state.notifications
+    final unreadAlerts = notifications
         .where((n) => !n.isRead && securityTypes.contains(n.deviceType))
         .length;
 
@@ -1314,9 +1318,9 @@ class _SmartHomeBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final state   = context.watch<AppState>();
-    final s       = state.strings;
-    final devices = state.devices;
+    final s       = context.select((AppState st) => st.strings);
+    final devices = context.select((AppState st) => st.devices);
+    final notifications = context.select((AppState st) => st.notifications);
 
     bool isGw(Device d) => d.source == 'gateway';
 
@@ -1338,7 +1342,7 @@ class _SmartHomeBanner extends StatelessWidget {
       DeviceType.smartSwitch, DeviceType.waterHeater,
       DeviceType.smartTv, DeviceType.matterDevice,
     };
-    final unreadAlerts = state.notifications
+    final unreadAlerts = notifications
         .where((n) => !n.isRead && smartHomeTypes.contains(n.deviceType))
         .length;
 
@@ -1576,10 +1580,10 @@ class _HomeManagementBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final state = context.watch<AppState>();
-    final s     = state.strings;
-    final members = state.homeUsers.length;
-    final status  = state.hasHomeManager ? DeviceStatus.online : DeviceStatus.warning;
+    final s     = context.select((AppState st) => st.strings);
+    final members = context.select((AppState st) => st.homeUsers.length);
+    final status  = context.select((AppState st) => st.hasHomeManager)
+        ? DeviceStatus.online : DeviceStatus.warning;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s16),
@@ -1836,9 +1840,8 @@ class _MediaBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final state   = context.watch<AppState>();
-    final s       = state.strings;
-    final devices = state.mediaDevices;
+    final s       = context.select((AppState st) => st.strings);
+    final devices = context.select((AppState st) => st.mediaDevices);
 
     final online   = devices.where((d) => d.isOnline).length;
     final playing  = devices.where((d) => d.isPlaying).toList();
@@ -1938,9 +1941,11 @@ class _CamerasSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final state = context.watch<AppState>();
-    final cameras = state.cameras;
-    final s = state.strings;
+    // Narrow selects instead of watching the whole AppState — this row
+    // otherwise rebuilt (with its icons/images) on every unrelated state
+    // change anywhere in the app, including every 60s background poll.
+    final cameras = context.select((AppState st) => st.cameras);
+    final s = context.select((AppState st) => st.strings);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -2196,21 +2201,23 @@ class _QuickActionsSectionState extends State<_QuickActionsSection> {
 
   @override
   Widget build(BuildContext context) {
-    final state = context.watch<AppState>();
-    final s = state.strings;
+    final s = context.select((AppState st) => st.strings);
+    final devices = context.select((AppState st) => st.devices);
+    final cams = context.select((AppState st) => st.cameras);
+    final notifications = context.select((AppState st) => st.notifications);
 
     // Status badges per button — only real gateway devices
     bool isGw(Device d) => d.source == 'gateway';
-    final lockCount   = state.devices.where((d) => isGw(d) &&
+    final lockCount   = devices.where((d) => isGw(d) &&
         (d.type == DeviceType.smartLock || d.type == DeviceType.doorSensor)).length;
-    final lightCount  = state.devices.where((d) => isGw(d) && d.type == DeviceType.light && d.isOn).length;
-    final acCount     = state.devices.where((d) => isGw(d) && d.type == DeviceType.airConditioner && d.isOn).length;
-    final camOnline   = state.cameras.where((c) => c.isOnline).length;
-    final alertCount  = state.notifications.where((n) => !n.isRead).length;
-    final plugCount   = state.devices.where((d) => isGw(d) && d.type == DeviceType.smartPlug && d.isOn).length;
-    final heaterCount = state.devices.where((d) => isGw(d) && d.type == DeviceType.waterHeater && d.isOn).length;
+    final lightCount  = devices.where((d) => isGw(d) && d.type == DeviceType.light && d.isOn).length;
+    final acCount     = devices.where((d) => isGw(d) && d.type == DeviceType.airConditioner && d.isOn).length;
+    final camOnline   = cams.where((c) => c.isOnline).length;
+    final alertCount  = notifications.where((n) => !n.isRead).length;
+    final plugCount   = devices.where((d) => isGw(d) && d.type == DeviceType.smartPlug && d.isOn).length;
+    final heaterCount = devices.where((d) => isGw(d) && d.type == DeviceType.waterHeater && d.isOn).length;
 
-    final intercomCount = state.devices.where((d) => isGw(d) && d.type == DeviceType.intercom && d.isOn).length;
+    final intercomCount = devices.where((d) => isGw(d) && d.type == DeviceType.intercom && d.isOn).length;
 
     final badges = [lockCount, lightCount, acCount, camOnline, alertCount, plugCount, heaterCount, 0, intercomCount];
 
@@ -2283,7 +2290,7 @@ class _QuickActionsSectionState extends State<_QuickActionsSection> {
                     ),
                     child: KeyedSubtree(
                       key: ValueKey(_sel),
-                      child: _QaPanel(sel: _sel, state: state, s: s),
+                      child: _QaPanel(sel: _sel, state: context.read<AppState>(), s: s),
                     ),
                   )
                 : const SizedBox.shrink(),
@@ -2961,18 +2968,19 @@ class _SystemStatusSectionState extends State<_SystemStatusSection> {
 
   @override
   Widget build(BuildContext context) {
-    final state    = context.watch<AppState>();
     final gateways = context.watch<GatewayManager>();
-    final s = state.strings;
+    final s = context.select((AppState st) => st.strings);
+    final devices = context.select((AppState st) => st.devices);
+    final cams = context.select((AppState st) => st.cameras);
 
     final connectedGws = gateways.connections.where((c) => c.isConnected).toList();
     final totalGws     = gateways.connections.length;
     final hasInternet  = connectedGws.isNotEmpty;
-    final gwDevices    = state.devices.where((d) => d.source == 'gateway').toList();
+    final gwDevices    = devices.where((d) => d.source == 'gateway').toList();
     final totalDevices = gwDevices.length;
     final onlineDev    = gwDevices.where((d) => d.status == DeviceStatus.online).length;
-    final totalCams    = state.cameras.length;
-    final onlineCams   = state.cameras.where((c) => c.isOnline).length;
+    final totalCams    = cams.length;
+    final onlineCams   = cams.where((c) => c.isOnline).length;
 
     void openGateways() {
       _collapseTimer?.cancel();

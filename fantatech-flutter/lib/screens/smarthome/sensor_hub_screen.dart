@@ -55,7 +55,10 @@ class _SensorHubViewState extends State<_SensorHubView>
   void initState() {
     super.initState();
     _tabs = TabController(length: 2, vsync: this);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _startScan());
+    // No auto-scan on open — a full-subnet probe firing every time this
+    // screen is visited (not just when the user taps "scan") was flagged
+    // as a real source of unnecessary, repeated network load. Scanning is
+    // now purely user-initiated via the scan button.
   }
 
   @override

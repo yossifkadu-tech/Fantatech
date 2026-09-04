@@ -566,17 +566,36 @@ class GatewayManager extends ChangeNotifier {
 
   // ── Import devices ─────────────────────────────────────────────────────────
 
+  /// Gateway types whose `_doImport` has a side effect that's fine for an
+  /// explicit user-triggered import but wrong to repeat silently every
+  /// 60s forever: deCONZ opens the Zigbee pairing window and blocks 20s
+  /// every call, and MQTT/Z2M open a brand-new broker connection instead
+  /// of reusing the already-live one — see fetchAllCurrentDevices below.
+  static const _noisyBackgroundImportTypes = {
+    GatewayType.deconz,
+    GatewayType.mqtt,
+    GatewayType.zigbee2mqtt,
+  };
+
   /// Quietly re-fetches devices from every connected gateway (no UI status
-  /// changes). Used by the background leak/state monitor.
+  /// changes). Used by the background leak/state monitor. Runs concurrently
+  /// rather than one gateway at a time, and skips gateway types whose
+  /// import path has side effects unsuitable for a silent, repeating
+  /// background poll (see [_noisyBackgroundImportTypes]) — those still get
+  /// refreshed normally via their own live-update mechanism or an explicit
+  /// user-triggered import.
   Future<List<Device>> fetchAllCurrentDevices() async {
-    final all = <Device>[];
-    for (final conn in connections.where((c) => c.isConnected)) {
+    final targets = connections.where(
+        (c) => c.isConnected && !_noisyBackgroundImportTypes.contains(c.type));
+    final results = await Future.wait(targets.map((conn) async {
       try {
         final result = await _doImport(conn);
-        if (result.isSuccess) all.addAll(result.devices);
-      } catch (_) {/* ignore — best-effort poll */}
-    }
-    return all;
+        return result.isSuccess ? result.devices : const <Device>[];
+      } catch (_) {
+        return const <Device>[]; // best-effort poll
+      }
+    }));
+    return results.expand((d) => d).toList();
   }
 
   Future<List<Device>> importDevices(String gatewayId) async {
