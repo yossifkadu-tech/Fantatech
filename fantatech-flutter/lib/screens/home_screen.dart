@@ -39,6 +39,7 @@ import '../providers/layout_provider.dart';
 import '../widgets/edit_mode/reorderable_dashboard.dart';
 import '../widgets/edit_mode/dashboard_customize_sheet.dart';
 import '../theme/app_theme.dart';
+import '../utils/responsive.dart';
 
 // ─────────────────────────────────────────────────────────────────
 // Design tokens — mapped to central design system
@@ -696,7 +697,7 @@ class _EnergySheet extends StatelessWidget {
                     )
                   else
                     GridView.count(
-                      crossAxisCount: 3,
+                      crossAxisCount: responsiveColumns(context, phoneColumns: 3),
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       crossAxisSpacing: 10, mainAxisSpacing: 10,

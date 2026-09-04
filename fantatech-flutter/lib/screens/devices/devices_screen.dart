@@ -6,6 +6,7 @@ import '../../models/device.dart';
 import '../../models/device_capabilities.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/device_icons.dart';
+import '../../utils/responsive.dart';
 import '../../utils/ac_options.dart';
 import '../../l10n/strings.dart';
 import '../../widgets/status_indicator.dart';
@@ -352,8 +353,8 @@ class _DevicesScreenState extends State<DevicesScreen> {
                           style: TextStyle(color: context.tText2(0.3), fontSize: 14)))
                     : GridView.builder(
                         padding: const EdgeInsets.fromLTRB(16, 0, 16, 30),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: responsiveColumns(context, phoneColumns: 2),
                           crossAxisSpacing: 12,
                           mainAxisSpacing: 12,
                           childAspectRatio: 0.88,

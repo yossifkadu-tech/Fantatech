@@ -8,6 +8,7 @@ import '../../models/app_state.dart';
 import '../../l10n/strings.dart';
 import '../../services/ai/ai_agent_service.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/responsive.dart';
 
 // Dedicated accent for the Fanta AI screen — distinct from the app's orange
 // brand color, matching the approved "Design 4" mockup.
@@ -305,7 +306,7 @@ class _FantaAIScreenState extends State<FantaAIScreen>
 
           // Suggestion cards — 2x2 grid
           GridView.count(
-            crossAxisCount: 2,
+            crossAxisCount: responsiveColumns(context, phoneColumns: 2, maxColumns: 4),
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             crossAxisSpacing: 12,

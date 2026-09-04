@@ -12,6 +12,7 @@ import '../../models/app_user.dart';
 import '../../services/auth/biometric_service.dart';
 import '../../services/auth/user_service.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/responsive.dart';
 import '../../l10n/strings.dart';
 import '../../widgets/ft_button.dart';
 import '../calendar/calendar_screen.dart';
@@ -780,7 +781,7 @@ class _StatsGrid extends StatelessWidget {
     final cameras = state.cameras.length;
 
     return GridView.count(
-      crossAxisCount: 2,
+      crossAxisCount: responsiveColumns(context, phoneColumns: 2, maxColumns: 4),
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       crossAxisSpacing: AppSpacing.s12,

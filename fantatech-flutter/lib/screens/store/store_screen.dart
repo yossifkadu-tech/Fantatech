@@ -6,6 +6,7 @@ import '../../models/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../l10n/strings.dart';
 import '../../utils/price_format.dart';
+import '../../utils/responsive.dart';
 
 // ── Product model ─────────────────────────────────────────────────────────────
 class _Product {
@@ -607,8 +608,8 @@ class _StoreScreenState extends State<StoreScreen> {
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
                 sliver: SliverGrid(
                   gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
+                      SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: responsiveColumns(context, phoneColumns: 2),
                     crossAxisSpacing: 12,
                     mainAxisSpacing: 12,
                     childAspectRatio: 0.82,

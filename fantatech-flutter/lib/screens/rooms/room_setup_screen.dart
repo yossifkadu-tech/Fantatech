@@ -8,6 +8,7 @@ import '../../models/device_capabilities.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/device_icons.dart';
 import '../../utils/ac_options.dart';
+import '../../utils/responsive.dart';
 import '../../widgets/device_card.dart';
 import '../media/media_screen.dart';
 import '../smarthome/scan_discovery_screen.dart';
@@ -259,8 +260,8 @@ class RoomSetupScreen extends StatelessWidget {
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
+                          SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: responsiveColumns(context, phoneColumns: 2),
                         mainAxisSpacing: 12,
                         crossAxisSpacing: 12,
                         childAspectRatio: 0.88,
@@ -280,8 +281,8 @@ class RoomSetupScreen extends StatelessWidget {
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
+                        SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: responsiveColumns(context, phoneColumns: 3),
                       mainAxisSpacing: 12,
                       crossAxisSpacing: 12,
                       childAspectRatio: 0.92,

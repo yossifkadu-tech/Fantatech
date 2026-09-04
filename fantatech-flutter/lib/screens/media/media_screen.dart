@@ -13,6 +13,7 @@ import '../../models/media_module.dart';
 import '../../services/discovery/media_discovery.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/haptics.dart';
+import '../../utils/responsive.dart';
 
 class MediaScreen extends StatefulWidget {
   const MediaScreen({super.key});
@@ -98,7 +99,7 @@ class _MediaScreenState extends State<MediaScreen> {
 
             // ── Streaming shortcuts ──────────────────────────────
             GridView.count(
-              crossAxisCount: 4,
+              crossAxisCount: responsiveColumns(context, phoneColumns: 4),
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               mainAxisSpacing: 12,

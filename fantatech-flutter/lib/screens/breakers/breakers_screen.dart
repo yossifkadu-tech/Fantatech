@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../models/app_state.dart';
 import '../../models/device.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/responsive.dart';
 
 // ─────────────────────────────────────────────────────────────
 // Data model
@@ -410,8 +411,8 @@ class _SubBreakerGrid extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       shrinkWrap: true,
       itemCount: breakers.length,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: responsiveColumns(context, phoneColumns: 3),
         mainAxisSpacing: 10,
         crossAxisSpacing: 10,
         childAspectRatio: 0.82,

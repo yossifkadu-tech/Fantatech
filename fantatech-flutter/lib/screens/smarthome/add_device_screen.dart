@@ -8,6 +8,7 @@ import '../../models/app_state.dart';
 import '../../models/device.dart';
 import '../../l10n/strings.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/responsive.dart';
 import '../../widgets/ft_button.dart';
 import '../../widgets/ft_search_bar.dart';
 import '../../services/discovery/real_discovery_engine.dart';
@@ -586,8 +587,8 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
                   : GridView.builder(
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 30),
                       gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 3,
+                          SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: responsiveColumns(context, phoneColumns: 3),
                         crossAxisSpacing: 10,
                         mainAxisSpacing: 10,
                         childAspectRatio: 0.95,

@@ -20,6 +20,7 @@ import '../../services/gateways/gateway_types.dart';
 import '../../services/gateways/clients/dirigera_client.dart';
 import '../../services/gateways/clients/tuya_cloud_client.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/responsive.dart';
 import '../../widgets/ft_button.dart';
 import 'gateway_connect_sheet.dart';
 import '../settings/ha_integration_screen.dart';
@@ -140,8 +141,8 @@ class GatewayHubScreen extends StatelessWidget {
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 40),
               sliver: SliverGrid(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount:   2,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount:   responsiveColumns(context, phoneColumns: 2),
                   crossAxisSpacing: 10,
                   mainAxisSpacing:  10,
                   childAspectRatio: 1.35,

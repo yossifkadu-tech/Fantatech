@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../services/ha/ha_provider.dart';
 import '../../services/ha/ha_entity.dart';
+import '../../utils/responsive.dart';
 
 const _bg     = Color(0xFF0D1117);
 const _card   = Color(0xFF21262D);
@@ -56,8 +57,8 @@ class HaSecurityScreen extends StatelessWidget {
             GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: responsiveColumns(context, phoneColumns: 2),
                 crossAxisSpacing: 10,
                 mainAxisSpacing: 10,
                 childAspectRatio: 2.2,

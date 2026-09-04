@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 import '../../services/ha/ha_entity.dart';
 import '../../services/ha/ha_provider.dart';
 import '../../theme/device_icons.dart';
+import '../../utils/responsive.dart';
 import 'ha_camera_viewer_screen.dart';
 
 // ── Palette ──────────────────────────────────────────────────────────────────
@@ -936,8 +937,8 @@ class _SensorsGrid extends StatelessWidget {
       child: GridView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: responsiveColumns(context, phoneColumns: 3),
           crossAxisSpacing: 8, mainAxisSpacing: 8,
           childAspectRatio: 1.3,
         ),
