@@ -130,6 +130,11 @@ class HaSyncService {
       room:   areaName ?? e.areaId ?? '',
       isOn:   !unreachable && e.isOn,
       status: unreachable ? DeviceStatus.offline : DeviceStatus.online,
+      // Without this, home_screen.dart's category counts (which only
+      // count source == 'gateway') never see a device that arrived via
+      // the live WS sync — it defaults to 'manual' otherwise, unlike
+      // HaImportService's bulk REST import which already sets this.
+      source: 'gateway',
       attributes: {
         'entityId':    e.entityId,
         'domain':      e.domain,

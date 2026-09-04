@@ -249,6 +249,12 @@ class AppState extends ChangeNotifier {
     if (idx == -1) {
       _devices.add(device);
     } else {
+      // Preserve local customizations (rename / room assignment) — this
+      // rebuilds the device fresh from HA's own current data every time,
+      // which would otherwise silently overwrite them on the very next
+      // live update.
+      device.name = _devices[idx].name;
+      device.room = _devices[idx].room;
       _devices[idx] = device;
     }
     notifyListeners();
@@ -273,6 +279,10 @@ class AppState extends ChangeNotifier {
         _devices.add(device);
         changed = true;
       } else {
+        // Preserve local customizations — see the matching comment in
+        // _onSingleEntityChanged.
+        device.name = _devices[idx].name;
+        device.room = _devices[idx].room;
         _devices[idx] = device;
         changed = true;
       }
@@ -1499,6 +1509,19 @@ class AppState extends ChangeNotifier {
         if (d.type == DeviceType.smartSwitch &&
             d.source == 'manual' &&
             d.attributes.containsKey('protocol')) {
+          d.source = 'gateway';
+        }
+      }
+      // Same idea for devices created by the live HA WebSocket sync
+      // (HaSyncService), which never set source at all until fixed —
+      // identified by the 'entityId'+'domain' attribute pair it always
+      // sets (HaImportService's bulk REST import already sets source
+      // correctly and uses a different attribute shape, so this can't
+      // double-fix or misfire on that path).
+      for (final d in _devices) {
+        if (d.source == 'manual' &&
+            d.attributes.containsKey('entityId') &&
+            d.attributes.containsKey('domain')) {
           d.source = 'gateway';
         }
       }
