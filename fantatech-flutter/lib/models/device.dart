@@ -65,7 +65,7 @@ class Device {
   String room;
 
   /// 'gateway' = imported from a real gateway, 'manual' = added via catalog.
-  final String source;
+  String source;
 
   /// Battery level 0–100, null if the device has no battery.
   int? battery;

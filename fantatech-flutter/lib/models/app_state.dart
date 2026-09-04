@@ -1478,6 +1478,19 @@ class AppState extends ChangeNotifier {
       _devices = jsonList
           .map((s) => Device.fromJson(jsonDecode(s) as Map<String, dynamic>))
           .toList();
+      // One-time backfill: switches added via SmartSwitchHubScreen before
+      // its _addToHome fix defaulted to source 'manual', which excluded
+      // them from home_screen.dart's "connected" counts (isGw filter checks
+      // source == 'gateway'). Identify them by the 'protocol' attribute key
+      // _addToHome always sets — unambiguous, no other add path uses it —
+      // so this can't misclassify a genuinely hand-typed catalog entry.
+      for (final d in _devices) {
+        if (d.type == DeviceType.smartSwitch &&
+            d.source == 'manual' &&
+            d.attributes.containsKey('protocol')) {
+          d.source = 'gateway';
+        }
+      }
     }
     _removedDeviceIds = (prefs.getStringList('ft_removed_device_ids') ?? [])
         .toSet();
