@@ -33,6 +33,8 @@ Future<void> showEntityEditSheet(
   // Optional — when provided, shows the device's real network address here
   // (edit sheet only — the card itself stays free of raw IPs).
   String? ipAddress,
+  // TEMPORARY — see the debugInfo build in showDeviceEditSheet.
+  String? debugInfo,
 }) {
   HapticFeedback.mediumImpact();
   return showModalBottomSheet(
@@ -50,6 +52,7 @@ Future<void> showEntityEditSheet(
       currentRoom: currentRoom,
       onAssignRoom: onAssignRoom,
       ipAddress: ipAddress,
+      debugInfo: debugInfo,
     ),
   );
 }
@@ -74,6 +77,13 @@ Future<void> showDeviceEditSheet(
     currentRoom: device.room,
     onAssignRoom: (room) => state.updateDeviceRoom(device.id, room),
     ipAddress: device.attributes['ip'] as String?,
+    // TEMPORARY diagnostic — shows what's actually stored for a device
+    // that's misbehaving, so we don't have to keep guessing. Remove once
+    // the home-screen-count issue is confirmed fixed.
+    debugInfo: 'id: ${device.id}\n'
+        'type: ${device.type.name}\n'
+        'source: ${device.source}\n'
+        'attrs: ${device.attributes.keys.join(', ')}',
   );
 }
 
@@ -106,6 +116,7 @@ class _EntityEditSheet extends StatefulWidget {
   final String? currentRoom;
   final void Function(String room)? onAssignRoom;
   final String? ipAddress;
+  final String? debugInfo;
 
   const _EntityEditSheet({
     required this.currentName,
@@ -118,6 +129,7 @@ class _EntityEditSheet extends StatefulWidget {
     this.currentRoom,
     this.onAssignRoom,
     this.ipAddress,
+    this.debugInfo,
   });
 
   @override
@@ -368,6 +380,14 @@ class _EntityEditSheetState extends State<_EntityEditSheet> {
               ),
             ),
           ),
+          if (widget.debugInfo != null) ...[
+            const SizedBox(height: 14),
+            SelectableText(widget.debugInfo!,
+                style: TextStyle(
+                    color: context.tText2(0.4),
+                    fontSize: 10,
+                    fontFamily: 'monospace')),
+          ],
         ],
       ),
     );
