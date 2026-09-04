@@ -53,8 +53,20 @@ class HaImportService {
     }
 
     final ip = normalizeUrl(savedUrl);
-    debugPrint('[HaImportService] pinging $ip ...');
-    final ok = await HaGatewayClient.ping(ip, token);
+    // Retry the first ping a couple of times with a short backoff — on a
+    // cold app launch the device's WiFi/DNS often isn't actually ready yet
+    // at T=0, so a single attempt here would fail even though HA is
+    // perfectly reachable a second later. Without this, that one failed
+    // ping was the whole story: no auto-sync all session, and the user had
+    // to manually reconnect from the HA settings screen every time.
+    var ok = false;
+    for (var attempt = 1; attempt <= 3 && !ok; attempt++) {
+      debugPrint('[HaImportService] pinging $ip (attempt $attempt) ...');
+      ok = await HaGatewayClient.ping(ip, token);
+      if (!ok && attempt < 3) {
+        await Future.delayed(Duration(seconds: attempt));
+      }
+    }
     debugPrint('[HaImportService] ping result: $ok');
     if (!ok) return null;
 
