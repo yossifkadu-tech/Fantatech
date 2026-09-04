@@ -123,6 +123,22 @@ class _RoomsScreenState extends State<RoomsScreen>
                       ),
                     ),
                   ),
+                  // Clear all room assignments — start clean, reassign
+                  // each device manually via its own edit sheet.
+                  GestureDetector(
+                    onTap: () => _confirmClearAllRooms(context, state, s),
+                    child: Container(
+                      width: 38, height: 38,
+                      margin: const EdgeInsets.only(left: 8),
+                      decoration: BoxDecoration(
+                        color: context.tText2(0.06),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: context.tText2(0.12)),
+                      ),
+                      child: Icon(Symbols.layers_clear,
+                          color: context.tText2(0.6), size: 18),
+                    ),
+                  ),
                   // Add room button
                   GestureDetector(
                     onTap: () => _showRoomDialog(context, state, s),
@@ -278,6 +294,38 @@ class _RoomsScreenState extends State<RoomsScreen>
         ),
       ),
     );
+  }
+
+  Future<void> _confirmClearAllRooms(
+      BuildContext context, AppState state, dynamic s) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: context.tCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(s.clearRoomsConfirmTitle, style: TextStyle(color: context.tText)),
+        content: Text(s.clearRoomsConfirmBody,
+            style: TextStyle(color: context.tText2(0.65))),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(s.cancel, style: TextStyle(color: context.tText2(0.6))),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(s.clearRoomsLabel,
+                style: const TextStyle(
+                    color: AppColors.unsecured, fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && context.mounted) {
+      state.clearAllDeviceRooms();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(s.clearRoomsDone)),
+      );
+    }
   }
 
   void _showRoomDialog(

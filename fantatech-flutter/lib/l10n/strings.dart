@@ -849,6 +849,10 @@ class S {
   final String assignRoom;
   final String noRoom;
   final String newRoom;
+  final String clearRoomsLabel;
+  final String clearRoomsConfirmTitle;
+  final String clearRoomsConfirmBody;
+  final String clearRoomsDone;
 
   // Boiler gateway / driver discovery
   final String boilerNotResponding;
@@ -2229,6 +2233,11 @@ class S {
     this.assignRoom = 'Assign Room',
     this.noRoom = 'No room',
     this.newRoom = 'New room…',
+    this.clearRoomsLabel = 'Clear all room assignments',
+    this.clearRoomsConfirmTitle = 'Clear all room assignments?',
+    this.clearRoomsConfirmBody =
+        'Every device will be unassigned from its room. You can then assign each one manually.',
+    this.clearRoomsDone = 'All room assignments cleared',
     // Plans
     required this.planFree, required this.planBasic,
     required this.planAdvanced, required this.planAdvancedPlus,
@@ -2508,6 +2517,10 @@ class S {
     deviceEditName: 'ערוך שם', deviceRename: 'שם חדש',
     deviceRenamed: 'השם עודכן',
     assignRoom: 'שייך לחדר', noRoom: 'ללא חדר', newRoom: 'חדר חדש…',
+    clearRoomsLabel: 'נקה שיוך חדרים לכל המכשירים',
+    clearRoomsConfirmTitle: 'לנקות שיוך חדרים לכל המכשירים?',
+    clearRoomsConfirmBody: 'כל מכשיר יוסר מהחדר שלו. תוכל לשייך כל אחד ידנית אחר כך.',
+    clearRoomsDone: 'שיוך החדרים נוקה לכל המכשירים',
     // Plans
     planFree: 'חינמי', planBasic: 'בסיסי',
     planAdvanced: 'מתקדם', planAdvancedPlus: 'מתקדם פלוס',
@@ -3005,6 +3018,10 @@ class S {
     deviceEditName: 'Edit Name', deviceRename: 'New name',
     deviceRenamed: 'Name updated',
     assignRoom: 'Assign Room', noRoom: 'No room', newRoom: 'New room…',
+    clearRoomsLabel: 'Clear all room assignments',
+    clearRoomsConfirmTitle: 'Clear all room assignments?',
+    clearRoomsConfirmBody: 'Every device will be unassigned from its room. You can then assign each one manually.',
+    clearRoomsDone: 'All room assignments cleared',
     planFree: 'Free', planBasic: 'Basic',
     planAdvanced: 'Advanced', planAdvancedPlus: 'Advanced Plus',
     planUnlimited: 'Unlimited',
@@ -3285,6 +3302,10 @@ class S {
     deviceEditName: 'تعديل الاسم', deviceRename: 'اسم جديد',
     deviceRenamed: 'تم تحديث الاسم',
     assignRoom: 'تعيين غرفة', noRoom: 'بدون غرفة', newRoom: 'غرفة جديدة…',
+    clearRoomsLabel: 'مسح تعيين الغرف لكل الأجهزة',
+    clearRoomsConfirmTitle: 'مسح تعيين الغرف لكل الأجهزة؟',
+    clearRoomsConfirmBody: 'سيتم إلغاء تعيين كل جهاز من غرفته. يمكنك بعد ذلك تعيين كل جهاز يدويًا.',
+    clearRoomsDone: 'تم مسح تعيين الغرف لكل الأجهزة',
     planFree: 'مجاني', planBasic: 'أساسي',
     planAdvanced: 'متقدم', planAdvancedPlus: 'متقدم بلس',
     planUnlimited: 'غير محدود',
@@ -3745,6 +3766,10 @@ class S {
     deviceEditName: 'ስም ያርትዑ', deviceRename: 'አዲስ ስም',
     deviceRenamed: 'ስም ተዘምኗል',
     assignRoom: 'ክፍል ይምደቡ', noRoom: 'ክፍል የለም', newRoom: 'አዲስ ክፍል…',
+    clearRoomsLabel: 'ለሁሉም መሣሪያዎች የክፍል ምደባ አጽዳ',
+    clearRoomsConfirmTitle: 'ለሁሉም መሣሪያዎች የክፍል ምደባ ይጽዳ?',
+    clearRoomsConfirmBody: 'እያንዳንዱ መሣሪያ ከክፍሉ ይወገዳል። ከዚያ በኋላ እያንዳንዱን በእጅ መመደብ ትችላለህ።',
+    clearRoomsDone: 'የክፍል ምደባ ለሁሉም መሣሪያዎች ጸድቷል',
     planFree: 'ነፃ', planBasic: 'መሰረታዊ',
     planAdvanced: 'የተሻሻለ', planAdvancedPlus: 'የተሻሻለ ፕላስ',
     planUnlimited: 'ያልተገደበ',
@@ -4194,6 +4219,10 @@ class S {
     deviceEditName: 'Editar nombre', deviceRename: 'Nuevo nombre',
     deviceRenamed: 'Nombre actualizado',
     assignRoom: 'Asignar habitación', noRoom: 'Sin habitación', newRoom: 'Nueva habitación…',
+    clearRoomsLabel: 'Borrar asignación de habitación de todos los dispositivos',
+    clearRoomsConfirmTitle: '¿Borrar asignación de habitación de todos los dispositivos?',
+    clearRoomsConfirmBody: 'Cada dispositivo quedará sin habitación asignada. Luego podrás asignar cada uno manualmente.',
+    clearRoomsDone: 'Asignación de habitación borrada para todos los dispositivos',
     planFree: 'Gratis', planBasic: 'Básico',
     planAdvanced: 'Avanzado', planAdvancedPlus: 'Avanzado Plus',
     planUnlimited: 'Ilimitado',
@@ -4644,6 +4673,10 @@ class S {
     deviceEditName: 'Изменить имя', deviceRename: 'Новое имя',
     deviceRenamed: 'Имя обновлено',
     assignRoom: 'Назначить комнату', noRoom: 'Без комнаты', newRoom: 'Новая комната…',
+    clearRoomsLabel: 'Очистить привязку комнат для всех устройств',
+    clearRoomsConfirmTitle: 'Очистить привязку комнат для всех устройств?',
+    clearRoomsConfirmBody: 'Каждое устройство будет отвязано от своей комнаты. Затем вы сможете назначить каждое вручную.',
+    clearRoomsDone: 'Привязка комнат очищена для всех устройств',
     planFree: 'Бесплатно', planBasic: 'Базовый',
     planAdvanced: 'Продвинутый', planAdvancedPlus: 'Продвинутый Плюс',
     planUnlimited: 'Безлимитный',
@@ -5103,6 +5136,10 @@ class S {
     deviceEditName: 'Modifier le nom', deviceRename: 'Nouveau nom',
     deviceRenamed: 'Nom mis à jour',
     assignRoom: 'Assigner une pièce', noRoom: 'Sans pièce', newRoom: 'Nouvelle pièce…',
+    clearRoomsLabel: 'Effacer l\'affectation de pièce pour tous les appareils',
+    clearRoomsConfirmTitle: 'Effacer l\'affectation de pièce pour tous les appareils ?',
+    clearRoomsConfirmBody: 'Chaque appareil sera désaffecté de sa pièce. Vous pourrez ensuite affecter chacun manuellement.',
+    clearRoomsDone: 'Affectation de pièce effacée pour tous les appareils',
     planFree: 'Gratuit', planBasic: 'Basique',
     planAdvanced: 'Avancé', planAdvancedPlus: 'Avancé Plus',
     planUnlimited: 'Illimité',

@@ -1413,6 +1413,17 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Clears the room assignment on every device (leaves the devices and
+  /// rooms themselves untouched) — a clean slate for the user to reassign
+  /// each device's room manually via the per-device edit sheet.
+  void clearAllDeviceRooms() {
+    for (final d in _devices) {
+      d.room = '';
+    }
+    _saveDevicesToPrefs();
+    notifyListeners();
+  }
+
   // ── Notifications ────────────────────────────────────────────
   void markNotificationRead(String id) {
     final idx = _appNotifications.indexWhere((n) => n.id == id);
