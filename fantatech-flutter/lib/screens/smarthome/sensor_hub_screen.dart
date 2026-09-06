@@ -560,6 +560,7 @@ class _SensorCardState extends State<_SensorCard> {
               : DeviceType.motionSensor,
       isOn: s.isTriggered ?? false,
       status: s.isOnline ? DeviceStatus.online : DeviceStatus.offline,
+      source: 'gateway',
       attributes: {
         'ip':       s.ip ?? '',
         'brand':    s.brand,
@@ -858,6 +859,7 @@ class _CoverCardState extends State<_CoverCard> {
       type: DeviceType.smartSwitch,
       isOn: c.state == CoverState.open,
       status: c.isOnline ? DeviceStatus.online : DeviceStatus.offline,
+      source: 'gateway',
       attributes: {
         'ip':       c.ip ?? '',
         'brand':    c.brand,

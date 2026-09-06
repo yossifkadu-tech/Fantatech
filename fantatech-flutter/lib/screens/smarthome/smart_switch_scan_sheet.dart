@@ -103,6 +103,7 @@ class _SmartSwitchScanSheetState extends State<SmartSwitchScanSheet> {
       type:   _toAppType(sw.deviceType),
       isOn:   false,
       status: DeviceStatus.online,
+      source: 'gateway',
       attributes: {
         'ip':           sw.ip,
         'brand':        sw.brand.name,

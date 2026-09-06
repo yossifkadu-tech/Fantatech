@@ -102,6 +102,7 @@ class _WizSetupScreenState extends State<WizSetupScreen> {
       type: DeviceType.light,
       status: DeviceStatus.online,
       isOn: false,
+      source: 'gateway',
       attributes: {'ip': ip, 'protocol': 'wiz'},
     );
     state.upsertDevice(device);

@@ -143,6 +143,8 @@ class Device {
       'deconz_', 'deconz_light_', 'deconz_sensor_',
       'z2m_', 'mqtt_', 'st_', 'tuya_',
       'ha_', 'smartthings_',
+      'aqara-', 'irobot_', 'xiaomi_vacuum_',
+      'ajax-', 'risco-', 'pima-', 'zwave-',
     ];
     return prefixes.any(id.startsWith);
   }

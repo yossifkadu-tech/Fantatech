@@ -152,6 +152,7 @@ class _DiscoverySheetState extends State<DiscoverySheet> {
       name: d.displayName,
       type: appType,
       room: room,
+      source: 'gateway',
       attributes: {
         if (d.ip != null) 'ip': d.ip,
         if (d.manufacturer != null) 'manufacturer': d.manufacturer,

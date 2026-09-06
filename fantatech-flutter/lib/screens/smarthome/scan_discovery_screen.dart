@@ -148,6 +148,7 @@ class _ScanDiscoveryScreenState extends State<ScanDiscoveryScreen>
       status: DeviceStatus.online,
       isOn: d.type != DiscoveredDeviceType.gateway &&
             d.type != DiscoveredDeviceType.router,
+      source: 'gateway',
       attributes: {
         if (d.ip != null) 'ip': d.ip,
         if (d.mac != null) 'mac': d.mac,
