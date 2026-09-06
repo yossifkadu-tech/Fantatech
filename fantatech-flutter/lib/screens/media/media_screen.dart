@@ -14,6 +14,7 @@ import '../../services/discovery/media_discovery.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/haptics.dart';
 import '../../utils/responsive.dart';
+import '../../widgets/device_edit_sheet.dart';
 
 class MediaScreen extends StatefulWidget {
   const MediaScreen({super.key});
@@ -527,7 +528,9 @@ class _SpeakerTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = context.read<AppState>();
     const color = AppColors.primary;
-    return Container(
+    return GestureDetector(
+      onLongPress: () => showMediaEditSheet(context, device: device, state: state),
+      child: Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -626,6 +629,7 @@ class _SpeakerTile extends StatelessWidget {
             ],
           ),
         ],
+      ),
       ),
     );
   }

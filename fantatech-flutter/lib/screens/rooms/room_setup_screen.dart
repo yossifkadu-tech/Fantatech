@@ -5,6 +5,7 @@ import '../../l10n/strings.dart';
 import '../../models/app_state.dart';
 import '../../models/device.dart';
 import '../../models/device_capabilities.dart';
+import '../../models/media_module.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/device_icons.dart';
 import '../../utils/ac_options.dart';
@@ -32,11 +33,16 @@ class _Cap {
   final String en;
   final _Dest dest;
   // Device types that count as "assigned here" for this capability — the
-  // tile only shows once roomDevices actually contains one. null means
-  // there's no real per-device backing yet (media family) so it can't be
-  // filtered this way and stays always-visible.
+  // tile only shows once roomDevices actually contains one.
   final Set<DeviceType>? matchTypes;
-  const _Cap(this.icon, this.color, this.he, this.en, this.dest, [this.matchTypes]);
+  // Same idea for the media family, matched against MediaDevice.kind
+  // instead (media devices aren't in state.devices). null with dest ==
+  // media means "any media device assigned here" — used where no specific
+  // MediaDeviceKind fits (general multimedia tile, receivers — there's no
+  // MediaDeviceKind for a receiver specifically).
+  final Set<MediaDeviceKind>? matchMediaKinds;
+  const _Cap(this.icon, this.color, this.he, this.en, this.dest,
+      [this.matchTypes, this.matchMediaKinds]);
 }
 
 // ── Capability catalogue ─────────────────────────────────────────
@@ -51,10 +57,10 @@ const _ac       = _Cap(Symbols.ac_unit,          Color(0xFF29B6F6), 'מזגן ו
 const _winDoor  = _Cap(Symbols.sensor_window,    Color(0xFF26A69A), 'חיישן חלון/דלת', 'Window/Door Sensor', _Dest.sensors, {DeviceType.doorSensor, DeviceType.windowSensor});
 const _door     = _Cap(Symbols.sensor_door,      Color(0xFF26A69A), 'חיישן דלת', 'Door Sensor', _Dest.sensors, {DeviceType.doorSensor});
 const _blind    = _Cap(Symbols.blinds,           Color(0xFF8E63CE), 'מפסק תריס', 'Blind Switch', _Dest.sensors, {DeviceType.blind});
-const _speakers = _Cap(Symbols.speaker,          Color(0xFF5C6BC0), 'רמקולים', 'Speakers', _Dest.media);
+const _speakers = _Cap(Symbols.speaker,          Color(0xFF5C6BC0), 'רמקולים', 'Speakers', _Dest.media, null, {MediaDeviceKind.speaker, MediaDeviceKind.soundbar});
 const _receiver = _Cap(Symbols.settings_input_hdmi, Color(0xFF455A64), 'רסיברים', 'Receivers', _Dest.media);
-const _tv       = _Cap(Symbols.tv,               Color(0xFF00897B), 'טלוויזיות חכמות', 'Smart TVs', _Dest.media);
-const _streamer = _Cap(Symbols.cast,             Color(0xFFAB47BC), 'סטרימרים', 'Streamers', _Dest.media);
+const _tv       = _Cap(Symbols.tv,               Color(0xFF00897B), 'טלוויזיות חכמות', 'Smart TVs', _Dest.media, null, {MediaDeviceKind.tv});
+const _streamer = _Cap(Symbols.cast,             Color(0xFFAB47BC), 'סטרימרים', 'Streamers', _Dest.media, null, {MediaDeviceKind.castTarget});
 const _intercom = _Cap(Symbols.doorbell,         Color(0xFFEF5350), 'אינטרקום', 'Intercom', _Dest.intercom, {DeviceType.intercom});
 const _smoke    = _Cap(Symbols.local_fire_department, Color(0xFFFF7043), 'גלאי עשן', 'Smoke Detector', _Dest.sensors, {DeviceType.smokeSensor});
 const _gas      = _Cap(Symbols.gas_meter,        Color(0xFFFFA726), 'גלאי גז', 'Gas Detector', _Dest.sensors, {DeviceType.gasSensor});
@@ -163,13 +169,19 @@ class RoomSetupScreen extends StatelessWidget {
     // A capability tile only shows once a matching device is actually
     // assigned to this room — otherwise every room of a given type showed
     // the exact same fixed tile set regardless of what's really in it, all
-    // routing to the same global, unfiltered category screens. Cameras
-    // aren't in state.devices (separate Camera model) so they're matched
-    // by their own room field instead. Media-family tiles have no
-    // per-device room model yet at all, so they're left always-visible.
+    // routing to the same global, unfiltered category screens. Cameras and
+    // media devices aren't in state.devices (separate Camera/MediaDevice
+    // models) so they're matched by their own room field instead.
+    final roomMedia =
+        state.mediaDevices.where((m) => m.room == roomKey).toList();
     final caps = _capsFor(roomKey).where((cap) {
       if (cap.dest == _Dest.cameras) {
         return state.cameras.any((c) => c.room == roomKey);
+      }
+      if (cap.dest == _Dest.media) {
+        return cap.matchMediaKinds == null
+            ? roomMedia.isNotEmpty
+            : roomMedia.any((m) => cap.matchMediaKinds!.contains(m.kind));
       }
       if (cap.matchTypes == null) return true;
       return roomDevices.any((d) => cap.matchTypes!.contains(d.type));

@@ -593,6 +593,22 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  void updateMediaDeviceName(String id, String name) {
+    final d = _findMedia(id);
+    if (d != null) {
+      d.name = name;
+      notifyListeners();
+    }
+  }
+
+  void updateMediaDeviceRoom(String id, String room) {
+    final d = _findMedia(id);
+    if (d != null) {
+      d.room = room;
+      notifyListeners();
+    }
+  }
+
   MediaDevice? _findMedia(String id) {
     for (final d in _media.devices) {
       if (d.id == id) return d;

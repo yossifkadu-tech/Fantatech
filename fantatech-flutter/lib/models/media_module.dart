@@ -22,6 +22,7 @@ class MediaDevice {
   bool isOnline;
   bool isPlaying;
   int volume; // 0–100
+  String room;
 
   // Now-playing metadata
   String track;
@@ -40,6 +41,7 @@ class MediaDevice {
     this.isOnline = true,
     this.isPlaying = false,
     this.volume = 30,
+    this.room = '',
     this.track = '',
     this.artist = '',
     this.progress = 0,
@@ -57,6 +59,7 @@ class MediaDevice {
         'isOnline': isOnline,
         'isPlaying': isPlaying,
         'volume': volume,
+        'room': room,
       };
 
   factory MediaDevice.fromJson(Map<String, dynamic> j) => MediaDevice(
@@ -76,6 +79,7 @@ class MediaDevice {
         isOnline: j['isOnline'] as bool? ?? true,
         isPlaying: j['isPlaying'] as bool? ?? false,
         volume: j['volume'] as int? ?? 30,
+        room: j['room'] as String? ?? '',
       );
 }
 

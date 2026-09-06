@@ -5,6 +5,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../l10n/strings.dart';
 import '../models/app_state.dart';
 import '../models/device.dart';
+import '../models/media_module.dart';
 import '../theme/app_theme.dart';
 import '../theme/device_icons.dart';
 
@@ -84,6 +85,35 @@ Future<void> showDeviceEditSheet(
         'type: ${device.type.name}\n'
         'source: ${device.source}\n'
         'attrs: ${device.attributes.keys.join(', ')}',
+  );
+}
+
+/// Rename/delete/assign-room sheet for a [MediaDevice] — wraps
+/// [showEntityEditSheet] with a kind-appropriate icon and app-state
+/// mutations.
+Future<void> showMediaEditSheet(
+  BuildContext context, {
+  required MediaDevice device,
+  required AppState state,
+}) {
+  final icon = switch (device.kind) {
+    MediaDeviceKind.tv        => Symbols.tv,
+    MediaDeviceKind.soundbar  => Symbols.speaker_group,
+    MediaDeviceKind.speaker   => Symbols.speaker,
+    _                         => Symbols.cast,
+  };
+  return showEntityEditSheet(
+    context,
+    currentName: device.name,
+    icon: icon,
+    color: AppColors.primary,
+    s: state.strings,
+    onRename: (name) => state.updateMediaDeviceName(device.id, name),
+    onDelete: () => state.removeMediaDevice(device.id),
+    rooms: state.rooms.map((r) => r['name'] as String? ?? '')
+        .where((r) => r.isNotEmpty).toList(),
+    currentRoom: device.room,
+    onAssignRoom: (room) => state.updateMediaDeviceRoom(device.id, room),
   );
 }
 
