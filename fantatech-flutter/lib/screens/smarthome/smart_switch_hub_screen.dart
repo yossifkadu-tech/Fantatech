@@ -735,19 +735,40 @@ class _SwitchCardState extends State<_SwitchCard> {
   /// produce the exact same id string, so an exact id match alone would
   /// silently miss it. No-op if no matching Device exists at all.
   void _showEditSheet(int channelIndex) {
-    final appState = context.read<AppState>();
-    final deviceId = '${dev.id}_ch$channelIndex';
-    final entityId = dev.connectionData['entityId'] as String?;
-    Device? device;
-    for (final d in appState.devices) {
-      if (d.id == deviceId ||
-          (entityId != null && d.attributes['entityId'] == entityId)) {
-        device = d;
-        break;
+    // TEMPORARY: every branch now surfaces something visible — a user
+    // report says long-press opens nothing even right after pressing
+    // "add", which (given _addToHome creates the Device with exactly the
+    // id this method looks for) shouldn't be possible unless something
+    // here is throwing, or the "device not found" no-op is the actual
+    // case for a reason not yet understood. Either way, silence was the
+    // problem — this removes it.
+    try {
+      final appState = context.read<AppState>();
+      final deviceId = '${dev.id}_ch$channelIndex';
+      final entityId = dev.connectionData['entityId'] as String?;
+      Device? device;
+      for (final d in appState.devices) {
+        if (d.id == deviceId ||
+            (entityId != null && d.attributes['entityId'] == entityId)) {
+          device = d;
+          break;
+        }
       }
+      if (device == null) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('לא נמצא מכשיר תואם (חיפשתי: $deviceId)'),
+          backgroundColor: Colors.red.shade700,
+        ));
+        return;
+      }
+      showDeviceEditSheet(context, device: device, state: appState);
+    } catch (e, st) {
+      debugPrint('[_showEditSheet] error: $e\n$st');
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('שגיאה בפתיחת עריכה: $e'),
+        backgroundColor: Colors.red.shade700,
+      ));
     }
-    if (device == null) return;
-    showDeviceEditSheet(context, device: device, state: appState);
   }
 
   void _showError() {
