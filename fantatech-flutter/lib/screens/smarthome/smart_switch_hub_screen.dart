@@ -506,7 +506,9 @@ class _SwitchCardState extends State<_SwitchCard> {
   /// for the id-matching rules), or null if it was never added / matched.
   Device? _findRegisteredDevice(BuildContext context, int channelIndex) {
     final appState = context.read<AppState>();
-    final deviceId = '${dev.id}_ch$channelIndex';
+    final deviceId = dev.protocol == SwitchProtocol.haRest
+        ? dev.id
+        : '${dev.id}_ch$channelIndex';
     final entityId = dev.connectionData['entityId'] as String?;
     for (final d in appState.devices) {
       if (d.id == deviceId ||
@@ -529,7 +531,14 @@ class _SwitchCardState extends State<_SwitchCard> {
 
       appState.upsertDevice(
         Device(
-          id:   '${dev.id}_ch$i',
+          // HA-derived switches (single channel, dev.id already the
+          // canonical 'ha_<entityId>' format ha_sync_service.dart and
+          // ha_import_service.dart also use) reuse dev.id as-is instead of
+          // appending '_ch0' — otherwise pressing Add here created a
+          // second Device for the exact entity those two paths already
+          // track under a different id, so toggling one side never moved
+          // the other's on/off count.
+          id:   dev.protocol == SwitchProtocol.haRest ? dev.id : '${dev.id}_ch$i',
           name: deviceName,
           type: DeviceType.smartSwitch,
           isOn: ch.isOn,
