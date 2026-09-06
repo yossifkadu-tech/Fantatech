@@ -480,15 +480,41 @@ class _SwitchCardState extends State<_SwitchCard> {
     if (mounted) {
       if (ok) {
         final ch = dev.channels[channelIdx];
+        final newOn = !ch.isOn;
         setState(() {
-          dev.channels[channelIdx] = ch.copyWith(isOn: !ch.isOn);
+          dev.channels[channelIdx] = ch.copyWith(isOn: newOn);
           _toggling.remove(channelIdx);
         });
+        // This screen controls the switch through SwitchController directly
+        // (on the raw scan model), bypassing AppState entirely — so a
+        // registered device's isOn here never matched what home_screen.dart
+        // reads until the next background poll caught up, sometimes a
+        // minute later. Keep the AppState Device in sync immediately too.
+        final device = _findRegisteredDevice(context, channelIdx);
+        if (device != null) {
+          device.isOn = newOn;
+          context.read<AppState>().notifyDeviceStateChanged();
+        }
       } else {
         setState(() => _toggling.remove(channelIdx));
         _showError();
       }
     }
+  }
+
+  /// Finds the [Device] this channel became once added (see _showEditSheet
+  /// for the id-matching rules), or null if it was never added / matched.
+  Device? _findRegisteredDevice(BuildContext context, int channelIndex) {
+    final appState = context.read<AppState>();
+    final deviceId = '${dev.id}_ch$channelIndex';
+    final entityId = dev.connectionData['entityId'] as String?;
+    for (final d in appState.devices) {
+      if (d.id == deviceId ||
+          (entityId != null && d.attributes['entityId'] == entityId)) {
+        return d;
+      }
+    }
+    return null;
   }
 
   void _addToHome() {
@@ -751,19 +777,10 @@ class _SwitchCardState extends State<_SwitchCard> {
     // problem — this removes it.
     try {
       final appState = context.read<AppState>();
-      final deviceId = '${dev.id}_ch$channelIndex';
-      final entityId = dev.connectionData['entityId'] as String?;
-      Device? device;
-      for (final d in appState.devices) {
-        if (d.id == deviceId ||
-            (entityId != null && d.attributes['entityId'] == entityId)) {
-          device = d;
-          break;
-        }
-      }
+      final device = _findRegisteredDevice(context, channelIndex);
       if (device == null) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('לא נמצא מכשיר תואם (חיפשתי: $deviceId)'),
+          content: Text('לא נמצא מכשיר תואם (חיפשתי: ${dev.id}_ch$channelIndex)'),
           backgroundColor: Colors.red.shade700,
         ));
         return;

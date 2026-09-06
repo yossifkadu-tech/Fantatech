@@ -1440,6 +1440,17 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// For a caller that already mutated a Device object it holds a direct
+  /// reference to (found via appState.devices, not through a method here)
+  /// and needs the rest of the app to notice — e.g. a screen that controls
+  /// a device through its own protocol client instead of DeviceCommander,
+  /// but still wants home_screen.dart's on/off counts to reflect it
+  /// immediately instead of waiting for the next background poll.
+  void notifyDeviceStateChanged() {
+    _saveDevicesToPrefs();
+    notifyListeners();
+  }
+
   void updateDeviceRoom(String id, String room) {
     final device = _devices.firstWhere((d) => d.id == id, orElse: () => throw StateError('not found'));
     device.room = room;
