@@ -198,8 +198,16 @@ class HaImportService {
       final isOn = _stateIsOn(stateStr);
       final brightness = attrs['brightness'];
 
+      // Reuse the existing device's id when this entity is already known,
+      // instead of always rebuilding 'ha_<entityId with dots replaced>' —
+      // that format diverges from ha_sync_service.dart/ha_client.dart's
+      // live-sync id ('ha_<entityId>', dots preserved), so an entity that
+      // arrived via live sync first and then got (re-)imported here ended
+      // up as two separate Device entries for the same physical switch.
+      // New entities (no existing match) get the canonical dot-preserved
+      // form so future imports/syncs of them agree too.
       state.upsertDevice(Device(
-        id:         'ha_${entityId.replaceAll('.', '_')}',
+        id:         existing?.id ?? 'ha_$entityId',
         name:       existing?.name ?? friendly,
         type:       type,
         isOn:       isOn,

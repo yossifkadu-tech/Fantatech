@@ -1560,6 +1560,32 @@ class AppState extends ChangeNotifier {
           d.source = 'gateway';
         }
       }
+      // One-time de-dup: ha_import_service.dart used to build its id as
+      // 'ha_<entityId with dots replaced by underscores>', diverging from
+      // ha_sync_service.dart/ha_client.dart's 'ha_<entityId>' (dots kept)
+      // for the exact same HA entity — so a switch that arrived via live
+      // sync and was later (re-)imported ended up as two Device entries.
+      // Fixed going forward (ha_import_service.dart now reuses the
+      // existing device's id instead of rebuilding this format), but
+      // that doesn't retroactively merge devices already split this way.
+      // Group by entityId and collapse each group to one entry, keeping
+      // whichever already has a room/custom name set.
+      final byEntityId = <String, List<Device>>{};
+      for (final d in _devices) {
+        final entityId = d.attributes['entityId'] as String?;
+        if (entityId != null) (byEntityId[entityId] ??= []).add(d);
+      }
+      for (final group in byEntityId.values) {
+        if (group.length < 2) continue;
+        final keep = group.firstWhere((d) => d.room.isNotEmpty,
+            orElse: () => group.first);
+        for (final d in group) {
+          if (identical(d, keep)) continue;
+          if (keep.room.isEmpty && d.room.isNotEmpty) keep.room = d.room;
+          _devices.remove(d);
+        }
+      }
+      _saveDevicesToPrefs();
     }
     _removedDeviceIds = (prefs.getStringList('ft_removed_device_ids') ?? [])
         .toSet();
