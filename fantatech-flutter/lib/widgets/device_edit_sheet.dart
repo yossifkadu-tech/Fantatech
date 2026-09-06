@@ -207,20 +207,35 @@ class _EntityEditSheetState extends State<_EntityEditSheet> {
   }
 
   Future<void> _showRoomPicker(BuildContext sheetContext) async {
-    final s = widget.s;
-    final rooms = widget.rooms ?? const [];
-    final picked = await showModalBottomSheet<String>(
-      context: sheetContext,
-      backgroundColor: sheetContext.tCard,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(22))),
-      builder: (_) => _RoomPickerSheet(
-          s: s, rooms: rooms, currentRoom: widget.currentRoom ?? ''),
-    );
-    if (picked != null && sheetContext.mounted) {
-      widget.onAssignRoom?.call(picked);
-      Navigator.pop(sheetContext);
+    // TEMPORARY: wrapped in try/catch with a visible SnackBar on failure —
+    // a user report said this button does nothing on tap, which in release
+    // mode is exactly what an uncaught exception here would look like
+    // (silently swallowed, no crash, no picker). This turns that invisible
+    // failure into something reportable instead of guessing further.
+    try {
+      final s = widget.s;
+      final rooms = widget.rooms ?? const [];
+      final picked = await showModalBottomSheet<String>(
+        context: sheetContext,
+        backgroundColor: sheetContext.tCard,
+        isScrollControlled: true,
+        shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(22))),
+        builder: (_) => _RoomPickerSheet(
+            s: s, rooms: rooms, currentRoom: widget.currentRoom ?? ''),
+      );
+      if (picked != null && sheetContext.mounted) {
+        widget.onAssignRoom?.call(picked);
+        Navigator.pop(sheetContext);
+      }
+    } catch (e, st) {
+      debugPrint('[_showRoomPicker] error: $e\n$st');
+      if (sheetContext.mounted) {
+        ScaffoldMessenger.of(sheetContext).showSnackBar(
+          SnackBar(content: Text('שגיאה בשיוך חדר: $e'),
+              backgroundColor: Colors.red.shade700),
+        );
+      }
     }
   }
 
