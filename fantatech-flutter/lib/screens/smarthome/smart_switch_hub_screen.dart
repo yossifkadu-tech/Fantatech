@@ -494,6 +494,19 @@ class _SwitchCardState extends State<_SwitchCard> {
         if (device != null) {
           device.isOn = newOn;
           context.read<AppState>().notifyDeviceStateChanged();
+        } else {
+          // TEMPORARY: user reports the physical toggle works but the home
+          // screen count never moves — this is the only place that could
+          // silently swallow that (no matching AppState Device found, so
+          // nothing gets updated, with no feedback at all unlike
+          // _showEditSheet's equivalent case). Surface it instead of
+          // guessing further.
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(
+                'הופעל בהצלחה אך לא נמצא מכשיר תואם לעדכון (חיפשתי: '
+                '${dev.protocol == SwitchProtocol.haRest ? dev.id : '${dev.id}_ch$channelIdx'})'),
+            backgroundColor: Colors.orange.shade800,
+          ));
         }
       } else {
         setState(() => _toggling.remove(channelIdx));
