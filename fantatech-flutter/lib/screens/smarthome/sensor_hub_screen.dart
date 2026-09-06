@@ -833,8 +833,32 @@ class _CoverCardState extends State<_CoverCard> {
           c.position = status.position;
           _busy      = false;
         });
+        // This card controls the cover through CoverController directly
+        // on the raw scan model, bypassing AppState entirely — same bug
+        // already fixed for switches: home_screen.dart's on/off counts
+        // read AppState.devices, so without this they'd stay stale until
+        // the next background poll caught up.
+        _syncRegisteredDevice();
       } else if (mounted) {
         setState(() => _busy = false);
+      }
+    }
+  }
+
+  /// Finds the [Device] this cover became once added (see _addToHome's
+  /// 'cover-<id>' convention), with an HA-entity-id fallback for the same
+  /// reason smart_switch_hub_screen.dart needs one, and updates its isOn
+  /// to match the cover's current state.
+  void _syncRegisteredDevice() {
+    final appState = context.read<AppState>();
+    final deviceId = 'cover-${c.id}';
+    final entityId = c.connectionData['entityId'] as String?;
+    for (final d in appState.devices) {
+      if (d.id == deviceId ||
+          (entityId != null && d.attributes['entityId'] == entityId)) {
+        d.isOn = c.state == CoverState.open;
+        appState.notifyDeviceStateChanged();
+        return;
       }
     }
   }
