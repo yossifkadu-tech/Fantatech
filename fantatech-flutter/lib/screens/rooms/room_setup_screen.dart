@@ -31,38 +31,44 @@ class _Cap {
   final String he;
   final String en;
   final _Dest dest;
-  const _Cap(this.icon, this.color, this.he, this.en, this.dest);
+  // Device types that count as "assigned here" for this capability — the
+  // tile only shows once roomDevices actually contains one. null means
+  // there's no real per-device backing yet (media family) so it can't be
+  // filtered this way and stays always-visible.
+  final Set<DeviceType>? matchTypes;
+  const _Cap(this.icon, this.color, this.he, this.en, this.dest, [this.matchTypes]);
 }
 
 // ── Capability catalogue ─────────────────────────────────────────
-const _plugs    = _Cap(Symbols.power,            Color(0xFF42A5F5), 'שקעים חכמים', 'Smart Plugs', _Dest.switches);
+const _plugs    = _Cap(Symbols.power,            Color(0xFF42A5F5), 'שקעים חכמים', 'Smart Plugs', _Dest.switches, {DeviceType.smartPlug});
 const _cameras  = _Cap(Symbols.videocam,         Color(0xFF26C6DA), 'מצלמות', 'Cameras', _Dest.cameras);
-const _gates    = _Cap(Symbols.fence,            Color(0xFF8D6E63), 'שערים', 'Gates', _Dest.none);
+const _gates    = _Cap(Symbols.fence,            Color(0xFF8D6E63), 'שערים', 'Gates', _Dest.none, {DeviceType.garage});
 const _media    = _Cap(Symbols.movie,            Color(0xFFE53935), 'מולטימדיה', 'Multimedia', _Dest.media);
-const _switches = _Cap(Symbols.toggle_on,        Color(0xFF7E57C2), 'מפסקים חכמים', 'Smart Switches', _Dest.switches);
-const _light    = _Cap(Symbols.lightbulb,        Color(0xFFFFB300), 'תאורה חכמה', 'Smart Lighting', _Dest.none);
-const _warmLight= _Cap(Symbols.wb_incandescent,  Color(0xFFFF8F00), 'תאורה חמה', 'Warm Lighting', _Dest.none);
-const _ac       = _Cap(Symbols.ac_unit,          Color(0xFF29B6F6), 'מזגן ושלטים', 'AC & Remotes', _Dest.none);
-const _odor     = _Cap(Symbols.air,              Color(0xFF66BB6A), 'גלאי ריחות', 'Odor Detector', _Dest.sensors);
-const _winDoor  = _Cap(Symbols.sensor_window,    Color(0xFF26A69A), 'חיישן חלון/דלת', 'Window/Door Sensor', _Dest.sensors);
-const _door     = _Cap(Symbols.sensor_door,      Color(0xFF26A69A), 'חיישן דלת', 'Door Sensor', _Dest.sensors);
-const _blind    = _Cap(Symbols.blinds,           Color(0xFF8E63CE), 'מפסק תריס', 'Blind Switch', _Dest.sensors);
-const _ambiance = _Cap(Symbols.auto_awesome,     Color(0xFFFF6B00), 'אוטומציות אווירה', 'Ambiance Scenes', _Dest.none);
+const _switches = _Cap(Symbols.toggle_on,        Color(0xFF7E57C2), 'מפסקים חכמים', 'Smart Switches', _Dest.switches, {DeviceType.smartSwitch});
+const _light    = _Cap(Symbols.lightbulb,        Color(0xFFFFB300), 'תאורה חכמה', 'Smart Lighting', _Dest.none, {DeviceType.light});
+const _warmLight= _Cap(Symbols.wb_incandescent,  Color(0xFFFF8F00), 'תאורה חמה', 'Warm Lighting', _Dest.none, {DeviceType.light});
+const _ac       = _Cap(Symbols.ac_unit,          Color(0xFF29B6F6), 'מזגן ושלטים', 'AC & Remotes', _Dest.none, {DeviceType.airConditioner});
+const _winDoor  = _Cap(Symbols.sensor_window,    Color(0xFF26A69A), 'חיישן חלון/דלת', 'Window/Door Sensor', _Dest.sensors, {DeviceType.doorSensor, DeviceType.windowSensor});
+const _door     = _Cap(Symbols.sensor_door,      Color(0xFF26A69A), 'חיישן דלת', 'Door Sensor', _Dest.sensors, {DeviceType.doorSensor});
+const _blind    = _Cap(Symbols.blinds,           Color(0xFF8E63CE), 'מפסק תריס', 'Blind Switch', _Dest.sensors, {DeviceType.blind});
 const _speakers = _Cap(Symbols.speaker,          Color(0xFF5C6BC0), 'רמקולים', 'Speakers', _Dest.media);
 const _receiver = _Cap(Symbols.settings_input_hdmi, Color(0xFF455A64), 'רסיברים', 'Receivers', _Dest.media);
 const _tv       = _Cap(Symbols.tv,               Color(0xFF00897B), 'טלוויזיות חכמות', 'Smart TVs', _Dest.media);
 const _streamer = _Cap(Symbols.cast,             Color(0xFFAB47BC), 'סטרימרים', 'Streamers', _Dest.media);
-const _voice    = _Cap(Symbols.mic,              Color(0xFF26C6DA), 'אלקסה / סירי', 'Alexa & Siri', _Dest.none);
-const _intercom = _Cap(Symbols.doorbell,         Color(0xFFEF5350), 'אינטרקום', 'Intercom', _Dest.intercom);
-const _smoke    = _Cap(Symbols.local_fire_department, Color(0xFFFF7043), 'גלאי עשן', 'Smoke Detector', _Dest.sensors);
-const _gas      = _Cap(Symbols.gas_meter,        Color(0xFFFFA726), 'גלאי גז', 'Gas Detector', _Dest.sensors);
-const _leak     = _Cap(Symbols.water_damage,     Color(0xFF42A5F5), 'גלאי נזילות', 'Leak Detector', _Dest.sensors);
+const _intercom = _Cap(Symbols.doorbell,         Color(0xFFEF5350), 'אינטרקום', 'Intercom', _Dest.intercom, {DeviceType.intercom});
+const _smoke    = _Cap(Symbols.local_fire_department, Color(0xFFFF7043), 'גלאי עשן', 'Smoke Detector', _Dest.sensors, {DeviceType.smokeSensor});
+const _gas      = _Cap(Symbols.gas_meter,        Color(0xFFFFA726), 'גלאי גז', 'Gas Detector', _Dest.sensors, {DeviceType.gasSensor});
+const _leak     = _Cap(Symbols.water_damage,     Color(0xFF42A5F5), 'גלאי נזילות', 'Leak Detector', _Dest.sensors, {DeviceType.waterLeakSensor});
 
 // ── Per-room-type capability sets ────────────────────────────────
+// _odor (no matching DeviceType exists — replaced elsewhere in the app by
+// co2/freeze/tamper/mailbox sensors), _ambiance ("scenes") and _voice
+// (Alexa/Siri) were removed — nothing in the device model backs them, so
+// they could never be anything but permanently-decorative dead buttons.
 const _living = <_Cap>[
-  _light, _switches, _plugs, _ac, _blind, _ambiance,
+  _light, _switches, _plugs, _ac, _blind,
   _cameras, _gates, _winDoor,
-  _media, _tv, _streamer, _speakers, _receiver, _voice, _odor,
+  _media, _tv, _streamer, _speakers, _receiver,
 ];
 const _garden = <_Cap>[
   _warmLight, _switches, _plugs, _cameras, _streamer, _gates, _intercom,
@@ -71,7 +77,7 @@ const _kitchen = <_Cap>[
   _light, _switches, _plugs, _winDoor, _smoke, _gas, _media,
 ];
 const _bathroom = <_Cap>[
-  _switches, _plugs, _door, _odor, _leak,
+  _switches, _plugs, _door, _leak,
 ];
 
 /// Resolve which capability set a room should offer, from its key/name.
@@ -154,16 +160,20 @@ class RoomSetupScreen extends StatelessWidget {
     final others =
         roomDevices.where((d) => !sectioned.contains(d)).toList();
 
-    // Switches/plugs tile ("מפסקים חכמים"/"שקעים חכמים") only shows once
-    // the user has actually assigned a device here (via the switch card's
-    // long-press "assign room") — otherwise every room showed the same
-    // tile regardless of what's really in it, all routing to the same
-    // global, unfiltered switches screen. Unconditional on roomDevices
-    // being empty too — hiding this one tile never strands the user, the
-    // Switches screen is always reachable from the main "בית חכם" tab.
-    final caps = _capsFor(roomKey)
-        .where((cap) => cap.dest != _Dest.switches || switches.isNotEmpty)
-        .toList();
+    // A capability tile only shows once a matching device is actually
+    // assigned to this room — otherwise every room of a given type showed
+    // the exact same fixed tile set regardless of what's really in it, all
+    // routing to the same global, unfiltered category screens. Cameras
+    // aren't in state.devices (separate Camera model) so they're matched
+    // by their own room field instead. Media-family tiles have no
+    // per-device room model yet at all, so they're left always-visible.
+    final caps = _capsFor(roomKey).where((cap) {
+      if (cap.dest == _Dest.cameras) {
+        return state.cameras.any((c) => c.room == roomKey);
+      }
+      if (cap.matchTypes == null) return true;
+      return roomDevices.any((d) => cap.matchTypes!.contains(d.type));
+    }).toList();
 
     return Scaffold(
       backgroundColor: _kBg,
