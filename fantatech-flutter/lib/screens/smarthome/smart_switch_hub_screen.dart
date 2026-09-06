@@ -767,14 +767,7 @@ class _SwitchCardState extends State<_SwitchCard> {
   /// instead of this screen's "add" button — those two paths don't always
   /// produce the exact same id string, so an exact id match alone would
   /// silently miss it. No-op if no matching Device exists at all.
-  void _showEditSheet(int channelIndex) {
-    // TEMPORARY: every branch now surfaces something visible — a user
-    // report says long-press opens nothing even right after pressing
-    // "add", which (given _addToHome creates the Device with exactly the
-    // id this method looks for) shouldn't be possible unless something
-    // here is throwing, or the "device not found" no-op is the actual
-    // case for a reason not yet understood. Either way, silence was the
-    // problem — this removes it.
+  Future<void> _showEditSheet(int channelIndex) async {
     try {
       final appState = context.read<AppState>();
       final device = _findRegisteredDevice(context, channelIndex);
@@ -785,13 +778,25 @@ class _SwitchCardState extends State<_SwitchCard> {
         ));
         return;
       }
-      showDeviceEditSheet(context, device: device, state: appState);
+      await showDeviceEditSheet(context, device: device, state: appState);
+      // The sheet's delete button removes the Device from AppState, but
+      // this card's checkmark/"added" look is driven by dev.isRegistered —
+      // a flag on the local scan model, not on AppState — so it stayed
+      // stuck showing "added" after a delete until the next full rescan.
+      // Re-sync it against reality every time the sheet closes, whatever
+      // happened inside (rename, delete, or just cancel).
+      if (mounted) {
+        setState(() => dev.isRegistered =
+            _findRegisteredDevice(context, channelIndex) != null);
+      }
     } catch (e, st) {
       debugPrint('[_showEditSheet] error: $e\n$st');
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('שגיאה בפתיחת עריכה: $e'),
-        backgroundColor: Colors.red.shade700,
-      ));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('שגיאה בפתיחת עריכה: $e'),
+          backgroundColor: Colors.red.shade700,
+        ));
+      }
     }
   }
 
