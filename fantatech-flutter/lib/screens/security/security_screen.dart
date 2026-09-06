@@ -561,14 +561,17 @@ class _SecurityScreenState extends State<SecurityScreen>
                         onConfirm: (name) {
                           final type = _addableDeviceTypes[addDeviceId];
                           if (type == null) return;
-                          context.read<AppState>().upsertDevice(Device(
-                                id: '${addDeviceId}_${name.trim().toLowerCase().replaceAll(RegExp(r'\s+'), '_')}',
-                                name: name,
-                                type: type,
-                                status: DeviceStatus.online,
-                                isOn: true,
-                                attributes: const {},
-                              ));
+                          context.read<AppState>().upsertDevice(
+                                Device(
+                                  id: '${addDeviceId}_${name.trim().toLowerCase().replaceAll(RegExp(r'\s+'), '_')}',
+                                  name: name,
+                                  type: type,
+                                  status: DeviceStatus.online,
+                                  isOn: true,
+                                  attributes: const {},
+                                ),
+                                userInitiated: true,
+                              );
                         },
                       ),
                     ),

@@ -105,7 +105,7 @@ class _WizSetupScreenState extends State<WizSetupScreen> {
       source: 'gateway',
       attributes: {'ip': ip, 'protocol': 'wiz'},
     );
-    state.upsertDevice(device);
+    state.upsertDevice(device, userInitiated: true);
     final s = context.read<AppState>().strings;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

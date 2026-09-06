@@ -147,19 +147,22 @@ class _DiscoverySheetState extends State<DiscoverySheet> {
         ? (state.rooms.first['name'] as String)
         : '';
 
-    state.upsertDevice(Device(
-      id:   d.id,
-      name: d.displayName,
-      type: appType,
-      room: room,
-      source: 'gateway',
-      attributes: {
-        if (d.ip != null) 'ip': d.ip,
-        if (d.manufacturer != null) 'manufacturer': d.manufacturer,
-        if (d.model != null) 'model': d.model,
-        ...d.metadata,
-      },
-    ));
+    state.upsertDevice(
+      Device(
+        id:   d.id,
+        name: d.displayName,
+        type: appType,
+        room: room,
+        source: 'gateway',
+        attributes: {
+          if (d.ip != null) 'ip': d.ip,
+          if (d.manufacturer != null) 'manufacturer': d.manufacturer,
+          if (d.model != null) 'model': d.model,
+          ...d.metadata,
+        },
+      ),
+      userInitiated: true,
+    );
     engine.markRegistered(d.id);
   }
 

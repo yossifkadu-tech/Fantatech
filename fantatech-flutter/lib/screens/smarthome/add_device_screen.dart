@@ -303,7 +303,7 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
                 isOn: true,
                 attributes: const {},
               );
-              state.upsertDevice(device);
+              state.upsertDevice(device, userInitiated: true);
               setState(() => _addedIds.add(item.id));
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -345,7 +345,7 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
                   _typeFor(id) != DeviceType.gateway,
             attributes: const {},
           );
-          state.upsertDevice(device);
+          state.upsertDevice(device, userInitiated: true);
           setState(() => _addedIds.add(id));
 
           ScaffoldMessenger.of(context).showSnackBar(

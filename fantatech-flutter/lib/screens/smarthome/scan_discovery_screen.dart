@@ -157,7 +157,7 @@ class _ScanDiscoveryScreenState extends State<ScanDiscoveryScreen>
         'protocol': d.protocol.name,
       },
     );
-    appState.upsertDevice(device);
+    appState.upsertDevice(device, userInitiated: true);
     _manager.registerDevice(d.id);
     setState(() => _addedIds.add(d.id));
 

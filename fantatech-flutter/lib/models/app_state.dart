@@ -1378,7 +1378,15 @@ class AppState extends ChangeNotifier {
   /// מוסיף מכשיר חדש או מעדכן קיים (לפי id) — משמש ע"י HaSyncService וגם
   /// ע"י כל מסכי הצימוד, כדי שחיבור חוזר של אותו מכשיר יעדכן את פרטי
   /// החיבור (IP/host/token חדשים) במקום להתעלם מהם.
-  void upsertDevice(Device device) {
+  /// [userInitiated] — set true when this comes from the user explicitly
+  /// pressing an "add"/"import" button (they clearly want this specific
+  /// device back), which bypasses the removed-device blocklist below and
+  /// un-deletes it. Leave false (the default) for passive/background sync
+  /// (HaSyncService's live WS updates, the silent startup re-sync) so a
+  /// device the user deliberately deleted doesn't silently reappear on its
+  /// own — only an explicit re-add should override that.
+  void upsertDevice(Device device, {bool userInitiated = false}) {
+    if (userInitiated) undeleteDevice(device.id);
     final idx = _devices.indexWhere((d) => d.id == device.id);
     if (idx == -1) {
       if (_removedDeviceIds.contains(device.id)) return;

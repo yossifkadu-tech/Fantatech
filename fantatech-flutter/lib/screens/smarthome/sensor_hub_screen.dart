@@ -550,25 +550,28 @@ class _SensorCardState extends State<_SensorCard> {
   void _addToHome() {
     final appState = context.read<AppState>();
     final str = appState.strings;
-    appState.upsertDevice(Device(
-      id:   'sensor-${s.id}',
-      name: s.name,
-      type: s.type == SensorType.motion
-          ? DeviceType.motionSensor
-          : s.type == SensorType.contact
-              ? DeviceType.doorSensor
-              : DeviceType.motionSensor,
-      isOn: s.isTriggered ?? false,
-      status: s.isOnline ? DeviceStatus.online : DeviceStatus.offline,
-      source: 'gateway',
-      attributes: {
-        'ip':       s.ip ?? '',
-        'brand':    s.brand,
-        'protocol': s.protocol.name,
-        'type':     s.type.name,
-        ...s.connectionData,
-      },
-    ));
+    appState.upsertDevice(
+      Device(
+        id:   'sensor-${s.id}',
+        name: s.name,
+        type: s.type == SensorType.motion
+            ? DeviceType.motionSensor
+            : s.type == SensorType.contact
+                ? DeviceType.doorSensor
+                : DeviceType.motionSensor,
+        isOn: s.isTriggered ?? false,
+        status: s.isOnline ? DeviceStatus.online : DeviceStatus.offline,
+        source: 'gateway',
+        attributes: {
+          'ip':       s.ip ?? '',
+          'brand':    s.brand,
+          'protocol': s.protocol.name,
+          'type':     s.type.name,
+          ...s.connectionData,
+        },
+      ),
+      userInitiated: true,
+    );
     setState(() => s.isRegistered = true);
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(str.switchAddedFmt.replaceAll('{name}', s.name)),
@@ -853,21 +856,24 @@ class _CoverCardState extends State<_CoverCard> {
   void _addToHome() {
     final appState = context.read<AppState>();
     final str = appState.strings;
-    appState.upsertDevice(Device(
-      id:   'cover-${c.id}',
-      name: c.name,
-      type: DeviceType.smartSwitch,
-      isOn: c.state == CoverState.open,
-      status: c.isOnline ? DeviceStatus.online : DeviceStatus.offline,
-      source: 'gateway',
-      attributes: {
-        'ip':       c.ip ?? '',
-        'brand':    c.brand,
-        'protocol': c.protocol.name,
-        'deviceClass': 'cover',
-        ...c.connectionData,
-      },
-    ));
+    appState.upsertDevice(
+      Device(
+        id:   'cover-${c.id}',
+        name: c.name,
+        type: DeviceType.smartSwitch,
+        isOn: c.state == CoverState.open,
+        status: c.isOnline ? DeviceStatus.online : DeviceStatus.offline,
+        source: 'gateway',
+        attributes: {
+          'ip':       c.ip ?? '',
+          'brand':    c.brand,
+          'protocol': c.protocol.name,
+          'deviceClass': 'cover',
+          ...c.connectionData,
+        },
+      ),
+      userInitiated: true,
+    );
     setState(() => c.isRegistered = true);
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(str.switchAddedFmt.replaceAll('{name}', c.name)),

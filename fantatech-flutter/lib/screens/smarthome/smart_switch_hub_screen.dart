@@ -501,28 +501,35 @@ class _SwitchCardState extends State<_SwitchCard> {
           ? dev.name
           : '${dev.name} — ${ch.name}';
 
-      appState.upsertDevice(Device(
-        id:   '${dev.id}_ch$i',
-        name: deviceName,
-        type: DeviceType.smartSwitch,
-        isOn: ch.isOn,
-        status: DeviceStatus.online,
-        // 'gateway' (not the default 'manual') — this device was actually
-        // discovered on the network, not typed in by hand, and the home
-        // screen's category counts (isGw filter) only count 'gateway'
-        // devices. Without this, an added switch stays invisible there —
-        // shows 0 connected even while it's on and controllable.
-        source: 'gateway',
-        attributes: {
-          'ip':       dev.ip ?? '',
-          'brand':    dev.brand,
-          'model':    dev.model ?? '',
-          'protocol': dev.protocol.name,
-          'channel':  i.toString(),
-          if (dev.mac != null) 'mac': dev.mac!,
-          ...dev.connectionData,
-        },
-      ));
+      appState.upsertDevice(
+        Device(
+          id:   '${dev.id}_ch$i',
+          name: deviceName,
+          type: DeviceType.smartSwitch,
+          isOn: ch.isOn,
+          status: DeviceStatus.online,
+          // 'gateway' (not the default 'manual') — this device was actually
+          // discovered on the network, not typed in by hand, and the home
+          // screen's category counts (isGw filter) only count 'gateway'
+          // devices. Without this, an added switch stays invisible there —
+          // shows 0 connected even while it's on and controllable.
+          source: 'gateway',
+          attributes: {
+            'ip':       dev.ip ?? '',
+            'brand':    dev.brand,
+            'model':    dev.model ?? '',
+            'protocol': dev.protocol.name,
+            'channel':  i.toString(),
+            if (dev.mac != null) 'mac': dev.mac!,
+            ...dev.connectionData,
+          },
+        ),
+        // The user just pressed "Add" on this exact device — if its id was
+        // ever deleted before, that should never silently block a
+        // deliberate re-add (this was a real bug: pressing Add after a
+        // previous delete did nothing, forever, with no error).
+        userInitiated: true,
+      );
     }
 
     setState(() => dev.isRegistered = true);
