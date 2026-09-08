@@ -5,6 +5,7 @@ import '../../models/app_state.dart';
 import '../../models/device.dart';
 import '../../models/device_capabilities.dart';
 import '../../models/layout_item.dart';
+import '../../providers/layout_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../l10n/strings.dart';
 import '../../widgets/edit_mode/edit_toolbar.dart';
@@ -303,6 +304,17 @@ class _AllAutomationsList extends StatelessWidget {
           config: {'autoId': e.value.id},
           order: e.key,
         )).toList();
+
+    // ReorderableDashboard's own layout, once persisted, only shows items
+    // already IN that persisted layout (see ensureLayout — it only seeds
+    // defaults the very first time). A brand-new automation otherwise saves
+    // fine to AppState but never appears here, looking like "save did
+    // nothing". Deferred to after this frame since syncNewItems can call
+    // notifyListeners, which build() must not trigger directly.
+    final layoutProvider = context.read<LayoutProvider>();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      layoutProvider.syncNewItems(DashboardId.automations, defaultItems);
+    });
 
     return ReorderableDashboard(
           dashboardId: DashboardId.automations,
