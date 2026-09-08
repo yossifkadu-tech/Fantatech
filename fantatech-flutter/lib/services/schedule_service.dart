@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/app_state.dart';
-import '../models/device.dart';
 
 // ─────────────────────────────────────────────────────────────
 // On/off schedule for any device (plug, switch, ...). Originally lived
@@ -126,26 +125,23 @@ class ScheduleService extends ChangeNotifier {
       if (!sched.hasAny) continue;
       if (sched.days.isNotEmpty && !sched.days.contains(now.weekday)) continue;
 
-      Device? device;
-      for (final d in state.devices) {
-        if (d.id == entry.key) {
-          device = d;
-          break;
-        }
-      }
-      if (device == null) continue;
+      final hasDevice = state.devices.any((d) => d.id == entry.key);
+      if (!hasDevice) continue;
 
+      // Always issue the command for the matching minute — don't gate on
+      // the device's cached isOn flag. That cache can lag behind an
+      // HA-synced device's real state, which silently made the scheduler
+      // look like it "did nothing" at the scheduled time even though the
+      // timer fired correctly.
       if (sched.onTime != null &&
           now.hour == sched.onTime!.hour &&
-          now.minute == sched.onTime!.minute &&
-          !device.isOn) {
-        state.toggleDevice(device.id);
+          now.minute == sched.onTime!.minute) {
+        state.setDevicePower(entry.key, true);
       }
       if (sched.offTime != null &&
           now.hour == sched.offTime!.hour &&
-          now.minute == sched.offTime!.minute &&
-          device.isOn) {
-        state.toggleDevice(device.id);
+          now.minute == sched.offTime!.minute) {
+        state.setDevicePower(entry.key, false);
       }
     }
   }

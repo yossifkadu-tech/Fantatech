@@ -125,12 +125,14 @@ class AutomationEngine {
       state.setDevicePower(deviceId, on);
       return;
     }
+    // Always issue the command — don't gate on the device's cached isOn
+    // flag, which can lag behind an HA-synced device's real state.
     for (final d in state.devices) {
       final isTarget = onlyLights
           ? (d.type == DeviceType.light ||
               (includeAc && d.type == DeviceType.airConditioner))
           : DeviceCapabilities.of(d).contains(DeviceCapability.onOff);
-      if (isTarget && d.isOn != on) {
+      if (isTarget) {
         state.setDevicePower(d.id, on);
       }
     }
@@ -138,8 +140,7 @@ class AutomationEngine {
 
   void _applyLock(AppState state, bool locked) {
     for (final d in state.devices) {
-      if (DeviceCapabilities.of(d).contains(DeviceCapability.lockControl) &&
-          d.isOn != locked) {
+      if (DeviceCapabilities.of(d).contains(DeviceCapability.lockControl)) {
         state.setDevicePower(d.id, locked);
       }
     }
