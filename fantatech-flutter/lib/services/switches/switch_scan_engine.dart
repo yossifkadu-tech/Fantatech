@@ -977,12 +977,33 @@ class SwitchScanEngine extends ChangeNotifier {
 
   void _addDevice(SmartSwitchDevice incoming) {
     if (_cancelled) return;
-    final idx = devices.indexWhere(
-        (d) => d.id == incoming.id || (incoming.ip != null && d.ip == incoming.ip));
+    final idx = devices.indexWhere((d) =>
+        d.id == incoming.id ||
+        (incoming.ip != null && d.ip == incoming.ip) ||
+        // The same physical switch can be found by two independent scan
+        // paths that don't share an id or ip at all — e.g. a Matter/HA
+        // device shows up both via _runHaScan (id 'ha_<entityId>', ip set
+        // to the HA server's own address, not the device's) and via the
+        // WiFi/mDNS LAN scan (its real id/ip, discovered as a generic
+        // network device). Neither of the checks above catches that, so
+        // it appeared as two cards for one switch. When either side is
+        // HA-derived and the names match exactly, treat it as the same
+        // device — a false-positive merge here (two different real
+        // switches that happen to share a name) is far rarer than the
+        // guaranteed duplicate this was causing.
+        (d.name == incoming.name &&
+            (d.protocol == SwitchProtocol.haRest ||
+                incoming.protocol == SwitchProtocol.haRest)));
     if (idx >= 0) {
-      // Prefer richer details on duplicate
+      // Prefer richer details on duplicate — and specifically prefer the
+      // HA-derived side of an HA/LAN merge, since its connectionData
+      // carries the entityId the edit sheet's device lookup depends on;
+      // a plain LAN-scan entry never has that.
       final existing = devices[idx];
-      if (incoming.model != null && existing.model == null) {
+      final incomingIsBetter = existing.protocol != SwitchProtocol.haRest &&
+              incoming.protocol == SwitchProtocol.haRest ||
+          (incoming.model != null && existing.model == null);
+      if (incomingIsBetter) {
         devices[idx] = incoming;
       }
     } else {
