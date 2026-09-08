@@ -1024,21 +1024,27 @@ class _ChannelToggle extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (toggling)
-              SizedBox(
-                width: 14, height: 14,
-                child: CircularProgressIndicator(
-                    strokeWidth: 1.8, color: color),
-              )
-            else
-              Icon(
-                isOn
-                    ? Symbols.toggle_on
-                    : Symbols.toggle_off,
-                color: isOn ? color : context.tText2(0.38),
-                size: 18,
+            // Solid filled button instead of a small bare icon — a much
+            // bigger, more obviously-clickable target with a clear on/off
+            // color state, chosen by the user from a set of mockup options.
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 40, height: 30,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: isOn ? color : context.tText2(0.18),
+                borderRadius: BorderRadius.circular(8),
               ),
-            const SizedBox(width: 6),
+              child: toggling
+                  ? SizedBox(
+                      width: 14, height: 14,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 1.8, color: Colors.white),
+                    )
+                  : Icon(Symbols.power,
+                      color: Colors.white, size: 17),
+            ),
+            const SizedBox(width: 8),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
