@@ -968,6 +968,15 @@ class _AddAutomationSheetState extends State<_AddAutomationSheet> {
       name:      name,
       condition: condition,
       action:    action,
+      triggerType: _triggerType.name,
+      triggerDeviceId: (_triggerType == _TriggerType.device ||
+              _triggerType == _TriggerType.sensor)
+          ? _triggerDevice?.id
+          : null,
+      triggerHour: _triggerType == _TriggerType.time ? _triggerTime.hour : null,
+      triggerMinute: _triggerType == _TriggerType.time ? _triggerTime.minute : null,
+      actionType: _actionType.name,
+      actionDeviceId: _actionDevice?.id,
     ));
     Navigator.pop(context);
   }

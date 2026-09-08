@@ -1076,6 +1076,7 @@ class AppState extends ChangeNotifier {
   void toggleAutomation(String id) {
     final auto = _automations.firstWhere((a) => a.id == id);
     auto.isEnabled = !auto.isEnabled;
+    _saveAutomationsToPrefs();
     notifyListeners();
   }
 
@@ -1169,13 +1170,7 @@ class AppState extends ChangeNotifier {
     'kwh_rate': _kwhRate,
     'keep_shabbat': _keepShabbat,
     'devices': _devices.map((d) => d.toJson()).toList(),
-    'automations': _automations.map((a) => {
-      'id': a.id,
-      'name': a.name,
-      'condition': a.condition,
-      'action': a.action,
-      'is_enabled': a.isEnabled,
-    }).toList(),
+    'automations': _automations.map((a) => a.toJson()).toList(),
     'rooms': _rooms
         .where((r) => !(r['key'] as String? ?? '').startsWith('__'))
         .toList(),
@@ -1195,13 +1190,7 @@ class AppState extends ChangeNotifier {
         final m = raw as Map<String, dynamic>;
         final id = m['id'] as String? ?? '';
         if (id.isNotEmpty && !existingAIds.contains(id)) {
-          _automations.add(Automation(
-            id: id,
-            name: m['name'] as String? ?? '',
-            condition: m['condition'] as String? ?? '',
-            action: m['action'] as String? ?? '',
-            isEnabled: m['is_enabled'] as bool? ?? true,
-          ));
+          _automations.add(Automation.fromJson(m));
         }
       } catch (_) {}
     }
@@ -1227,6 +1216,7 @@ class AppState extends ChangeNotifier {
       final p = await SharedPreferences.getInstance();
       await p.setBool('ft_shabbat', _keepShabbat);
     }
+    _saveAutomationsToPrefs();
     notifyListeners();
   }
 
@@ -1550,6 +1540,15 @@ class AppState extends ChangeNotifier {
       } catch (_) {}
     }
 
+    final savedAutomations = prefs.getString('ft_automations');
+    if (savedAutomations != null) {
+      try {
+        _automations = (jsonDecode(savedAutomations) as List)
+            .map((e) => Automation.fromJson(Map<String, dynamic>.from(e as Map)))
+            .toList();
+      } catch (_) {}
+    }
+
     final jsonList = prefs.getStringList('ft_devices') ?? [];
     if (jsonList.isNotEmpty) {
       _devices = jsonList
@@ -1826,6 +1825,7 @@ class AppState extends ChangeNotifier {
 
   void addAutomation(Automation automation) {
     _automations.add(automation);
+    _saveAutomationsToPrefs();
     notifyListeners();
   }
 
@@ -1836,21 +1836,39 @@ class AppState extends ChangeNotifier {
   }) {
     final idx = _automations.indexWhere((a) => a.id == id);
     if (idx >= 0) {
-      final wasEnabled = _automations[idx].isEnabled;
+      // Editing here only touches the display text — the structured
+      // trigger/action fields (what AutomationEngine actually executes)
+      // are preserved as-is, since this free-text sheet has no UI for
+      // re-picking a device/time/action type.
+      final existing = _automations[idx];
       _automations[idx] = Automation(
         id: id,
         name: name,
         condition: condition,
         action: action,
-        isEnabled: wasEnabled,
+        isEnabled: existing.isEnabled,
+        triggerType: existing.triggerType,
+        triggerDeviceId: existing.triggerDeviceId,
+        triggerHour: existing.triggerHour,
+        triggerMinute: existing.triggerMinute,
+        actionType: existing.actionType,
+        actionDeviceId: existing.actionDeviceId,
       );
+      _saveAutomationsToPrefs();
       notifyListeners();
     }
   }
 
   void deleteAutomation(String id) {
     _automations.removeWhere((a) => a.id == id);
+    _saveAutomationsToPrefs();
     notifyListeners();
+  }
+
+  Future<void> _saveAutomationsToPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+        'ft_automations', jsonEncode(_automations.map((a) => a.toJson()).toList()));
   }
 
   // ── Rooms CRUD ───────────────────────────────────────────────

@@ -266,9 +266,21 @@ class SecurityEvent {
 class Automation {
   final String id;
   String name;
-  String condition;
-  String action;
+  String condition; // human-readable display text (built by the add wizard)
+  String action;    // human-readable display text (built by the add wizard)
   bool isEnabled;
+
+  // ── Structured fields — what AutomationEngine actually executes ──────────
+  // condition/action above are just labels; these are what's evaluated.
+  // Nullable/defaulted so an automation restored from an old backup (text
+  // only) simply never fires instead of crashing.
+  String? triggerType;      // 'device' | 'sensor' | 'time' | 'arrival'
+  String? triggerDeviceId;  // for 'device'/'sensor' triggers
+  int? triggerHour;         // for 'time' triggers
+  int? triggerMinute;
+
+  String? actionType;       // 'turnOn'|'turnOff'|'lock'|'unlock'|'openBlind'|'closeBlind'|'allLightsOff'
+  String? actionDeviceId;   // null = apply to all matching devices
 
   Automation({
     required this.id,
@@ -276,7 +288,41 @@ class Automation {
     required this.condition,
     required this.action,
     this.isEnabled = true,
+    this.triggerType,
+    this.triggerDeviceId,
+    this.triggerHour,
+    this.triggerMinute,
+    this.actionType,
+    this.actionDeviceId,
   });
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'condition': condition,
+        'action': action,
+        'is_enabled': isEnabled,
+        if (triggerType != null) 'trigger_type': triggerType,
+        if (triggerDeviceId != null) 'trigger_device_id': triggerDeviceId,
+        if (triggerHour != null) 'trigger_hour': triggerHour,
+        if (triggerMinute != null) 'trigger_minute': triggerMinute,
+        if (actionType != null) 'action_type': actionType,
+        if (actionDeviceId != null) 'action_device_id': actionDeviceId,
+      };
+
+  factory Automation.fromJson(Map<String, dynamic> json) => Automation(
+        id: json['id'] as String,
+        name: json['name'] as String? ?? '',
+        condition: json['condition'] as String? ?? '',
+        action: json['action'] as String? ?? '',
+        isEnabled: json['is_enabled'] as bool? ?? true,
+        triggerType: json['trigger_type'] as String?,
+        triggerDeviceId: json['trigger_device_id'] as String?,
+        triggerHour: json['trigger_hour'] as int?,
+        triggerMinute: json['trigger_minute'] as int?,
+        actionType: json['action_type'] as String?,
+        actionDeviceId: json['action_device_id'] as String?,
+      );
 }
 
 enum CameraStreamType { mjpeg, rtsp, hls, snapshot, unknown }

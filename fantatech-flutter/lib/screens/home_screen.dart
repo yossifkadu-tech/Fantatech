@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../l10n/strings.dart';
 import '../models/app_state.dart';
 import '../models/device.dart';
+import '../services/automation_engine.dart';
 import '../services/gateways/gateway_manager.dart';
 import '../services/gateways/gateway_model.dart';
 import '../services/schedule_service.dart';
@@ -107,6 +108,7 @@ class _HomeScreenState extends State<HomeScreen> {
       // sheet, not just the Plugs hub) actually execute regardless of
       // which screen the user opens.
       ScheduleService.instance.attach(context.read<AppState>());
+      AutomationEngine.instance.attach(context.read<AppState>());
     });
   }
 
