@@ -8,6 +8,7 @@ import '../models/app_state.dart';
 import '../models/device.dart';
 import '../services/gateways/gateway_manager.dart';
 import '../services/gateways/gateway_model.dart';
+import '../services/schedule_service.dart';
 import '../services/weather/weather_service.dart';
 import 'gateways/gateway_hub_screen.dart';
 import 'ai/fanta_ai_screen.dart';
@@ -100,7 +101,13 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _migrateLayout());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _migrateLayout();
+      // Attach once here so on/off schedules (set from any device's edit
+      // sheet, not just the Plugs hub) actually execute regardless of
+      // which screen the user opens.
+      ScheduleService.instance.attach(context.read<AppState>());
+    });
   }
 
   // One-time cleanup for devices with a layout persisted before the

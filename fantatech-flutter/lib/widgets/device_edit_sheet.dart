@@ -5,9 +5,11 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../l10n/strings.dart';
 import '../models/app_state.dart';
 import '../models/device.dart';
+import '../models/device_capabilities.dart';
 import '../models/media_module.dart';
 import '../theme/app_theme.dart';
 import '../theme/device_icons.dart';
+import 'schedule_sheet.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // showEntityEditSheet — the single, app-wide rename/delete sheet. Generic
@@ -34,6 +36,9 @@ Future<void> showEntityEditSheet(
   // Optional — when provided, shows the device's real network address here
   // (edit sheet only — the card itself stays free of raw IPs).
   String? ipAddress,
+  // Optional — when provided, an "on/off schedule" option appears in the
+  // sheet, opening the shared schedule sheet.
+  VoidCallback? onSchedule,
   // TEMPORARY — see the debugInfo build in showDeviceEditSheet.
   String? debugInfo,
 }) {
@@ -53,6 +58,7 @@ Future<void> showEntityEditSheet(
       currentRoom: currentRoom,
       onAssignRoom: onAssignRoom,
       ipAddress: ipAddress,
+      onSchedule: onSchedule,
       debugInfo: debugInfo,
     ),
   );
@@ -78,6 +84,10 @@ Future<void> showDeviceEditSheet(
     currentRoom: device.room,
     onAssignRoom: (room) => state.updateDeviceRoom(device.id, room),
     ipAddress: device.attributes['ip'] as String?,
+    onSchedule: DeviceCapabilities.of(device).contains(DeviceCapability.onOff)
+        ? () => showScheduleSheet(context,
+            device: device, color: DeviceIcons.color(device.type))
+        : null,
     // TEMPORARY diagnostic — shows what's actually stored for a device
     // that's misbehaving, so we don't have to keep guessing. Remove once
     // the home-screen-count issue is confirmed fixed.
@@ -146,6 +156,7 @@ class _EntityEditSheet extends StatefulWidget {
   final String? currentRoom;
   final void Function(String room)? onAssignRoom;
   final String? ipAddress;
+  final VoidCallback? onSchedule;
   final String? debugInfo;
 
   const _EntityEditSheet({
@@ -159,6 +170,7 @@ class _EntityEditSheet extends StatefulWidget {
     this.currentRoom,
     this.onAssignRoom,
     this.ipAddress,
+    this.onSchedule,
     this.debugInfo,
   });
 
@@ -394,6 +406,34 @@ class _EntityEditSheetState extends State<_EntityEditSheet> {
                           ? s.noRoom
                           : s.translateRoomKey(widget.currentRoom!),
                       style: TextStyle(color: context.tText2(0.45), fontSize: 13),
+                    ),
+                    Icon(Symbols.chevron_right, color: context.tText2(0.35), size: 16),
+                  ],
+                ),
+              ),
+            ),
+          ],
+          if (widget.onSchedule != null) ...[
+            const SizedBox(height: 10),
+            GestureDetector(
+              onTap: widget.onSchedule,
+              child: Container(
+                height: 44,
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                decoration: BoxDecoration(
+                  color: context.tText2(0.05),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Symbols.schedule, color: context.tText2(0.6), size: 18),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(s.boilerSchedule,
+                          style: TextStyle(
+                              color: context.tText,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600)),
                     ),
                     Icon(Symbols.chevron_right, color: context.tText2(0.35), size: 16),
                   ],
