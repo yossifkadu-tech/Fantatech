@@ -306,6 +306,7 @@ class AppState extends ChangeNotifier {
     if (_devices.length != before) changed = true;
     if (changed) {
       _saveDevicesToPrefs();
+      _saveRoomsToPrefs();
       notifyListeners();
     }
   }
@@ -1529,6 +1530,26 @@ class AppState extends ChangeNotifier {
       await prefs.setBool('ft_shabbat', true);
     }
 
+    // Load persisted rooms/groups (falls back to the hardcoded default seed
+    // — declared as the _rooms field initializer — on first run or if
+    // nothing was ever saved).
+    final savedRooms = prefs.getString('ft_rooms');
+    if (savedRooms != null) {
+      try {
+        _rooms = (jsonDecode(savedRooms) as List)
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList();
+      } catch (_) {}
+    }
+    final savedRoomGroups = prefs.getString('ft_room_groups');
+    if (savedRoomGroups != null) {
+      try {
+        _roomGroups = (jsonDecode(savedRoomGroups) as List)
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList();
+      } catch (_) {}
+    }
+
     final jsonList = prefs.getStringList('ft_devices') ?? [];
     if (jsonList.isNotEmpty) {
       _devices = jsonList
@@ -1683,6 +1704,17 @@ class AppState extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     final jsonList = _cameras.map((c) => jsonEncode(c.toJson())).toList();
     await prefs.setStringList('ft_cameras', jsonList);
+  }
+
+  // _rooms/_roomGroups were never persisted at all before this — every
+  // manual add/rename/delete (and any manually-created group) silently
+  // reverted to the hardcoded default seed list on the next full app
+  // restart. HA-synced rooms/areas happened to survive because
+  // _syncHaRooms rebuilds them fresh from HA on every launch anyway.
+  Future<void> _saveRoomsToPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('ft_rooms', jsonEncode(_rooms));
+    await prefs.setString('ft_room_groups', jsonEncode(_roomGroups));
   }
 
   // ── Camera management ────────────────────────────────────────
@@ -1845,6 +1877,7 @@ class AppState extends ChangeNotifier {
     } else {
       _rooms.add(newRoom);
     }
+    _saveRoomsToPrefs();
     notifyListeners();
   }
 
@@ -1858,6 +1891,7 @@ class AppState extends ChangeNotifier {
         // preserve existing parentGroupId if caller doesn't specify a new one
         'parentGroupId': parentGroupId ?? _rooms[index]['parentGroupId'],
       };
+      _saveRoomsToPrefs();
       notifyListeners();
     }
   }
@@ -1865,6 +1899,7 @@ class AppState extends ChangeNotifier {
   void deleteRoom(int index) {
     if (index >= 0 && index < _rooms.length) {
       _rooms.removeAt(index);
+      _saveRoomsToPrefs();
       notifyListeners();
     }
   }
@@ -1873,6 +1908,7 @@ class AppState extends ChangeNotifier {
   void addRoomGroup(String id, String name, int iconCodePoint) {
     if (_roomGroups.any((g) => g['id'] == id)) return;
     _roomGroups.add({'id': id, 'name': name, 'icon': iconCodePoint, 'collapsed': false});
+    _saveRoomsToPrefs();
     notifyListeners();
   }
 
@@ -1884,6 +1920,7 @@ class AppState extends ChangeNotifier {
         'name': name,
         'icon': iconCodePoint,
       };
+      _saveRoomsToPrefs();
       notifyListeners();
     }
   }
@@ -1892,6 +1929,7 @@ class AppState extends ChangeNotifier {
     final idx = _roomGroups.indexWhere((g) => g['id'] == id);
     if (idx >= 0) {
       _roomGroups[idx] = {..._roomGroups[idx], 'collapsed': collapsed};
+      _saveRoomsToPrefs();
       notifyListeners();
     }
   }
@@ -1904,6 +1942,7 @@ class AppState extends ChangeNotifier {
         _rooms[i] = Map.from(_rooms[i])..remove('parentGroupId');
       }
     }
+    _saveRoomsToPrefs();
     notifyListeners();
   }
 

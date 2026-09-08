@@ -139,9 +139,12 @@ class _RoomsScreenState extends State<RoomsScreen>
                           color: context.tText2(0.6), size: 18),
                     ),
                   ),
-                  // Add room button
+                  // Add room button — short tap adds a room; long-press adds
+                  // a new category/group (e.g. "חדרי שינה") that rooms can
+                  // then be added into, one at a time, from its own header.
                   GestureDetector(
                     onTap: () => _showRoomDialog(context, state, s),
+                    onLongPress: () => _showAddGroupDialog(context, state),
                     child: Container(
                       width: 38, height: 38,
                       decoration: BoxDecoration(
@@ -292,6 +295,34 @@ class _RoomsScreenState extends State<RoomsScreen>
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  /// New manually-created category — e.g. "חדרי שינה" — that rooms can be
+  /// grouped under, same as the automatic HA-floor groups but user-made.
+  /// The id just needs to be unique; a timestamp is enough here since this
+  /// isn't shared with anything external.
+  void _showAddGroupDialog(BuildContext context, AppState state) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: context.tCard,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (_) => _RoomEditSheet(
+        s: state.strings,
+        initialName: '',
+        initialIconCode: 0xe318,
+        initialOccupant: null,
+        isEdit: false,
+        isGroup: true,
+        onSave: (name, iconCode, _) {
+          state.addRoomGroup(
+              DateTime.now().millisecondsSinceEpoch.toString(),
+              name, iconCode);
+          Navigator.pop(context);
+        },
       ),
     );
   }
@@ -929,6 +960,7 @@ class _RoomEditSheet extends StatefulWidget {
   final int initialIconCode;
   final String? initialOccupant;
   final bool isEdit;
+  final bool isGroup;
   final void Function(String name, int iconCode, String? occupant) onSave;
 
   const _RoomEditSheet({
@@ -937,6 +969,7 @@ class _RoomEditSheet extends StatefulWidget {
     required this.initialIconCode,
     required this.initialOccupant,
     required this.isEdit,
+    this.isGroup = false,
     required this.onSave,
   });
 
@@ -982,7 +1015,9 @@ class _RoomEditSheetState extends State<_RoomEditSheet> {
 
           // Title
           Text(
-            widget.isEdit ? s.editRoom : s.addRoom,
+            widget.isGroup
+                ? 'קטגוריה חדשה'
+                : (widget.isEdit ? s.editRoom : s.addRoom),
             style: TextStyle(
               color: context.tText, fontSize: 17, fontWeight: FontWeight.bold),
           ),
@@ -993,7 +1028,7 @@ class _RoomEditSheetState extends State<_RoomEditSheet> {
             controller: _nameCtrl,
             style: TextStyle(color: context.tText, fontSize: 14),
             decoration: InputDecoration(
-              hintText: s.roomNameHint,
+              hintText: widget.isGroup ? 'למשל: חדרי שינה' : s.roomNameHint,
               hintStyle: TextStyle(color: context.tText2(0.30)),
               prefixIcon: Icon(Symbols.drive_file_rename,
                   color: context.tText2(0.38), size: 18),
@@ -1060,42 +1095,44 @@ class _RoomEditSheetState extends State<_RoomEditSheet> {
               );
             }).toList(),
           ),
-          const SizedBox(height: 20),
+          if (!widget.isGroup) ...[
+            const SizedBox(height: 20),
 
-          // Occupant (kids / adults) picker
-          Text(
-            s.roomOccupantLabel,
-            style: TextStyle(
-                color: context.tText2(0.55),
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.8),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              _OccupantChip(
-                label: s.occupantNone,
-                icon: Symbols.block,
-                selected: _occupant == null,
-                onTap: () => setState(() => _occupant = null),
-              ),
-              const SizedBox(width: 8),
-              _OccupantChip(
-                label: s.occupantKids,
-                icon: Symbols.child_care,
-                selected: _occupant == 'kids',
-                onTap: () => setState(() => _occupant = 'kids'),
-              ),
-              const SizedBox(width: 8),
-              _OccupantChip(
-                label: s.occupantAdults,
-                icon: Symbols.person,
-                selected: _occupant == 'adults',
-                onTap: () => setState(() => _occupant = 'adults'),
-              ),
-            ],
-          ),
+            // Occupant (kids / adults) picker
+            Text(
+              s.roomOccupantLabel,
+              style: TextStyle(
+                  color: context.tText2(0.55),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.8),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                _OccupantChip(
+                  label: s.occupantNone,
+                  icon: Symbols.block,
+                  selected: _occupant == null,
+                  onTap: () => setState(() => _occupant = null),
+                ),
+                const SizedBox(width: 8),
+                _OccupantChip(
+                  label: s.occupantKids,
+                  icon: Symbols.child_care,
+                  selected: _occupant == 'kids',
+                  onTap: () => setState(() => _occupant = 'kids'),
+                ),
+                const SizedBox(width: 8),
+                _OccupantChip(
+                  label: s.occupantAdults,
+                  icon: Symbols.person,
+                  selected: _occupant == 'adults',
+                  onTap: () => setState(() => _occupant = 'adults'),
+                ),
+              ],
+            ),
+          ],
           const SizedBox(height: 20),
 
           // Save button
