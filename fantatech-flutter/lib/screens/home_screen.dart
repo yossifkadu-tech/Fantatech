@@ -141,6 +141,23 @@ class _HomeScreenState extends State<HomeScreen> {
       }
       await prefs.setBool(migrationKey, true);
     }
+
+    // One-time declutter (per user request): the ad/store promo cards
+    // start hidden on the home screen's first page. They're not removed —
+    // toggling visibility instead of pruning means "עריכת לוח" → the item
+    // is still there, just switched off, so the user can bring it back
+    // exactly the way they'd un-hide anything else.
+    const declutterKey = 'home_declutter_ads_v1';
+    if (!(prefs.getBool(declutterKey) ?? false)) {
+      final current = provider.getItems(DashboardId.home, allItems: true);
+      for (final id in const ['ad_banner', 'store']) {
+        final idx = current.indexWhere((i) => i.id == id);
+        if (idx != -1 && current[idx].visible) {
+          provider.toggleVisibility(DashboardId.home, id);
+        }
+      }
+      await prefs.setBool(declutterKey, true);
+    }
   }
 
   @override

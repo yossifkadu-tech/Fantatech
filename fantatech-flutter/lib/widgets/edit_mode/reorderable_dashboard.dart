@@ -454,8 +454,10 @@ abstract class DashboardDefaults {
     LayoutItem(id: 'quick_actions',   type: 'quick_actions',   order: 1,  page: 0),
     LayoutItem(id: 'security',        type: 'security',        order: 2,  page: 0),
     LayoutItem(id: 'cameras',         type: 'cameras',         order: 3,  page: 0),
-    LayoutItem(id: 'ad_banner',       type: 'ad_banner',       order: 4,  page: 0),
-    LayoutItem(id: 'store',           type: 'store',           order: 5,  page: 0),
+    // Hidden by default (declutter) — still fully available via
+    // עריכת לוח → un-hide, just not shown on a fresh install.
+    LayoutItem(id: 'ad_banner',       type: 'ad_banner',       order: 4,  page: 0, visible: false),
+    LayoutItem(id: 'store',           type: 'store',           order: 5,  page: 0, visible: false),
     LayoutItem(id: 'weather',         type: 'weather',         order: 10, page: 1),
     LayoutItem(id: 'system_status',   type: 'system_status',   order: 11, page: 1),
     LayoutItem(id: 'home_management', type: 'home_management', order: 12, page: 1),
