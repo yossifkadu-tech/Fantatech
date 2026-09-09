@@ -8,6 +8,7 @@ import '../../models/device.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/device_icons.dart';
 import '../../widgets/device_edit_sheet.dart';
+import '../../widgets/smart_switch_card.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SwitchDetailScreen — single-device control page opened by tapping a
@@ -44,15 +45,13 @@ class SwitchDetailScreen extends StatelessWidget {
       return Scaffold(backgroundColor: context.tBg);
     }
 
-    final on = device.isOn;
-    final accent = DeviceIcons.color(device.type);
-
     return Scaffold(
       backgroundColor: context.tBg,
       body: SafeArea(
         child: Column(
           children: [
-            // ── Header ───────────────────────────────────────────────
+            // ── Top bar (back / edit only — the card below carries the
+            // name, room, and connection status) ───────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
               child: Row(
@@ -69,32 +68,7 @@ class SwitchDetailScreen extends StatelessWidget {
                           color: context.tText2(0.6), size: 18),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Container(
-                    width: 40, height: 40,
-                    decoration: BoxDecoration(
-                      color: accent.withValues(alpha: 0.14),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(DeviceIcons.forDevice(device), color: accent, size: 20),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(device.name,
-                            style: TextStyle(
-                                color: context.tText,
-                                fontSize: 17,
-                                fontWeight: FontWeight.bold),
-                            overflow: TextOverflow.ellipsis),
-                        if (device.room.isNotEmpty)
-                          Text(s.translateRoomKey(device.room),
-                              style: TextStyle(color: context.tText2(0.5), fontSize: 12)),
-                      ],
-                    ),
-                  ),
+                  const Spacer(),
                   GestureDetector(
                     onTap: () => showDeviceEditSheet(context, device: device!, state: state),
                     child: Container(
@@ -110,26 +84,19 @@ class SwitchDetailScreen extends StatelessWidget {
               ),
             ),
 
-            // ── Big toggle ───────────────────────────────────────────
+            // ── Switch card ────────────────────────────────────────────
             Expanded(
               child: Center(
-                child: SwitchGlowToggle(
-                  on: on,
-                  label: (on ? s.deviceOn : s.deviceOff).toUpperCase(),
-                  onTap: () => state.toggleDevice(device!.id),
-                ),
-              ),
-            ),
-
-            // ── Status line ──────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.only(bottom: 40),
-              child: Text(
-                '${device.name} — ${on ? s.deviceOn : s.deviceOff}',
-                style: TextStyle(
-                  color: on ? _switchOnGlow : context.tText2(0.45),
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: SmartSwitchCard(
+                    deviceName: device.name,
+                    roomName: device.room.isEmpty ? '' : s.translateRoomKey(device.room),
+                    isOn: device.isOn,
+                    isConnected: device.online,
+                    icon: DeviceIcons.forDevice(device),
+                    onChanged: (_) => state.toggleDevice(device!.id),
+                  ),
                 ),
               ),
             ),
