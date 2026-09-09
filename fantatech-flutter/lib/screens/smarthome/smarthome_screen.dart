@@ -35,16 +35,17 @@ class _SmartHomeScreenState extends State<SmartHomeScreen> {
   @override
   void initState() {
     super.initState();
-    // One-time cleanup: AC and sensor category chips used to live here —
-    // they've moved to Home Management and Security respectively. Existing
-    // installs would otherwise keep showing the old chips forever, since
-    // seeding a dashboard only ever ADDS new items, never removes retired
-    // ones.
+    // One-time cleanup: the sensor category chip used to live here — it's
+    // moved to Security. AC used to live here too, then moved to Home
+    // Management, and per user request has now moved back — no longer
+    // pruned. Existing installs would otherwise keep showing retired
+    // chips forever, since seeding a dashboard only ever ADDS new items,
+    // never removes retired ones.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final provider = context.read<LayoutProvider>();
       provider.pruneObsoleteTypes(
-          DashboardId.smarthomeCats, const {'cat_ac', 'cat_sensor'});
+          DashboardId.smarthomeCats, const {'cat_sensor'});
       // Existing installs persisted their smarthomeCats layout before the
       // Robot Vacuum chip existed — ensureLayout is a no-op once a layout is
       // saved, so it needs to be added explicitly for upgraders.

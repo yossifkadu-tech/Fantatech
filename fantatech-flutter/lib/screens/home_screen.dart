@@ -15,13 +15,11 @@ import 'gateways/gateway_hub_screen.dart';
 import 'ai/fanta_ai_screen.dart';
 import 'smarthome/scan_discovery_screen.dart';
 import 'smarthome/smarthome_screen.dart';
-import 'smarthome/ac_hub_screen.dart';
 import 'smarthome/plugs_hub_screen.dart';
 import 'smarthome/smart_switch_hub_screen.dart';
 import 'smarthome/sensor_hub_screen.dart';
 import 'smarthome/blind_hub_screen.dart';
 import 'security/smart_lock_hub_screen.dart';
-import 'energy/energy_screen.dart';
 import 'profile/profile_screen.dart' show showHomeManagementSheet;
 import 'solar/solar_screen.dart';
 import 'rooms/rooms_screen.dart';
@@ -1733,7 +1731,9 @@ class _HomeManagementBanner extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: AppSpacing.s12),
-                // ── Sub-links: rooms + energy + AC ────────────────
+                // ── Sub-links: rooms ─────────────────────────────
+                // Energy removed and AC moved to the Smart Home category
+                // grid per user request — both used to link out from here.
                 Row(
                   children: [
                     Expanded(
@@ -1742,24 +1742,6 @@ class _HomeManagementBanner extends StatelessWidget {
                         label: s.roomsHeader,
                         onTap: () => Navigator.push(context,
                             MaterialPageRoute(builder: (_) => const RoomsScreen())),
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.s8),
-                    Expanded(
-                      child: _HmSubLink(
-                        icon: Symbols.bolt,
-                        label: s.energyTitle,
-                        onTap: () => Navigator.push(context,
-                            MaterialPageRoute(builder: (_) => const EnergyScreen())),
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.s8),
-                    Expanded(
-                      child: _HmSubLink(
-                        icon: Symbols.thermostat,
-                        label: s.qaAc,
-                        onTap: () => Navigator.push(context,
-                            MaterialPageRoute(builder: (_) => const ACHubScreen())),
                       ),
                     ),
                   ],

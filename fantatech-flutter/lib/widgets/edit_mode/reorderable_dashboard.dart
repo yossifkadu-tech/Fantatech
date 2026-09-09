@@ -492,9 +492,10 @@ abstract class DashboardDefaults {
   static const List<LayoutItem> smarthomeCats = [
     LayoutItem(id: 'cat_light',  type: 'cat_light',  order: 0),
     LayoutItem(id: 'cat_blind',  type: 'cat_blind',  order: 1),
-    LayoutItem(id: 'cat_plug',   type: 'cat_plug',   order: 2),
-    LayoutItem(id: 'cat_switch', type: 'cat_switch', order: 3),
-    LayoutItem(id: 'cat_vacuum', type: 'cat_vacuum', order: 4),
+    LayoutItem(id: 'cat_ac',     type: 'cat_ac',     order: 2),
+    LayoutItem(id: 'cat_plug',   type: 'cat_plug',   order: 3),
+    LayoutItem(id: 'cat_switch', type: 'cat_switch', order: 4),
+    LayoutItem(id: 'cat_vacuum', type: 'cat_vacuum', order: 5),
   ];
 
   // Automations screen
