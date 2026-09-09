@@ -331,16 +331,6 @@ class _TopBar extends StatelessWidget {
                         ],
                       ),
                     ),
-                    const SizedBox(width: AppSpacing.s8),
-                    Container(
-                      width: 32, height: 32,
-                      decoration: BoxDecoration(
-                        color: _kOrange,
-                        borderRadius: BorderRadius.circular(AppBorderRadius.r8),
-                        boxShadow: AppShadows.glow(_kOrange, intensity: 0.6),
-                      ),
-                      child: const Icon(Symbols.home, color: Colors.white, size: 20),
-                    ),
                   ],
                 ),
               ),
@@ -361,6 +351,17 @@ class _TopBar extends StatelessWidget {
                   iconResolver: DashboardDefaults.iconOf,
                   showPageToggle: true,
                 ),
+              ),
+              const SizedBox(width: AppSpacing.s8),
+              // Moved to the far edge of the top bar, per user request.
+              Container(
+                width: 32, height: 32,
+                decoration: BoxDecoration(
+                  color: _kOrange,
+                  borderRadius: BorderRadius.circular(AppBorderRadius.r8),
+                  boxShadow: AppShadows.glow(_kOrange, intensity: 0.6),
+                ),
+                child: const Icon(Symbols.home, color: Colors.white, size: 20),
               ),
             ],
           ),
@@ -1806,11 +1807,15 @@ class _StoreBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.select((AppState st) => st.strings);
+    final isHebrew = context.select((AppState st) => st.locale) == AppLocale.hebrew;
+    // Per user request: this card's own header, specifically — not
+    // s.storeTitle's other use inside the full StoreScreen.
+    final cardTitle = isHebrew ? 'פרסום ומימון' : s.storeTitle;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s16),
       child: Semantics(
-        label: s.storeTitle,
+        label: cardTitle,
         button: true,
         child: GestureDetector(
           onTap: () => Navigator.push(context,
@@ -1853,7 +1858,7 @@ class _StoreBanner extends StatelessWidget {
                 const SizedBox(width: AppSpacing.s16),
                 Expanded(
                   child: Text(
-                    s.storeTitle,
+                    cardTitle,
                     style: AppTypography.titleMd.copyWith(color: Colors.white),
                   ),
                 ),
