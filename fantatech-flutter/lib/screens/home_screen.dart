@@ -1335,13 +1335,9 @@ class _SmartHomeBanner extends StatelessWidget {
     bool isGw(Device d) => d.source == 'gateway';
 
     final lightsOn    = devices.where((d) => isGw(d) && d.type == DeviceType.light && d.isOn).length;
-    final lightsAll   = devices.where((d) => isGw(d) && d.type == DeviceType.light).length;
     final switchesOn  = devices.where((d) => isGw(d) && d.type == DeviceType.smartSwitch && d.isOn).length;
-    final switchesAll = devices.where((d) => isGw(d) && d.type == DeviceType.smartSwitch).length;
     final plugsOn     = devices.where((d) => isGw(d) && d.type == DeviceType.smartPlug && d.isOn).length;
-    final plugsAll    = devices.where((d) => isGw(d) && d.type == DeviceType.smartPlug).length;
     final heaterOn    = devices.where((d) => isGw(d) && d.type == DeviceType.waterHeater && d.isOn).length;
-    final heaterAll   = devices.where((d) => isGw(d) && d.type == DeviceType.waterHeater).length;
 
     final totalAll    = devices.where(isGw).length;
     final totalActive = lightsOn + switchesOn + plugsOn + heaterOn;
@@ -1471,34 +1467,33 @@ class _SmartHomeBanner extends StatelessWidget {
                     ],
                   ),
                 ),
-                // ── Device category strip ──────────────────────
+                // ── Device category rows ────────────────────────
                 Container(
                   margin: const EdgeInsets.fromLTRB(
                       AppSpacing.s12, 0, AppSpacing.s12, AppSpacing.s12),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.s8, vertical: AppSpacing.s12),
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s4),
                   decoration: BoxDecoration(
                     color: Colors.black.withValues(alpha: 0.20),
                     borderRadius: AppBorderRadius.card,
                     border: Border.all(
                         color: Colors.white.withValues(alpha: 0.10), width: 1),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  child: Column(
                     children: [
-                      _ShStat(
+                      _ShRow(
                           icon: Symbols.lightbulb,
-                          value: '$lightsOn/$lightsAll',
+                          count: lightsOn,
                           label: s.qaLights,
                           color: AppColors.lightColor,
+                          strings: s,
                           onTap: () => Navigator.push(context,
                               MaterialPageRoute(builder: (_) => const LightsHubScreen()))),
-                      const _ShDivider(),
-                      _ShStat(
+                      _ShRow(
                           icon: Symbols.toggle_on,
-                          value: '$switchesOn/$switchesAll',
+                          count: switchesOn,
                           label: s.switchesCategory,
                           color: AppColors.plugColor,
+                          strings: s,
                           // switchesAll counts every smartSwitch Device
                           // regardless of source, but SmartSwitchHubScreen
                           // only ever shows LAN-scan results — a switch
@@ -1512,20 +1507,21 @@ class _SmartHomeBanner extends StatelessWidget {
                           onTap: () => Navigator.push(context,
                               MaterialPageRoute(builder: (_) => const DevicesScreen(
                                   initialCategory: DeviceType.smartSwitch)))),
-                      const _ShDivider(),
-                      _ShStat(
+                      _ShRow(
                           icon: Symbols.power,
-                          value: '$plugsOn/$plugsAll',
+                          count: plugsOn,
                           label: s.qaPlugs,
                           color: AppColors.plugColor,
+                          strings: s,
                           onTap: () => Navigator.push(context,
                               MaterialPageRoute(builder: (_) => const PlugsHubScreen()))),
-                      const _ShDivider(),
-                      _ShStat(
+                      _ShRow(
                           icon: Symbols.water_drop,
-                          value: '$heaterOn/$heaterAll',
+                          count: heaterOn,
                           label: s.qaWaterHeater,
                           color: AppColors.networkColor,
+                          strings: s,
+                          isLast: true,
                           onTap: () => Navigator.push(context,
                               MaterialPageRoute(builder: (_) => const DevicesScreen(
                                   initialCategory: DeviceType.waterHeater)))),
@@ -1541,54 +1537,65 @@ class _SmartHomeBanner extends StatelessWidget {
   }
 }
 
-class _ShStat extends StatelessWidget {
+/// A single tappable category row (icon, name, "N on" count, chevron) —
+/// used in place of the old compact stat strip so each category reads
+/// clearly on its own line instead of being squeezed into a shared row.
+class _ShRow extends StatelessWidget {
   final IconData icon;
-  final String value;
+  final int count;
   final String label;
   final Color color;
+  final S strings;
   final VoidCallback? onTap;
-  const _ShStat({
+  final bool isLast;
+  const _ShRow({
     required this.icon,
-    required this.value,
+    required this.count,
     required this.label,
     required this.color,
+    required this.strings,
     this.onTap,
+    this.isLast = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: color, size: 18),
-          const SizedBox(height: AppSpacing.s4),
-          Text(
-            value,
-            style: AppTypography.titleMd.copyWith(color: Colors.white),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: AppTypography.labelSm.copyWith(
-                color: Colors.white.withValues(alpha: 0.55)),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
+      child: Container(
+        decoration: BoxDecoration(
+          border: isLast
+              ? null
+              : Border(
+                  bottom: BorderSide(
+                      color: Colors.white.withValues(alpha: 0.08), width: 1)),
+        ),
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.s12, vertical: AppSpacing.s12),
+        child: Row(
+          children: [
+            Container(
+              width: 36, height: 36,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.18),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 18),
+            ),
+            const SizedBox(width: AppSpacing.s12),
+            Expanded(
+              child: Text(label,
+                  style: AppTypography.titleMd.copyWith(color: Colors.white)),
+            ),
+            Text('$count ${strings.devicesOn}',
+                style: AppTypography.caption
+                    .copyWith(color: Colors.white.withValues(alpha: 0.55))),
+            const SizedBox(width: AppSpacing.s4),
+            Icon(Symbols.chevron_right,
+                color: Colors.white.withValues(alpha: 0.35), size: 18),
+          ],
+        ),
       ),
-    );
-  }
-}
-
-class _ShDivider extends StatelessWidget {
-  const _ShDivider();
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 1, height: 32,
-      color: Colors.white.withValues(alpha: 0.15),
     );
   }
 }
