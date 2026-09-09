@@ -1664,6 +1664,18 @@ class AppState extends ChangeNotifier {
         await prefs.remove(key);
       }
     }
+    // ── One-time nudge to a clean-white background (per user request,
+    // matching a supplied mockup) — fires once ever, then leaves the
+    // Appearance sheet free to change it back like any other preference.
+    // Separate from the schema migration above so it doesn't disturb
+    // that block's already-proven accent/radius behavior.
+    const String _kLightNudgeKey = 'theme_light_nudge_v1';
+    if (!(prefs.getBool(_kLightNudgeKey) ?? false)) {
+      _themeMode  = ThemeMode.light;
+      _themePrefs = _themePrefs.copyWith(bgStyle: AppBgStyle.lightWhite);
+      await prefs.setString('tp_bg', AppBgStyle.lightWhite.name);
+      await prefs.setBool(_kLightNudgeKey, true);
+    }
     // Load Azure credentials + known persons
     await loadAzureCredentials();
     final personsList = prefs.getStringList('known_persons') ?? [];
