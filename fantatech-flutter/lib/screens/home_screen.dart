@@ -299,6 +299,13 @@ class _TopBar extends StatelessWidget {
               Expanded(
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
+                  // "end" in this row's own LTR context pushes the text+icon
+                  // group all the way to this Expanded box's right edge —
+                  // which is the screen's true right edge, since this is
+                  // the first child of the outer (RTL) row. Without this,
+                  // content sat flush against the "+"/tune buttons instead,
+                  // leaving a gap at the actual screen edge.
+                  mainAxisAlignment: MainAxisAlignment.end,
                   textDirection: TextDirection.ltr,
                   children: [
                     Flexible(
