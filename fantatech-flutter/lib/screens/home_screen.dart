@@ -15,6 +15,7 @@ import 'gateways/gateway_hub_screen.dart';
 import 'ai/fanta_ai_screen.dart';
 import 'smarthome/scan_discovery_screen.dart';
 import 'smarthome/smarthome_screen.dart';
+import 'smarthome/ac_hub_screen.dart';
 import 'smarthome/plugs_hub_screen.dart';
 import 'smarthome/smart_switch_hub_screen.dart';
 import 'smarthome/sensor_hub_screen.dart';
@@ -1374,14 +1375,15 @@ class _SmartHomeBanner extends StatelessWidget {
     final switchesOn  = devices.where((d) => isGw(d) && d.type == DeviceType.smartSwitch && d.isOn).length;
     final plugsOn     = devices.where((d) => isGw(d) && d.type == DeviceType.smartPlug && d.isOn).length;
     final heaterOn    = devices.where((d) => isGw(d) && d.type == DeviceType.waterHeater && d.isOn).length;
+    final acOn        = devices.where((d) => isGw(d) && d.type == DeviceType.airConditioner && d.isOn).length;
 
     final totalAll    = devices.where(isGw).length;
-    final totalActive = lightsOn + switchesOn + plugsOn + heaterOn;
+    final totalActive = lightsOn + switchesOn + plugsOn + heaterOn + acOn;
     final anyOffline  = devices.where(isGw).any((d) => d.status == DeviceStatus.offline);
 
     const smartHomeTypes = {
       DeviceType.light, DeviceType.blind, DeviceType.smartPlug,
-      DeviceType.smartSwitch, DeviceType.waterHeater,
+      DeviceType.smartSwitch, DeviceType.waterHeater, DeviceType.airConditioner,
       DeviceType.smartTv, DeviceType.matterDevice,
     };
     final unreadAlerts = notifications
@@ -1550,9 +1552,20 @@ class _SmartHomeBanner extends StatelessWidget {
                           label: heLabel('שקעים חכמים', s.qaPlugs),
                           color: AppColors.plugColor,
                           strings: s,
-                          isLast: true,
                           onTap: () => Navigator.push(context,
                               MaterialPageRoute(builder: (_) => const PlugsHubScreen()))),
+                      // Quick-access shortcut, per user request — same
+                      // category also lives one tap deeper in the "בית
+                      // חכם" category grid (SmartHomeScreen).
+                      _ShRow(
+                          icon: Symbols.thermostat,
+                          count: acOn,
+                          label: s.qaAc,
+                          color: AppColors.acColor,
+                          strings: s,
+                          isLast: true,
+                          onTap: () => Navigator.push(context,
+                              MaterialPageRoute(builder: (_) => const ACHubScreen()))),
                     ],
                   ),
                 ),
