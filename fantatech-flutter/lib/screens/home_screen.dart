@@ -1499,8 +1499,19 @@ class _SmartHomeBanner extends StatelessWidget {
                           value: '$switchesOn/$switchesAll',
                           label: s.switchesCategory,
                           color: AppColors.plugColor,
+                          // switchesAll counts every smartSwitch Device
+                          // regardless of source, but SmartSwitchHubScreen
+                          // only ever shows LAN-scan results — a switch
+                          // imported via a cloud gateway (e.g. Tuya's
+                          // Devices → Link App Account) counted in the
+                          // number here could never be reached by tapping
+                          // it, since that screen has no path to display
+                          // it at all. DevicesScreen reads AppState
+                          // directly, so it actually shows everything the
+                          // count includes.
                           onTap: () => Navigator.push(context,
-                              MaterialPageRoute(builder: (_) => const SmartSwitchHubScreen()))),
+                              MaterialPageRoute(builder: (_) => const DevicesScreen(
+                                  initialCategory: DeviceType.smartSwitch)))),
                       const _ShDivider(),
                       _ShStat(
                           icon: Symbols.power,
