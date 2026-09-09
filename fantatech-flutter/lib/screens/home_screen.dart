@@ -989,21 +989,25 @@ Widget _iconAvatarWithBadge({
 // ─────────────────────────────────────────────────────────────────
 class _BannerGearButton extends StatelessWidget {
   final VoidCallback onTap;
-  const _BannerGearButton({required this.onTap});
+  // True for a light-background banner (e.g. the white "בית חכם" card) —
+  // flips the icon/fill to dark instead of the default white-on-dark look.
+  final bool dark;
+  const _BannerGearButton({required this.onTap, this.dark = false});
 
   @override
   Widget build(BuildContext context) {
+    final fg = dark ? Colors.black : Colors.white;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: 32, height: 32,
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.12),
+          color: fg.withValues(alpha: dark ? 0.06 : 0.12),
           shape: BoxShape.circle,
         ),
-        child: const Icon(
+        child: Icon(
           Symbols.settings,
-          color: Colors.white, size: 17,
+          color: fg, size: 17,
         ),
       ),
     );
@@ -1396,21 +1400,20 @@ class _SmartHomeBanner extends StatelessWidget {
               MaterialPageRoute(builder: (_) => const SmartHomeScreen())),
           child: Container(
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF7B2F00), Color(0xFF3A1200)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+              // Per user request: white card, black text — was a dark
+              // orange gradient.
+              color: Colors.white,
               borderRadius: AppBorderRadius.cardLg,
+              border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF7B2F00).withValues(alpha: 0.45),
+                  color: Colors.black.withValues(alpha: 0.08),
                   blurRadius: 24,
                   spreadRadius: 2,
                   offset: const Offset(0, 8),
                 ),
                 BoxShadow(
-                  color: const Color(0xFF7B2F00).withValues(alpha: 0.20),
+                  color: Colors.black.withValues(alpha: 0.04),
                   blurRadius: 48,
                   offset: const Offset(0, 16),
                 ),
@@ -1430,14 +1433,14 @@ class _SmartHomeBanner extends StatelessWidget {
                         avatar: Container(
                           width: 60, height: 60,
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.15),
+                            color: Colors.black.withValues(alpha: 0.06),
                             shape: BoxShape.circle,
                             border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.25), width: 1.5),
+                                color: Colors.black.withValues(alpha: 0.12), width: 1.5),
                           ),
                           child: const Icon(
                             Symbols.home_iot_device,
-                            color: Colors.white,
+                            color: Colors.black,
                             size: 30,
                           ),
                         ),
@@ -1451,7 +1454,7 @@ class _SmartHomeBanner extends StatelessWidget {
                             Text(
                               s.smartHomeTitle,
                               style: AppTypography.caption.copyWith(
-                                color: Colors.white.withValues(alpha: 0.70),
+                                color: Colors.black.withValues(alpha: 0.60),
                                 letterSpacing: 0.8,
                               ),
                             ),
@@ -1459,7 +1462,7 @@ class _SmartHomeBanner extends StatelessWidget {
                             Text(
                               s.deviceCountFmt.replaceAll('{n}', '$totalAll'),
                               style: AppTypography.displaySm.copyWith(
-                                color: Colors.white,
+                                color: Colors.black,
                                 letterSpacing: -0.5,
                               ),
                             ),
@@ -1472,7 +1475,7 @@ class _SmartHomeBanner extends StatelessWidget {
                                 Text(
                                   '$totalActive ${s.devicesOn}',
                                   style: AppTypography.caption.copyWith(
-                                    color: Colors.white.withValues(alpha: 0.75),
+                                    color: Colors.black.withValues(alpha: 0.65),
                                   ),
                                 ),
                               ],
@@ -1482,6 +1485,7 @@ class _SmartHomeBanner extends StatelessWidget {
                       ),
                       // Quick settings gear → jump straight to add device
                       _BannerGearButton(
+                        dark: true,
                         onTap: () => Navigator.push(context,
                             MaterialPageRoute(builder: (_) => const AddDeviceScreen())),
                       ),
@@ -1490,12 +1494,12 @@ class _SmartHomeBanner extends StatelessWidget {
                       Container(
                         width: 32, height: 32,
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.12),
+                          color: Colors.black.withValues(alpha: 0.06),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
                           Symbols.chevron_right,
-                          color: Colors.white, size: 20,
+                          color: Colors.black, size: 20,
                         ),
                       ),
                     ],
@@ -1507,10 +1511,10 @@ class _SmartHomeBanner extends StatelessWidget {
                       AppSpacing.s12, 0, AppSpacing.s12, AppSpacing.s12),
                   padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s4),
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.20),
+                    color: Colors.black.withValues(alpha: 0.04),
                     borderRadius: AppBorderRadius.card,
                     border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.10), width: 1),
+                        color: Colors.black.withValues(alpha: 0.08), width: 1),
                   ),
                   child: Column(
                     children: [
@@ -1594,7 +1598,7 @@ class _ShRow extends StatelessWidget {
               ? null
               : Border(
                   bottom: BorderSide(
-                      color: Colors.white.withValues(alpha: 0.08), width: 1)),
+                      color: Colors.black.withValues(alpha: 0.06), width: 1)),
         ),
         padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.s12, vertical: AppSpacing.s12),
@@ -1611,14 +1615,14 @@ class _ShRow extends StatelessWidget {
             const SizedBox(width: AppSpacing.s12),
             Expanded(
               child: Text(label,
-                  style: AppTypography.titleMd.copyWith(color: Colors.white)),
+                  style: AppTypography.titleMd.copyWith(color: Colors.black)),
             ),
             Text('$count ${strings.devicesOn}',
                 style: AppTypography.caption
-                    .copyWith(color: Colors.white.withValues(alpha: 0.55))),
+                    .copyWith(color: Colors.black.withValues(alpha: 0.55))),
             const SizedBox(width: AppSpacing.s4),
             Icon(Symbols.chevron_right,
-                color: Colors.white.withValues(alpha: 0.35), size: 18),
+                color: Colors.black.withValues(alpha: 0.35), size: 18),
           ],
         ),
       ),
