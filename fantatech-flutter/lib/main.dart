@@ -30,10 +30,9 @@ import 'screens/auth/login_screen.dart';
 import 'screens/onboarding/splash_screen.dart';
 import 'screens/onboarding/onboarding_screen.dart';
 import 'screens/home_screen.dart';
-import 'screens/security/security_screen.dart';
 import 'screens/cameras/cameras_screen.dart';
 import 'screens/profile/profile_screen.dart';
-import 'screens/smarthome/smarthome_screen.dart';
+import 'screens/energy/energy_screen.dart';
 import 'screens/automations/automations_screen.dart';
 import 'services/push/ha_push_service.dart';
 
@@ -596,11 +595,14 @@ class _MainShellState extends State<MainShell> {
   @override
   void initState() {
     super.initState();
+    // Security dropped from the nav — the "מערכות אבטחה" card on the home
+    // screen already covers it. Devices/SmartHome slot replaced with
+    // Energy — the "בית חכם" card on home already covers device browsing,
+    // but there was no other way to reach consumption/usage graphs.
     _screens = [
       const HomeScreen(),
       const CamerasScreen(),
-      const SecurityScreen(),
-      const SmartHomeScreen(),
+      const EnergyScreen(),
       const AutomationsScreen(),
       const ProfileScreen(),
     ];
@@ -610,6 +612,11 @@ class _MainShellState extends State<MainShell> {
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
     final s = state.strings;
+    // Shorter than s.energyTitle ("צריכת אנרגיה") to fit the nav bar —
+    // Hebrew-only, matching the user's own wording; other locales keep
+    // the existing, already-translated energyTitle.
+    final consumptionLabel =
+        state.locale == AppLocale.hebrew ? 'צריכה' : s.energyTitle;
 
     void onNavTap(int i) {
       context.read<LayoutProvider>().exitAllEditModes();
@@ -631,8 +638,7 @@ class _MainShellState extends State<MainShell> {
               isRtl: state.isRtl,
               navHome: s.navHome,
               navCameras: s.navCameras,
-              navSecurity: s.navSecurity,
-              navDevices: s.navDevices,
+              navConsumption: consumptionLabel,
               navAutomations: s.navAutomations,
               navProfile: s.navProfile,
             ),
@@ -650,8 +656,7 @@ class _MainShellState extends State<MainShell> {
           onTap: onNavTap,
           navHome: s.navHome,
           navCameras: s.navCameras,
-          navSecurity: s.navSecurity,
-          navDevices: s.navDevices,
+          navConsumption: consumptionLabel,
           navAutomations: s.navAutomations,
           navProfile: s.navProfile,
         ),
@@ -674,8 +679,7 @@ class _SideNav extends StatelessWidget {
   final bool isRtl;
   final String navHome;
   final String navCameras;
-  final String navSecurity;
-  final String navDevices;
+  final String navConsumption;
   final String navAutomations;
   final String navProfile;
 
@@ -685,8 +689,7 @@ class _SideNav extends StatelessWidget {
     required this.isRtl,
     required this.navHome,
     required this.navCameras,
-    required this.navSecurity,
-    required this.navDevices,
+    required this.navConsumption,
     required this.navAutomations,
     required this.navProfile,
   });
@@ -698,14 +701,14 @@ class _SideNav extends StatelessWidget {
     final kUnsel    = isLight ? const Color(0xFF9E9E9E) : const Color(0xFF6B7280);
     final bgColor   = isLight ? Colors.white : Theme.of(context).colorScheme.surface;
 
-    final labels = [navHome, navCameras, navSecurity, navDevices, navAutomations, navProfile];
+    final labels = [navHome, navCameras, navConsumption, navAutomations, navProfile];
     final icons  = [
-      Symbols.home,      Symbols.videocam,     Symbols.shield,
-      Symbols.devices,   Symbols.auto_awesome,  Symbols.person,
+      Symbols.home,      Symbols.videocam,     Symbols.bar_chart,
+      Symbols.auto_awesome,  Symbols.person,
     ];
     final activeIcons = [
-      Symbols.home,       Symbols.videocam,      Symbols.shield,
-      Symbols.devices,    Symbols.auto_awesome,   Symbols.person,
+      Symbols.home,       Symbols.videocam,      Symbols.bar_chart,
+      Symbols.auto_awesome,   Symbols.person,
     ];
 
     final railBorder = isRtl
@@ -802,8 +805,7 @@ class _BottomNav extends StatelessWidget {
   final ValueChanged<int> onTap;
   final String navHome;
   final String navCameras;
-  final String navSecurity;
-  final String navDevices;
+  final String navConsumption;
   final String navAutomations;
   final String navProfile;
 
@@ -812,8 +814,7 @@ class _BottomNav extends StatelessWidget {
     required this.onTap,
     required this.navHome,
     required this.navCameras,
-    required this.navSecurity,
-    required this.navDevices,
+    required this.navConsumption,
     required this.navAutomations,
     required this.navProfile,
   });
@@ -855,8 +856,7 @@ class _BottomNav extends StatelessWidget {
         destinations: [
           _dest(Symbols.home,        Symbols.home,        navHome),
           _dest(Symbols.videocam,    Symbols.videocam,    navCameras),
-          _dest(Symbols.shield,      Symbols.shield,      navSecurity),
-          _dest(Symbols.devices,     Symbols.devices,     navDevices),
+          _dest(Symbols.bar_chart,   Symbols.bar_chart,   navConsumption),
           _dest(Symbols.auto_awesome,Symbols.auto_awesome,navAutomations),
           _dest(Symbols.person,Symbols.person,     navProfile),
         ],
