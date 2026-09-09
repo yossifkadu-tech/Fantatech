@@ -331,6 +331,18 @@ class _TopBar extends StatelessWidget {
                         ],
                       ),
                     ),
+                    const SizedBox(width: AppSpacing.s8),
+                    // Right after the wordmark, not at the far edge of the
+                    // whole bar — per user correction.
+                    Container(
+                      width: 32, height: 32,
+                      decoration: BoxDecoration(
+                        color: _kOrange,
+                        borderRadius: BorderRadius.circular(AppBorderRadius.r8),
+                        boxShadow: AppShadows.glow(_kOrange, intensity: 0.6),
+                      ),
+                      child: const Icon(Symbols.home, color: Colors.white, size: 20),
+                    ),
                   ],
                 ),
               ),
@@ -351,17 +363,6 @@ class _TopBar extends StatelessWidget {
                   iconResolver: DashboardDefaults.iconOf,
                   showPageToggle: true,
                 ),
-              ),
-              const SizedBox(width: AppSpacing.s8),
-              // Moved to the far edge of the top bar, per user request.
-              Container(
-                width: 32, height: 32,
-                decoration: BoxDecoration(
-                  color: _kOrange,
-                  borderRadius: BorderRadius.circular(AppBorderRadius.r8),
-                  boxShadow: AppShadows.glow(_kOrange, intensity: 0.6),
-                ),
-                child: const Icon(Symbols.home, color: Colors.white, size: 20),
               ),
             ],
           ),

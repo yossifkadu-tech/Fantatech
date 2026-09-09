@@ -206,9 +206,15 @@ class GatewayHubScreen extends StatelessWidget {
         // added — update those fields in place rather than replacing the
         // whole Device, which would wipe out the user's name/room edits.
         final existing = state.devices[existingIdx];
-        if (existing.isOn != d.isOn || existing.status != d.status) {
+        final newWatts = d.attributes['watts'];
+        if (existing.isOn != d.isOn ||
+            existing.status != d.status ||
+            existing.attributes['watts'] != newWatts) {
           existing.isOn = d.isOn;
           existing.status = d.status;
+          if (newWatts != null) {
+            existing.attributes = {...existing.attributes, 'watts': newWatts};
+          }
           refreshed = true;
         }
       }

@@ -140,13 +140,22 @@ class TuyaCloudClient {
         // off. Different device generations use different codes for the
         // same concept, so check every switch-like code this app might see.
         bool isOn = false;
+        // 'cur_power' is Tuya's standard live-power DP for metering sockets
+        // (kept in the 'cz' category), reported in units of 0.1 W — hence
+        // the /10. Devices that don't report it (most switches, and plugs
+        // without a metering chip) simply have no 'watts' attribute at all,
+        // rather than a fabricated 0 — that's what the Energy screen uses
+        // to tell "no data" apart from "actually drawing nothing".
+        num? watts;
         final statusList = d['status'] as List<dynamic>? ?? const [];
         for (final s in statusList) {
           final entry = s as Map<String, dynamic>;
           final code = entry['code'] as String?;
           if (code == 'switch_1' || code == 'switch' || code == 'switch_led') {
             isOn = entry['value'] == true;
-            break;
+          } else if (code == 'cur_power') {
+            final raw = entry['value'] as num?;
+            if (raw != null) watts = raw / 10;
           }
         }
 
@@ -163,6 +172,7 @@ class TuyaCloudClient {
             'protocol': 'tuya',
             'tuyaId': id,
             'category': category,
+            if (watts != null) 'watts': watts,
           },
         ));
       }
