@@ -16,12 +16,12 @@ import '../../widgets/device_edit_sheet.dart';
 // through toggles coming from anywhere — manual tap, a schedule, or an
 // automation — and pops gracefully if the device gets deleted while open.
 // ─────────────────────────────────────────────────────────────────────────────
+const _switchOnGradient = [Color(0xFFFFC266), Color(0xFFFF7A00)];
+const _switchOnGlow = Color(0xFFFF7A00);
+
 class SwitchDetailScreen extends StatelessWidget {
   final String deviceId;
   const SwitchDetailScreen({super.key, required this.deviceId});
-
-  static const _onGradient = [Color(0xFFFFC266), Color(0xFFFF7A00)];
-  static const _onGlow = Color(0xFFFF7A00);
 
   @override
   Widget build(BuildContext context) {
@@ -113,51 +113,10 @@ class SwitchDetailScreen extends StatelessWidget {
             // ── Big toggle ───────────────────────────────────────────
             Expanded(
               child: Center(
-                child: GestureDetector(
-                  onTap: () {
-                    HapticFeedback.mediumImpact();
-                    state.toggleDevice(device!.id);
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 250),
-                    width: 220, height: 220,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: RadialGradient(
-                        colors: on
-                            ? _onGradient
-                            : [context.tText2(0.10), context.tText2(0.05)],
-                      ),
-                      boxShadow: on
-                          ? [
-                              BoxShadow(
-                                color: _onGlow.withValues(alpha: 0.45),
-                                blurRadius: 60,
-                                spreadRadius: 8,
-                              ),
-                            ]
-                          : [],
-                    ),
-                    child: Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Symbols.power_settings_new,
-                              color: on ? Colors.white : context.tText2(0.35), size: 56),
-                          const SizedBox(height: 8),
-                          Text(
-                            (on ? s.deviceOn : s.deviceOff).toUpperCase(),
-                            style: TextStyle(
-                              color: on ? Colors.white : context.tText2(0.4),
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                child: SwitchGlowToggle(
+                  on: on,
+                  label: (on ? s.deviceOn : s.deviceOff).toUpperCase(),
+                  onTap: () => state.toggleDevice(device!.id),
                 ),
               ),
             ),
@@ -168,13 +127,85 @@ class SwitchDetailScreen extends StatelessWidget {
               child: Text(
                 '${device.name} — ${on ? s.deviceOn : s.deviceOff}',
                 style: TextStyle(
-                  color: on ? _onGlow : context.tText2(0.45),
+                  color: on ? _switchOnGlow : context.tText2(0.45),
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SwitchGlowToggle — the circular gradient/glow on-off button, reused at full
+// size on [SwitchDetailScreen] and at a smaller size on each switch card in
+// SmartSwitchHubScreen's list.
+// ─────────────────────────────────────────────────────────────────────────────
+class SwitchGlowToggle extends StatelessWidget {
+  final bool on;
+  final String label;
+  final VoidCallback onTap;
+  final double size;
+
+  const SwitchGlowToggle({
+    super.key,
+    required this.on,
+    required this.label,
+    required this.onTap,
+    this.size = 220,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final iconSize = size * 0.25;
+    final labelSize = size * 0.09;
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.mediumImpact();
+        onTap();
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        width: size, height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: RadialGradient(
+            colors: on
+                ? _switchOnGradient
+                : [context.tText2(0.10), context.tText2(0.05)],
+          ),
+          boxShadow: on
+              ? [
+                  BoxShadow(
+                    color: _switchOnGlow.withValues(alpha: 0.45),
+                    blurRadius: size * 0.27,
+                    spreadRadius: size * 0.036,
+                  ),
+                ]
+              : [],
+        ),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Symbols.power_settings_new,
+                  color: on ? Colors.white : context.tText2(0.35), size: iconSize),
+              SizedBox(height: size * 0.036),
+              Text(
+                label,
+                style: TextStyle(
+                  color: on ? Colors.white : context.tText2(0.4),
+                  fontSize: labelSize,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

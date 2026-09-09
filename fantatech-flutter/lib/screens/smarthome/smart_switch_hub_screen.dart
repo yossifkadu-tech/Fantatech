@@ -962,25 +962,58 @@ class _SwitchCardState extends State<_SwitchCard> {
 
             const SizedBox(height: 12),
 
-            // ── Channel toggles ─────────────────────────────────────────────
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: dev.channels.asMap().entries.map((entry) {
-                final i   = entry.key;
-                final ch  = entry.value;
-                final tog = _toggling.contains(i);
+            // ── Toggle ────────────────────────────────────────────────────
+            // A registered single-channel device (the common case) gets the
+            // big glow toggle instead of the small chip — same control used
+            // on SwitchDetailScreen, just smaller. Multi-channel or
+            // not-yet-added devices keep the compact per-channel chips,
+            // since the big toggle only makes sense for one already-added
+            // switch.
+            if (dev.isRegistered && dev.channels.length == 1)
+              Center(
+                child: Column(
+                  children: [
+                    SwitchGlowToggle(
+                      on: dev.channels[0].isOn,
+                      label: (dev.channels[0].isOn ? s.deviceOn : s.deviceOff)
+                          .toUpperCase(),
+                      onTap: () => _toggle(0),
+                      size: 130,
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      '${dev.name} — '
+                      '${dev.channels[0].isOn ? s.deviceOn : s.deviceOff}',
+                      style: TextStyle(
+                        color: dev.channels[0].isOn
+                            ? brandColor
+                            : context.tText2(0.45),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: dev.channels.asMap().entries.map((entry) {
+                  final i   = entry.key;
+                  final ch  = entry.value;
+                  final tog = _toggling.contains(i);
 
-                return _ChannelToggle(
-                  channel:    ch,
-                  toggling:   tog,
-                  canControl: dev.protocol.canControl,
-                  color:      brandColor,
-                  onTap:      () => _toggle(i),
-                  onLongPress: () => _showEditSheet(i),
-                );
-              }).toList(),
-            ),
+                  return _ChannelToggle(
+                    channel:    ch,
+                    toggling:   tog,
+                    canControl: dev.protocol.canControl,
+                    color:      brandColor,
+                    onTap:      () => _toggle(i),
+                    onLongPress: () => _showEditSheet(i),
+                  );
+                }).toList(),
+              ),
           ],
         ),
       ),
