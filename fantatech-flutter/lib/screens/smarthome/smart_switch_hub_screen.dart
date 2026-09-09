@@ -978,7 +978,7 @@ class _SwitchCardState extends State<_SwitchCard> {
                       label: (dev.channels[0].isOn ? s.deviceOn : s.deviceOff)
                           .toUpperCase(),
                       onTap: () => _toggle(0),
-                      size: 130,
+                      size: 70,
                     ),
                     const SizedBox(height: 10),
                     Text(

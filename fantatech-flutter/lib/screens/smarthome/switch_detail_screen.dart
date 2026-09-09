@@ -159,9 +159,15 @@ class SwitchGlowToggle extends StatelessWidget {
     this.size = 220,
   });
 
+  // Below this diameter the "ON"/"OFF" text becomes too small to read, so
+  // it's dropped and the icon alone (scaled up a bit to compensate) carries
+  // the state — the status text next to the toggle already says the rest.
+  static const _labelMinSize = 90.0;
+
   @override
   Widget build(BuildContext context) {
-    final iconSize = size * 0.25;
+    final showLabel = size >= _labelMinSize;
+    final iconSize = size * (showLabel ? 0.25 : 0.4);
     final labelSize = size * 0.09;
     return GestureDetector(
       onTap: () {
@@ -194,16 +200,18 @@ class SwitchGlowToggle extends StatelessWidget {
             children: [
               Icon(Symbols.power_settings_new,
                   color: on ? Colors.white : context.tText2(0.35), size: iconSize),
-              SizedBox(height: size * 0.036),
-              Text(
-                label,
-                style: TextStyle(
-                  color: on ? Colors.white : context.tText2(0.4),
-                  fontSize: labelSize,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1,
+              if (showLabel) ...[
+                SizedBox(height: size * 0.036),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: on ? Colors.white : context.tText2(0.4),
+                    fontSize: labelSize,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1,
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         ),
