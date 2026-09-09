@@ -301,16 +301,6 @@ class _TopBar extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   textDirection: TextDirection.ltr,
                   children: [
-                    Container(
-                      width: 32, height: 32,
-                      decoration: BoxDecoration(
-                        color: _kOrange,
-                        borderRadius: BorderRadius.circular(AppBorderRadius.r8),
-                        boxShadow: AppShadows.glow(_kOrange, intensity: 0.6),
-                      ),
-                      child: const Icon(Symbols.home, color: Colors.white, size: 20),
-                    ),
-                    const SizedBox(width: AppSpacing.s8),
                     Flexible(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -340,6 +330,16 @@ class _TopBar extends StatelessWidget {
                           ),
                         ],
                       ),
+                    ),
+                    const SizedBox(width: AppSpacing.s8),
+                    Container(
+                      width: 32, height: 32,
+                      decoration: BoxDecoration(
+                        color: _kOrange,
+                        borderRadius: BorderRadius.circular(AppBorderRadius.r8),
+                        boxShadow: AppShadows.glow(_kOrange, intensity: 0.6),
+                      ),
+                      child: const Icon(Symbols.home, color: Colors.white, size: 20),
                     ),
                   ],
                 ),
