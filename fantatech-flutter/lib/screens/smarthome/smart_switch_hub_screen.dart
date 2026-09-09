@@ -21,6 +21,7 @@ import '../../services/switches/switch_controller.dart';
 import '../../services/switches/switch_scan_engine.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/device_edit_sheet.dart';
+import 'switch_detail_screen.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -840,8 +841,17 @@ class _SwitchCardState extends State<_SwitchCard> {
     // long-press target instead of just the small per-channel toggle chip —
     // a much easier area to hit. Multi-channel devices keep long-press on
     // each individual channel toggle (below), since the card as a whole
-    // can't map to one specific channel's Device.
+    // can't map to one specific channel's Device. A tap on an added
+    // single-channel card opens the full-screen control page.
     return GestureDetector(
+      onTap: dev.isRegistered && dev.channels.length == 1
+          ? () {
+              final device = _findRegisteredDevice(context, 0);
+              if (device == null) return;
+              Navigator.push(context, MaterialPageRoute(
+                  builder: (_) => SwitchDetailScreen(deviceId: device.id)));
+            }
+          : null,
       onLongPress:
           dev.channels.length == 1 ? () => _showEditSheet(0) : null,
       child: Container(
