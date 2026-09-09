@@ -12,11 +12,12 @@ import '../../widgets/edit_mode/reorderable_dashboard.dart';
 import '../../widgets/edit_mode/edit_toolbar.dart';
 import '../../providers/layout_provider.dart';
 import '../../models/layout_item.dart';
-import '../devices/devices_screen.dart';
 import 'add_device_screen.dart';
 import 'blind_hub_screen.dart';
 import 'lights_hub_screen.dart';
 import 'ac_hub_screen.dart';
+import 'plugs_hub_screen.dart';
+import 'smart_switch_hub_screen.dart';
 import 'sensor_hub_screen.dart';
 import 'intercom_hub_screen.dart';
 import 'robot_vacuum_hub_screen.dart';
@@ -68,14 +69,8 @@ class _SmartHomeScreenState extends State<SmartHomeScreen> {
     'cat_light':  (label: s.lightsCategory,   type: DeviceType.light,           icon: DeviceIcons.icon(DeviceType.light),           color: DeviceIcons.color(DeviceType.light),           dest: const LightsHubScreen()),
     'cat_blind':  (label: s.blindsCategory,   type: DeviceType.blind,           icon: DeviceIcons.icon(DeviceType.blind),           color: DeviceIcons.color(DeviceType.blind),           dest: const BlindHubScreen()),
     'cat_ac':     (label: s.acCategory,       type: DeviceType.airConditioner,  icon: DeviceIcons.icon(DeviceType.airConditioner),  color: DeviceIcons.color(DeviceType.airConditioner),  dest: const ACHubScreen()),
-    // dest routes to DevicesScreen (not the LAN-scan hub screens) — this
-    // grid is for VIEWING devices you already have, regardless of source;
-    // scanning for new Shelly/Sonoff/Tuya-local switches or plugs happens
-    // through the dedicated Add Device flow instead. Kept as two separate
-    // concerns after user feedback that having both a hub screen AND this
-    // grid open a device-viewing screen felt duplicated/confusing.
-    'cat_plug':   (label: heLabel('שקעים חכמים', s.plugsCategory), type: DeviceType.smartPlug,       icon: DeviceIcons.icon(DeviceType.smartPlug),       color: DeviceIcons.color(DeviceType.smartPlug),       dest: const DevicesScreen(initialCategory: DeviceType.smartPlug)),
-    'cat_switch': (label: heLabel('מתגי תאורה', s.switchesCategory), type: DeviceType.smartSwitch,     icon: DeviceIcons.icon(DeviceType.smartSwitch),     color: DeviceIcons.color(DeviceType.smartSwitch),     dest: const DevicesScreen(initialCategory: DeviceType.smartSwitch)),
+    'cat_plug':   (label: heLabel('שקעים חכמים', s.plugsCategory), type: DeviceType.smartPlug,       icon: DeviceIcons.icon(DeviceType.smartPlug),       color: DeviceIcons.color(DeviceType.smartPlug),       dest: const PlugsHubScreen()),
+    'cat_switch': (label: heLabel('מתגי תאורה', s.switchesCategory), type: DeviceType.smartSwitch,     icon: DeviceIcons.icon(DeviceType.smartSwitch),     color: DeviceIcons.color(DeviceType.smartSwitch),     dest: const SmartSwitchHubScreen()),
     'cat_sensor':   (label: s.sensorsCategory,  type: DeviceType.motionSensor, icon: DeviceIcons.icon(DeviceType.motionSensor), color: DeviceIcons.color(DeviceType.motionSensor), dest: const SensorHubScreen()),
     'cat_intercom': (label: s.intercomCategory, type: DeviceType.intercom,    icon: DeviceIcons.icon(DeviceType.intercom),     color: DeviceIcons.color(DeviceType.intercom),     dest: const IntercomHubScreen()),
     'cat_vacuum':   (label: s.vacuumCategory,   type: DeviceType.robotVacuum, icon: DeviceIcons.icon(DeviceType.robotVacuum),  color: DeviceIcons.color(DeviceType.robotVacuum),  dest: const RobotVacuumHubScreen()),
