@@ -55,16 +55,27 @@ class _SmartHomeScreenState extends State<SmartHomeScreen> {
 
   // ── Category metadata keyed by layout item type ──────────────────────────
   Map<String, ({String label, DeviceType type, IconData icon, Color color, Widget? dest})>
-      _catMeta(S s, BuildContext ctx) => {
+      _catMeta(S s, BuildContext ctx) {
+    // Per user-supplied mockup: Hebrew-only label overrides, matching the
+    // ones applied to the home screen's category row list. Left out of the
+    // shared strings.dart definitions since s.plugsCategory/s.switchesCategory
+    // are reused elsewhere (scan sheets, other category chips) where the
+    // generic name still applies, and there's no reviewed translation for
+    // these more specific phrasings in the other 6 locales yet.
+    final isHebrew = ctx.read<AppState>().locale == AppLocale.hebrew;
+    String heLabel(String hebrew, String fallback) => isHebrew ? hebrew : fallback;
+
+    return {
     'cat_light':  (label: s.lightsCategory,   type: DeviceType.light,           icon: DeviceIcons.icon(DeviceType.light),           color: DeviceIcons.color(DeviceType.light),           dest: const LightsHubScreen()),
     'cat_blind':  (label: s.blindsCategory,   type: DeviceType.blind,           icon: DeviceIcons.icon(DeviceType.blind),           color: DeviceIcons.color(DeviceType.blind),           dest: const BlindHubScreen()),
     'cat_ac':     (label: s.acCategory,       type: DeviceType.airConditioner,  icon: DeviceIcons.icon(DeviceType.airConditioner),  color: DeviceIcons.color(DeviceType.airConditioner),  dest: const ACHubScreen()),
-    'cat_plug':   (label: s.plugsCategory,    type: DeviceType.smartPlug,       icon: DeviceIcons.icon(DeviceType.smartPlug),       color: DeviceIcons.color(DeviceType.smartPlug),       dest: const PlugsHubScreen()),
-    'cat_switch': (label: s.switchesCategory, type: DeviceType.smartSwitch,     icon: DeviceIcons.icon(DeviceType.smartSwitch),     color: DeviceIcons.color(DeviceType.smartSwitch),     dest: const SmartSwitchHubScreen()),
+    'cat_plug':   (label: heLabel('שקעים חכמים', s.plugsCategory), type: DeviceType.smartPlug,       icon: DeviceIcons.icon(DeviceType.smartPlug),       color: DeviceIcons.color(DeviceType.smartPlug),       dest: const PlugsHubScreen()),
+    'cat_switch': (label: heLabel('מתגי תאורה', s.switchesCategory), type: DeviceType.smartSwitch,     icon: DeviceIcons.icon(DeviceType.smartSwitch),     color: DeviceIcons.color(DeviceType.smartSwitch),     dest: const SmartSwitchHubScreen()),
     'cat_sensor':   (label: s.sensorsCategory,  type: DeviceType.motionSensor, icon: DeviceIcons.icon(DeviceType.motionSensor), color: DeviceIcons.color(DeviceType.motionSensor), dest: const SensorHubScreen()),
     'cat_intercom': (label: s.intercomCategory, type: DeviceType.intercom,    icon: DeviceIcons.icon(DeviceType.intercom),     color: DeviceIcons.color(DeviceType.intercom),     dest: const IntercomHubScreen()),
     'cat_vacuum':   (label: s.vacuumCategory,   type: DeviceType.robotVacuum, icon: DeviceIcons.icon(DeviceType.robotVacuum),  color: DeviceIcons.color(DeviceType.robotVacuum),  dest: const RobotVacuumHubScreen()),
-  };
+    };
+  }
 
   @override
   Widget build(BuildContext context) {

@@ -1331,6 +1331,15 @@ class _SmartHomeBanner extends StatelessWidget {
     final s       = context.select((AppState st) => st.strings);
     final devices = context.select((AppState st) => st.devices);
     final notifications = context.select((AppState st) => st.notifications);
+    final isHebrew = context.select((AppState st) => st.locale) == AppLocale.hebrew;
+
+    // Per user-supplied mockup: Hebrew-only label overrides for this row
+    // list. Not touched in the shared strings.dart definitions — those
+    // labels (s.switchesCategory etc.) are reused across other screens
+    // (scan sheets, DevicesScreen categories...) where the generic name
+    // still applies, and there's no reviewed translation for these more
+    // specific phrasings in the other 6 locales yet.
+    String heLabel(String hebrew, String fallback) => isHebrew ? hebrew : fallback;
 
     bool isGw(Device d) => d.source == 'gateway';
 
@@ -1491,7 +1500,7 @@ class _SmartHomeBanner extends StatelessWidget {
                       _ShRow(
                           icon: Symbols.toggle_on,
                           count: switchesOn,
-                          label: s.switchesCategory,
+                          label: heLabel('מתגי תאורה', s.switchesCategory),
                           color: AppColors.plugColor,
                           strings: s,
                           // switchesAll counts every smartSwitch Device
@@ -1510,7 +1519,7 @@ class _SmartHomeBanner extends StatelessWidget {
                       _ShRow(
                           icon: Symbols.power,
                           count: plugsOn,
-                          label: s.qaPlugs,
+                          label: heLabel('שקעים חכמים', s.qaPlugs),
                           color: AppColors.plugColor,
                           strings: s,
                           onTap: () => Navigator.push(context,
@@ -1518,7 +1527,13 @@ class _SmartHomeBanner extends StatelessWidget {
                       _ShRow(
                           icon: Symbols.water_drop,
                           count: heaterOn,
-                          label: s.qaWaterHeater,
+                          // Displayed as "תאורת חוץ" (outdoor lighting) per
+                          // the mockup even though this row still targets
+                          // the water-heater category underneath — there's
+                          // no separate outdoor-lighting device category in
+                          // this app, and the user asked to use this label
+                          // anyway rather than drop the row.
+                          label: heLabel('תאורת חוץ', s.qaWaterHeater),
                           color: AppColors.networkColor,
                           strings: s,
                           isLast: true,
