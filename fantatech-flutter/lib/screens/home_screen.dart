@@ -16,7 +16,6 @@ import 'ai/fanta_ai_screen.dart';
 import 'smarthome/scan_discovery_screen.dart';
 import 'smarthome/smarthome_screen.dart';
 import 'smarthome/ac_hub_screen.dart';
-import 'smarthome/lights_hub_screen.dart';
 import 'smarthome/plugs_hub_screen.dart';
 import 'smarthome/smart_switch_hub_screen.dart';
 import 'smarthome/sensor_hub_screen.dart';
@@ -1490,13 +1489,14 @@ class _SmartHomeBanner extends StatelessWidget {
                   child: Column(
                     children: [
                       _ShRow(
-                          icon: Symbols.lightbulb,
-                          count: lightsOn,
-                          label: s.qaLights,
-                          color: AppColors.lightColor,
+                          icon: Symbols.water_drop,
+                          count: heaterOn,
+                          label: heLabel('דוד חכם', s.qaWaterHeater),
+                          color: AppColors.networkColor,
                           strings: s,
                           onTap: () => Navigator.push(context,
-                              MaterialPageRoute(builder: (_) => const LightsHubScreen()))),
+                              MaterialPageRoute(builder: (_) => const DevicesScreen(
+                                  initialCategory: DeviceType.waterHeater)))),
                       _ShRow(
                           icon: Symbols.toggle_on,
                           count: switchesOn,
@@ -1522,24 +1522,9 @@ class _SmartHomeBanner extends StatelessWidget {
                           label: heLabel('שקעים חכמים', s.qaPlugs),
                           color: AppColors.plugColor,
                           strings: s,
-                          onTap: () => Navigator.push(context,
-                              MaterialPageRoute(builder: (_) => const PlugsHubScreen()))),
-                      _ShRow(
-                          icon: Symbols.water_drop,
-                          count: heaterOn,
-                          // Displayed as "תאורת חוץ" (outdoor lighting) per
-                          // the mockup even though this row still targets
-                          // the water-heater category underneath — there's
-                          // no separate outdoor-lighting device category in
-                          // this app, and the user asked to use this label
-                          // anyway rather than drop the row.
-                          label: heLabel('תאורת חוץ', s.qaWaterHeater),
-                          color: AppColors.networkColor,
-                          strings: s,
                           isLast: true,
                           onTap: () => Navigator.push(context,
-                              MaterialPageRoute(builder: (_) => const DevicesScreen(
-                                  initialCategory: DeviceType.waterHeater)))),
+                              MaterialPageRoute(builder: (_) => const PlugsHubScreen()))),
                     ],
                   ),
                 ),

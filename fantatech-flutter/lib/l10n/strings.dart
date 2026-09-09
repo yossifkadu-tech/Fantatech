@@ -2300,7 +2300,7 @@ class S {
     homeGreetingSub: 'הבית שלך, בטוח וחכם.', energyToday: 'צריכת אנרגיה היום', vsYesterday: 'מהאתמול',
     climateEnergyTitle: 'אקלים ואנרגיה', homeManagementTitle: 'ניהול הבית',
     energyAnalytics: 'ניתוח אנרגיה',
-    securitySystemLabel: 'מערכת אבטחה', secArmedShort: 'מופעלת', secDisarmedShort: 'מנוטרל', allOkLabel: 'הכל תקין', emergencyBtn: 'לחצן חירום',
+    securitySystemLabel: 'מערכות אבטחה', secArmedShort: 'מופעלת', secDisarmedShort: 'מנוטרל', allOkLabel: 'הכל תקין', emergencyBtn: 'לחצן חירום',
     showAll: 'הצג הכל', roomsHeader: 'חדרים', statHomesLabel: 'בתים', devicesUnit: 'מכשירים',
     qaLock: 'נעילה', qaLights: 'אורות', qaAc: 'מזגן', qaCameras: 'מצלמות', qaAlerts: 'התראות',
     qaPlugs: 'שקעים', qaWaterHeater: 'דוד חכם', qaBreakers: 'לוח חשמל',
