@@ -460,7 +460,9 @@ abstract class DashboardDefaults {
     LayoutItem(id: 'store',           type: 'store',           order: 5,  page: 0, visible: false),
     LayoutItem(id: 'weather',         type: 'weather',         order: 10, page: 1),
     LayoutItem(id: 'system_status',   type: 'system_status',   order: 11, page: 1),
-    LayoutItem(id: 'home_management', type: 'home_management', order: 12, page: 1),
+    // Hidden by default (declutter) — Profile screen already has its own
+    // entry point to the same "ניהול בית" sheet, so nothing is lost.
+    LayoutItem(id: 'home_management', type: 'home_management', order: 12, page: 1, visible: false),
     LayoutItem(id: 'media',           type: 'media',           order: 13, page: 1),
   ];
 

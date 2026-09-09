@@ -157,6 +157,19 @@ class _HomeScreenState extends State<HomeScreen> {
       }
       await prefs.setBool(declutterKey, true);
     }
+
+    // One-time declutter round 2: Home Management card hidden — Profile
+    // already has its own entry point to the same "ניהול בית" sheet, so
+    // nothing is lost by switching this one off by default.
+    const declutterKey2 = 'home_declutter_hm_v1';
+    if (!(prefs.getBool(declutterKey2) ?? false)) {
+      final current = provider.getItems(DashboardId.home, allItems: true);
+      final idx = current.indexWhere((i) => i.id == 'home_management');
+      if (idx != -1 && current[idx].visible) {
+        provider.toggleVisibility(DashboardId.home, 'home_management');
+      }
+      await prefs.setBool(declutterKey2, true);
+    }
   }
 
   @override
