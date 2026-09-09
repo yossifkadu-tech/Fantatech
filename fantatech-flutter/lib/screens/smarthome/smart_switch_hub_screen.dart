@@ -837,6 +837,8 @@ class _SwitchCardState extends State<_SwitchCard> {
   @override
   Widget build(BuildContext context) {
     final s = context.select((AppState st) => st.strings);
+    final registeredDevice =
+        dev.channels.length == 1 ? _findRegisteredDevice(context, 0) : null;
     // Single-channel devices (the vast majority) get the whole card as the
     // long-press target instead of just the small per-channel toggle chip —
     // a much easier area to hit. Multi-channel devices keep long-press on
@@ -844,13 +846,9 @@ class _SwitchCardState extends State<_SwitchCard> {
     // can't map to one specific channel's Device. A tap on an added
     // single-channel card opens the full-screen control page.
     return GestureDetector(
-      onTap: dev.isRegistered && dev.channels.length == 1
-          ? () {
-              final device = _findRegisteredDevice(context, 0);
-              if (device == null) return;
-              Navigator.push(context, MaterialPageRoute(
-                  builder: (_) => SwitchDetailScreen(deviceId: device.id)));
-            }
+      onTap: dev.isRegistered && registeredDevice != null
+          ? () => Navigator.push(context, MaterialPageRoute(
+              builder: (_) => SwitchDetailScreen(deviceId: registeredDevice.id)))
           : null,
       onLongPress:
           dev.channels.length == 1 ? () => _showEditSheet(0) : null,
@@ -869,8 +867,56 @@ class _SwitchCardState extends State<_SwitchCard> {
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
+        padding: dev.isRegistered && dev.channels.length == 1
+            ? const EdgeInsets.symmetric(horizontal: 14, vertical: 10)
+            : const EdgeInsets.all(14),
+        // A registered single-channel device (the common case) collapses
+        // the whole card to one compact row — small glow toggle + name/room/
+        // status — instead of the header/tags/big-toggle stack below, which
+        // took up far too much height once there were more than 2-3
+        // switches. Multi-channel or not-yet-added devices keep the full
+        // layout, since neither the compact row nor the big toggle apply to
+        // them (no single on/off state, or nothing to control yet).
+        child: dev.isRegistered && dev.channels.length == 1
+            ? Row(
+                children: [
+                  SwitchGlowToggle(
+                    on: dev.channels[0].isOn,
+                    label: (dev.channels[0].isOn ? s.deviceOn : s.deviceOff)
+                        .toUpperCase(),
+                    onTap: () => _toggle(0),
+                    size: 38,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(dev.name,
+                            style: TextStyle(
+                                color: context.tText,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500),
+                            overflow: TextOverflow.ellipsis),
+                        Text(
+                          [
+                            if ((registeredDevice?.room ?? '').isNotEmpty)
+                              s.translateRoomKey(registeredDevice!.room),
+                            dev.channels[0].isOn ? s.deviceOn : s.deviceOff,
+                          ].join(' · '),
+                          style: TextStyle(
+                            color: dev.channels[0].isOn
+                                ? brandColor
+                                : context.tText2(0.5),
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              )
+            : Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ── Card header ─────────────────────────────────────────────────
@@ -962,58 +1008,28 @@ class _SwitchCardState extends State<_SwitchCard> {
 
             const SizedBox(height: 12),
 
-            // ── Toggle ────────────────────────────────────────────────────
-            // A registered single-channel device (the common case) gets the
-            // big glow toggle instead of the small chip — same control used
-            // on SwitchDetailScreen, just smaller. Multi-channel or
-            // not-yet-added devices keep the compact per-channel chips,
-            // since the big toggle only makes sense for one already-added
-            // switch.
-            if (dev.isRegistered && dev.channels.length == 1)
-              Center(
-                child: Column(
-                  children: [
-                    SwitchGlowToggle(
-                      on: dev.channels[0].isOn,
-                      label: (dev.channels[0].isOn ? s.deviceOn : s.deviceOff)
-                          .toUpperCase(),
-                      onTap: () => _toggle(0),
-                      size: 70,
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      '${dev.name} — '
-                      '${dev.channels[0].isOn ? s.deviceOn : s.deviceOff}',
-                      style: TextStyle(
-                        color: dev.channels[0].isOn
-                            ? brandColor
-                            : context.tText2(0.45),
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            else
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: dev.channels.asMap().entries.map((entry) {
-                  final i   = entry.key;
-                  final ch  = entry.value;
-                  final tog = _toggling.contains(i);
+            // ── Channel toggles ─────────────────────────────────────────────
+            // Reaching here means multi-channel or not-yet-added (the
+            // compact single-channel-registered row above is a separate
+            // branch entirely) — always the per-channel chip row.
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: dev.channels.asMap().entries.map((entry) {
+                final i   = entry.key;
+                final ch  = entry.value;
+                final tog = _toggling.contains(i);
 
-                  return _ChannelToggle(
-                    channel:    ch,
-                    toggling:   tog,
-                    canControl: dev.protocol.canControl,
-                    color:      brandColor,
-                    onTap:      () => _toggle(i),
-                    onLongPress: () => _showEditSheet(i),
-                  );
-                }).toList(),
-              ),
+                return _ChannelToggle(
+                  channel:    ch,
+                  toggling:   tog,
+                  canControl: dev.protocol.canControl,
+                  color:      brandColor,
+                  onTap:      () => _toggle(i),
+                  onLongPress: () => _showEditSheet(i),
+                );
+              }).toList(),
+            ),
           ],
         ),
       ),
