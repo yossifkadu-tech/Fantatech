@@ -135,11 +135,26 @@ class TuyaCloudClient {
             ' (id: tuya_$id, online: $online)');
         if (type == null) continue; // skip hubs only — everything else maps to a type
 
+        // The device-list endpoint includes each device's current DP values
+        // in 'status' — read the on/off one instead of always importing as
+        // off. Different device generations use different codes for the
+        // same concept, so check every switch-like code this app might see.
+        bool isOn = false;
+        final statusList = d['status'] as List<dynamic>? ?? const [];
+        for (final s in statusList) {
+          final entry = s as Map<String, dynamic>;
+          final code = entry['code'] as String?;
+          if (code == 'switch_1' || code == 'switch' || code == 'switch_led') {
+            isOn = entry['value'] == true;
+            break;
+          }
+        }
+
         devices.add(Device(
           id: 'tuya_$id',
           name: name,
           type: type,
-          isOn: false,
+          isOn: isOn,
           status: online ? DeviceStatus.online : DeviceStatus.offline,
           source: 'gateway',
           attributes: {

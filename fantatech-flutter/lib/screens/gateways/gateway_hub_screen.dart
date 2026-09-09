@@ -194,12 +194,26 @@ class GatewayHubScreen extends StatelessWidget {
     if (!context.mounted) return;
 
     int added = 0;
+    bool refreshed = false;
     for (final d in devices) {
-      if (!state.devices.any((e) => e.id == d.id)) {
+      final existingIdx = state.devices.indexWhere((e) => e.id == d.id);
+      if (existingIdx == -1) {
         state.upsertDevice(d, userInitiated: true);
         added++;
+      } else {
+        // Re-running Import on an already-linked gateway (e.g. Tuya) should
+        // still refresh live on/off + online state for devices already
+        // added — update those fields in place rather than replacing the
+        // whole Device, which would wipe out the user's name/room edits.
+        final existing = state.devices[existingIdx];
+        if (existing.isOn != d.isOn || existing.status != d.status) {
+          existing.isOn = d.isOn;
+          existing.status = d.status;
+          refreshed = true;
+        }
       }
     }
+    if (refreshed) state.notifyDeviceStateChanged();
 
     final s = context.read<AppState>().strings;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(

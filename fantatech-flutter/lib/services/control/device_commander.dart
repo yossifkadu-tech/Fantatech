@@ -28,6 +28,7 @@ import '../gateways/clients/deconz_client.dart';
 import '../gateways/clients/z2m_client.dart';
 import '../gateways/clients/hue_client.dart';
 import '../gateways/clients/ha_gateway_client.dart';
+import '../gateways/clients/tuya_cloud_client.dart';
 import '../gateways/clients/aqara_hub_client.dart';
 import '../gateways/clients/irobot_client.dart';
 import '../gateways/clients/xiaomi_vacuum_client.dart';
@@ -181,6 +182,35 @@ class DeviceCommander {
     // ── Generic MQTT (HA-discovery devices with mqtt_ prefix) ─────────────────
     if (id.startsWith('mqtt_')) {
       return _mqttSetOnOff(device, on, gateways);
+    }
+
+    // ── Tuya Cloud (devices imported via Devices → Link App Account, not
+    // the LAN-scan Tuya-local path below) ──────────────────────────────────
+    // Import (TuyaCloudClient.fetchDevices) added these to AppState but
+    // never wired a command path back to them — toggling silently did
+    // nothing. 'switch_1' is the modern Tuya DP code for on/off across both
+    // switch ('kg') and socket ('cz') categories; a small number of older
+    // devices on the legacy 'switch' code won't respond to this yet.
+    if (id.startsWith('tuya_')) {
+      final gw = _gateway(gateways, GatewayType.tuyaSmart) ??
+          _gateway(gateways, GatewayType.smartLife);
+      if (gw == null) return false;
+      final clientId     = gw.credentials['clientId'];
+      final clientSecret = gw.credentials['clientSecret'];
+      if (clientId == null || clientSecret == null) return false;
+      final region = TuyaRegionHost.fromName(gw.credentials['region']);
+      final client = TuyaCloudClient(
+          clientId: clientId, clientSecret: clientSecret, region: region);
+      final token = await client.getToken();
+      if (token == null) return false;
+      final tuyaDeviceId = id.substring('tuya_'.length);
+      return client.sendCommands(
+        token: token,
+        tuyaDeviceId: tuyaDeviceId,
+        commands: [
+          {'code': 'switch_1', 'value': on},
+        ],
+      );
     }
 
     // ── LAN-direct (Shelly / Sonoff / Tuya / Kasa / Tapo / ESPHome) ────────────
