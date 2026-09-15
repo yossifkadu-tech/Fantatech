@@ -169,8 +169,8 @@ class _SmartHomeScreenState extends State<SmartHomeScreen> {
                             buildDefaultDragHandles: false,
                             padding: EdgeInsets.zero,
                             itemCount: catItems.length,
-                            onReorder: (o, n) =>
-                                provider.reorder(DashboardId.smarthomeCats, o, n),
+                            onReorder: (o, n) => provider.reorder(
+                                DashboardId.smarthomeCats, catItems, o, n),
                             itemBuilder: (ctx, i) {
                               final item = catItems[i];
                               final m    = meta[item.type];

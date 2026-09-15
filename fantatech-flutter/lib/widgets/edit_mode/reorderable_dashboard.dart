@@ -339,8 +339,21 @@ class _EditModeScroll extends StatelessWidget {
           sliver: SliverReorderableList(
             itemCount:       items.length,
             proxyDecorator:  proxyDecor,
-            onReorder: (oldIndex, newIndex) =>
-                provider.reorder(dashboardId, oldIndex, newIndex),
+            // Deferred to next frame: calling provider.reorder() (which
+            // triggers a synchronous notifyListeners() rebuild of every
+            // DraggableItem watching this provider) while
+            // SliverReorderableList is still finishing its own internal
+            // drag-cleanup animation causes a framework
+            // "'_dependents.isEmpty': is not true" assertion.
+            onReorder: (oldIndex, newIndex) {
+              // Snapshot now — `items` is already page/visibility-filtered,
+              // and reorder() needs exactly this list to map indices back
+              // to the right positions (see its doc comment).
+              final displayed = items;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                provider.reorder(dashboardId, displayed, oldIndex, newIndex);
+              });
+            },
             itemBuilder: (ctx, i) {
               final item = items[i];
               return ReorderableDelayedDragStartListener(

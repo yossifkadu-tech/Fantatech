@@ -133,6 +133,25 @@ class UserService {
     await file.writeAsString(buf.toString());
   }
 
+  /// Promotes the signed-in account to Home Manager — granting the full
+  /// default permission set ([Permission.manageUsers] included). Called
+  /// when a user registers themselves as their household's manager; without
+  /// this, that action only added a cosmetic label to the household-members
+  /// list and never actually unlocked [Permission]-gated actions, since
+  /// those check this account's [UserRole], not that list.
+  static Future<void> promoteCurrentUserToManager() async {
+    final user = _currentUser;
+    if (user == null || user.role == UserRole.homeManager) return;
+    final promoted = user.copyWith(
+      role: UserRole.homeManager,
+      permissions: defaultPermissionsFor(UserRole.homeManager),
+    );
+    final idx = _users.indexWhere((u) => u.id == user.id);
+    if (idx != -1) _users[idx] = promoted;
+    _currentUser = promoted;
+    await _saveCsv();
+  }
+
   static Future<void> _persistSession(String? userId) async {
     final prefs = await SharedPreferences.getInstance();
     if (userId == null) {

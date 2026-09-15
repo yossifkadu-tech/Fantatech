@@ -1329,9 +1329,23 @@ class AppState extends ChangeNotifier {
         isManager: true,
         imagePath: _userImagePath,
       ));
+      // Also grant the real account-level manager permissions — this list
+      // entry alone is cosmetic and canManageHousehold never looks at it.
+      UserService.promoteCurrentUserToManager();
       _saveHomeUsers();
       notifyListeners();
     }
+  }
+
+  /// Clears the locally-registered manager, so [registerAsHomeManager] can
+  /// be run again from scratch. Deliberately does NOT require
+  /// [canManageHousehold] — this is the escape hatch for an install stuck
+  /// with a manager registration that never received the real account
+  /// permission (installs from before that promotion existed).
+  void resetHomeManager() {
+    _homeUsers.removeWhere((u) => u.isManager);
+    _saveHomeUsers();
+    notifyListeners();
   }
 
   /// True when the signed-in user is allowed to invite/remove/rename
@@ -1524,6 +1538,14 @@ class AppState extends ChangeNotifier {
   // ── SharedPreferences persistence ────────────────────────────
   Future<void> _initFromPrefs() async {
     await _loadHomeUsers(); // images + home users (needs no prefs instance)
+    // Self-heal: a household "manager" HomeUser registered before account-
+    // level permission promotion existed would otherwise permanently block
+    // every Permission.manageUsers action with no way to re-trigger it from
+    // the UI (the "register as manager" button only re-runs this once,
+    // the first time hasHomeManager flips true).
+    if (hasHomeManager && !canManageHousehold) {
+      UserService.promoteCurrentUserToManager();
+    }
     final prefs = await SharedPreferences.getInstance();
     // Load persisted locale (before anything below that depends on it,
     // e.g. the Shabbat-mode default check).

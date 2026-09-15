@@ -17,8 +17,9 @@ import '../services/layout_sync_service.dart';
 //   // Get sorted visible items for a dashboard
 //   final items = lp.getItems('home');
 //
-//   // Reorder after a ReorderableListView callback
-//   lp.reorder('home', oldIndex, newIndex);
+//   // Reorder after a ReorderableListView callback (pass the exact
+//   // displayed/filtered item list the indices are relative to)
+//   lp.reorder('home', displayedItems, oldIndex, newIndex);
 // ─────────────────────────────────────────────────────────────────────────────
 
 class LayoutProvider extends ChangeNotifier {
@@ -92,21 +93,37 @@ class LayoutProvider extends ChangeNotifier {
 
   // ── Reorder ────────────────────────────────────────────────────────────────
 
-  /// Called from ReorderableListView.onReorder.
+  /// Called from ReorderableListView.onReorder. [displayedItems] must be the
+  /// exact (already page/visibility-filtered) list the caller rendered —
+  /// oldIndex/newIndex are relative to it, not to the dashboard's full item
+  /// set. Reordering against the full set here would misapply indices from
+  /// a filtered subset (e.g. one page of a multi-page dashboard) to the
+  /// wrong global positions, silently moving the wrong item and corrupting
+  /// order/page assignment across pages.
   /// Flutter already adjusts newIndex for the removal, so we just clamp.
-  void reorder(String dashboardId, int oldIndex, int newIndex) {
+  void reorder(String dashboardId, List<LayoutItem> displayedItems,
+      int oldIndex, int newIndex) {
     final layout = _layouts[dashboardId];
     if (layout == null) return;
+    if (oldIndex < 0 || oldIndex >= displayedItems.length) return;
 
-    final items = layout.sorted(allItems: true);
-    if (oldIndex < 0 || oldIndex >= items.length) return;
-
+    final items = List<LayoutItem>.from(displayedItems);
     // ReorderableListView's newIndex is post-removal, re-adjust:
     final ni = newIndex > oldIndex ? newIndex - 1 : newIndex;
     final item = items.removeAt(oldIndex);
     items.insert(ni.clamp(0, items.length), item);
 
-    _setItems(dashboardId, _reassignOrder(items));
+    // Redistribute only this subset's own order values across the new
+    // arrangement, so other subsets (e.g. the dashboard's other page) are
+    // left untouched and never collide with this subset's order range.
+    final orderPool = displayedItems.map((i) => i.order).toList()..sort();
+    final renumbered = [
+      for (var i = 0; i < items.length; i++) items[i].copyWith(order: orderPool[i]),
+    ];
+
+    final movedIds = renumbered.map((i) => i.id).toSet();
+    final others = layout.items.where((i) => !movedIds.contains(i.id));
+    _setItems(dashboardId, [...others, ...renumbered]);
   }
 
   // ── Item operations ────────────────────────────────────────────────────────

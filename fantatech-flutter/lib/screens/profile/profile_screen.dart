@@ -1318,9 +1318,16 @@ class _UsersSheet extends StatelessWidget {
                 if (state.hasHomeManager)
                   GestureDetector(
                     onTap: () {
-                      Navigator.pop(context);
+                      // Capture the Navigator's own (stable) context before
+                      // popping this sheet — reusing this widget's context
+                      // to open the next sheet would push a new route from
+                      // an Element that's still mid-teardown from the pop,
+                      // which crashes with a framework
+                      // "'_dependents.isEmpty': is not true" assertion.
+                      final navigator = Navigator.of(context);
+                      navigator.pop();
                       showModalBottomSheet(
-                        context: context,
+                        context: navigator.context,
                         backgroundColor: context.tCard,
                         isScrollControlled: true,
                         shape: const RoundedRectangleBorder(
@@ -1378,9 +1385,15 @@ class _UsersSheet extends StatelessWidget {
                           const SizedBox(height: 16),
                           GestureDetector(
                             onTap: () {
-                              Navigator.pop(context);
+                              // See the matching comment above (header
+                              // "Edit" button) — capture the Navigator's
+                              // stable context before popping, don't reuse
+                              // this widget's own about-to-be-torn-down
+                              // context to open the next sheet.
+                              final navigator = Navigator.of(context);
+                              navigator.pop();
                               showModalBottomSheet(
-                                context: context,
+                                context: navigator.context,
                                 backgroundColor: context.tCard,
                                 isScrollControlled: true,
                                 shape: const RoundedRectangleBorder(
@@ -1846,6 +1859,37 @@ class _HomeManagementSheetState extends State<_HomeManagementSheet> {
     );
   }
 
+  Future<void> _confirmResetManager(AppState state) async {
+    final s = state.strings;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: context.tCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('הסרת מנהל הבית',
+            style: TextStyle(color: context.tText, fontSize: 16)),
+        content: Text(
+            'הרישום כמנהל הבית יימחק. תוכלו להירשם מחדש בכל עת.',
+            style: TextStyle(color: context.tText2(0.6), fontSize: 14)),
+        actions: [
+          FtButton(
+            label: s.cancel,
+            variant: FtButtonVariant.ghost,
+            onTap: () => Navigator.pop(ctx, false),
+          ),
+          FtButton(
+            label: s.remove,
+            variant: FtButtonVariant.danger,
+            onTap: () => Navigator.pop(ctx, true),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      state.resetHomeManager();
+    }
+  }
+
   void _addMember(AppState state, S s) {
     final name = _memberCtrl.text.trim();
     if (name.isNotEmpty) {
@@ -2041,6 +2085,19 @@ class _HomeManagementSheetState extends State<_HomeManagementSheet> {
                     ),
                     child: Icon(Symbols.verified,
                         color: AppColors.primary, size: 16),
+                  ),
+                  const SizedBox(width: 6),
+                  GestureDetector(
+                    onTap: () => _confirmResetManager(state),
+                    child: Container(
+                      width: 30, height: 30,
+                      decoration: BoxDecoration(
+                        color: AppColors.unsecured.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(Symbols.close,
+                          color: AppColors.unsecured, size: 14),
+                    ),
                   ),
                 ]),
               ),
@@ -3243,9 +3300,15 @@ class _SettingsSheetState extends State<_SettingsSheet> {
             iconColor: AppColors.primary,
             title: s.appearanceTitle,
             onTap: () {
-              Navigator.pop(context);
+              // Capture the Navigator's own (stable) context before popping
+              // this sheet — reusing this widget's context to open the next
+              // sheet would push a new route from an Element that's still
+              // mid-teardown from the pop, which crashes with a framework
+              // "'_dependents.isEmpty': is not true" assertion.
+              final navigator = Navigator.of(context);
+              navigator.pop();
               showModalBottomSheet(
-                context: context,
+                context: navigator.context,
                 backgroundColor: context.tCard,
                 isScrollControlled: true,
                 shape: const RoundedRectangleBorder(
