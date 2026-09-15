@@ -1546,9 +1546,13 @@ class _DeviceDetailSheetState extends State<_DeviceDetailSheet> {
                 label: Text(s.discoverDevices,
                     style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                 onPressed: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
+                  // Capture the Navigator before popping — pushing through
+                  // this widget's own about-to-be-torn-down context crashes
+                  // with a framework "'_dependents.isEmpty': is not true"
+                  // assertion.
+                  final navigator = Navigator.of(context);
+                  navigator.pop();
+                  navigator.push(
                     MaterialPageRoute(
                       builder: (_) => AddDeviceScreen(gateway: d),
                     ),

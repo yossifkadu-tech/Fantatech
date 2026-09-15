@@ -3327,8 +3327,12 @@ class _SettingsSheetState extends State<_SettingsSheet> {
             iconColor: const Color(0xFFFFD700),
             title: s.calendarTitle,
             onTap: () {
-              Navigator.pop(context);
-              Navigator.push(context,
+              // Capture the Navigator before popping — pushing through this
+              // widget's own about-to-be-torn-down context crashes with a
+              // framework "'_dependents.isEmpty': is not true" assertion.
+              final navigator = Navigator.of(context);
+              navigator.pop();
+              navigator.push(
                   MaterialPageRoute(builder: (_) => const CalendarScreen()));
             },
           ),
@@ -3342,8 +3346,9 @@ class _SettingsSheetState extends State<_SettingsSheet> {
             iconColor: const Color(0xFFCE93D8),
             title: s.mirrorScreenTitle,
             onTap: () {
-              Navigator.pop(context);
-              Navigator.push(context,
+              final navigator = Navigator.of(context);
+              navigator.pop();
+              navigator.push(
                   MaterialPageRoute(builder: (_) => const MirrorScreen()));
             },
           ),
@@ -3357,8 +3362,9 @@ class _SettingsSheetState extends State<_SettingsSheet> {
             iconColor: kDevSwitchCardDemoColor,
             title: 'FantaTechSwitchCard — בדיקה',
             onTap: () {
-              Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(
+              final navigator = Navigator.of(context);
+              navigator.pop();
+              navigator.push(MaterialPageRoute(
                   builder: (_) => const FantaTechSwitchCardDemoScreen()));
             },
           ),

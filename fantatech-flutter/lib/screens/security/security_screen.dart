@@ -549,9 +549,13 @@ class _SecurityScreenState extends State<SecurityScreen>
                 color: color,
                 expand: true,
                 onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
+                  // Capture the Navigator before popping — pushing through
+                  // this widget's own about-to-be-torn-down context crashes
+                  // with a framework "'_dependents.isEmpty': is not true"
+                  // assertion.
+                  final navigator = Navigator.of(context);
+                  navigator.pop();
+                  navigator.push(
                     MaterialPageRoute(
                       builder: (_) => SensorBrandPickerScreen(
                         deviceId: addDeviceId,

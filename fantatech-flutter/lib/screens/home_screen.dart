@@ -820,8 +820,9 @@ class _EnergySheet extends StatelessWidget {
                         variant: FtButtonVariant.secondary,
                         expand: true,
                         onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(context,
+                          final navigator = Navigator.of(context);
+                          navigator.pop();
+                          navigator.push(
                               MaterialPageRoute(builder: (_) => const BreakersScreen()));
                         },
                       ),
