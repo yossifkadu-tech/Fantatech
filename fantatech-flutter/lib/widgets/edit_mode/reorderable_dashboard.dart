@@ -465,20 +465,16 @@ abstract class DashboardDefaults {
   static const List<LayoutItem> home = [
     LayoutItem(id: 'ai_hero',         type: 'ai_hero',         order: 0,  page: 0, pinned: true),
     LayoutItem(id: 'quick_actions',   type: 'quick_actions',   order: 1,  page: 0),
-    // Re-added per user request — its only previous entry point (a
-    // sub-link inside the Home Management card) went unreachable once
-    // that card got hidden by default; see _RoomsBanner's doc comment.
-    LayoutItem(id: 'rooms',           type: 'rooms',           order: 2,  page: 0),
-    LayoutItem(id: 'security',        type: 'security',        order: 3,  page: 0),
+    LayoutItem(id: 'security',        type: 'security',        order: 2,  page: 0),
     // Hidden by default (declutter, per user request) — still fully
     // available via עריכת לוח → un-hide.
-    LayoutItem(id: 'cameras',         type: 'cameras',         order: 4,  page: 0, visible: false),
+    LayoutItem(id: 'cameras',         type: 'cameras',         order: 3,  page: 0, visible: false),
     // Took the cameras slot on page 0 (per user request).
-    LayoutItem(id: 'media',           type: 'media',           order: 4,  page: 0),
+    LayoutItem(id: 'media',           type: 'media',           order: 3,  page: 0),
     // Hidden by default (declutter) — still fully available via
     // עריכת לוח → un-hide, just not shown on a fresh install.
-    LayoutItem(id: 'ad_banner',       type: 'ad_banner',       order: 5,  page: 0, visible: false),
-    LayoutItem(id: 'store',           type: 'store',           order: 6,  page: 0, visible: false),
+    LayoutItem(id: 'ad_banner',       type: 'ad_banner',       order: 4,  page: 0, visible: false),
+    LayoutItem(id: 'store',           type: 'store',           order: 5,  page: 0, visible: false),
     LayoutItem(id: 'weather',         type: 'weather',         order: 10, page: 1),
     LayoutItem(id: 'system_status',   type: 'system_status',   order: 11, page: 1),
     // Hidden by default (declutter) — Profile screen already has its own
@@ -491,7 +487,7 @@ abstract class DashboardDefaults {
   /// Item types that belong on home-screen page 1. Anything else (including
   /// future/unrecognized types) defaults to page 2 — the "אחר" bucket.
   static const homePage0Types = {
-    'ai_hero', 'quick_actions', 'rooms', 'security', 'media', 'ad_banner', 'store',
+    'ai_hero', 'quick_actions', 'security', 'media', 'ad_banner', 'store',
   };
 
   // Cameras screen

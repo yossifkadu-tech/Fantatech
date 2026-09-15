@@ -109,17 +109,12 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  // One-time cleanup for devices with a layout persisted before
-  // home-screen paging existed.
+  // One-time cleanup for devices with a layout persisted before the
+  // "rooms" section was retired and before home-screen paging existed.
   void _migrateLayout() async {
     final provider = context.read<LayoutProvider>();
     provider.ensureLayout(DashboardId.home, DashboardDefaults.home);
-    // 'rooms' used to be pruned here as obsolete (it had been retired as a
-    // dashboard card type) — it's back as of this session (see _RoomsBanner)
-    // after its only other entry point, a sub-link inside the since-hidden
-    // Home Management card, made it unreachable from the dashboard. Pruning
-    // it unconditionally on every launch would silently delete it again the
-    // moment a user added or un-hid it.
+    provider.pruneObsoleteTypes(DashboardId.home, const {'rooms'});
     provider.syncNewItems(DashboardId.home, DashboardDefaults.home);
     provider.applyDefaultPagesIfUnset(DashboardId.home, DashboardDefaults.homePage0Types);
 
@@ -223,7 +218,6 @@ class _HomeScreenState extends State<HomeScreen> {
       'weather'       => const _WeatherEnergyRow(),
       'security'      => const _SecurityBanner(),
       'cameras'       => const _CamerasSection(),
-      'rooms'         => const _RoomsBanner(),
       'quick_actions' => const _SmartHomeBanner(),
       'home_management' => const _HomeManagementBanner(),
       'system_status' => const _SystemStatusSection(),
@@ -1859,90 +1853,6 @@ class _NotificationsBanner extends StatelessWidget {
                               ),
                           ],
                         ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────
-// Rooms Banner — quick shortcut to the Rooms screen. Re-added per user
-// request: its only previous entry point was a sub-link inside the Home
-// Management card, which got hidden by default in a declutter pass under
-// the (incorrect) assumption that this link had already been relocated
-// elsewhere. It hadn't, so Rooms became unreachable from the dashboard
-// entirely — still reachable via the bottom nav's "חדרים" tab, but not
-// from here. This is a standalone card, not tied to Home Management's
-// visibility.
-// ─────────────────────────────────────────────────────────────────
-class _RoomsBanner extends StatelessWidget {
-  const _RoomsBanner();
-
-  @override
-  Widget build(BuildContext context) {
-    final s = context.select((AppState st) => st.strings);
-    final roomCount = context.select((AppState st) => st.rooms.length);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s16),
-      child: Semantics(
-        label: s.roomsHeader,
-        button: true,
-        child: GestureDetector(
-          onTap: () => Navigator.push(context,
-              MaterialPageRoute(builder: (_) => const RoomsScreen())),
-          child: Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: context.tCard,
-              borderRadius: AppBorderRadius.cardLg,
-              border: Border.all(color: context.tText2(0.08)),
-              boxShadow: [
-                BoxShadow(
-                  color: context.tText2(0.08),
-                  blurRadius: 24,
-                  spreadRadius: 2,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 40, height: 40,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.12),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(Symbols.door_front,
-                      color: AppColors.primary, size: 20),
-                ),
-                const SizedBox(width: AppSpacing.s12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(s.roomsHeader,
-                          style: AppTypography.titleLg
-                              .copyWith(color: context.tText)),
-                      Text('$roomCount ${s.roomsUnit}',
-                          style: AppTypography.caption
-                              .copyWith(color: context.tText2(0.55))),
-                    ],
-                  ),
-                ),
-                Container(
-                  width: 24, height: 24,
-                  decoration: BoxDecoration(
-                    color: context.tText2(0.06),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(Symbols.chevron_right,
-                      color: context.tText, size: 16),
                 ),
               ],
             ),
