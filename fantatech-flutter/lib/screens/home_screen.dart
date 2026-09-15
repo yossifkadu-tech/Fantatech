@@ -1526,7 +1526,7 @@ class _SmartHomeBanner extends StatelessWidget {
                       Expanded(child: _ShChip(
                           icon: Symbols.toggle_on,
                           value: switchesOn,
-                          label: heLabel('מתגי תאורה', s.switchesCategory),
+                          label: heLabel('תאורה', s.switchesCategory),
                           color: AppColors.plugColor,
                           // switchesAll counts every smartSwitch Device
                           // regardless of source, but SmartSwitchHubScreen
@@ -1544,7 +1544,7 @@ class _SmartHomeBanner extends StatelessWidget {
                       Expanded(child: _ShChip(
                           icon: Symbols.power,
                           value: plugsOn,
-                          label: heLabel('שקעים חכמים', s.qaPlugs),
+                          label: heLabel('שקעים', s.qaPlugs),
                           color: AppColors.plugColor,
                           // Was PlugsHubScreen (old list-style _PlugCard) —
                           // per user request, use the same DevicesScreen +
@@ -1611,41 +1611,47 @@ class _ShChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final muted = value == 0;
+    // Muting is expressed per-element (dimmer icon fill, dimmer text) —
+    // not a single Opacity wrapping the whole chip, which on a dark
+    // background washed out every chip at once whenever a lot of
+    // categories happened to be at 0, making the entire row look faint
+    // and unclear rather than just quieter.
     return GestureDetector(
       onTap: onTap,
-      child: Opacity(
-        opacity: muted ? 0.45 : 1,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 34, height: 34,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.16),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(icon, color: color, size: 16),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 6),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40, height: 40,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: muted ? 0.10 : 0.18),
+                shape: BoxShape.circle,
               ),
-              const SizedBox(height: 4),
-              if (value != null)
-                Text('$value',
-                    style: AppTypography.labelSm.copyWith(
-                      color: context.tText,
-                      fontWeight: FontWeight.w800,
-                    )),
-              const SizedBox(height: 1),
-              Text(label,
-                  style: AppTypography.caption.copyWith(
-                    color: context.tText2(0.55),
-                    fontSize: 9.5,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center),
-            ],
-          ),
+              child: Icon(icon,
+                  color: muted ? color.withValues(alpha: 0.55) : color,
+                  size: 19),
+            ),
+            const SizedBox(height: 5),
+            if (value != null)
+              Text('$value',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: muted ? context.tText2(0.45) : context.tText,
+                  )),
+            const SizedBox(height: 2),
+            Text(label,
+                style: TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w600,
+                  color: context.tText2(muted ? 0.45 : 0.62),
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center),
+          ],
         ),
       ),
     );
