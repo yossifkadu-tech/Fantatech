@@ -1281,7 +1281,7 @@ class _SecurityBanner extends StatelessWidget {
                   ],
                 ),
               ),
-              // ── Category rows ─────────────────────────────────────
+              // ── Category chips ────────────────────────────────────
               Container(
                 margin: const EdgeInsets.fromLTRB(
                     AppSpacing.s8, 0, AppSpacing.s8, AppSpacing.s8),
@@ -1292,49 +1292,43 @@ class _SecurityBanner extends StatelessWidget {
                   border: Border.all(
                       color: context.tText2(0.08), width: 1),
                 ),
-                child: Column(
+                child: Row(
                   children: [
-                    _ShRow(
+                    Expanded(child: _ShChip(
                         icon: Symbols.sensors,
-                        count: null,
-                        label: '$sensors ${heLabel('חיישנים', s.statusSensors)}',
+                        value: sensors,
+                        label: heLabel('חיישנים', s.statusSensors),
                         color: AppColors.motionColor,
-                        strings: s,
                         onTap: () => Navigator.push(context,
-                            MaterialPageRoute(builder: (_) => const SensorHubScreen()))),
-                    _ShRow(
+                            MaterialPageRoute(builder: (_) => const SensorHubScreen())))),
+                    Expanded(child: _ShChip(
                         icon: Symbols.lock,
-                        count: null,
-                        label: '$locks ${heLabel('מנעולים', s.qaLock)}',
+                        value: locks,
+                        label: heLabel('מנעולים', s.qaLock),
                         color: AppColors.primary,
-                        strings: s,
                         onTap: () => Navigator.push(context,
-                            MaterialPageRoute(builder: (_) => const SmartLockHubScreen()))),
-                    _ShRow(
+                            MaterialPageRoute(builder: (_) => const SmartLockHubScreen())))),
+                    Expanded(child: _ShChip(
                         icon: Symbols.videocam,
-                        count: null,
-                        label: '$cameras ${heLabel('מצלמות', s.navCameras)}',
+                        value: cameras,
+                        label: heLabel('מצלמות', s.navCameras),
                         color: AppColors.networkColor,
-                        strings: s,
                         onTap: () => Navigator.push(context,
-                            MaterialPageRoute(builder: (_) => const CamerasScreen()))),
-                    _ShRow(
+                            MaterialPageRoute(builder: (_) => const CamerasScreen())))),
+                    Expanded(child: _ShChip(
                         icon: Symbols.blinds,
-                        count: null,
-                        label: '$blinds ${heLabel('תריסים', s.blindsCategory)}',
+                        value: blinds,
+                        label: heLabel('תריסים', s.blindsCategory),
                         color: AppColors.plugColor,
-                        strings: s,
                         onTap: () => Navigator.push(context,
-                            MaterialPageRoute(builder: (_) => const BlindHubScreen()))),
-                    _ShRow(
+                            MaterialPageRoute(builder: (_) => const BlindHubScreen())))),
+                    Expanded(child: _ShChip(
                         icon: Symbols.doorbell,
-                        count: null,
-                        label: '$intercoms ${heLabel('אינטרקום', s.planIntercomLabel)}',
+                        value: intercoms,
+                        label: heLabel('אינטרקום', s.planIntercomLabel),
                         color: AppColors.cameraColor,
-                        strings: s,
-                        isLast: true,
                         onTap: () => Navigator.push(context,
-                            MaterialPageRoute(builder: (_) => const IntercomHubScreen()))),
+                            MaterialPageRoute(builder: (_) => const IntercomHubScreen())))),
                   ],
                 ),
               ),
@@ -1508,7 +1502,7 @@ class _SmartHomeBanner extends StatelessWidget {
                     ],
                   ),
                 ),
-                // ── Device category rows ────────────────────────
+                // ── Device category chips ───────────────────────
                 Container(
                   margin: const EdgeInsets.fromLTRB(
                       AppSpacing.s8, 0, AppSpacing.s8, AppSpacing.s8),
@@ -1519,23 +1513,21 @@ class _SmartHomeBanner extends StatelessWidget {
                     border: Border.all(
                         color: context.tText2(0.08), width: 1),
                   ),
-                  child: Column(
+                  child: Row(
                     children: [
-                      _ShRow(
+                      Expanded(child: _ShChip(
                           icon: Symbols.water_drop,
-                          count: heaterOn,
+                          value: heaterOn,
                           label: heLabel('דוד חכם', s.qaWaterHeater),
                           color: AppColors.networkColor,
-                          strings: s,
                           onTap: () => Navigator.push(context,
                               MaterialPageRoute(builder: (_) => const DevicesScreen(
-                                  initialCategory: DeviceType.waterHeater)))),
-                      _ShRow(
+                                  initialCategory: DeviceType.waterHeater))))),
+                      Expanded(child: _ShChip(
                           icon: Symbols.toggle_on,
-                          count: switchesOn,
+                          value: switchesOn,
                           label: heLabel('מתגי תאורה', s.switchesCategory),
                           color: AppColors.plugColor,
-                          strings: s,
                           // switchesAll counts every smartSwitch Device
                           // regardless of source, but SmartSwitchHubScreen
                           // only ever shows LAN-scan results — a switch
@@ -1548,13 +1540,12 @@ class _SmartHomeBanner extends StatelessWidget {
                           // count includes.
                           onTap: () => Navigator.push(context,
                               MaterialPageRoute(builder: (_) => const DevicesScreen(
-                                  initialCategory: DeviceType.smartSwitch)))),
-                      _ShRow(
+                                  initialCategory: DeviceType.smartSwitch))))),
+                      Expanded(child: _ShChip(
                           icon: Symbols.power,
-                          count: plugsOn,
+                          value: plugsOn,
                           label: heLabel('שקעים חכמים', s.qaPlugs),
                           color: AppColors.plugColor,
-                          strings: s,
                           // Was PlugsHubScreen (old list-style _PlugCard) —
                           // per user request, use the same DevicesScreen +
                           // FantaTechSwitchCard grid as the direct entry
@@ -1562,30 +1553,27 @@ class _SmartHomeBanner extends StatelessWidget {
                           // widget.
                           onTap: () => Navigator.push(context,
                               MaterialPageRoute(builder: (_) => const DevicesScreen(
-                                  initialCategory: DeviceType.smartPlug)))),
+                                  initialCategory: DeviceType.smartPlug))))),
                       // Quick-access shortcut, per user request — same
                       // category also lives one tap deeper in the "בית
                       // חכם" category grid (SmartHomeScreen).
-                      _ShRow(
+                      Expanded(child: _ShChip(
                           icon: Symbols.thermostat,
-                          count: acOn,
+                          value: acOn,
                           label: heLabel('מזגנים', s.qaAc),
                           color: AppColors.acColor,
-                          strings: s,
                           onTap: () => Navigator.push(context,
-                              MaterialPageRoute(builder: (_) => const ACHubScreen()))),
+                              MaterialPageRoute(builder: (_) => const ACHubScreen())))),
                       // Fanta AI shortcut — same "בית חכם" card, one tap
                       // to the assistant instead of only the separate
                       // search-bar pill higher up the dashboard.
-                      _ShRow(
+                      Expanded(child: _ShChip(
                           icon: Symbols.auto_awesome,
-                          count: null,
+                          value: null,
                           label: heLabel('עוזר AI', 'Fanta AI'),
                           color: AppColors.primary,
-                          strings: s,
-                          isLast: true,
                           onTap: () => Navigator.push(context,
-                              MaterialPageRoute(builder: (_) => const FantaAIScreen()))),
+                              MaterialPageRoute(builder: (_) => const FantaAIScreen())))),
                     ],
                   ),
                 ),
@@ -1598,67 +1586,66 @@ class _SmartHomeBanner extends StatelessWidget {
   }
 }
 
-/// A single tappable category row (icon, name, "N on" count, chevron) —
-/// used in place of the old compact stat strip so each category reads
-/// clearly on its own line instead of being squeezed into a shared row.
-class _ShRow extends StatelessWidget {
+/// Compact category chip (icon + count + short label) — 5 of these sit in
+/// one row instead of 5 stacked full-width rows (the old _ShRow), so a
+/// card's category breakdown takes ~80px instead of ~280px. Muted (lower
+/// opacity) when [value] is exactly 0 so an empty category recedes
+/// without disappearing — still visible, still tappable, just quieter
+/// than the ones that actually have something going on. [value] null
+/// (rather than 0) means "not a count at all" (e.g. the Fanta AI
+/// shortcut) — never muted.
+class _ShChip extends StatelessWidget {
   final IconData icon;
-  // Null hides the "N on" trailing text entirely — used for rows that
-  // aren't a device count (e.g. the Fanta AI shortcut).
-  final int? count;
+  final int? value;
   final String label;
   final Color color;
-  final S strings;
   final VoidCallback? onTap;
-  final bool isLast;
-  const _ShRow({
+  const _ShChip({
     required this.icon,
-    required this.count,
+    required this.value,
     required this.label,
     required this.color,
-    required this.strings,
     this.onTap,
-    this.isLast = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final muted = value == 0;
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          border: isLast
-              ? null
-              : Border(
-                  bottom: BorderSide(
-                      color: context.tText2(0.06), width: 1)),
-        ),
-        padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.s8, vertical: 6),
-        child: Row(
-          children: [
-            Container(
-              width: 26, height: 26,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.18),
-                shape: BoxShape.circle,
+      child: Opacity(
+        opacity: muted ? 0.45 : 1,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 34, height: 34,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.16),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: color, size: 16),
               ),
-              child: Icon(icon, color: color, size: 14),
-            ),
-            const SizedBox(width: AppSpacing.s8),
-            Expanded(
-              child: Text(label,
-                  style: AppTypography.bodyMd.copyWith(color: context.tText)),
-            ),
-            if (count != null) ...[
-              Text('$count ${strings.devicesOn}',
-                  style: AppTypography.labelSm
-                      .copyWith(color: context.tText2(0.55))),
-              const SizedBox(width: AppSpacing.s4),
+              const SizedBox(height: 4),
+              if (value != null)
+                Text('$value',
+                    style: AppTypography.labelSm.copyWith(
+                      color: context.tText,
+                      fontWeight: FontWeight.w800,
+                    )),
+              const SizedBox(height: 1),
+              Text(label,
+                  style: AppTypography.caption.copyWith(
+                    color: context.tText2(0.55),
+                    fontSize: 9.5,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center),
             ],
-            Icon(Symbols.chevron_right,
-                color: context.tText2(0.35), size: 15),
-          ],
+          ),
         ),
       ),
     );
