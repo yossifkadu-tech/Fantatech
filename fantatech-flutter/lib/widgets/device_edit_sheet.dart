@@ -39,8 +39,6 @@ Future<void> showEntityEditSheet(
   // Optional — when provided, an "on/off schedule" option appears in the
   // sheet, opening the shared schedule sheet.
   VoidCallback? onSchedule,
-  // TEMPORARY — see the debugInfo build in showDeviceEditSheet.
-  String? debugInfo,
 }) {
   HapticFeedback.mediumImpact();
   return showModalBottomSheet(
@@ -59,7 +57,6 @@ Future<void> showEntityEditSheet(
       onAssignRoom: onAssignRoom,
       ipAddress: ipAddress,
       onSchedule: onSchedule,
-      debugInfo: debugInfo,
     ),
   );
 }
@@ -88,13 +85,6 @@ Future<void> showDeviceEditSheet(
         ? () => showScheduleSheet(context,
             device: device, color: DeviceIcons.color(device.type))
         : null,
-    // TEMPORARY diagnostic — shows what's actually stored for a device
-    // that's misbehaving, so we don't have to keep guessing. Remove once
-    // the home-screen-count issue is confirmed fixed.
-    debugInfo: 'id: ${device.id}\n'
-        'type: ${device.type.name}\n'
-        'source: ${device.source}\n'
-        'attrs: ${device.attributes.keys.join(', ')}',
   );
 }
 
@@ -157,7 +147,6 @@ class _EntityEditSheet extends StatefulWidget {
   final void Function(String room)? onAssignRoom;
   final String? ipAddress;
   final VoidCallback? onSchedule;
-  final String? debugInfo;
 
   const _EntityEditSheet({
     required this.currentName,
@@ -171,7 +160,6 @@ class _EntityEditSheet extends StatefulWidget {
     this.onAssignRoom,
     this.ipAddress,
     this.onSchedule,
-    this.debugInfo,
   });
 
   @override
@@ -465,14 +453,6 @@ class _EntityEditSheetState extends State<_EntityEditSheet> {
               ),
             ),
           ),
-          if (widget.debugInfo != null) ...[
-            const SizedBox(height: 14),
-            SelectableText(widget.debugInfo!,
-                style: TextStyle(
-                    color: context.tText2(0.4),
-                    fontSize: 10,
-                    fontFamily: 'monospace')),
-          ],
         ],
       ),
     );
