@@ -10,7 +10,6 @@ import '../services/automation_engine.dart';
 import '../services/gateways/gateway_manager.dart';
 import '../services/gateways/gateway_model.dart';
 import '../services/schedule_service.dart';
-import '../services/weather/weather_service.dart';
 import 'gateways/gateway_hub_screen.dart';
 import 'ai/fanta_ai_screen.dart';
 import 'smarthome/scan_discovery_screen.dart';
@@ -327,10 +326,6 @@ class _TopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final s = context.select((AppState st) => st.strings);
-    final userFirstName = context.select((AppState st) => st.userFirstName);
-    final firstName = userFirstName.isNotEmpty ? userFirstName : 'FantaTech';
-
     return Padding(
       padding: const EdgeInsets.fromLTRB(AppSpacing.s16, 14, AppSpacing.s16, 0),
       child: Column(
@@ -373,9 +368,13 @@ class _TopBar extends StatelessWidget {
                             ]),
                           ),
                           const SizedBox(width: AppSpacing.s8),
+                          // Per user request: was s.appTagline ("פתרונות
+                          // בית חכם ואבטחה") — replaced with the same line
+                          // that used to only appear in the (now removed)
+                          // greeting row below.
                           Flexible(
                             child: Text(
-                              s.appTagline,
+                              'הבית שלך בטוח וחכם',
                               style: AppTypography.labelSm.copyWith(
                                 color: context.tTextSecondary,
                               ),
@@ -404,175 +403,15 @@ class _TopBar extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.s16),
-          // ── Greeting row ─────────────────────────────────────────
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const Text('👋', style: TextStyle(fontSize: 20)),
-              const SizedBox(width: AppSpacing.s8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${s.greetingPrefix} $firstName',
-                      style: AppTypography.headlineMd.copyWith(color: context.tText),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      s.homeGreetingSub,
-                      style: AppTypography.bodyMd.copyWith(color: context.tTextSecondary),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: AppSpacing.s8),
-              const _CompactWeatherChip(),
-            ],
-          ),
         ],
       ),
     );
   }
 }
 
-// ─────────────────────────────────────────────────────────────────
-// Compact weather chip — sits next to the greeting in the top bar
-// ─────────────────────────────────────────────────────────────────
-class _CompactWeatherChip extends StatefulWidget {
-  const _CompactWeatherChip();
-
-  @override
-  State<_CompactWeatherChip> createState() => _CompactWeatherChipState();
-}
-
-class _CompactWeatherChipState extends State<_CompactWeatherChip> {
-  WeatherInfo? _weather;
-  bool _refreshing = false;
-  Timer? _autoRefresh;
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-    // "Live" — refresh automatically every 10 minutes, and on tap.
-    _autoRefresh = Timer.periodic(const Duration(minutes: 10), (_) => _load());
-  }
-
-  @override
-  void dispose() {
-    _autoRefresh?.cancel();
-    super.dispose();
-  }
-
-  Future<void> _load() async {
-    if (!mounted) return;
-    setState(() => _refreshing = true);
-    final info = await WeatherService.fetch();
-    if (!mounted) return;
-    setState(() {
-      _weather    = info;
-      _refreshing = false;
-    });
-  }
-
-  ({IconData icon, Color color}) _glyph() {
-    final w = _weather;
-    if (w == null) return (icon: Symbols.wb_sunny, color: const Color(0xFFFFCC00));
-    final c = w.weatherCode;
-    if (c == 0) {
-      return w.isDay
-          ? (icon: Symbols.wb_sunny, color: const Color(0xFFFFCC00))
-          : (icon: Symbols.nightlight_round, color: const Color(0xFF90A4D4));
-    }
-    if (c <= 3)  return (icon: Symbols.wb_cloudy, color: const Color(0xFFB0BEC5));
-    if (c <= 48) return (icon: Symbols.foggy, color: const Color(0xFFB0BEC5));
-    if (c <= 67 || (c >= 80 && c <= 82)) return (icon: Symbols.grain, color: const Color(0xFF4FC3F7));
-    if (c <= 77 || (c >= 85 && c <= 86)) return (icon: Symbols.ac_unit, color: const Color(0xFF81D4FA));
-    return (icon: Symbols.thunderstorm, color: const Color(0xFF7986CB));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final g = _glyph();
-    final temp     = _weather != null ? '${_weather!.temperatureC.round()}°' : '—°';
-    final humidity = _weather != null ? '${_weather!.humidityPct}%' : '—';
-
-    final city = _weather?.city;
-    final showCity = city != null && city.isNotEmpty && city != '—';
-
-    return GestureDetector(
-      onTap: _refreshing ? null : _load,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-        decoration: BoxDecoration(
-          color: context.tCard,
-          borderRadius: BorderRadius.circular(AppBorderRadius.r16),
-          border: Border.all(
-            color: context.isLight ? AppColors.lightBorder : AppColors.darkBorder.withValues(alpha: 0.6),
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _refreshing
-                ? SizedBox(
-                    width: 22, height: 22,
-                    child: Padding(
-                      padding: const EdgeInsets.all(3),
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2, color: g.color),
-                    ),
-                  )
-                : Icon(g.icon, color: g.color, size: 22),
-            const SizedBox(width: 8),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(temp, style: AppTypography.titleMd.copyWith(color: context.tText)),
-                    const SizedBox(width: 6),
-                    Icon(Symbols.humidity_percentage, size: 10, color: context.tTextSecondary),
-                    const SizedBox(width: 2),
-                    Text(humidity, style: AppTypography.labelSm.copyWith(color: context.tTextSecondary)),
-                  ],
-                ),
-                if (showCity)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 2),
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 110),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Symbols.location_on, size: 10, color: context.tTextSecondary),
-                          const SizedBox(width: 2),
-                          Flexible(
-                            child: Text(
-                              city,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppTypography.labelSm.copyWith(color: context.tTextSecondary),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 // ─────────────────────────────────────────────────────────────────
-// Energy row (standalone — weather now lives next to the greeting)
+// Energy row
 // ─────────────────────────────────────────────────────────────────
 class _WeatherEnergyRow extends StatelessWidget {
   const _WeatherEnergyRow();
