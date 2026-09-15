@@ -17,7 +17,6 @@ import '../../l10n/strings.dart';
 import '../../widgets/ft_button.dart';
 import '../calendar/calendar_screen.dart';
 import '../mirror/mirror_screen.dart';
-import '../dev/fantatech_switch_card_demo_screen.dart';
 import '../rooms/rooms_screen.dart';
 import '../../models/layout_item.dart';
 import '../../widgets/edit_mode/reorderable_dashboard.dart';
@@ -3350,22 +3349,6 @@ class _SettingsSheetState extends State<_SettingsSheet> {
               navigator.pop();
               navigator.push(
                   MaterialPageRoute(builder: (_) => const MirrorScreen()));
-            },
-          ),
-
-          const SizedBox(height: 10),
-
-          // ── TEMP: FantaTechSwitchCard preview (remove once tested) ──
-          FtListTile(
-            icon: kDevSwitchCardDemoIcon,
-            iconBg: kDevSwitchCardDemoColor.withValues(alpha: 0.12),
-            iconColor: kDevSwitchCardDemoColor,
-            title: 'FantaTechSwitchCard — בדיקה',
-            onTap: () {
-              final navigator = Navigator.of(context);
-              navigator.pop();
-              navigator.push(MaterialPageRoute(
-                  builder: (_) => const FantaTechSwitchCardDemoScreen()));
             },
           ),
 
