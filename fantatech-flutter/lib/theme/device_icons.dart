@@ -195,9 +195,41 @@ class MaterialSymbolsIconSet extends DeviceIconSet {
         }
         final position = d.attributes['blindLevel'] as int?;
         return blindIcon(position);
+      case DeviceType.smartPlug:
+      case DeviceType.smartSwitch:
+        // A plug/switch is often really standing in for whatever appliance
+        // it powers (e.g. "מזגן סלון" — a plug controlling a living-room
+        // AC) — per user request, reflect that in the icon instead of
+        // always showing the generic plug/switch glyph.
+        final applianceIcon = _applianceIconForName(d.name);
+        if (applianceIcon != null) return applianceIcon;
+        return icon(d.type);
       default:
         return icon(d.type);
     }
+  }
+
+  /// Best-guess appliance icon from a plug/switch device's own name — null
+  /// when nothing matches, so the caller falls back to the generic icon.
+  static IconData? _applianceIconForName(String name) {
+    final k = name.toLowerCase();
+    if (k.contains('מזגן') || k.contains(' ac ') || k.contains('air condition')) {
+      return Symbols.hvac;
+    }
+    if (k.contains('דוד') || k.contains('water heater') || k.contains('boiler')) {
+      return Symbols.water_drop;
+    }
+    if (k.contains('מקרר') || k.contains('fridge') || k.contains('refrigerator')) {
+      return Symbols.kitchen;
+    }
+    if (k.contains('כביסה') || k.contains('washing machine') || k.contains('washer')) {
+      return Symbols.local_laundry_service;
+    }
+    if (k.contains('תנור') || k.contains('oven')) return Symbols.microwave;
+    if (k.contains('טלוויזיה') || k.contains(' tv ') || k.contains('television')) {
+      return Symbols.tv;
+    }
+    return null;
   }
 
   @override

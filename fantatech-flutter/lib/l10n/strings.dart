@@ -2310,7 +2310,7 @@ class S {
     camMotion: 'תנועה מזוהה', camOnline: 'מקוון', camOffline: 'לא מקוון', locationUnavailable: 'מיקום לא זמין', gatewaysManage: 'נהל', gatewaysTitle: 'גשרים', statusOffline: 'לא מקוון',
     secArmStayBtn: 'הפעל בבית', secDisarmBtn: 'נטרל', roomNameMedia: 'מדיה', mediaRoomTitle: 'מדיה',
     roomOccupantLabel: 'מי משתמש בחדר?', occupantNone: 'ללא', occupantKids: 'ילדים', occupantAdults: 'מבוגרים',
-    navHome: 'חדרים', navCameras: 'מצלמות', navSecurity: 'אבטחה', navProfile: 'פרופיל', navAutomations: 'אוטומציות',
+    navHome: 'בית', navCameras: 'מצלמות', navSecurity: 'אבטחה', navProfile: 'פרופיל', navAutomations: 'אוטומציות',
     greetingPrefix: 'שלום', homeSecured: 'הבית שלך מוגן', homeNotSecured: 'הבית לא מוגן',
     allSystemsActive: 'כל המערכות פעילות', tapToActivate: 'לחץ להפעיל מערכת אבטחה',
     alarmTitle: 'אזעקה', alarmSecured: 'מוגן', alarmOff: 'כבויה', roomManagement: 'ניהול בית', roomsUnit: 'חדרים',

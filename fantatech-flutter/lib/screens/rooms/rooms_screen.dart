@@ -40,6 +40,12 @@ const _kIconChoices = [
   (Symbols.desk,    0xef53), // office/study
   (Symbols.dining,           0xe15b), // dining room
   (Symbols.outdoor_grill, 0xefb9), // garden / outdoor
+  (Symbols.person,               0xf0d3), // guest room
+  (Symbols.local_laundry_service, 0xe54a), // laundry room
+  (Symbols.door_front,           0xeffd), // entrance
+  (Symbols.stairs,               0xf1a9), // stairs
+  (Symbols.inventory_2,          0xe1a1), // storage
+  (Symbols.foundation,           0xf200), // basement
 ];
 
 // Const lookup map so Flutter's icon tree-shaker can statically enumerate
@@ -57,9 +63,129 @@ const _kIconMap = <int, IconData>{
   0xef53: Symbols.desk,
   0xe15b: Symbols.dining,
   0xefb9: Symbols.outdoor_grill,
+  0xf0d3: Symbols.person,
+  0xe54a: Symbols.local_laundry_service,
+  0xeffd: Symbols.door_front,
+  0xf1a9: Symbols.stairs,
+  0xe1a1: Symbols.inventory_2,
+  0xf200: Symbols.foundation,
 };
 
 IconData _resolveIcon(int cp) => _kIconMap[cp] ?? Symbols.home;
+
+// Optional cover photo per room icon/category — user-supplied via
+// assets/images/rooms/. Only categories with a file here get a photo;
+// every other category keeps the plain icon circle. Add more entries as
+// more photos are supplied.
+const Map<int, String> _kRoomPhotos = {
+  0xe318: 'assets/images/rooms/living_room.png', // סלון
+  0xe239: 'assets/images/rooms/bedroom.png',     // חדרי שינה
+  0xf04c3: 'assets/images/rooms/kitchen.png',    // מטבח
+  0xe556: 'assets/images/rooms/kids_room.png',   // חדרי ילדים
+  0xe3a3: 'assets/images/rooms/balcony.png',     // מרפסות
+  0xe1b3: 'assets/images/rooms/garage.png',      // מוסך
+  0xe0ee: 'assets/images/rooms/pool.png',        // בריכה
+  0xf05b3: 'assets/images/rooms/bathroom.png',   // חדרי רחצה
+  0xef53: 'assets/images/rooms/office.png',      // משרד
+  0xefb9: 'assets/images/rooms/garden.png',      // גינה וחוץ
+  0xf0d3: 'assets/images/rooms/guest_room.png',  // חדר אורחים
+  0xe54a: 'assets/images/rooms/laundry.png',     // חדר כביסה
+  0xeffd: 'assets/images/rooms/entrance.png',    // כניסה
+  0xf1a9: 'assets/images/rooms/stairs.png',      // מדרגות
+  0xe1a1: 'assets/images/rooms/storage.png',     // מחסן
+  0xf200: 'assets/images/rooms/basement.png',    // מרתף
+};
+
+/// Best-guess category (as an _kRoomPhotos key) from a room's own name,
+/// independent of whatever icon happens to be saved on it. Existing rooms
+/// were often created before matching icons existed, or with whichever icon
+/// the user happened to click — so the icon alone isn't reliable for
+/// picking a cover photo. Keyword list mirrors _colorForRoom above.
+int? _categoryForRoomName(String rawName) {
+  final k = rawName.toLowerCase();
+  if (k.contains('סלון') || k.contains('living')) return 0xe318;
+  // "הורים" (parents) covers the common "חדר הורים" master-bedroom name.
+  if (k.contains('שינה') || k.contains('הורים') || k.contains('bedroom')) {
+    return 0xe239;
+  }
+  if (k.contains('מטבח') || k.contains('kitchen')) return 0xf04c3;
+  if (k.contains('ילדים') || k.contains('kids')) return 0xe556;
+  if (k.contains('מרפסת') || k.contains('balcony')) return 0xe3a3;
+  if (k.contains('מוסך') || k.contains('garage')) return 0xe1b3;
+  if (k.contains('בריכה') || k.contains('pool')) return 0xe0ee;
+  if (k.contains('רחצה') || k.contains('אמבט') || k.contains('שירות') ||
+      k.contains('מקלח') || k.contains('bath')) {
+    return 0xf05b3;
+  }
+  if (k.contains('משרד') || k.contains('office')) return 0xef53;
+  if (k.contains('גינה') || k.contains('חצר') || k.contains('garden')) {
+    return 0xefb9;
+  }
+  if (k.contains('אורחים') || k.contains('guest')) return 0xf0d3;
+  if (k.contains('כביסה') || k.contains('laundry')) return 0xe54a;
+  if (k.contains('כניסה') || k.contains('entrance')) return 0xeffd;
+  if (k.contains('מדרגות') || k.contains('stairs')) return 0xf1a9;
+  if (k.contains('מחסן') || k.contains('storage')) return 0xe1a1;
+  if (k.contains('מרתף') || k.contains('basement')) return 0xf200;
+  return null;
+}
+
+/// Resolves which cover photo (if any) a room should show — name match
+/// first (more reliable, reflects what the room is actually called), then
+/// falls back to whatever icon is saved on the room.
+String? _photoForRoom(String rawName, int iconCp) {
+  final byName = _categoryForRoomName(rawName);
+  if (byName != null && _kRoomPhotos.containsKey(byName)) {
+    return _kRoomPhotos[byName];
+  }
+  return _kRoomPhotos[iconCp];
+}
+
+// Category label shown as a section header when rooms are auto-sorted by
+// their icon (per user request — same icon choices as _kIconChoices above).
+const Map<int, String> _kCategoryLabels = {
+  0xe318:  'סלון',
+  0xe239:  'חדרי שינה',
+  0xf04c3: 'מטבח',
+  0xe556:  'חדרי ילדים',
+  0xe3a3:  'מרפסות',
+  0xe1b3:  'מוסך',
+  0xe0ee:  'בריכה',
+  0xe1d5:  'חדר כושר',
+  0xf05b3: 'חדרי רחצה',
+  0xef53:  'משרד',
+  0xe15b:  'פינת אוכל',
+  0xefb9:  'גינה וחוץ',
+  0xf0d3:  'חדר אורחים',
+  0xe54a:  'חדר כביסה',
+  0xeffd:  'כניסה',
+  0xf1a9:  'מדרגות',
+  0xe1a1:  'מחסן',
+  0xf200:  'מרתף',
+};
+
+/// Splits a flat room list into icon-based categories, in the same order as
+/// _kIconChoices, each holding only the rooms that share that icon.
+List<({int iconCp, String label, List<Map<String, dynamic>> rooms})>
+    _groupRoomsByCategory(List<Map<String, dynamic>> rooms) {
+  final byIcon = <int, List<Map<String, dynamic>>>{};
+  for (final r in rooms) {
+    final cp = r['icon'] as int;
+    byIcon.putIfAbsent(cp, () => []).add(r);
+  }
+  final result = <({int iconCp, String label, List<Map<String, dynamic>> rooms})>[];
+  for (final choice in _kIconChoices) {
+    final cp = choice.$2;
+    final list = byIcon.remove(cp);
+    if (list != null && list.isNotEmpty) {
+      result.add((iconCp: cp, label: _kCategoryLabels[cp] ?? 'אחר', rooms: list));
+    }
+  }
+  for (final entry in byIcon.entries) {
+    result.add((iconCp: entry.key, label: 'אחר', rooms: entry.value));
+  }
+  return result;
+}
 
 class RoomsScreen extends StatefulWidget {
   final bool openAddDialog;
@@ -227,6 +353,7 @@ class _RoomsScreenState extends State<RoomsScreen>
                                       roomName: displayName,
                                       icon: _resolveIcon(icon),
                                       color: _colorForRoom(rawName),
+                                      coverPhoto: _photoForRoom(rawName, icon),
                                     ),
                                   )),
                           ),
@@ -249,43 +376,75 @@ class _RoomsScreenState extends State<RoomsScreen>
                               ),
                             ),
                           ],
-                          for (final room in state.rootRooms) ...[
-                            Builder(builder: (ctx) {
-                              final rawName = room['name'] as String;
-                              final globalIdx = state.rooms.indexOf(room);
-                              final displayName =
-                                  s.translateRoomKey(rawName);
-                              final devicesInRoom = state.devices
-                                  .where((d) => d.room == rawName)
-                                  .toList();
-                              return _RoomTile(
-                                key: ValueKey('root_$globalIdx'),
-                                name:          displayName,
-                                iconCodePoint: room['icon'] as int,
-                                deviceCount:   devicesInRoom.length,
-                                devices:       devicesInRoom,
-                                onTap: () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => RoomSetupScreen(
-                                        roomKey:  rawName,
-                                        roomName: displayName,
-                                        icon: _resolveIcon(room['icon'] as int),
-                                        color: _colorForRoom(rawName),
-                                      ),
-                                    )),
-                                onEdit: () => _showRoomDialog(
-                                    context, state, s,
-                                    editIndex:      globalIdx,
-                                    initialName:    rawName,
-                                    initialIcon:    room['icon'] as int,
-                                    initialOccupant:
-                                        room['occupant'] as String?),
-                                onDelete: () => _confirmDelete(
-                                    context, state, s,
-                                    globalIdx, displayName),
-                              );
-                            }),
+                          // Auto-sorted by room icon/category, per user
+                          // request — replaces the old flat list so rooms
+                          // of the same kind (bedrooms, kitchen, etc.) sit
+                          // together under their own header.
+                          for (final category in _groupRoomsByCategory(state.rootRooms)) ...[
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(2, 10, 2, 6),
+                              child: Row(
+                                children: [
+                                  Icon(_resolveIcon(category.iconCp),
+                                      color: context.tText2(0.45), size: 15),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    category.label,
+                                    style: TextStyle(
+                                        color: context.tText2(0.5),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                        letterSpacing: 0.3),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    '${category.rooms.length}',
+                                    style: TextStyle(
+                                        color: context.tText2(0.35),
+                                        fontSize: 12),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            for (final room in category.rooms) ...[
+                              Builder(builder: (ctx) {
+                                final rawName = room['name'] as String;
+                                final globalIdx = state.rooms.indexOf(room);
+                                final displayName =
+                                    s.translateRoomKey(rawName);
+                                final devicesInRoom = state.devices
+                                    .where((d) => d.room == rawName)
+                                    .toList();
+                                return _RoomTile(
+                                  key: ValueKey('root_$globalIdx'),
+                                  name:          displayName,
+                                  iconCodePoint: room['icon'] as int,
+                                  deviceCount:   devicesInRoom.length,
+                                  devices:       devicesInRoom,
+                                  onTap: () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => RoomSetupScreen(
+                                          roomKey:  rawName,
+                                          roomName: displayName,
+                                          icon: _resolveIcon(room['icon'] as int),
+                                          color: _colorForRoom(rawName),
+                                          coverPhoto: _photoForRoom(rawName, room['icon'] as int),
+                                        ),
+                                      )),
+                                  onEdit: () => _showRoomDialog(
+                                      context, state, s,
+                                      editIndex:      globalIdx,
+                                      initialName:    rawName,
+                                      initialIcon:    room['icon'] as int,
+                                      initialOccupant:
+                                          room['occupant'] as String?),
+                                  onDelete: () => _confirmDelete(
+                                      context, state, s,
+                                      globalIdx, displayName),
+                                );
+                              }),
+                            ],
                           ],
                         ],
                       ],
@@ -859,26 +1018,47 @@ class _RoomTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
+        // Root cause found: the 4-sided Border(left:,top:,right:,bottom:)
+        // constructor combined with borderRadius silently failed to paint
+        // this row's content on the user's device — confirmed with a
+        // debug build using Border.all() (this exact form) rendering
+        // correctly. Back to real theme-aware colors (proven fine
+        // elsewhere with this exact border form, e.g. devices_screen.dart's
+        // _DeviceCard) — just with the working border constructor. The
+        // colored left accent edge is dropped since Border.all() can't
+        // vary color by side.
         color: context.tCard,
         borderRadius: BorderRadius.circular(16),
-        border: Border(
-          left: BorderSide(color: roomColor.withValues(alpha: 0.55), width: 3),
-          top: BorderSide(color: context.tText2(0.07)),
-          right: BorderSide(color: context.tText2(0.07)),
-          bottom: BorderSide(color: context.tText2(0.07)),
-        ),
+        border: Border.all(color: context.tText2(0.08), width: 1),
       ),
       child: Row(
         children: [
-          // Icon circle
-          Container(
-            width: 44, height: 44,
-            decoration: BoxDecoration(
-              color: roomColor.withValues(alpha: 0.14),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: roomColor, size: 22),
-          ),
+          // Icon circle — or a cover photo when one exists for this
+          // room's category (user-supplied, see _kRoomPhotos above).
+          // Matched by the room's NAME first, icon only as a fallback —
+          // existing rooms often have a saved icon that doesn't actually
+          // match what they're called.
+          Builder(builder: (context) {
+            final photo = _photoForRoom(name, iconCodePoint);
+            if (photo != null) {
+              return ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.asset(
+                  photo,
+                  width: 44, height: 44,
+                  fit: BoxFit.cover,
+                ),
+              );
+            }
+            return Container(
+              width: 44, height: 44,
+              decoration: BoxDecoration(
+                color: roomColor.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: roomColor, size: 22),
+            );
+          }),
           const SizedBox(width: 14),
 
           // Name + live summary (falls back to device count)

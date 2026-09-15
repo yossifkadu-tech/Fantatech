@@ -425,6 +425,12 @@ class _SavedSensorCard extends StatelessWidget {
     final triggered = device.isOn;
 
     return GestureDetector(
+      // Was long-press only — per user report, tapping the card did
+      // nothing visible, which reads as broken since it looks tappable.
+      // Sensors have no on/off action of their own, so both a tap and a
+      // long-press now open the same rename/room/delete sheet.
+      onTap: () => showDeviceEditSheet(context,
+          device: device, state: context.read<AppState>()),
       onLongPress: () => showDeviceEditSheet(context,
           device: device, state: context.read<AppState>()),
       child: Container(

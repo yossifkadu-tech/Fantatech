@@ -30,10 +30,11 @@ import 'screens/auth/login_screen.dart';
 import 'screens/onboarding/splash_screen.dart';
 import 'screens/onboarding/onboarding_screen.dart';
 import 'screens/home_screen.dart';
-import 'screens/cameras/cameras_screen.dart';
+import 'screens/notifications/notifications_screen.dart';
 import 'screens/profile/profile_screen.dart';
 import 'screens/energy/energy_screen.dart';
 import 'screens/automations/automations_screen.dart';
+import 'screens/rooms/rooms_screen.dart';
 import 'services/push/ha_push_service.dart';
 
 void main() async {
@@ -599,9 +600,12 @@ class _MainShellState extends State<MainShell> {
     // screen already covers it. Devices/SmartHome slot replaced with
     // Energy — the "בית חכם" card on home already covers device browsing,
     // but there was no other way to reach consumption/usage graphs.
+    // Cameras slot replaced with Notifications, per user request — the
+    // home screen already has its own cameras entry points (System
+    // Status card, quick actions, "בית חכם" card).
     _screens = [
       const HomeScreen(),
-      const CamerasScreen(),
+      const NotificationsScreen(),
       const EnergyScreen(),
       const AutomationsScreen(),
       const ProfileScreen(),
@@ -619,6 +623,15 @@ class _MainShellState extends State<MainShell> {
         state.locale == AppLocale.hebrew ? 'צריכה' : s.energyTitle;
 
     void onNavTap(int i) {
+      // Rooms isn't a persistent IndexedStack tab (it was always reached by
+      // pushing a route, not switching tabs) — the nav bar just gives it a
+      // one-tap entry point per user request, pushed on top instead of
+      // taking over _index.
+      if (i == 5) {
+        Navigator.push(
+            context, MaterialPageRoute(builder: (_) => const RoomsScreen()));
+        return;
+      }
       context.read<LayoutProvider>().exitAllEditModes();
       setState(() => _index = i);
     }
@@ -637,10 +650,11 @@ class _MainShellState extends State<MainShell> {
               onTap: onNavTap,
               isRtl: state.isRtl,
               navHome: s.navHome,
-              navCameras: s.navCameras,
+              navNotifications: s.notificationsTitle,
               navConsumption: consumptionLabel,
               navAutomations: s.navAutomations,
               navProfile: s.navProfile,
+              navRooms: s.roomsHeader,
             ),
             Expanded(
               child: IndexedStack(index: _index, children: _screens),
@@ -655,10 +669,11 @@ class _MainShellState extends State<MainShell> {
           index: _index,
           onTap: onNavTap,
           navHome: s.navHome,
-          navCameras: s.navCameras,
+          navNotifications: s.notificationsTitle,
           navConsumption: consumptionLabel,
           navAutomations: s.navAutomations,
           navProfile: s.navProfile,
+          navRooms: s.roomsHeader,
         ),
       );
     }
@@ -678,20 +693,22 @@ class _SideNav extends StatelessWidget {
   final ValueChanged<int> onTap;
   final bool isRtl;
   final String navHome;
-  final String navCameras;
+  final String navNotifications;
   final String navConsumption;
   final String navAutomations;
   final String navProfile;
+  final String navRooms;
 
   const _SideNav({
     required this.index,
     required this.onTap,
     required this.isRtl,
     required this.navHome,
-    required this.navCameras,
+    required this.navNotifications,
     required this.navConsumption,
     required this.navAutomations,
     required this.navProfile,
+    required this.navRooms,
   });
 
   @override
@@ -701,14 +718,14 @@ class _SideNav extends StatelessWidget {
     final kUnsel    = isLight ? const Color(0xFF9E9E9E) : const Color(0xFF6B7280);
     final bgColor   = isLight ? Colors.white : Theme.of(context).colorScheme.surface;
 
-    final labels = [navHome, navCameras, navConsumption, navAutomations, navProfile];
+    final labels = [navHome, navNotifications, navConsumption, navAutomations, navProfile, navRooms];
     final icons  = [
-      Symbols.home,      Symbols.videocam,     Symbols.bar_chart,
-      Symbols.auto_awesome,  Symbols.person,
+      Symbols.home,      Symbols.notifications,     Symbols.bar_chart,
+      Symbols.auto_awesome,  Symbols.person,     Symbols.door_front,
     ];
     final activeIcons = [
-      Symbols.home,       Symbols.videocam,      Symbols.bar_chart,
-      Symbols.auto_awesome,   Symbols.person,
+      Symbols.home,       Symbols.notifications,      Symbols.bar_chart,
+      Symbols.auto_awesome,   Symbols.person,     Symbols.door_front,
     ];
 
     final railBorder = isRtl
@@ -804,19 +821,21 @@ class _BottomNav extends StatelessWidget {
   final int index;
   final ValueChanged<int> onTap;
   final String navHome;
-  final String navCameras;
+  final String navNotifications;
   final String navConsumption;
   final String navAutomations;
   final String navProfile;
+  final String navRooms;
 
   const _BottomNav({
     required this.index,
     required this.onTap,
     required this.navHome,
-    required this.navCameras,
+    required this.navNotifications,
     required this.navConsumption,
     required this.navAutomations,
     required this.navProfile,
+    required this.navRooms,
   });
 
   @override
@@ -855,10 +874,11 @@ class _BottomNav extends StatelessWidget {
         animationDuration: const Duration(milliseconds: 300),
         destinations: [
           _dest(Symbols.home,        Symbols.home,        navHome),
-          _dest(Symbols.videocam,    Symbols.videocam,    navCameras),
+          _dest(Symbols.notifications, Symbols.notifications, navNotifications),
           _dest(Symbols.bar_chart,   Symbols.bar_chart,   navConsumption),
           _dest(Symbols.auto_awesome,Symbols.auto_awesome,navAutomations),
           _dest(Symbols.person,Symbols.person,     navProfile),
+          _dest(Symbols.door_front,  Symbols.door_front,  navRooms),
         ],
       ),
     );

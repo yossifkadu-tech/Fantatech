@@ -19,6 +19,10 @@ class SmartSwitchCard extends StatefulWidget {
   final bool isConnected;
   final ValueChanged<bool>? onChanged;
   final IconData icon;
+  // False when the card is embedded in a screen that already shows its own
+  // name/room/icon header (e.g. the devices list detail sheet) — avoids
+  // showing the same name and a second small icon twice.
+  final bool showHeader;
 
   const SmartSwitchCard({
     super.key,
@@ -28,6 +32,7 @@ class SmartSwitchCard extends StatefulWidget {
     this.isConnected = true,
     this.onChanged,
     this.icon = Icons.power_settings_new_rounded,
+    this.showHeader = true,
   });
 
   @override
@@ -77,15 +82,15 @@ class _SmartSwitchCardState extends State<SmartSwitchCard> {
             ? constraints.maxWidth
             : MediaQuery.of(context).size.width;
 
-        // גודל הכפתור: 60% מרוחב הכרטיס, עם רצפה/תקרה כדי לשמור על שימושיות
-        // (הרבה מעל המינימום המומלץ ל-touch target: 44pt / 48dp).
-        final buttonSize = (availableWidth * 0.6).clamp(150.0, 230.0);
+        // גודל הכפתור: 18% מרוחב הכרטיס — עכשיו שהכותרת קומפקטית וחד-שורתית,
+        // המקום שהתפנה הולך לכפתור עצמו כדי שיהיה בולט.
+        final buttonSize = (availableWidth * 0.18).clamp(60.0, 78.0);
         final glowSize = buttonSize * 1.3;
 
         return Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(28),
+            borderRadius: BorderRadius.circular(16),
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
@@ -97,14 +102,16 @@ class _SmartSwitchCardState extends State<SmartSwitchCard> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _Header(
-                deviceName: widget.deviceName,
-                roomName: widget.roomName,
-                icon: widget.icon,
-                isOn: _isOn,
-                isConnected: widget.isConnected,
-              ),
-              const SizedBox(height: 28),
+              if (widget.showHeader) ...[
+                _Header(
+                  deviceName: widget.deviceName,
+                  roomName: widget.roomName,
+                  icon: widget.icon,
+                  isOn: _isOn,
+                  isConnected: widget.isConnected,
+                ),
+                const SizedBox(height: 10),
+              ],
               SizedBox(
                 width: glowSize,
                 height: glowSize,
@@ -159,16 +166,16 @@ class _SmartSwitchCardState extends State<SmartSwitchCard> {
                           children: [
                             Icon(
                               Icons.power_settings_new_rounded,
-                              size: buttonSize * 0.22,
+                              size: buttonSize * 0.24,
                               color: _isOn ? Colors.white : const Color(0xFF78716A),
                             ),
-                            const SizedBox(height: 6),
+                            const SizedBox(height: 3),
                             Text(
                               _isOn ? 'ON' : 'OFF',
                               style: TextStyle(
-                                fontSize: buttonSize * 0.11,
+                                fontSize: buttonSize * 0.16,
                                 fontWeight: FontWeight.w800,
-                                letterSpacing: 1,
+                                letterSpacing: 0.6,
                                 color: _isOn ? Colors.white : const Color(0xFF78716A),
                               ),
                             ),
@@ -179,11 +186,11 @@ class _SmartSwitchCardState extends State<SmartSwitchCard> {
                   ],
                 ),
               ),
-              const SizedBox(height: 22),
+              const SizedBox(height: 11),
               AnimatedDefaultTextStyle(
                 duration: const Duration(milliseconds: 250),
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 12,
                   fontWeight: FontWeight.w700,
                   color: _isOn ? const Color(0xFFF4661A) : const Color(0xFFA9A29A),
                 ),
@@ -192,10 +199,10 @@ class _SmartSwitchCardState extends State<SmartSwitchCard> {
                 child: Text(
                     '${widget.deviceName} ${_isOn ? "פעיל" : "כבוי"}'),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 2),
               Text(
                 _isOn ? 'הקש כדי לכבות' : 'הקש כדי להדליק',
-                style: const TextStyle(fontSize: 11, color: Color(0xFF7A6F63)),
+                style: const TextStyle(fontSize: 9, color: Color(0xFF7A6F63)),
               ),
             ],
           ),
@@ -224,53 +231,39 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          width: 38,
-          height: 38,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: isOn
-                  ? const [Color(0xFFFFB37A), Color(0xFFF4661A)]
-                  : const [Color(0xFFC9C4BC), Color(0xFFA9A29A)],
-            ),
-          ),
-          child: Icon(icon, size: 18, color: Colors.white),
-        ),
-        const SizedBox(width: 10),
+        // Name + room on one line (was two stacked lines) — frees up
+        // vertical space for the button below.
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                deviceName,
-                style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.w700),
-                overflow: TextOverflow.ellipsis,
-              ),
-              if (roomName.isNotEmpty)
-                Text(
-                  roomName,
-                  style: const TextStyle(fontSize: 11.5, color: Color(0xFF7A6F63)),
-                  overflow: TextOverflow.ellipsis,
+          child: Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: deviceName,
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF2C2C2A)),
                 ),
-            ],
+                if (roomName.isNotEmpty)
+                  TextSpan(
+                    text: '  ·  $roomName',
+                    style: const TextStyle(fontSize: 11, color: Color(0xFF7A6F63)),
+                  ),
+              ],
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 6),
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(isConnected ? 'מחובר' : 'לא מחובר',
-                style: const TextStyle(fontSize: 10.5, color: Color(0xFF7A6F63))),
-            const SizedBox(width: 5),
+                style: const TextStyle(fontSize: 9, color: Color(0xFF7A6F63))),
+            const SizedBox(width: 4),
             if (isConnected) const _ConnectedDot(),
-            const SizedBox(width: 5),
+            const SizedBox(width: 4),
             Icon(
               isConnected ? Icons.wifi_rounded : Icons.wifi_off_rounded,
-              size: 16,
+              size: 13,
               color: const Color(0xFF7A6F63),
             ),
           ],

@@ -447,13 +447,17 @@ class _InlineEditButton extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 abstract class DashboardDefaults {
-  // Page 1: smart home, security, cameras, ad banner, store.
-  // Page 2: energy (weather), system status, home management, media.
+  // Page 1: smart home, security, media, ad banner, store.
+  // Page 2: energy (weather), system status, home management.
   static const List<LayoutItem> home = [
     LayoutItem(id: 'ai_hero',         type: 'ai_hero',         order: 0,  page: 0, pinned: true),
     LayoutItem(id: 'quick_actions',   type: 'quick_actions',   order: 1,  page: 0),
     LayoutItem(id: 'security',        type: 'security',        order: 2,  page: 0),
-    LayoutItem(id: 'cameras',         type: 'cameras',         order: 3,  page: 0),
+    // Hidden by default (declutter, per user request) — still fully
+    // available via עריכת לוח → un-hide.
+    LayoutItem(id: 'cameras',         type: 'cameras',         order: 3,  page: 0, visible: false),
+    // Took the cameras slot on page 0 (per user request).
+    LayoutItem(id: 'media',           type: 'media',           order: 3,  page: 0),
     // Hidden by default (declutter) — still fully available via
     // עריכת לוח → un-hide, just not shown on a fresh install.
     LayoutItem(id: 'ad_banner',       type: 'ad_banner',       order: 4,  page: 0, visible: false),
@@ -463,13 +467,14 @@ abstract class DashboardDefaults {
     // Hidden by default (declutter) — Profile screen already has its own
     // entry point to the same "ניהול בית" sheet, so nothing is lost.
     LayoutItem(id: 'home_management', type: 'home_management', order: 12, page: 1, visible: false),
-    LayoutItem(id: 'media',           type: 'media',           order: 13, page: 1),
+    // New card, per user request — recent notifications preview.
+    LayoutItem(id: 'notifications',   type: 'notifications',   order: 13, page: 1),
   ];
 
   /// Item types that belong on home-screen page 1. Anything else (including
   /// future/unrecognized types) defaults to page 2 — the "אחר" bucket.
   static const homePage0Types = {
-    'ai_hero', 'quick_actions', 'security', 'cameras', 'ad_banner', 'store',
+    'ai_hero', 'quick_actions', 'security', 'media', 'ad_banner', 'store',
   };
 
   // Cameras screen
@@ -520,6 +525,7 @@ abstract class DashboardDefaults {
       'store':         'חנות',
       'ad_banner':     'פרסום ומימון',
       'media':         'מדיה',
+      'notifications': 'התראות',
       'system_status': 'סטטוס מערכת',
       'live_grid':     'שידור חי',
       'timeline':      'ציר זמן',
@@ -551,6 +557,7 @@ abstract class DashboardDefaults {
       'store':         Symbols.storefront,
       'ad_banner':     Symbols.campaign,
       'media':         Symbols.speaker,
+      'notifications': Symbols.notifications,
       'system_status': Symbols.memory,
       'live_grid':     Symbols.grid_view,
       'timeline':      Symbols.timeline,

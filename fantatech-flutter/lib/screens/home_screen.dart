@@ -1,4 +1,4 @@
-import 'package:material_symbols_icons/symbols.dart';
+﻿import 'package:material_symbols_icons/symbols.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -16,10 +16,10 @@ import 'ai/fanta_ai_screen.dart';
 import 'smarthome/scan_discovery_screen.dart';
 import 'smarthome/smarthome_screen.dart';
 import 'smarthome/ac_hub_screen.dart';
-import 'smarthome/plugs_hub_screen.dart';
 import 'smarthome/smart_switch_hub_screen.dart';
 import 'smarthome/sensor_hub_screen.dart';
 import 'smarthome/blind_hub_screen.dart';
+import 'smarthome/intercom_hub_screen.dart';
 import 'security/smart_lock_hub_screen.dart';
 import 'profile/profile_screen.dart' show showHomeManagementSheet;
 import 'solar/solar_screen.dart';
@@ -37,7 +37,6 @@ import '../widgets/ft_button.dart';
 import '../models/layout_item.dart';
 import '../providers/layout_provider.dart';
 import '../widgets/edit_mode/reorderable_dashboard.dart';
-import '../widgets/edit_mode/dashboard_customize_sheet.dart';
 import '../theme/app_theme.dart';
 import '../utils/responsive.dart';
 
@@ -146,7 +145,7 @@ class _HomeScreenState extends State<HomeScreen> {
     // toggling visibility instead of pruning means "עריכת לוח" → the item
     // is still there, just switched off, so the user can bring it back
     // exactly the way they'd un-hide anything else.
-    const declutterKey = 'home_declutter_ads_v1';
+    const declutterKey = 'home_declutter_ads_v2';
     if (!(prefs.getBool(declutterKey) ?? false)) {
       final current = provider.getItems(DashboardId.home, allItems: true);
       for (final id in const ['ad_banner', 'store']) {
@@ -161,7 +160,7 @@ class _HomeScreenState extends State<HomeScreen> {
     // One-time declutter round 2: Home Management card hidden — Profile
     // already has its own entry point to the same "ניהול בית" sheet, so
     // nothing is lost by switching this one off by default.
-    const declutterKey2 = 'home_declutter_hm_v1';
+    const declutterKey2 = 'home_declutter_hm_v2';
     if (!(prefs.getBool(declutterKey2) ?? false)) {
       final current = provider.getItems(DashboardId.home, allItems: true);
       final idx = current.indexWhere((i) => i.id == 'home_management');
@@ -170,6 +169,41 @@ class _HomeScreenState extends State<HomeScreen> {
       }
       await prefs.setBool(declutterKey2, true);
     }
+
+    // One-time declutter round 3: the standalone AI search pill hidden —
+    // Fanta AI now also lives as a row inside the "בית חכם" card, so
+    // having both on screen was a duplicate.
+    const declutterKey3 = 'home_declutter_ai_v2';
+    if (!(prefs.getBool(declutterKey3) ?? false)) {
+      final current = provider.getItems(DashboardId.home, allItems: true);
+      final idx = current.indexWhere((i) => i.id == 'ai_hero');
+      if (idx != -1 && current[idx].visible) {
+        provider.toggleVisibility(DashboardId.home, 'ai_hero');
+      }
+      await prefs.setBool(declutterKey3, true);
+    }
+
+    // One-time declutter round 4 (per user request): the cameras dashboard
+    // card hidden — media took its slot on page 0 instead. Still fully
+    // available via עריכת לוח → un-hide.
+    const declutterKey4 = 'home_declutter_cameras_v1';
+    if (!(prefs.getBool(declutterKey4) ?? false)) {
+      final current = provider.getItems(DashboardId.home, allItems: true);
+      final idx = current.indexWhere((i) => i.id == 'cameras');
+      if (idx != -1 && current[idx].visible) {
+        provider.toggleVisibility(DashboardId.home, 'cameras');
+      }
+      await prefs.setBool(declutterKey4, true);
+    }
+
+    // Root-cause fix: toggleVisibility()/setItemOrder()/setItemPage() (via
+    // LayoutProvider._patch → _setItems) only ever update in-memory state —
+    // they never call saveLocal(). Every one-time migration above therefore
+    // looked like it worked for the rest of that session (the in-memory
+    // change is real) but silently reverted on the next cold start, while
+    // its "already ran" prefs flag stayed set — so it could never retry.
+    // This explicit save is what actually makes the migrations above stick.
+    await provider.saveLocal();
   }
 
   @override
@@ -190,6 +224,7 @@ class _HomeScreenState extends State<HomeScreen> {
       'store'         => const _StoreBanner(),
       'ad_banner'     => const _AdBanner(),
       'media'         => const _MediaBanner(),
+      'notifications' => const _NotificationsBanner(),
       _               => const SizedBox.shrink(),
     };
     return Padding(
@@ -296,9 +331,6 @@ class _TopBar extends StatelessWidget {
     final userFirstName = context.select((AppState st) => st.userFirstName);
     final firstName = userFirstName.isNotEmpty ? userFirstName : 'FantaTech';
 
-    void openAddDevice() => Navigator.push(context,
-        MaterialPageRoute(builder: (_) => const AddDeviceScreen()));
-
     return Padding(
       padding: const EdgeInsets.fromLTRB(AppSpacing.s16, 14, AppSpacing.s16, 0),
       child: Column(
@@ -321,8 +353,9 @@ class _TopBar extends StatelessWidget {
                   textDirection: TextDirection.ltr,
                   children: [
                     Flexible(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text.rich(
@@ -339,13 +372,16 @@ class _TopBar extends StatelessWidget {
                               ),
                             ]),
                           ),
-                          Text(
-                            s.appTagline,
-                            style: AppTypography.labelSm.copyWith(
-                              color: context.tTextSecondary,
+                          const SizedBox(width: AppSpacing.s8),
+                          Flexible(
+                            child: Text(
+                              s.appTagline,
+                              style: AppTypography.labelSm.copyWith(
+                                color: context.tTextSecondary,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
@@ -363,24 +399,6 @@ class _TopBar extends StatelessWidget {
                       child: const Icon(Symbols.home, color: Colors.white, size: 20),
                     ),
                   ],
-                ),
-              ),
-              // Action buttons
-              FtButton.iconOnly(
-                icon: Symbols.add,
-                variant: FtButtonVariant.neutral,
-                onTap: openAddDevice,
-              ),
-              const SizedBox(width: AppSpacing.s4),
-              FtButton.iconOnly(
-                icon: Symbols.tune,
-                variant: FtButtonVariant.neutral,
-                onTap: () => showDashboardCustomizeSheet(
-                  context,
-                  dashboardId: DashboardId.home,
-                  nameResolver: DashboardDefaults.nameOf,
-                  iconResolver: DashboardDefaults.iconOf,
-                  showPageToggle: true,
                 ),
               ),
             ],
@@ -1008,18 +1026,21 @@ class _BannerGearButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fg = dark ? Colors.black : Colors.white;
+    // 'dark' banners (בית חכם / מערכות אבטחה) follow the user's own
+    // light/dark theme choice — context.tText — instead of being hardcoded
+    // to black, so this button stays visible in both themes.
+    final fg = dark ? context.tText : Colors.white;
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 32, height: 32,
+        width: 26, height: 26,
         decoration: BoxDecoration(
           color: fg.withValues(alpha: dark ? 0.06 : 0.12),
           shape: BoxShape.circle,
         ),
         child: Icon(
           Symbols.settings,
-          color: fg, size: 17,
+          color: fg, size: 14,
         ),
       ),
     );
@@ -1123,6 +1144,7 @@ class _SecurityBanner extends StatelessWidget {
     final locks       = devices.where((d) => d.type == DeviceType.smartLock).length;
     final cameras     = cams.where((c) => c.isOnline).length;
     final blinds      = devices.where((d) => d.type == DeviceType.blind).length;
+    final intercoms   = devices.where((d) => d.type == DeviceType.intercom).length;
 
     const securityTypes = {
       DeviceType.smartLock, DeviceType.doorSensor, DeviceType.windowSensor,
@@ -1135,10 +1157,11 @@ class _SecurityBanner extends StatelessWidget {
         .where((n) => !n.isRead && securityTypes.contains(n.deviceType))
         .length;
 
-    final Color baseColor   = armed ? const Color(0xFF006064) : const Color(0xFFB71C1C);
-    final List<Color> gradColors = armed
-        ? [const Color(0xFF006064), const Color(0xFF00838F)]
-        : [const Color(0xFFC62828), const Color(0xFFB71C1C)];
+    // Per user request: same white-card / black-text / row-list style as
+    // the "בית חכם" card (_SmartHomeBanner), instead of the old red/teal
+    // gradient + stat strip.
+    final isHebrew = context.select((AppState st) => st.locale) == AppLocale.hebrew;
+    String heLabel(String hebrew, String fallback) => isHebrew ? hebrew : fallback;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s16),
@@ -1150,21 +1173,18 @@ class _SecurityBanner extends StatelessWidget {
             context, MaterialPageRoute(builder: (_) => const SecurityScreen())),
         child: Container(
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: gradColors,
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+            color: context.tCard,
             borderRadius: AppBorderRadius.cardLg,
+            border: Border.all(color: context.tText2(0.08)),
             boxShadow: [
               BoxShadow(
-                color: baseColor.withValues(alpha: 0.45),
+                color: context.tText2(0.08),
                 blurRadius: 24,
                 spreadRadius: 2,
                 offset: const Offset(0, 8),
               ),
               BoxShadow(
-                color: baseColor.withValues(alpha: 0.20),
+                color: context.tText2(0.04),
                 blurRadius: 48,
                 offset: const Offset(0, 16),
               ),
@@ -1172,33 +1192,32 @@ class _SecurityBanner extends StatelessWidget {
           ),
           child: Column(
             children: [
-              // ── Main row ─────────────────────────────────────────
+              // ── Main row (shrunk per user request) ─────────────────
               Padding(
                 padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.s20, AppSpacing.s20, AppSpacing.s16, AppSpacing.s16),
+                    AppSpacing.s12, AppSpacing.s12, AppSpacing.s12, AppSpacing.s8),
                 child: Row(
                   children: [
-                    // Animated lock icon
                     _iconAvatarWithBadge(
                       badgeCount: unreadAlerts,
                       avatar: AnimatedContainer(
                         duration: const Duration(milliseconds: 400),
                         curve: Curves.easeOutCubic,
-                        width: 60, height: 60,
+                        width: 40, height: 40,
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.15),
+                          color: context.tText2(0.06),
                           shape: BoxShape.circle,
                           border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.25), width: 1.5),
+                              color: context.tText2(0.12), width: 1.5),
                         ),
                         child: Icon(
                           armed ? Symbols.lock : Symbols.lock_open,
-                          color: Colors.white,
-                          size: 30,
+                          color: context.tText,
+                          size: 20,
                         ),
                       ),
                     ),
-                    const SizedBox(width: AppSpacing.s16),
+                    const SizedBox(width: AppSpacing.s12),
                     // Status text
                     Expanded(
                       child: Column(
@@ -1206,29 +1225,32 @@ class _SecurityBanner extends StatelessWidget {
                         children: [
                           Text(
                             s.securitySystemLabel,
-                            style: AppTypography.caption.copyWith(
-                              color: Colors.white.withValues(alpha: 0.70),
-                              letterSpacing: 0.8,
+                            style: AppTypography.labelSm.copyWith(
+                              color: context.tText2(0.60),
+                              letterSpacing: 0.4,
                             ),
                           ),
-                          const SizedBox(height: AppSpacing.s4),
-                          Text(
-                            armed ? s.secArmedShort : s.secDisarmedShort,
-                            style: AppTypography.displaySm.copyWith(
-                              color: Colors.white,
-                              letterSpacing: -0.5,
-                            ),
-                          ),
-                          const SizedBox(height: AppSpacing.s4),
                           Row(
                             children: [
+                              Text(
+                                armed ? s.secArmedShort : s.secDisarmedShort,
+                                style: AppTypography.titleLg.copyWith(
+                                  color: context.tText,
+                                  letterSpacing: -0.5,
+                                ),
+                              ),
+                              const SizedBox(width: AppSpacing.s8),
                               _topicStatusDot(
                                   armed ? DeviceStatus.online : DeviceStatus.warning),
                               const SizedBox(width: AppSpacing.s4),
-                              Text(
-                                s.allOkLabel,
-                                style: AppTypography.caption.copyWith(
-                                  color: Colors.white.withValues(alpha: 0.75),
+                              Flexible(
+                                child: Text(
+                                  s.allOkLabel,
+                                  style: AppTypography.caption.copyWith(
+                                    color: context.tText2(0.65),
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                             ],
@@ -1238,67 +1260,80 @@ class _SecurityBanner extends StatelessWidget {
                     ),
                     // Quick settings gear → open Security screen directly
                     _BannerGearButton(
+                      dark: true,
                       onTap: () => Navigator.push(context,
                           MaterialPageRoute(builder: (_) => const SecurityScreen())),
                     ),
-                    const SizedBox(width: AppSpacing.s8),
+                    const SizedBox(width: AppSpacing.s4),
                     // Chevron
                     Container(
-                      width: 32, height: 32,
+                      width: 24, height: 24,
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.12),
+                        color: context.tText2(0.06),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Symbols.chevron_right,
-                        color: Colors.white, size: 20,
+                        color: context.tText, size: 16,
                       ),
                     ),
                   ],
                 ),
               ),
-              // ── Stats strip ──────────────────────────────────────
+              // ── Category rows ─────────────────────────────────────
               Container(
                 margin: const EdgeInsets.fromLTRB(
-                    AppSpacing.s12, 0, AppSpacing.s12, AppSpacing.s12),
-                padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.s16, vertical: AppSpacing.s12),
+                    AppSpacing.s8, 0, AppSpacing.s8, AppSpacing.s8),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s4),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.20),
+                  color: context.tText2(0.04),
                   borderRadius: AppBorderRadius.card,
                   border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.10), width: 1),
+                      color: context.tText2(0.08), width: 1),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                child: Column(
                   children: [
-                    _SecurityStat(
+                    _ShRow(
                         icon: Symbols.sensors,
-                        value: '$sensors',
-                        label: s.statusSensors,
+                        count: null,
+                        label: '$sensors ${heLabel('חיישנים', s.statusSensors)}',
+                        color: AppColors.motionColor,
+                        strings: s,
                         onTap: () => Navigator.push(context,
                             MaterialPageRoute(builder: (_) => const SensorHubScreen()))),
-                    const _SecurityDivider(),
-                    _SecurityStat(
+                    _ShRow(
                         icon: Symbols.lock,
-                        value: '$locks',
-                        label: s.qaLock,
+                        count: null,
+                        label: '$locks ${heLabel('מנעולים', s.qaLock)}',
+                        color: AppColors.primary,
+                        strings: s,
                         onTap: () => Navigator.push(context,
                             MaterialPageRoute(builder: (_) => const SmartLockHubScreen()))),
-                    const _SecurityDivider(),
-                    _SecurityStat(
+                    _ShRow(
                         icon: Symbols.videocam,
-                        value: '$cameras',
-                        label: s.navCameras,
+                        count: null,
+                        label: '$cameras ${heLabel('מצלמות', s.navCameras)}',
+                        color: AppColors.networkColor,
+                        strings: s,
                         onTap: () => Navigator.push(context,
                             MaterialPageRoute(builder: (_) => const CamerasScreen()))),
-                    const _SecurityDivider(),
-                    _SecurityStat(
+                    _ShRow(
                         icon: Symbols.blinds,
-                        value: '$blinds',
-                        label: s.blindsCategory,
+                        count: null,
+                        label: '$blinds ${heLabel('תריסים', s.blindsCategory)}',
+                        color: AppColors.plugColor,
+                        strings: s,
                         onTap: () => Navigator.push(context,
                             MaterialPageRoute(builder: (_) => const BlindHubScreen()))),
+                    _ShRow(
+                        icon: Symbols.doorbell,
+                        count: null,
+                        label: '$intercoms ${heLabel('אינטרקום', s.planIntercomLabel)}',
+                        color: AppColors.cameraColor,
+                        strings: s,
+                        isLast: true,
+                        onTap: () => Navigator.push(context,
+                            MaterialPageRoute(builder: (_) => const IntercomHubScreen()))),
                   ],
                 ),
               ),
@@ -1311,55 +1346,6 @@ class _SecurityBanner extends StatelessWidget {
   }
 }
 
-class _SecurityStat extends StatelessWidget {
-  final IconData icon;
-  final String value;
-  final String label;
-  final VoidCallback? onTap;
-  const _SecurityStat({
-    required this.icon,
-    required this.value,
-    required this.label,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: Colors.white.withValues(alpha: 0.70), size: 16),
-          const SizedBox(height: AppSpacing.s4),
-          Text(
-            value,
-            style: AppTypography.titleMd.copyWith(color: Colors.white),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: AppTypography.labelSm.copyWith(
-                color: Colors.white.withValues(alpha: 0.55)),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SecurityDivider extends StatelessWidget {
-  const _SecurityDivider();
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 1, height: 32,
-      color: Colors.white.withValues(alpha: 0.15),
-    );
-  }
-}
 
 // ─────────────────────────────────────────────────────────────────
 // Smart Home Banner — hero card for all smart home devices
@@ -1415,18 +1401,18 @@ class _SmartHomeBanner extends StatelessWidget {
             decoration: BoxDecoration(
               // Per user request: white card, black text — was a dark
               // orange gradient.
-              color: Colors.white,
+              color: context.tCard,
               borderRadius: AppBorderRadius.cardLg,
-              border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
+              border: Border.all(color: context.tText2(0.08)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
+                  color: context.tText2(0.08),
                   blurRadius: 24,
                   spreadRadius: 2,
                   offset: const Offset(0, 8),
                 ),
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
+                  color: context.tText2(0.04),
                   blurRadius: 48,
                   offset: const Offset(0, 16),
                 ),
@@ -1434,31 +1420,31 @@ class _SmartHomeBanner extends StatelessWidget {
             ),
             child: Column(
               children: [
-                // ── Main row ───────────────────────────────────
+                // ── Main row (shrunk per user request) ──────────
                 Padding(
                   padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.s20, AppSpacing.s20, AppSpacing.s16, AppSpacing.s16),
+                      AppSpacing.s12, AppSpacing.s12, AppSpacing.s12, AppSpacing.s8),
                   child: Row(
                     children: [
                       // Home IoT icon
                       _iconAvatarWithBadge(
                         badgeCount: unreadAlerts,
                         avatar: Container(
-                          width: 60, height: 60,
+                          width: 40, height: 40,
                           decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.06),
+                            color: context.tText2(0.06),
                             shape: BoxShape.circle,
                             border: Border.all(
-                                color: Colors.black.withValues(alpha: 0.12), width: 1.5),
+                                color: context.tText2(0.12), width: 1.5),
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Symbols.home_iot_device,
-                            color: Colors.black,
-                            size: 30,
+                            color: context.tText,
+                            size: 20,
                           ),
                         ),
                       ),
-                      const SizedBox(width: AppSpacing.s16),
+                      const SizedBox(width: AppSpacing.s12),
                       // Status text
                       Expanded(
                         child: Column(
@@ -1466,29 +1452,32 @@ class _SmartHomeBanner extends StatelessWidget {
                           children: [
                             Text(
                               s.smartHomeTitle,
-                              style: AppTypography.caption.copyWith(
-                                color: Colors.black.withValues(alpha: 0.60),
-                                letterSpacing: 0.8,
+                              style: AppTypography.labelSm.copyWith(
+                                color: context.tText2(0.60),
+                                letterSpacing: 0.4,
                               ),
                             ),
-                            const SizedBox(height: AppSpacing.s4),
-                            Text(
-                              s.deviceCountFmt.replaceAll('{n}', '$totalAll'),
-                              style: AppTypography.displaySm.copyWith(
-                                color: Colors.black,
-                                letterSpacing: -0.5,
-                              ),
-                            ),
-                            const SizedBox(height: AppSpacing.s4),
                             Row(
                               children: [
+                                Text(
+                                  s.deviceCountFmt.replaceAll('{n}', '$totalAll'),
+                                  style: AppTypography.titleLg.copyWith(
+                                    color: context.tText,
+                                    letterSpacing: -0.5,
+                                  ),
+                                ),
+                                const SizedBox(width: AppSpacing.s8),
                                 _topicStatusDot(
                                     anyOffline ? DeviceStatus.warning : DeviceStatus.online),
                                 const SizedBox(width: AppSpacing.s4),
-                                Text(
-                                  '$totalActive ${s.devicesOn}',
-                                  style: AppTypography.caption.copyWith(
-                                    color: Colors.black.withValues(alpha: 0.65),
+                                Flexible(
+                                  child: Text(
+                                    '$totalActive ${s.devicesOn}',
+                                    style: AppTypography.caption.copyWith(
+                                      color: context.tText2(0.65),
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                               ],
@@ -1502,17 +1491,17 @@ class _SmartHomeBanner extends StatelessWidget {
                         onTap: () => Navigator.push(context,
                             MaterialPageRoute(builder: (_) => const AddDeviceScreen())),
                       ),
-                      const SizedBox(width: AppSpacing.s8),
+                      const SizedBox(width: AppSpacing.s4),
                       // Chevron
                       Container(
-                        width: 32, height: 32,
+                        width: 24, height: 24,
                         decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.06),
+                          color: context.tText2(0.06),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Symbols.chevron_right,
-                          color: Colors.black, size: 20,
+                          color: context.tText, size: 16,
                         ),
                       ),
                     ],
@@ -1521,13 +1510,13 @@ class _SmartHomeBanner extends StatelessWidget {
                 // ── Device category rows ────────────────────────
                 Container(
                   margin: const EdgeInsets.fromLTRB(
-                      AppSpacing.s12, 0, AppSpacing.s12, AppSpacing.s12),
+                      AppSpacing.s8, 0, AppSpacing.s8, AppSpacing.s8),
                   padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s4),
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.04),
+                    color: context.tText2(0.04),
                     borderRadius: AppBorderRadius.card,
                     border: Border.all(
-                        color: Colors.black.withValues(alpha: 0.08), width: 1),
+                        color: context.tText2(0.08), width: 1),
                   ),
                   child: Column(
                     children: [
@@ -1565,20 +1554,37 @@ class _SmartHomeBanner extends StatelessWidget {
                           label: heLabel('שקעים חכמים', s.qaPlugs),
                           color: AppColors.plugColor,
                           strings: s,
+                          // Was PlugsHubScreen (old list-style _PlugCard) —
+                          // per user request, use the same DevicesScreen +
+                          // FantaTechSwitchCard grid as the direct entry
+                          // point into plugs, so both paths show the same
+                          // widget.
                           onTap: () => Navigator.push(context,
-                              MaterialPageRoute(builder: (_) => const PlugsHubScreen()))),
+                              MaterialPageRoute(builder: (_) => const DevicesScreen(
+                                  initialCategory: DeviceType.smartPlug)))),
                       // Quick-access shortcut, per user request — same
                       // category also lives one tap deeper in the "בית
                       // חכם" category grid (SmartHomeScreen).
                       _ShRow(
                           icon: Symbols.thermostat,
                           count: acOn,
-                          label: s.qaAc,
+                          label: heLabel('מזגנים', s.qaAc),
                           color: AppColors.acColor,
+                          strings: s,
+                          onTap: () => Navigator.push(context,
+                              MaterialPageRoute(builder: (_) => const ACHubScreen()))),
+                      // Fanta AI shortcut — same "בית חכם" card, one tap
+                      // to the assistant instead of only the separate
+                      // search-bar pill higher up the dashboard.
+                      _ShRow(
+                          icon: Symbols.auto_awesome,
+                          count: null,
+                          label: heLabel('עוזר AI', 'Fanta AI'),
+                          color: AppColors.primary,
                           strings: s,
                           isLast: true,
                           onTap: () => Navigator.push(context,
-                              MaterialPageRoute(builder: (_) => const ACHubScreen()))),
+                              MaterialPageRoute(builder: (_) => const FantaAIScreen()))),
                     ],
                   ),
                 ),
@@ -1596,7 +1602,9 @@ class _SmartHomeBanner extends StatelessWidget {
 /// clearly on its own line instead of being squeezed into a shared row.
 class _ShRow extends StatelessWidget {
   final IconData icon;
-  final int count;
+  // Null hides the "N on" trailing text entirely — used for rows that
+  // aren't a device count (e.g. the Fanta AI shortcut).
+  final int? count;
   final String label;
   final Color color;
   final S strings;
@@ -1622,32 +1630,239 @@ class _ShRow extends StatelessWidget {
               ? null
               : Border(
                   bottom: BorderSide(
-                      color: Colors.black.withValues(alpha: 0.06), width: 1)),
+                      color: context.tText2(0.06), width: 1)),
         ),
         padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.s12, vertical: AppSpacing.s12),
+            horizontal: AppSpacing.s8, vertical: 6),
         child: Row(
           children: [
             Container(
-              width: 36, height: 36,
+              width: 26, height: 26,
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.18),
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, color: color, size: 18),
+              child: Icon(icon, color: color, size: 14),
             ),
-            const SizedBox(width: AppSpacing.s12),
+            const SizedBox(width: AppSpacing.s8),
             Expanded(
               child: Text(label,
-                  style: AppTypography.titleMd.copyWith(color: Colors.black)),
+                  style: AppTypography.bodyMd.copyWith(color: context.tText)),
             ),
-            Text('$count ${strings.devicesOn}',
-                style: AppTypography.caption
-                    .copyWith(color: Colors.black.withValues(alpha: 0.55))),
-            const SizedBox(width: AppSpacing.s4),
+            if (count != null) ...[
+              Text('$count ${strings.devicesOn}',
+                  style: AppTypography.labelSm
+                      .copyWith(color: context.tText2(0.55))),
+              const SizedBox(width: AppSpacing.s4),
+            ],
             Icon(Symbols.chevron_right,
-                color: Colors.black.withValues(alpha: 0.35), size: 18),
+                color: context.tText2(0.35), size: 15),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Notifications Banner — recent alerts preview (per user request)
+// ─────────────────────────────────────────────────────────────────
+class _NotificationsBanner extends StatelessWidget {
+  const _NotificationsBanner();
+
+  String _relTime(DateTime t, S s) {
+    final diff = DateTime.now().difference(t);
+    if (diff.inMinutes < 1) return s.timeNow;
+    if (diff.inMinutes < 60) return s.timeMinAgo.replaceAll('{n}', '${diff.inMinutes}');
+    if (diff.inHours < 24) return s.timeHrAgo.replaceAll('{n}', '${diff.inHours}');
+    return s.timeDayAgo.replaceAll('{n}', '${diff.inDays}');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.select((AppState st) => st.strings);
+    final notifications = context.select((AppState st) => st.notifications);
+    final isHebrew = context.select((AppState st) => st.locale) == AppLocale.hebrew;
+    String heLabel(String hebrew, String fallback) => isHebrew ? hebrew : fallback;
+
+    final unread = notifications.where((n) => !n.isRead).length;
+    final recent = [...notifications]
+      ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    final preview = recent.take(3).toList();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s16),
+      child: Semantics(
+        label: s.notificationsTitle,
+        button: true,
+        child: GestureDetector(
+          onTap: () => Navigator.push(context,
+              MaterialPageRoute(builder: (_) => const NotificationsScreen())),
+          child: Container(
+            decoration: BoxDecoration(
+              color: context.tCard,
+              borderRadius: AppBorderRadius.cardLg,
+              border: Border.all(color: context.tText2(0.08)),
+              boxShadow: [
+                BoxShadow(
+                  color: context.tText2(0.08),
+                  blurRadius: 24,
+                  spreadRadius: 2,
+                  offset: const Offset(0, 8),
+                ),
+                BoxShadow(
+                  color: context.tText2(0.04),
+                  blurRadius: 48,
+                  offset: const Offset(0, 16),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                // ── Main row ──────────────────────────────────────
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.s12, AppSpacing.s12, AppSpacing.s12, AppSpacing.s8),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 40, height: 40,
+                        decoration: BoxDecoration(
+                          color: context.tText2(0.06),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                              color: context.tText2(0.12), width: 1.5),
+                        ),
+                        child: Icon(
+                          Symbols.notifications,
+                          color: context.tText,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.s12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              s.notificationsTitle,
+                              style: AppTypography.labelSm.copyWith(
+                                color: context.tText2(0.60),
+                                letterSpacing: 0.4,
+                              ),
+                            ),
+                            Row(
+                              children: [
+                                Text(
+                                  '${notifications.length}',
+                                  style: AppTypography.titleLg.copyWith(
+                                    color: context.tText,
+                                    letterSpacing: -0.5,
+                                  ),
+                                ),
+                                const SizedBox(width: AppSpacing.s8),
+                                _topicStatusDot(
+                                    unread > 0 ? DeviceStatus.warning : DeviceStatus.online),
+                                const SizedBox(width: AppSpacing.s4),
+                                Flexible(
+                                  child: Text(
+                                    '$unread ${heLabel('לא נקראו', 'unread')}',
+                                    style: AppTypography.caption.copyWith(
+                                      color: context.tText2(0.65),
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        width: 24, height: 24,
+                        decoration: BoxDecoration(
+                          color: context.tText2(0.06),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Symbols.chevron_right,
+                          color: context.tText, size: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // ── Recent notifications preview ────────────────────
+                Container(
+                  margin: const EdgeInsets.fromLTRB(
+                      AppSpacing.s8, 0, AppSpacing.s8, AppSpacing.s8),
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s4),
+                  decoration: BoxDecoration(
+                    color: context.tText2(0.04),
+                    borderRadius: AppBorderRadius.card,
+                    border: Border.all(
+                        color: context.tText2(0.08), width: 1),
+                  ),
+                  child: preview.isEmpty
+                      ? Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          child: Center(
+                            child: Text(
+                              s.noNotifications,
+                              style: AppTypography.bodyMd
+                                  .copyWith(color: context.tText2(0.4)),
+                            ),
+                          ),
+                        )
+                      : Column(
+                          children: [
+                            for (var i = 0; i < preview.length; i++)
+                              Container(
+                                decoration: BoxDecoration(
+                                  border: i == preview.length - 1
+                                      ? null
+                                      : Border(
+                                          bottom: BorderSide(
+                                              color: context.tText2(0.06), width: 1)),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: AppSpacing.s8, vertical: 8),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 8, height: 8,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: preview[i].isRead
+                                            ? context.tText2(0.2)
+                                            : AppColors.primary,
+                                      ),
+                                    ),
+                                    const SizedBox(width: AppSpacing.s8),
+                                    Expanded(
+                                      child: Text(preview[i].title,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: AppTypography.bodyMd.copyWith(
+                                              color: context.tText,
+                                              fontWeight: preview[i].isRead
+                                                  ? FontWeight.w400
+                                                  : FontWeight.w600)),
+                                    ),
+                                    const SizedBox(width: AppSpacing.s4),
+                                    Text(_relTime(preview[i].timestamp, s),
+                                        style: AppTypography.labelSm
+                                            .copyWith(color: context.tText2(0.45))),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -2196,6 +2411,11 @@ class _QuickActionsSectionState extends State<_QuickActionsSection> {
   ) {
     return GestureDetector(
       onTap: () {
+        if (i == 3) {
+          Navigator.push(context,
+              MaterialPageRoute(builder: (_) => const MediaScreen()));
+          return;
+        }
         if (i == 7) {
           Navigator.push(context,
               MaterialPageRoute(builder: (_) => const BreakersScreen()));
@@ -2273,7 +2493,6 @@ class _QuickActionsSectionState extends State<_QuickActionsSection> {
   Widget build(BuildContext context) {
     final s = context.select((AppState st) => st.strings);
     final devices = context.select((AppState st) => st.devices);
-    final cams = context.select((AppState st) => st.cameras);
     final notifications = context.select((AppState st) => st.notifications);
 
     // Status badges per button — only real gateway devices
@@ -2282,20 +2501,23 @@ class _QuickActionsSectionState extends State<_QuickActionsSection> {
         (d.type == DeviceType.smartLock || d.type == DeviceType.doorSensor)).length;
     final lightCount  = devices.where((d) => isGw(d) && d.type == DeviceType.light && d.isOn).length;
     final acCount     = devices.where((d) => isGw(d) && d.type == DeviceType.airConditioner && d.isOn).length;
-    final camOnline   = cams.where((c) => c.isOnline).length;
+    final mediaOnline = context.select((AppState st) => st.mediaDevices)
+        .where((m) => m.isOnline).length;
     final alertCount  = notifications.where((n) => !n.isRead).length;
     final plugCount   = devices.where((d) => isGw(d) && d.type == DeviceType.smartPlug && d.isOn).length;
     final heaterCount = devices.where((d) => isGw(d) && d.type == DeviceType.waterHeater && d.isOn).length;
 
     final intercomCount = devices.where((d) => isGw(d) && d.type == DeviceType.intercom && d.isOn).length;
 
-    final badges = [lockCount, lightCount, acCount, camOnline, alertCount, plugCount, heaterCount, 0, intercomCount];
+    final badges = [lockCount, lightCount, acCount, mediaOnline, alertCount, plugCount, heaterCount, 0, intercomCount];
 
     final actions = <({IconData icon, String label})>[
       (icon: Symbols.lock,           label: s.qaLock),
       (icon: Symbols.lightbulb,      label: s.qaLights),
       (icon: Symbols.thermostat,     label: s.qaAc),
-      (icon: Symbols.videocam,       label: s.qaCameras),
+      // Was cameras — per user request, swapped for media (also hidden
+      // from the dashboard card grid, replaced there by the media card).
+      (icon: Symbols.speaker,        label: s.mediaTitle),
       (icon: Symbols.notifications,  label: s.qaAlerts),
       (icon: Symbols.power,          label: s.qaPlugs),
       (icon: Symbols.water_drop,     label: s.qaWaterHeater),
@@ -3103,40 +3325,46 @@ class _SystemStatusSectionState extends State<_SystemStatusSection> {
             width: 112,
             padding: AppSpacing.p12,
             decoration: _card(context, radius: AppBorderRadius.r12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Row(children: [
-                  Icon(icon, color: context.tTextSecondary, size: 14),
-                  const Spacer(),
-                  Container(
-                    width: 8, height: 8,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: ok ? _kGreen : AppColors.alert,
-                      boxShadow: [
-                        BoxShadow(
-                          color: (ok ? _kGreen : AppColors.alert)
-                              .withValues(alpha: 0.40),
-                          blurRadius: 6,
-                          spreadRadius: 1,
-                        ),
-                      ],
+            // FittedBox absorbs a larger system font-scale setting instead
+            // of overflowing this card's fixed height (same fix as the
+            // devices-screen category chips overflow).
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Row(children: [
+                    Icon(icon, color: context.tTextSecondary, size: 14),
+                    const Spacer(),
+                    Container(
+                      width: 8, height: 8,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: ok ? _kGreen : AppColors.alert,
+                        boxShadow: [
+                          BoxShadow(
+                            color: (ok ? _kGreen : AppColors.alert)
+                                .withValues(alpha: 0.40),
+                            blurRadius: 6,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ]),
-                const SizedBox(height: AppSpacing.s8),
-                Text(label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTypography.titleSm.copyWith(color: context.tText)),
-                Text(value,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTypography.caption.copyWith(
-                        color: context.tTextSecondary)),
-              ],
+                  ]),
+                  const SizedBox(height: AppSpacing.s8),
+                  Text(label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTypography.titleSm.copyWith(color: context.tText)),
+                  Text(value,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTypography.caption.copyWith(
+                          color: context.tTextSecondary)),
+                ],
+              ),
             ),
           ),
           ),
@@ -3178,36 +3406,39 @@ class _SystemStatusSectionState extends State<_SystemStatusSection> {
                         width: _gwExpanded ? 1.5 : 1.0,
                       ),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Row(children: [
-                          Icon(Symbols.hub,
-                              color: context.tTextSecondary, size: 14),
-                          const Spacer(),
-                          Icon(
-                            _gwExpanded
-                                ? Symbols.keyboard_arrow_up
-                                : Symbols.keyboard_arrow_down,
-                            color: context.tTextSecondary, size: 14,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Row(children: [
+                            Icon(Symbols.hub,
+                                color: context.tTextSecondary, size: 14),
+                            const Spacer(),
+                            Icon(
+                              _gwExpanded
+                                  ? Symbols.keyboard_arrow_up
+                                  : Symbols.keyboard_arrow_down,
+                              color: context.tTextSecondary, size: 14,
+                            ),
+                          ]),
+                          const SizedBox(height: AppSpacing.s8),
+                          Text(s.gatewaysTitle,
+                              style: AppTypography.titleSm.copyWith(
+                                  color: context.tText)),
+                          Text(
+                            totalGws == 0
+                                ? '—'
+                                : '${connectedGws.length}/$totalGws',
+                            style: AppTypography.caption.copyWith(
+                              color: connectedGws.isNotEmpty
+                                  ? _kGreen
+                                  : AppColors.alert,
+                            ),
                           ),
-                        ]),
-                        const SizedBox(height: AppSpacing.s8),
-                        Text(s.gatewaysTitle,
-                            style: AppTypography.titleSm.copyWith(
-                                color: context.tText)),
-                        Text(
-                          totalGws == 0
-                              ? '—'
-                              : '${connectedGws.length}/$totalGws',
-                          style: AppTypography.caption.copyWith(
-                            color: connectedGws.isNotEmpty
-                                ? _kGreen
-                                : AppColors.alert,
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),

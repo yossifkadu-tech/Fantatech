@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Android 12+ (API 31) draws its own system splash screen using the
+         app icon before LaunchTheme's windowBackground ever shows. Without
+         this, some OEM skins (seen on Samsung) render that system splash on
+         a plain black background instead of matching the launcher icon's
+         own background — this makes it use the icon's real background
+         color (ic_launcher_background, values/colors.xml) instead. -->
+    <style name="LaunchTheme" parent="@android:style/Theme.Light.NoTitleBar">
+        <item name="android:windowBackground">@drawable/launch_background</item>
+        <item name="android:windowSplashScreenBackground">@color/ic_launcher_background</item>
+    </style>
+    <style name="NormalTheme" parent="@android:style/Theme.Light.NoTitleBar">
+        <item name="android:windowBackground">?android:colorBackground</item>
+    </style>
+</resources>

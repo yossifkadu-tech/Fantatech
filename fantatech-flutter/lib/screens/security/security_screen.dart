@@ -1224,14 +1224,18 @@ class _SensorRow extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
         decoration: BoxDecoration(
+          // Root cause found: the 4-sided Border(left:,top:,right:,bottom:)
+          // constructor combined with borderRadius silently failed to
+          // paint this row's content on the user's device — confirmed by
+          // a debug build using Border.all() (this exact form) rendering
+          // correctly. Back to the real theme-aware colors (context.tCard/
+          // tText — proven fine elsewhere, e.g. devices_screen.dart's
+          // _DeviceCard, which already uses this same combination), just
+          // with the working border constructor. The colored left accent
+          // edge is dropped — Border.all() can't vary width/color by side.
           color: context.tCard,
           borderRadius: BorderRadius.circular(16),
-          border: Border(
-            left: BorderSide(color: color.withValues(alpha: 0.6), width: 3),
-            top: BorderSide(color: context.tText2(0.07)),
-            right: BorderSide(color: context.tText2(0.07)),
-            bottom: BorderSide(color: context.tText2(0.07)),
-          ),
+          border: Border.all(color: context.tText2(0.08), width: 1),
         ),
         child: Row(
           children: [

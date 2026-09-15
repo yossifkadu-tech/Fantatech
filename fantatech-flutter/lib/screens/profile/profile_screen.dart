@@ -17,6 +17,11 @@ import '../../l10n/strings.dart';
 import '../../widgets/ft_button.dart';
 import '../calendar/calendar_screen.dart';
 import '../mirror/mirror_screen.dart';
+import '../dev/fantatech_switch_card_demo_screen.dart';
+import '../rooms/rooms_screen.dart';
+import '../../models/layout_item.dart';
+import '../../widgets/edit_mode/reorderable_dashboard.dart';
+import '../../widgets/edit_mode/dashboard_customize_sheet.dart';
 
 // ─── Home management sheet — reusable from outside this screen ───────────────
 void showHomeManagementSheet(BuildContext context) {
@@ -793,6 +798,12 @@ class _StatsGrid extends StatelessWidget {
           color: AppColors.primary,
           value: '$rooms',
           label: s.roomsHeader,
+          // The only other entry point to RoomsScreen lived inside the
+          // "ניהול בית" home-screen card, which is now hidden by default
+          // (see home_declutter_hm_v2 in home_screen.dart) — without this,
+          // there was no way to reach it at all.
+          onTap: () => Navigator.push(
+              context, MaterialPageRoute(builder: (_) => const RoomsScreen())),
         ),
         _StatCard(
           icon: Symbols.devices,
@@ -822,17 +833,19 @@ class _StatCard extends StatelessWidget {
   final Color color;
   final String value;
   final String label;
+  final VoidCallback? onTap;
 
   const _StatCard({
     required this.icon,
     required this.color,
     required this.value,
     required this.label,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final card = Container(
       padding: AppSpacing.card,
       decoration: BoxDecoration(
         color: context.tCard,
@@ -882,6 +895,7 @@ class _StatCard extends StatelessWidget {
         ],
       ),
     );
+    return onTap == null ? card : GestureDetector(onTap: onTap, child: card);
   }
 }
 
@@ -1398,7 +1412,16 @@ class _UsersSheet extends StatelessWidget {
                     )
                   : ListView(
                       controller: scroll,
-                      children: users.map((u) => _HomeMemberTile(user: u, s: s)).toList(),
+                      // Stable per-user key — without one, a background
+                      // AppState update (live device sync fires often in
+                      // this app) arriving while a member's edit dialog is
+                      // open can cause Flutter to reuse/dispose the wrong
+                      // _HomeMemberTileState mid-rebuild, crashing with
+                      // "_dependents.isEmpty" when the dialog then tries to
+                      // pop against a context that no longer matches.
+                      children: users
+                          .map((u) => _HomeMemberTile(key: ValueKey(u.id), user: u, s: s))
+                          .toList(),
                     ),
             ),
           ],
@@ -1411,7 +1434,7 @@ class _UsersSheet extends StatelessWidget {
 class _HomeMemberTile extends StatefulWidget {
   final HomeUser user;
   final S s;
-  const _HomeMemberTile({required this.user, required this.s});
+  const _HomeMemberTile({super.key, required this.user, required this.s});
 
   @override
   State<_HomeMemberTile> createState() => _HomeMemberTileState();
@@ -3210,6 +3233,30 @@ class _SettingsSheetState extends State<_SettingsSheet> {
 
           const SizedBox(height: 22),
 
+          // ── Appearance (dark/light mode, accent, font, radius) ──
+          // _AppearanceSheet already existed fully built, but had no
+          // button anywhere in the app that opened it — this was the
+          // missing entry point.
+          FtListTile(
+            icon: Symbols.palette,
+            iconBg: AppColors.primary.withValues(alpha: 0.12),
+            iconColor: AppColors.primary,
+            title: s.appearanceTitle,
+            onTap: () {
+              Navigator.pop(context);
+              showModalBottomSheet(
+                context: context,
+                backgroundColor: context.tCard,
+                isScrollControlled: true,
+                shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+                builder: (_) => const _AppearanceSheet(),
+              );
+            },
+          ),
+
+          const SizedBox(height: 10),
+
           // ── Calendar ─────────────────────────────────────────
           FtListTile(
             icon: Symbols.calendar_month,
@@ -3235,6 +3282,43 @@ class _SettingsSheetState extends State<_SettingsSheet> {
               Navigator.pop(context);
               Navigator.push(context,
                   MaterialPageRoute(builder: (_) => const MirrorScreen()));
+            },
+          ),
+
+          const SizedBox(height: 10),
+
+          // ── TEMP: FantaTechSwitchCard preview (remove once tested) ──
+          FtListTile(
+            icon: kDevSwitchCardDemoIcon,
+            iconBg: kDevSwitchCardDemoColor.withValues(alpha: 0.12),
+            iconColor: kDevSwitchCardDemoColor,
+            title: 'FantaTechSwitchCard — בדיקה',
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(context, MaterialPageRoute(
+                  builder: (_) => const FantaTechSwitchCardDemoScreen()));
+            },
+          ),
+
+          const SizedBox(height: 10),
+
+          // ── Dashboard customize (moved here from the home top bar) ──
+          FtListTile(
+            icon: Symbols.tune,
+            iconBg: AppColors.primary.withValues(alpha: 0.12),
+            iconColor: AppColors.primary,
+            title: context.select((AppState st) => st.locale) == AppLocale.hebrew
+                ? 'התאמת דשבורד'
+                : 'Customize dashboard',
+            onTap: () {
+              Navigator.pop(context);
+              showDashboardCustomizeSheet(
+                context,
+                dashboardId: DashboardId.home,
+                nameResolver: DashboardDefaults.nameOf,
+                iconResolver: DashboardDefaults.iconOf,
+                showPageToggle: true,
+              );
             },
           ),
 

@@ -85,7 +85,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final isLast = _page == pages.length - 1;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0a1628),
+      backgroundColor: const Color(0xFF1565C0),
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -106,10 +106,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 end: Alignment.bottomCenter,
                 stops: [0.0, 0.28, 0.55, 1.0],
                 colors: [
-                  Color(0x440a1628),
-                  Color(0x770a1628),
-                  Color(0xCC0a1628),
-                  Color(0xF20a1628),
+                  Color(0x441565C0),
+                  Color(0x771565C0),
+                  Color(0xCC1565C0),
+                  Color(0xF21565C0),
                 ],
               ),
             ),

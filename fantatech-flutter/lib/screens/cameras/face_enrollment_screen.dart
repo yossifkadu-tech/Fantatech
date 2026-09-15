@@ -192,6 +192,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
     if (xFile == null) return;
 
     final bytes = await xFile.readAsBytes();
+    if (!mounted) return;
 
     setState(() => _statusMsg = s.faceAddingPhoto);
 
@@ -484,6 +485,7 @@ class _AzureSettingsCardState extends State<_AzureSettingsCard> {
       return;
     }
     final ok = await svc.testConnection();
+    if (!mounted) return;
     setState(() {
       _testing = false;
       _testResult = ok ? s.faceAzureConnOk : s.faceAzureConnFailed;

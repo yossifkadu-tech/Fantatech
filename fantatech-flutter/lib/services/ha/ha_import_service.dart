@@ -14,6 +14,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/scheduler.dart';
 
 import '../../models/app_state.dart';
 import '../../models/device.dart';
@@ -76,16 +77,30 @@ class HaImportService {
     final registry = await HaGatewayClient.fetchEntityRegistryInfo(ip, token);
     debugPrint('[HaImportService] fetched states=${states.length} areas=${areas.length} registry=${registry.length}');
 
-    final stats = importFromHa(state, states, areas, registry, ip);
-    debugPrint('[HaImportService] import stats: lights=${stats.lights} switches=${stats.switches} sensors=${stats.sensors} others=${stats.others}');
+    // Deferred to the next frame — importFromHa() below calls
+    // AppState.upsertDevice() once per imported entity, each firing
+    // notifyListeners() synchronously, back-to-back (potentially dozens in
+    // a row). Since these network calls can resolve at any arbitrary
+    // moment — including mid-startup while the user is already interacting
+    // with the UI — that burst has crashed with a "_dependents.isEmpty"
+    // assertion when it happened to land in the same frame as a dialog or
+    // sheet closing elsewhere in the app (e.g. Profile → household
+    // members). Same reasoning as the matching fix in ha_provider.dart.
+    final completer = Completer<HaImportStats>();
+    SchedulerBinding.instance.scheduleFrame();
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      final stats = importFromHa(state, states, areas, registry, ip);
+      debugPrint('[HaImportService] import stats: lights=${stats.lights} switches=${stats.switches} sensors=${stats.sensors} others=${stats.others}');
 
-    final totalDevices = stats.lights + stats.switches + stats.sensors + stats.others;
-    gateways.upsertHaConnection(ip: ip, token: token, deviceCount: totalDevices);
+      final totalDevices = stats.lights + stats.switches + stats.sensors + stats.others;
+      gateways.upsertHaConnection(ip: ip, token: token, deviceCount: totalDevices);
 
-    final fullUrl = 'http://$ip:8123';
-    unawaited(haProvider.connect(HaConfig(baseUrl: fullUrl, token: token)));
+      final fullUrl = 'http://$ip:8123';
+      unawaited(haProvider.connect(HaConfig(baseUrl: fullUrl, token: token)));
 
-    return stats;
+      completer.complete(stats);
+    });
+    return completer.future;
   }
 
   /// Maps raw HA entity states into FantaTech Devices and upserts them into

@@ -18,6 +18,7 @@
 
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 import 'ha_config.dart';
 import 'ha_device.dart';
@@ -411,7 +412,12 @@ class HaProvider extends ChangeNotifier with WidgetsBindingObserver {
 
         _status = HaStatus.connected;
         _error  = null;
-        notifyListeners();
+        // Deferred to the next frame — this fires from a reconnect Timer
+        // at an arbitrary moment, and notifying synchronously here has
+        // crashed with a "_dependents.isEmpty" assertion when it happened
+        // to land in the same frame as a dialog closing elsewhere in the
+        // app (e.g. Profile → edit household member name → Save/Cancel).
+        SchedulerBinding.instance.addPostFrameCallback((_) => notifyListeners());
         HaLogger.i('HaProvider',
             'Back online — ${_entities.length} entities synced');
 

@@ -17,6 +17,19 @@ import '../../services/gateways/gateway_manager.dart';
 import '../../services/gateways/gateway_types.dart';
 import '../../services/gateways/gateway_model.dart';
 import '../../services/gateways/clients/ha_gateway_client.dart';
+import '../../widgets/smart_switch_card.dart';
+import '../../models/button_spec.dart';
+import '../../models/button_executor.dart';
+import '../../widgets/fantatech_switch_card.dart';
+
+// Simple on/off device types that render as the compact FantaTechSwitchCard
+// in the devices grid, instead of the generic _DeviceCard — matches the set
+// used for the big-card treatment in _DeviceDetailSheet below.
+const _kBigCardTypes = {
+  DeviceType.smartSwitch,
+  DeviceType.smartPlug,
+  DeviceType.waterHeater,
+};
 
 class DevicesScreen extends StatefulWidget {
   final DeviceType? initialCategory;
@@ -265,21 +278,26 @@ class _DevicesScreenState extends State<DevicesScreen> {
                             ),
                           ),
                           padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(cat.icon, color: selected ? cat.color : context.tText2(0.38), size: 18),
-                              const SizedBox(height: 3),
-                              Text(cat.label,
-                                style: TextStyle(
-                                  color: selected ? cat.color : context.tText2(0.38),
-                                  fontSize: 10, fontWeight: FontWeight.w600),
-                                maxLines: 1, overflow: TextOverflow.ellipsis),
-                              Text('$count',
-                                style: TextStyle(
-                                  color: selected ? cat.color.withValues(alpha: 0.75) : context.tText2(0.24),
-                                  fontSize: 10)),
-                            ],
+                          // FittedBox absorbs larger system font-scale settings
+                          // instead of overflowing the fixed 72dp row height.
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(cat.icon, color: selected ? cat.color : context.tText2(0.38), size: 18),
+                                const SizedBox(height: 3),
+                                Text(cat.label,
+                                  style: TextStyle(
+                                    color: selected ? cat.color : context.tText2(0.38),
+                                    fontSize: 10, fontWeight: FontWeight.w600),
+                                  maxLines: 1, overflow: TextOverflow.ellipsis),
+                                Text('$count',
+                                  style: TextStyle(
+                                    color: selected ? cat.color.withValues(alpha: 0.75) : context.tText2(0.24),
+                                    fontSize: 10)),
+                              ],
+                            ),
                           ),
                         ),
                       );
@@ -360,16 +378,43 @@ class _DevicesScreenState extends State<DevicesScreen> {
                           childAspectRatio: 0.88,
                         ),
                         itemCount: filtered.length,
-                        itemBuilder: (ctx, i) => _DeviceCard(
-                          device: filtered[i],
-                          s: s,
-                          onToggle: () => state.toggleDevice(filtered[i].id),
-                          onTap: () => _showDetail(context, filtered[i], state, s),
-                          onOptions: () => _showCardOptions(
-                              context, filtered[i], state, s, rooms),
-                          onFavoriteToggle: () =>
-                              state.toggleFavorite(filtered[i].id),
-                        ),
+                        itemBuilder: (ctx, i) {
+                          final d = filtered[i];
+                          // Simple on/off devices get the compact Apple-Home-
+                          // style FantaTechSwitchCard instead of the generic
+                          // _DeviceCard, per user request. Long-press still
+                          // opens the same rename/room/favorite/delete sheet
+                          // as before — nothing lost, just moved off the
+                          // (deliberately button-only) card face.
+                          if (_kBigCardTypes.contains(d.type)) {
+                            return GestureDetector(
+                              onLongPress: () =>
+                                  _showCardOptions(context, d, state, s, rooms),
+                              child: FantaTechSwitchCard(
+                                deviceId: d.id,
+                                deviceName: d.name,
+                                roomName: d.room.isEmpty
+                                    ? ''
+                                    : s.translateRoomKey(d.room),
+                                isOn: d.isOn,
+                                isOnline: d.online,
+                                deviceType: d.type.name,
+                                icon: DeviceIcons.forDevice(d),
+                                onToggle: (id, desired) =>
+                                    state.setDevicePower(id, desired),
+                              ),
+                            );
+                          }
+                          return _DeviceCard(
+                            device: d,
+                            s: s,
+                            onToggle: () => state.toggleDevice(d.id),
+                            onTap: () => _showDetail(context, d, state, s),
+                            onOptions: () =>
+                                _showCardOptions(context, d, state, s, rooms),
+                            onFavoriteToggle: () => state.toggleFavorite(d.id),
+                          );
+                        },
                       ),
               ),
             ],
@@ -1180,6 +1225,16 @@ class _DeviceDetailSheetState extends State<_DeviceDetailSheet> {
   bool get _isNetworkDevice =>
       widget.device.type == DeviceType.router || widget.device.type == DeviceType.gateway;
 
+  // Simple on/off devices get the big glow-button card (same design as
+  // SwitchDetailScreen) instead of the small header toggle — matches the
+  // switch/plug/heater mockups the user approved.
+  static const _kBigCardTypes = {
+    DeviceType.smartSwitch,
+    DeviceType.smartPlug,
+    DeviceType.waterHeater,
+  };
+  bool get _isBigCardType => _kBigCardTypes.contains(widget.device.type);
+
   @override
   void initState() {
     super.initState();
@@ -1275,15 +1330,20 @@ class _DeviceDetailSheetState extends State<_DeviceDetailSheet> {
           const SizedBox(height: 20),
           Row(
             children: [
-              Container(
-                width: 48, height: 48,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(14),
+              // Big-card types (switch/plug/heater) show their own icon +
+              // name + room inside the card itself below — this generic
+              // icon avatar would just be a second, smaller copy of it.
+              if (!_isBigCardType) ...[
+                Container(
+                  width: 48, height: 48,
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(DeviceIcons.forDevice(d), color: color, size: 24),
                 ),
-                child: Icon(DeviceIcons.forDevice(d), color: color, size: 24),
-              ),
-              const SizedBox(width: 14),
+                const SizedBox(width: 14),
+              ],
               Expanded(
                 child: _editingName
                     ? Row(
@@ -1338,6 +1398,11 @@ class _DeviceDetailSheetState extends State<_DeviceDetailSheet> {
                       )
                     : Row(
                         children: [
+                          // Big-card types show name/room on the card
+                          // itself below instead of duplicating it here.
+                          if (_isBigCardType)
+                            const Spacer()
+                          else
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1415,7 +1480,7 @@ class _DeviceDetailSheetState extends State<_DeviceDetailSheet> {
                     Text(s.connectedStatus, style: TextStyle(color: AppColors.secured, fontSize: 12)),
                   ]),
                 )
-              else
+              else if (!_isBigCardType)
                 GestureDetector(
                   onTap: () { widget.state.toggleDevice(d.id); setState(() {}); },
                   child: AnimatedContainer(
@@ -1439,6 +1504,32 @@ class _DeviceDetailSheetState extends State<_DeviceDetailSheet> {
             ],
           ),
           const SizedBox(height: 20),
+
+          // Simple on/off devices (switch / plug / water heater): big
+          // glow-button card instead of the small header toggle.
+          if (_isBigCardType) ...[
+            SmartSwitchCard(
+              deviceName: d.name,
+              roomName: d.room.isEmpty ? '' : s.translateRoomKey(d.room),
+              isOn: d.isOn,
+              isConnected: d.online,
+              icon: DeviceIcons.forDevice(d),
+              // Routed through the capability layer (ButtonSpec/
+              // ButtonExecutor) instead of calling AppState.toggleDevice
+              // directly — same real command underneath (setDevicePower →
+              // DeviceCommander → gateway, with its existing optimistic-
+              // update/revert-on-failure handling), just expressed as
+              // "execute this device's onOff capability" rather than a
+              // switch-specific call.
+              onChanged: (nextOn) {
+                final spec = ButtonSpec.forCapability(d, DeviceCapability.onOff);
+                ButtonExecutor.execute(spec, widget.state,
+                    explicitState: nextOn ? 'on' : 'off');
+                setState(() {});
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
 
           // Network device info + discover button
           if (_isNetworkDevice) ...[

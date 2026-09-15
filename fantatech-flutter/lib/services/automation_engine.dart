@@ -43,6 +43,21 @@ class AutomationEngine {
     }
   }
 
+  /// Stops the periodic timer and detaches the AppState listener. Not
+  /// called anywhere today (this is an app-lifetime singleton by design —
+  /// Dart tears down its Timer automatically on process exit either way),
+  /// but exposed so a future logout/account-switch flow, or a test, has a
+  /// real way to stop it instead of leaving it running forever unconditionally.
+  void dispose() {
+    _timer?.cancel();
+    _timer = null;
+    if (_listening) {
+      _appState?.removeListener(_checkEventTriggers);
+      _listening = false;
+    }
+    _appState = null;
+  }
+
   void _checkTimeTriggers() {
     final state = _appState;
     if (state == null) return;

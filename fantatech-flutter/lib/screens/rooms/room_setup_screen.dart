@@ -105,12 +105,16 @@ class RoomSetupScreen extends StatelessWidget {
   final String roomName;
   final IconData icon;
   final Color color;
+  // Optional user-supplied cover photo for this room's category — shown in
+  // the header in place of the plain icon avatar when present.
+  final String? coverPhoto;
   const RoomSetupScreen({
     super.key,
     required this.roomKey,
     required this.roomName,
     required this.icon,
     required this.color,
+    this.coverPhoto,
   });
 
   void _open(BuildContext context, _Cap cap) {
@@ -190,11 +194,64 @@ class RoomSetupScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: _kBg,
       body: SafeArea(
+        bottom: false,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ── Header ──────────────────────────────────────────
-            Padding(
+            // A large full-width photo banner when this room's category has
+            // one (per user request — "want a big image when I enter the
+            // room"); falls back to the original compact icon row when it
+            // doesn't.
+            if (coverPhoto != null)
+              SizedBox(
+                height: 180,
+                width: double.infinity,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Image.asset(coverPhoto!, fit: BoxFit.cover),
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withValues(alpha: 0.55),
+                          ],
+                          stops: const [0.4, 1.0],
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      top: 4, left: 4,
+                      child: IconButton(
+                        icon: const Icon(Symbols.arrow_back, color: Colors.white),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ),
+                    Positioned(
+                      left: 16, right: 16, bottom: 12,
+                      child: Row(
+                        children: [
+                          Icon(icon, color: Colors.white, size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(roomName,
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w800)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              Padding(
               padding: const EdgeInsets.fromLTRB(8, 8, 16, 4),
               child: Row(
                 children: [

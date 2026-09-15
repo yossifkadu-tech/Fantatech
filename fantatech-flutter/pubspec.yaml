@@ -2,7 +2,7 @@ name: fantatech
 description: FantaTech Smart Home Hub
 
 publish_to: 'none'
-version: 2.15.3+10003
+version: 2.15.3+12150
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
@@ -117,6 +117,8 @@ flutter:
 
   assets:
     - assets/images/main.jpg
+    - assets/images/app_icon.png
+    - assets/images/rooms/
 
   fonts:
     # Bundled Noto fallbacks — guarantee Amharic (Ge'ez) + Arabic glyphs

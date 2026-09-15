@@ -252,8 +252,10 @@ class _PlugCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: context.tCard,
           borderRadius: BorderRadius.circular(18),
+          // Per user request: LED color meaning reversed — colored when
+          // OFF, neutral when ON (matches FantaTechSwitchCard's convention).
           border: Border.all(
-              color: on
+              color: !on
                   ? AppColors.plugColor.withValues(alpha: 0.35)
                   : context.tText2(0.07)),
         ),
@@ -265,14 +267,14 @@ class _PlugCard extends StatelessWidget {
               child: Container(
                 width: 42, height: 42,
                 decoration: BoxDecoration(
-                  color: on
+                  color: !on
                       ? AppColors.plugColor.withValues(alpha: 0.13)
                       : context.tText2(0.06),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
                   on ? Symbols.power : Symbols.power_off,
-                  color: on ? AppColors.plugColor : context.tText2(0.3),
+                  color: !on ? AppColors.plugColor : context.tText2(0.3),
                   size: 22,
                 ),
               ),
@@ -370,7 +372,7 @@ class _PlugCard extends StatelessWidget {
                 duration: const Duration(milliseconds: 220),
                 width: 46, height: 26,
                 decoration: BoxDecoration(
-                  color: on ? AppColors.plugColor : context.tText2(0.12),
+                  color: !on ? AppColors.plugColor : context.tText2(0.12),
                   borderRadius: BorderRadius.circular(13),
                 ),
                 child: AnimatedAlign(

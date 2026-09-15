@@ -25,17 +25,23 @@ import 'app_user.dart' show Permission;
 import '../services/storage/secure_cred_service.dart';
 import '../theme/app_theme.dart';
 
-enum SecurityMode { disarmed, armedHome, armedAway, panic, guest }
+// armedNight and triggered added for the alarm capability's requested
+// state set (armed/disarmed/home/away/night/triggered) — purely additive:
+// every existing switch/comparison on the original 5 values is untouched,
+// callers that don't know about the new ones simply never produce them.
+enum SecurityMode { disarmed, armedHome, armedAway, armedNight, panic, guest, triggered }
 
 extension SecurityModeX on SecurityMode {
   bool get isArmed => this != SecurityMode.disarmed && this != SecurityMode.guest;
   bool get isGuest => this == SecurityMode.guest;
   String get label => switch (this) {
-    SecurityMode.disarmed  => 'Disarmed',
-    SecurityMode.armedHome => 'Armed Home',
-    SecurityMode.armedAway => 'Armed Away',
-    SecurityMode.panic     => 'PANIC',
-    SecurityMode.guest     => 'Welcome Guest',
+    SecurityMode.disarmed   => 'Disarmed',
+    SecurityMode.armedHome  => 'Armed Home',
+    SecurityMode.armedAway  => 'Armed Away',
+    SecurityMode.armedNight => 'Armed Night',
+    SecurityMode.panic      => 'PANIC',
+    SecurityMode.guest      => 'Welcome Guest',
+    SecurityMode.triggered  => 'Triggered',
   };
 }
 enum AppLocale { hebrew, english, arabic, amharic, spanish, russian, french }
@@ -918,7 +924,9 @@ class AppState extends ChangeNotifier {
   }
 
   void toggleDevice(String id) {
-    final device = _devices.firstWhere((d) => d.id == id);
+    final idx = _devices.indexWhere((d) => d.id == id);
+    if (idx == -1) return; // device removed (e.g. by a concurrent gateway sync)
+    final device = _devices[idx];
     final wantOn = !device.isOn;
     // Optimistic UI update — feels instant to the user.
     device.isOn = wantOn;
@@ -1006,7 +1014,9 @@ class AppState extends ChangeNotifier {
   }
 
   void setCoverPosition(String id, int position) {
-    final device = _devices.firstWhere((d) => d.id == id);
+    final idx = _devices.indexWhere((d) => d.id == id);
+    if (idx == -1) return;
+    final device = _devices[idx];
     device.attributes = {...device.attributes, 'position': position};
     notifyListeners();
     final gw = _gateways;
@@ -1018,19 +1028,23 @@ class AppState extends ChangeNotifier {
   void stopCover(String id) {
     final gw = _gateways;
     if (gw == null) return;
-    final device = _devices.firstWhere((d) => d.id == id);
-    DeviceCommander.stopCover(device, gateways: gw);
+    final idx = _devices.indexWhere((d) => d.id == id);
+    if (idx == -1) return;
+    DeviceCommander.stopCover(_devices[idx], gateways: gw);
   }
 
   void vacuumCommand(String id, VacuumAction action) {
     final gw = _gateways;
     if (gw == null) return;
-    final device = _devices.firstWhere((d) => d.id == id);
-    DeviceCommander.vacuumCommand(device, action, gateways: gw);
+    final idx = _devices.indexWhere((d) => d.id == id);
+    if (idx == -1) return;
+    DeviceCommander.vacuumCommand(_devices[idx], action, gateways: gw);
   }
 
   void setDeviceAttribute(String id, String key, dynamic value) {
-    final device = _devices.firstWhere((d) => d.id == id);
+    final idx = _devices.indexWhere((d) => d.id == id);
+    if (idx == -1) return;
+    final device = _devices[idx];
     device.attributes = {...device.attributes, key: value};
     notifyListeners();
 
@@ -1041,6 +1055,17 @@ class AppState extends ChangeNotifier {
     // without this the slider only edits the local attribute map.
     if (key == 'brightness' && value is num) {
       DeviceCommander.setBrightness(device, value.toInt(), gateways: gw);
+      return;
+    }
+
+    // Fire-and-forget: mirror a cover/blind position slider to the real
+    // device — setCoverPosition() already does exactly this and is the
+    // canonical path (also used directly by screens); routing it through
+    // here too means a caller using the generic setDeviceAttribute('position',
+    // v) entry point (as devices_screen.dart's slider does) isn't silently
+    // local-only.
+    if (key == 'position' && value is num) {
+      DeviceCommander.setCoverPosition(device, value.toInt(), gateways: gw);
       return;
     }
 
@@ -1069,12 +1094,22 @@ class AppState extends ChangeNotifier {
           DeviceCommander.setClimate(device,
               presetMode: value as String, gateways: gw);
           break;
+        // The compact swing toggle (devices_screen.dart) sends a bool under
+        // 'swing' rather than a named mode under 'swingMode' — map it onto
+        // the same real command using the 'on'/'off' modes most simple AC
+        // units expose, instead of leaving it as a silent local-only no-op.
+        case 'swing':
+          DeviceCommander.setClimate(device,
+              swingMode: (value as bool) ? 'on' : 'off', gateways: gw);
+          break;
       }
     }
   }
 
   void toggleAutomation(String id) {
-    final auto = _automations.firstWhere((a) => a.id == id);
+    final idx = _automations.indexWhere((a) => a.id == id);
+    if (idx == -1) return;
+    final auto = _automations[idx];
     auto.isEnabled = !auto.isEnabled;
     _saveAutomationsToPrefs();
     notifyListeners();

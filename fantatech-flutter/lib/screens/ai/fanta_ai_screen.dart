@@ -96,6 +96,7 @@ class _FantaAIScreenState extends State<FantaAIScreen>
   Future<void> _toggleListening() async {
     if (_isListening) {
       await _speech.stop();
+      if (!mounted) return;
       setState(() => _isListening = false);
       // If we got transcribed text, send it as a message.
       final text = _inputCtrl.text.trim();

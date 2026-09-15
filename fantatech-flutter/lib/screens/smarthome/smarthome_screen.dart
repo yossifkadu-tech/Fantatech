@@ -16,7 +16,7 @@ import 'add_device_screen.dart';
 import 'blind_hub_screen.dart';
 import 'lights_hub_screen.dart';
 import 'ac_hub_screen.dart';
-import 'plugs_hub_screen.dart';
+import '../devices/devices_screen.dart';
 import 'smart_switch_hub_screen.dart';
 import 'sensor_hub_screen.dart';
 import 'intercom_hub_screen.dart';
@@ -70,7 +70,7 @@ class _SmartHomeScreenState extends State<SmartHomeScreen> {
     'cat_light':  (label: s.lightsCategory,   type: DeviceType.light,           icon: DeviceIcons.icon(DeviceType.light),           color: DeviceIcons.color(DeviceType.light),           dest: const LightsHubScreen()),
     'cat_blind':  (label: s.blindsCategory,   type: DeviceType.blind,           icon: DeviceIcons.icon(DeviceType.blind),           color: DeviceIcons.color(DeviceType.blind),           dest: const BlindHubScreen()),
     'cat_ac':     (label: s.acCategory,       type: DeviceType.airConditioner,  icon: DeviceIcons.icon(DeviceType.airConditioner),  color: DeviceIcons.color(DeviceType.airConditioner),  dest: const ACHubScreen()),
-    'cat_plug':   (label: heLabel('שקעים חכמים', s.plugsCategory), type: DeviceType.smartPlug,       icon: DeviceIcons.icon(DeviceType.smartPlug),       color: DeviceIcons.color(DeviceType.smartPlug),       dest: const PlugsHubScreen()),
+    'cat_plug':   (label: heLabel('שקעים חכמים', s.plugsCategory), type: DeviceType.smartPlug,       icon: DeviceIcons.icon(DeviceType.smartPlug),       color: DeviceIcons.color(DeviceType.smartPlug),       dest: const DevicesScreen(initialCategory: DeviceType.smartPlug)),
     'cat_switch': (label: heLabel('מתגי תאורה', s.switchesCategory), type: DeviceType.smartSwitch,     icon: DeviceIcons.icon(DeviceType.smartSwitch),     color: DeviceIcons.color(DeviceType.smartSwitch),     dest: const SmartSwitchHubScreen()),
     'cat_sensor':   (label: s.sensorsCategory,  type: DeviceType.motionSensor, icon: DeviceIcons.icon(DeviceType.motionSensor), color: DeviceIcons.color(DeviceType.motionSensor), dest: const SensorHubScreen()),
     'cat_intercom': (label: s.intercomCategory, type: DeviceType.intercom,    icon: DeviceIcons.icon(DeviceType.intercom),     color: DeviceIcons.color(DeviceType.intercom),     dest: const IntercomHubScreen()),
@@ -402,12 +402,20 @@ class _CategoryChip extends StatelessWidget {
         children: [
           Icon(icon, color: effectiveColor, size: 22),
           const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-                color: effectiveColor,
-                fontSize: 11,
-                fontWeight: FontWeight.w600),
+          // FittedBox guards against a fixed-width chip overflowing when
+          // the device's font-scale setting is large — same fix already
+          // applied to devices_screen.dart's category chips and
+          // home_screen.dart's system-status cards this session.
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              label,
+              maxLines: 1,
+              style: TextStyle(
+                  color: effectiveColor,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600),
+            ),
           ),
           Text(
             '$count',
