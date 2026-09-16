@@ -2,9 +2,10 @@ import 'package:material_symbols_icons/symbols.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 // SensorHubScreen
 //
-// Two-tab screen:
-//   חיישנים  — motion sensors + door/window contacts  (read + refresh)
-//   תריסים   — smart covers / roller shutters         (control + position)
+// חיישנים — motion sensors + door/window contacts (read + refresh).
+// Used to also have a תריסים (covers/shutters) tab, but per user request
+// that's removed — BlindHubScreen is the one dedicated path for covers now,
+// this screen no longer duplicates it.
 // ─────────────────────────────────────────────────────────────────────────────
 import 'dart:async';
 
@@ -16,7 +17,6 @@ import '../../models/device.dart';
 import '../../services/discovery/ha_client.dart';
 import '../../services/gateways/gateway_manager.dart';
 import '../../services/gateways/gateway_types.dart';
-import '../../services/sensors/cover_controller.dart';
 import '../../services/sensors/sensor_controller.dart';
 import '../../services/sensors/sensor_models.dart';
 import '../../services/sensors/sensor_scan_engine.dart';
@@ -47,27 +47,17 @@ class _SensorHubView extends StatefulWidget {
   State<_SensorHubView> createState() => _SensorHubViewState();
 }
 
-class _SensorHubViewState extends State<_SensorHubView>
-    with SingleTickerProviderStateMixin {
-
-  late final TabController _tabs;
+class _SensorHubViewState extends State<_SensorHubView> {
 
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 2, vsync: this);
     // No scan triggered here — a full-subnet probe firing every time this
     // screen is visited (not just when the user taps "scan") was flagged as
     // unnecessary, repeated network load. The one scan that matters already
     // ran once at app launch (see main.dart's _autoScanLan), and its results
     // live on the app-level SensorScanEngine this screen reads from, so
     // they're already here. The scan button re-runs it on demand.
-  }
-
-  @override
-  void dispose() {
-    _tabs.dispose();
-    super.dispose();
   }
 
   // ── Scan ──────────────────────────────────────────────────────────────────
@@ -132,26 +122,16 @@ class _SensorHubViewState extends State<_SensorHubView>
             _Header(
               isScanning: engine.isScanning,
               sensorsCount: engine.sensors.length,
-              coversCount:  engine.covers.length,
               onScan: engine.isScanning ? null : _startScan,
             ),
 
             // ── Protocol progress chips ───────────────────────────────────────
-            if (engine.isScanning || engine.sensors.isNotEmpty || engine.covers.isNotEmpty)
+            if (engine.isScanning || engine.sensors.isNotEmpty)
               _ProgressChips(engine: engine),
 
-            // ── Tabs ──────────────────────────────────────────────────────────
-            _TabBar(controller: _tabs),
-
-            // ── Tab content ───────────────────────────────────────────────────
+            // ── Content ───────────────────────────────────────────────────────
             Expanded(
-              child: TabBarView(
-                controller: _tabs,
-                children: [
-                  _SensorsTab(engine: engine, onScan: _startScan),
-                  _CoversTab(engine: engine,  onScan: _startScan),
-                ],
-              ),
+              child: _SensorsTab(engine: engine, onScan: _startScan),
             ),
           ],
         ),
@@ -165,20 +145,17 @@ class _SensorHubViewState extends State<_SensorHubView>
 class _Header extends StatelessWidget {
   final bool isScanning;
   final int  sensorsCount;
-  final int  coversCount;
   final VoidCallback? onScan;
 
   const _Header({
     required this.isScanning,
     required this.sensorsCount,
-    required this.coversCount,
     required this.onScan,
   });
 
   @override
   Widget build(BuildContext context) {
     final s = context.select((AppState st) => st.strings);
-    final total = sensorsCount + coversCount;
     return Container(
       padding: const EdgeInsets.fromLTRB(8, 8, 16, 0),
       child: Row(
@@ -201,11 +178,9 @@ class _Header extends StatelessWidget {
                 Text(
                   isScanning
                       ? s.searching
-                      : total == 0
+                      : sensorsCount == 0
                           ? s.noDevicesOnNetwork
-                          : s.sensorHubFoundFmt
-                              .replaceAll('{sensors}', '$sensorsCount')
-                              .replaceAll('{covers}', '$coversCount'),
+                          : s.scanFoundFmt.replaceAll('{n}', '$sensorsCount'),
                   style: TextStyle(color: context.tText2(0.54), fontSize: 12),
                 ),
               ],
@@ -297,45 +272,6 @@ class _ProgressChips extends StatelessWidget {
             ]),
           );
         }).toList(),
-      ),
-    );
-  }
-}
-
-// ── Tab bar ────────────────────────────────────────────────────────────────────
-
-class _TabBar extends StatelessWidget {
-  final TabController controller;
-  const _TabBar({required this.controller});
-
-  @override
-  Widget build(BuildContext context) {
-    final s = context.select((AppState st) => st.strings);
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: context.tText2(0.05),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: TabBar(
-        controller: controller,
-        indicator: BoxDecoration(
-          color: AppColors.primary.withValues(alpha: 0.18),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: AppColors.primary.withValues(alpha: 0.45)),
-        ),
-        indicatorSize: TabBarIndicatorSize.tab,
-        dividerColor: Colors.transparent,
-        labelColor: AppColors.primary,
-        unselectedLabelColor: context.tText2(0.38),
-        labelStyle:
-            const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-        unselectedLabelStyle:
-            const TextStyle(fontSize: 13, fontWeight: FontWeight.w400),
-        tabs: [
-          Tab(icon: const Icon(Symbols.sensors, size: 16), text: s.sensorsTab),
-          Tab(icon: const Icon(Symbols.window,  size: 16), text: s.shuttersTab),
-        ],
       ),
     );
   }
@@ -823,375 +759,6 @@ class _SensorCardState extends State<_SensorCard> {
             ],
           ),
         ],
-      ),
-    );
-  }
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-// COVERS TAB
-// ══════════════════════════════════════════════════════════════════════════════
-
-class _CoversTab extends StatelessWidget {
-  final SensorScanEngine engine;
-  final VoidCallback onScan;
-  const _CoversTab({required this.engine, required this.onScan});
-
-  @override
-  Widget build(BuildContext context) {
-    final s = context.select((AppState st) => st.strings);
-    if (engine.covers.isEmpty) {
-      return _EmptyState(
-          isScanning: engine.isScanning,
-          icon: Symbols.window,
-          message: s.noCoversFound,
-          hint: 'Shelly 2.5 roller mode · Shelly Plus 2PM cover mode\n'
-              'ESPHome cover · Home Assistant cover.* · Zigbee',
-          onScan: onScan);
-    }
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-      itemCount: engine.covers.length,
-      itemBuilder: (_, i) => _CoverCard(cover: engine.covers[i]),
-    );
-  }
-}
-
-// ── Cover card ────────────────────────────────────────────────────────────────
-
-class _CoverCard extends StatefulWidget {
-  final SmartCover cover;
-  const _CoverCard({required this.cover});
-  @override
-  State<_CoverCard> createState() => _CoverCardState();
-}
-
-class _CoverCardState extends State<_CoverCard> {
-  bool _busy = false;
-  double? _sliderValue; // local slider value while dragging
-
-  SmartCover get c => widget.cover;
-
-  Future<void> _action(Future<bool> Function() action) async {
-    if (_busy) return;
-    setState(() => _busy = true);
-    final ok = await action();
-    if (mounted) {
-      if (!ok) _showError();
-      // Refresh state after command
-      final status = await CoverController.readState(c);
-      if (mounted && status != null) {
-        setState(() {
-          c.state    = status.state;
-          c.position = status.position;
-          _busy      = false;
-        });
-        // This card controls the cover through CoverController directly
-        // on the raw scan model, bypassing AppState entirely — same bug
-        // already fixed for switches: home_screen.dart's on/off counts
-        // read AppState.devices, so without this they'd stay stale until
-        // the next background poll caught up.
-        _syncRegisteredDevice();
-      } else if (mounted) {
-        setState(() => _busy = false);
-      }
-    }
-  }
-
-  /// Finds the [Device] this cover became once added (see _addToHome's
-  /// 'cover-<id>' convention), with an HA-entity-id fallback for the same
-  /// reason smart_switch_hub_screen.dart needs one, and updates its isOn
-  /// to match the cover's current state.
-  void _syncRegisteredDevice() {
-    final appState = context.read<AppState>();
-    final deviceId = 'cover-${c.id}';
-    final entityId = c.connectionData['entityId'] as String?;
-    for (final d in appState.devices) {
-      if (d.id == deviceId ||
-          (entityId != null && d.attributes['entityId'] == entityId)) {
-        d.isOn = c.state == CoverState.open;
-        appState.notifyDeviceStateChanged();
-        return;
-      }
-    }
-  }
-
-  Future<void> _setPosition(int pos) =>
-      _action(() => CoverController.setPosition(c, pos));
-
-  void _showError() {
-    final str = context.read<AppState>().strings;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(str.errControlFmt.replaceAll('{name}', c.name)),
-      backgroundColor: AppColors.statusAlarm,
-      behavior: SnackBarBehavior.floating,
-      duration: const Duration(seconds: 2),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-    ));
-  }
-
-  void _addToHome() {
-    final appState = context.read<AppState>();
-    final str = appState.strings;
-    appState.upsertDevice(
-      Device(
-        id:   'cover-${c.id}',
-        name: c.name,
-        type: DeviceType.smartSwitch,
-        isOn: c.state == CoverState.open,
-        status: c.isOnline ? DeviceStatus.online : DeviceStatus.offline,
-        source: 'gateway',
-        attributes: {
-          'ip':       c.ip ?? '',
-          'brand':    c.brand,
-          'protocol': c.protocol.name,
-          'deviceClass': 'cover',
-          ...c.connectionData,
-        },
-      ),
-      userInitiated: true,
-    );
-    setState(() => c.isRegistered = true);
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(str.switchAddedFmt.replaceAll('{name}', c.name)),
-      backgroundColor: AppColors.secured,
-      behavior: SnackBarBehavior.floating,
-      duration: const Duration(seconds: 2),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-    ));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final str      = context.select((AppState st) => st.strings);
-    final color    = c.protocol.color;
-    final stateCol = c.state.color;
-    final pos      = c.position;
-    final sliderVal = _sliderValue ?? pos?.toDouble() ?? 50;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: context.tText2(0.04),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: c.isRegistered
-              ? color.withValues(alpha: 0.35)
-              : context.tText2(0.07),
-          width: 1.2,
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ── Card header ──────────────────────────────────────────────────
-            Row(children: [
-              Container(
-                width: 40, height: 40,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(c.protocol.icon, color: color, size: 20),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(c.name,
-                        style: TextStyle(
-                            color: context.tText,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600)),
-                    Text(
-                      [
-                        if (c.ip != null) c.ip!,
-                        if (c.model != null) c.model!,
-                      ].join(' · '),
-                      style: TextStyle(
-                          color: context.tText2(0.54), fontSize: 11),
-                    ),
-                  ],
-                ),
-              ),
-              // State badge
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: stateCol.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: stateCol.withValues(alpha: 0.40)),
-                ),
-                child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  if (c.state.isMoving)
-                    SizedBox(
-                      width: 10, height: 10,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 1.5, color: stateCol),
-                    )
-                  else
-                    Icon(Symbols.window, color: stateCol, size: 12),
-                  const SizedBox(width: 4),
-                  Text(c.state.label,
-                      style: TextStyle(
-                          color: stateCol,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700)),
-                ]),
-              ),
-            ]),
-
-            const SizedBox(height: 12),
-
-            // ── Protocol tag + position ───────────────────────────────────────
-            Row(children: [
-              _Tag(c.protocol.displayName, color),
-              if (pos != null) ...[
-                const SizedBox(width: 6),
-                _Tag('$pos %', context.tText2(0.54)),
-              ],
-              const Spacer(),
-              if (!c.isRegistered)
-                GestureDetector(
-                  onTap: _addToHome,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: color.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(7),
-                      border: Border.all(
-                          color: color.withValues(alpha: 0.40)),
-                    ),
-                    child: Text(str.add,
-                        style: TextStyle(
-                            color: color,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700)),
-                  ),
-                )
-              else
-                Icon(Symbols.check_circle, color: color, size: 20),
-            ]),
-
-            const SizedBox(height: 12),
-
-            // ── Position slider ───────────────────────────────────────────────
-            if (c.hasPositionControl && pos != null) ...[
-              Row(children: [
-                Icon(Symbols.unfold_less,
-                    color: context.tText2(0.38), size: 14),
-                Expanded(
-                  child: SliderTheme(
-                    data: SliderTheme.of(context).copyWith(
-                      trackHeight: 4,
-                      thumbShape: const RoundSliderThumbShape(
-                          enabledThumbRadius: 7),
-                      activeTrackColor: color,
-                      inactiveTrackColor: context.tText2(0.12),
-                      thumbColor: color,
-                      overlayColor: color.withValues(alpha: 0.2),
-                    ),
-                    child: Slider(
-                      value: sliderVal.clamp(0, 100),
-                      min: 0,
-                      max: 100,
-                      divisions: 10,
-                      onChanged: (v) =>
-                          setState(() => _sliderValue = v),
-                      onChangeEnd: (v) {
-                        _sliderValue = null;
-                        _setPosition(v.round());
-                      },
-                    ),
-                  ),
-                ),
-                Icon(Symbols.unfold_more,
-                    color: context.tText2(0.38), size: 14),
-              ]),
-            ],
-
-            // ── Control buttons ───────────────────────────────────────────────
-            Row(children: [
-              Expanded(
-                child: _CtrlButton(
-                  label: str.coverOpen,
-                  color: AppColors.secured,
-                  busy: _busy,
-                  onTap: () => _action(() => CoverController.open(c)),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _CtrlButton(
-                  label: str.coverStop,
-                  color: AppColors.statusWarning,
-                  busy: _busy,
-                  onTap: () => _action(() => CoverController.stop(c)),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _CtrlButton(
-                  label: str.coverClose,
-                  color: AppColors.statusOffline,
-                  busy: _busy,
-                  onTap: () => _action(() => CoverController.close(c)),
-                ),
-              ),
-            ]),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── Control button ────────────────────────────────────────────────────────────
-
-class _CtrlButton extends StatelessWidget {
-  final String label;
-  final Color  color;
-  final bool   busy;
-  final VoidCallback onTap;
-
-  const _CtrlButton({
-    required this.label,
-    required this.color,
-    required this.busy,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: busy ? null : onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          color: busy
-              ? context.tText2(0.04)
-              : color.withValues(alpha: 0.14),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: busy
-                ? context.tText2(0.08)
-                : color.withValues(alpha: 0.40),
-            width: 1.2,
-          ),
-        ),
-        child: Center(
-          child: Text(label,
-              style: TextStyle(
-                  color: busy ? context.tText2(0.24) : color,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700)),
-        ),
       ),
     );
   }
