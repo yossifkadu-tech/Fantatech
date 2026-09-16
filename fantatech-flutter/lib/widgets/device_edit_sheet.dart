@@ -39,6 +39,14 @@ Future<void> showEntityEditSheet(
   // Optional — when provided, an "on/off schedule" option appears in the
   // sheet, opening the shared schedule sheet.
   VoidCallback? onSchedule,
+  // Optional — when both provided, an "advanced settings" section lists
+  // every raw Tuya DP this device reported (code → current value) with an
+  // inline editor per row, calling onSetTuyaDp(code, newValue) to apply.
+  // Vendor/model-specific (sensitivity, delay, detection range, ...) — no
+  // normalized FantaTech capability covers these, so they're surfaced as-is
+  // rather than guessed at.
+  Map<String, dynamic>? tuyaDps,
+  void Function(String code, dynamic value)? onSetTuyaDp,
 }) {
   HapticFeedback.mediumImpact();
   return showModalBottomSheet(
@@ -57,6 +65,8 @@ Future<void> showEntityEditSheet(
       onAssignRoom: onAssignRoom,
       ipAddress: ipAddress,
       onSchedule: onSchedule,
+      tuyaDps: tuyaDps,
+      onSetTuyaDp: onSetTuyaDp,
     ),
   );
 }
@@ -84,6 +94,10 @@ Future<void> showDeviceEditSheet(
     onSchedule: DeviceCapabilities.of(device).contains(DeviceCapability.onOff)
         ? () => showScheduleSheet(context,
             device: device, color: DeviceIcons.color(device.type))
+        : null,
+    tuyaDps: (device.attributes['tuyaDps'] as Map?)?.cast<String, dynamic>(),
+    onSetTuyaDp: device.id.startsWith('tuya_')
+        ? (code, value) => state.setTuyaDp(device.id, code, value)
         : null,
   );
 }
@@ -147,6 +161,8 @@ class _EntityEditSheet extends StatefulWidget {
   final void Function(String room)? onAssignRoom;
   final String? ipAddress;
   final VoidCallback? onSchedule;
+  final Map<String, dynamic>? tuyaDps;
+  final void Function(String code, dynamic value)? onSetTuyaDp;
 
   const _EntityEditSheet({
     required this.currentName,
@@ -160,6 +176,8 @@ class _EntityEditSheet extends StatefulWidget {
     this.onAssignRoom,
     this.ipAddress,
     this.onSchedule,
+    this.tuyaDps,
+    this.onSetTuyaDp,
   });
 
   @override
@@ -429,6 +447,27 @@ class _EntityEditSheetState extends State<_EntityEditSheet> {
               ),
             ),
           ],
+          if (widget.tuyaDps != null &&
+              widget.tuyaDps!.isNotEmpty &&
+              widget.onSetTuyaDp != null) ...[
+            const SizedBox(height: 16),
+            Text('הגדרות מתקדמות (Tuya)',
+                style: TextStyle(
+                    color: context.tText2(0.5),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700)),
+            const SizedBox(height: 2),
+            Text(
+                'ערכים גולמיים שהמכשיר מדווח לענן Tuya — לא כל שורה בהכרח ניתנת לעריכה.',
+                style: TextStyle(color: context.tText2(0.4), fontSize: 10.5)),
+            const SizedBox(height: 8),
+            ...widget.tuyaDps!.entries.map((e) => _TuyaDpRow(
+                  code: e.key,
+                  value: e.value,
+                  color: color,
+                  onSet: widget.onSetTuyaDp!,
+                )),
+          ],
           const SizedBox(height: 10),
           GestureDetector(
             onTap: () => _confirmDelete(context),
@@ -452,6 +491,124 @@ class _EntityEditSheetState extends State<_EntityEditSheet> {
                 ],
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// _TuyaDpRow — one raw Tuya DP (data point), editable in place. A bool value
+// gets a Switch; anything else (num/String) gets a text field + apply
+// button, sent back as-is if it parses as a number, otherwise as a string —
+// Tuya rejects a command whose value type doesn't match what it expects for
+// that code, so this can't validate further without knowing the code's
+// meaning ahead of time (see tuyaDps' doc comment on showEntityEditSheet).
+// ─────────────────────────────────────────────────────────────────────────────
+class _TuyaDpRow extends StatefulWidget {
+  final String code;
+  final dynamic value;
+  final Color color;
+  final void Function(String code, dynamic value) onSet;
+  const _TuyaDpRow({
+    required this.code,
+    required this.value,
+    required this.color,
+    required this.onSet,
+  });
+
+  @override
+  State<_TuyaDpRow> createState() => _TuyaDpRowState();
+}
+
+class _TuyaDpRowState extends State<_TuyaDpRow> {
+  late final TextEditingController _ctrl =
+      TextEditingController(text: widget.value?.toString() ?? '');
+  bool _saving = false;
+
+  Future<void> _save(dynamic value) async {
+    setState(() => _saving = true);
+    widget.onSet(widget.code, value);
+    if (mounted) setState(() => _saving = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isBool = widget.value is bool;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 2,
+            child: Text(widget.code,
+                style: TextStyle(
+                    color: context.tText2(0.7),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            flex: 3,
+            child: isBool
+                ? Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: Switch(
+                      value: widget.value == true,
+                      activeThumbColor: widget.color,
+                      onChanged: _saving ? null : (v) => _save(v),
+                    ),
+                  )
+                : Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _ctrl,
+                          enabled: !_saving,
+                          style: TextStyle(color: context.tText, fontSize: 13),
+                          decoration: InputDecoration(
+                            isDense: true,
+                            filled: true,
+                            fillColor: context.tText2(0.05),
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 8),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      GestureDetector(
+                        onTap: _saving
+                            ? null
+                            : () {
+                                final text = _ctrl.text.trim();
+                                final n = num.tryParse(text);
+                                _save(n ?? text);
+                              },
+                        child: Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: widget.color.withValues(alpha: 0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          child: _saving
+                              ? Padding(
+                                  padding: const EdgeInsets.all(8),
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2, color: widget.color),
+                                )
+                              : Icon(Symbols.check, color: widget.color, size: 16),
+                        ),
+                      ),
+                    ],
+                  ),
           ),
         ],
       ),

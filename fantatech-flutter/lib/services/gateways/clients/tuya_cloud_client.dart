@@ -148,9 +148,20 @@ class TuyaCloudClient {
         // to tell "no data" apart from "actually drawing nothing".
         num? watts;
         final statusList = d['status'] as List<dynamic>? ?? const [];
+        // Every DP Tuya reports for this device, kept verbatim (code →
+        // value) — not just the ones this app already understands
+        // (switch/power above). Devices like sensors report vendor- and
+        // model-specific config DPs (sensitivity, delay, detection range,
+        // etc.) that have no normalized FantaTech capability; surfacing
+        // them raw here is what lets the edit sheet offer a "Tuya advanced
+        // settings" section for whatever a specific device actually
+        // exposes, instead of guessing DP names that vary by model.
+        final dps = <String, dynamic>{};
         for (final s in statusList) {
           final entry = s as Map<String, dynamic>;
           final code = entry['code'] as String?;
+          if (code == null) continue;
+          dps[code] = entry['value'];
           if (code == 'switch_1' || code == 'switch' || code == 'switch_led') {
             isOn = entry['value'] == true;
           } else if (code == 'cur_power') {
@@ -173,6 +184,7 @@ class TuyaCloudClient {
             'tuyaId': id,
             'category': category,
             if (watts != null) 'watts': watts,
+            if (dps.isNotEmpty) 'tuyaDps': dps,
           },
         ));
       }

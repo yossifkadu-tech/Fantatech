@@ -223,6 +223,44 @@ class DeviceCommander {
     return false;
   }
 
+  /// Set a single raw Tuya DP (data point) by code — e.g. a PIR sensor's
+  /// vendor-specific sensitivity/delay/detection-range config, which has no
+  /// normalized FantaTech capability (see [Device.attributes]'s 'tuyaDps'
+  /// map, populated by [TuyaCloudClient.fetchDevices], for what a given
+  /// device actually reports). Only works for Tuya Cloud devices (id prefix
+  /// 'tuya_'); returns false for anything else. [value] must already be the
+  /// correct type for that DP (bool/num/String) — Tuya rejects a mismatched
+  /// command instead of coercing it.
+  static Future<bool> setTuyaDp(
+    Device device,
+    String code,
+    dynamic value, {
+    required GatewayManager gateways,
+  }) async {
+    final id = device.id;
+    if (!id.startsWith('tuya_')) return false;
+
+    final gw = _gateway(gateways, GatewayType.tuyaSmart) ??
+        _gateway(gateways, GatewayType.smartLife);
+    if (gw == null) return false;
+    final clientId     = gw.credentials['clientId'];
+    final clientSecret = gw.credentials['clientSecret'];
+    if (clientId == null || clientSecret == null) return false;
+    final region = TuyaRegionHost.fromName(gw.credentials['region']);
+    final client = TuyaCloudClient(
+        clientId: clientId, clientSecret: clientSecret, region: region);
+    final token = await client.getToken();
+    if (token == null) return false;
+    final tuyaDeviceId = id.substring('tuya_'.length);
+    return client.sendCommands(
+      token: token,
+      tuyaDeviceId: tuyaDeviceId,
+      commands: [
+        {'code': code, 'value': value},
+      ],
+    );
+  }
+
   /// Send a climate control change to the physical AC. HA only for now —
   /// pass exactly one of the named parameters per call.
   static Future<bool> setClimate(

@@ -965,6 +965,31 @@ class AppState extends ChangeNotifier {
     return ok;
   }
 
+  /// Sets a single raw Tuya DP by code (e.g. a motion sensor's sensitivity/
+  /// delay/detection-range) — see [DeviceCommander.setTuyaDp]. Optimistic
+  /// update of the cached value in `attributes['tuyaDps']`, reverted if the
+  /// gateway call fails, matching [setDevicePower]'s contract.
+  Future<bool> setTuyaDp(String id, String code, dynamic value) async {
+    final idx = _devices.indexWhere((d) => d.id == id);
+    if (idx == -1) return false;
+    final device = _devices[idx];
+    final dps = Map<String, dynamic>.from(
+        device.attributes['tuyaDps'] as Map? ?? {});
+    final was = dps[code];
+    dps[code] = value;
+    device.attributes = {...device.attributes, 'tuyaDps': dps};
+    notifyListeners();
+    final gw = _gateways;
+    if (gw == null) return false;
+    final ok = await DeviceCommander.setTuyaDp(device, code, value, gateways: gw);
+    if (!ok) {
+      dps[code] = was;
+      device.attributes = {...device.attributes, 'tuyaDps': dps};
+      notifyListeners();
+    }
+    return ok;
+  }
+
   /// Awaitable brightness set (0-100) — same "confirm before claiming
   /// success" contract as [setDevicePower], for the AI agent.
   Future<bool> agentSetBrightness(String id, int level) async {
