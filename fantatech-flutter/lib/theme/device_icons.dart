@@ -59,6 +59,11 @@ abstract class DeviceIcons {
 
   /// Battery-level icon — reflects charge, not device type.
   static IconData batteryIcon(int? level) => _active.batteryIcon(level);
+
+  /// Real device-photo asset for a device type, or null when only the
+  /// generic [icon] glyph is available for it. Callers that show a photo
+  /// (e.g. [DeviceCard]) should fall back to [icon]/[color] when this is null.
+  static String? photoAsset(DeviceType type) => _active.photoAsset(type);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -75,6 +80,7 @@ abstract class DeviceIconSet {
   IconData blindIcon(int? position);
   IconData forHaDeviceClass(String? deviceClass, {required IconData fallback});
   IconData batteryIcon(int? level);
+  String? photoAsset(DeviceType type);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -285,4 +291,11 @@ class MaterialSymbolsIconSet extends DeviceIconSet {
     if (level <= 80) return Symbols.battery_5_bar;
     return Symbols.battery_full;
   }
+
+  @override
+  String? photoAsset(DeviceType type) => switch (type) {
+        DeviceType.smartSwitch => 'assets/images/devices/switch.png',
+        DeviceType.smartPlug   => 'assets/images/devices/socket.png',
+        _                      => null,
+      };
 }

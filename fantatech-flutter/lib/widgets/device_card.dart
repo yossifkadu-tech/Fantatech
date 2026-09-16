@@ -55,6 +55,8 @@ class DeviceCard extends StatelessWidget {
 
   Color get _accentColor => DeviceIcons.color(device.type);
 
+  String? get _photoAsset => DeviceIcons.photoAsset(device.type);
+
   Color _cardColor(DeviceStatus status) => switch (status) {
     DeviceStatus.offline => AppColors.statusOffline,
     DeviceStatus.warning => AppColors.statusWarning,
@@ -130,7 +132,9 @@ class DeviceCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Device icon — glows when on / alerted
+                // Device icon — glows when on / alerted. Shows a real device
+                // photo for types that have one (DeviceIcons.photoAsset),
+                // falling back to the generic glyph otherwise.
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 300),
                   curve: Curves.easeOutCubic,
@@ -150,11 +154,16 @@ class DeviceCard extends StatelessWidget {
                           ]
                         : const [],
                   ),
-                  child: Icon(
-                    _icon,
-                    color: showGlow ? color : context.tText2(0.35),
-                    size: 20,
-                  ),
+                  child: _photoAsset != null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.asset(_photoAsset!, fit: BoxFit.cover),
+                        )
+                      : Icon(
+                          _icon,
+                          color: showGlow ? color : context.tText2(0.35),
+                          size: 20,
+                        ),
                 ),
 
                 const Spacer(),
