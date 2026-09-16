@@ -21,6 +21,7 @@ import 'dart:io';
 import 'package:crypto/crypto.dart';
 
 import '../../../models/device.dart';
+import '../../../models/device_capabilities.dart';
 import '../gateway_model.dart';
 
 /// Tuya regional data centers.
@@ -177,6 +178,18 @@ class TuyaCloudClient {
           }
         }
 
+        // Map the sensor-triggered DP into the same normalized attribute
+        // key DeviceCapabilities.binaryStateKey(type) expects (used by
+        // AppState's alert/notification logic and the sensor cards' UI) —
+        // this never existed before, so a Tuya sensor's actual trigger DP
+        // only ever landed in the raw 'tuyaDps' bag above, which nothing
+        // reads for display or alerting. isOn also gets it for sensor
+        // types (isOn otherwise only comes from the switch_* codes above,
+        // which sensors don't have, so it would silently stay false
+        // forever regardless of real motion/contact/leak state).
+        final detected = _sensorDetectedFromDps(type, dps);
+        if (detected != null) isOn = detected;
+
         devices.add(Device(
           id: 'tuya_$id',
           name: name,
@@ -192,6 +205,8 @@ class TuyaCloudClient {
             'category': category,
             if (watts != null) 'watts': watts,
             if (dps.isNotEmpty) 'tuyaDps': dps,
+            if (detected != null)
+              DeviceCapabilities.binaryStateKey(type)!: detected,
           },
         ));
       }
@@ -292,6 +307,57 @@ class TuyaCloudClient {
       // ── Anything else: import as a generic device rather than drop it ───
       default:
         return DeviceType.unknown;
+    }
+  }
+
+  // ── Sensor-triggered DP → normalized 'detected' state ───────────────────────
+  // https://developer.tuya.com/en/docs/iot/standarddescription — DP codes
+  // vary by device generation/manufacturer even within one category (same
+  // situation as the switch_1/switch/switch_led check above), so each
+  // sensor type checks every documented code its category is known to use.
+  // Returns null when none of them are present (device didn't report a
+  // trigger state at all) rather than guessing false, so a device this
+  // doesn't recognize just keeps whatever isOn it already had instead of
+  // being silently forced to "clear".
+  static bool? _sensorDetectedFromDps(DeviceType type, Map<String, dynamic> dps) {
+    bool? asBool(dynamic v) {
+      if (v is bool) return v;
+      if (v is String) {
+        final s = v.toLowerCase();
+        if (s == 'pir' || s == 'alarm' || s == 'alarming' || s == 'true' || s == '1') return true;
+        if (s == 'none' || s == 'normal' || s == 'false' || s == '0') return false;
+      }
+      return null;
+    }
+
+    switch (type) {
+      case DeviceType.motionSensor:
+        for (final code in ['pir', 'presence_state', 'radar_state']) {
+          if (dps.containsKey(code)) return asBool(dps[code]) ?? false;
+        }
+        return null;
+      case DeviceType.windowSensor:
+        for (final code in ['doorcontact_state']) {
+          if (dps.containsKey(code)) return asBool(dps[code]) ?? false;
+        }
+        return null;
+      case DeviceType.smokeSensor:
+        for (final code in ['smoke_sensor_status', 'smoke_sensor_state']) {
+          if (dps.containsKey(code)) return asBool(dps[code]) ?? false;
+        }
+        return null;
+      case DeviceType.gasSensor:
+        for (final code in ['gas_sensor_status', 'co_status', 'co_state']) {
+          if (dps.containsKey(code)) return asBool(dps[code]) ?? false;
+        }
+        return null;
+      case DeviceType.waterLeakSensor:
+        for (final code in ['watersensor_state', 'water_sensor_state']) {
+          if (dps.containsKey(code)) return asBool(dps[code]) ?? false;
+        }
+        return null;
+      default:
+        return null;
     }
   }
 
