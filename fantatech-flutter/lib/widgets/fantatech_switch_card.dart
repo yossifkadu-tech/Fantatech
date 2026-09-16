@@ -73,9 +73,12 @@ class _FantaTechSwitchCardState extends State<FantaTechSwitchCard> {
   static const _offGray = Color(0xFFE5E5EA);
   static const _offIconGray = Color(0xFF8E8E93);
 
-  // Per user request: reversed LED meaning — the orange/glow treatment
-  // shows when the device is OFF, gray shows when it's ON.
-  bool get _ledActive => !widget.isOn;
+  // Per user request: orange/glow = on, gray = off — matches
+  // SwitchGlowToggle's convention (smart_switch_hub_screen.dart /
+  // switch_detail_screen.dart, reached via the same "מתגי תאורה" flow),
+  // which this card previously didn't match (it briefly used the
+  // opposite mapping per an earlier, now-superseded request).
+  bool get _ledActive => widget.isOn;
 
   Future<void> _handleTap() async {
     if (_loading || !widget.isOnline) return;
@@ -157,9 +160,6 @@ class _FantaTechSwitchCardState extends State<FantaTechSwitchCard> {
                         height: buttonSize,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          // Per user request: LED color meaning reversed —
-                          // orange = OFF, gray = ON (opposite of the usual
-                          // "orange = active" convention).
                           color: _ledActive ? AppColors.primary : _offGray,
                           border: _ledActive
                               ? null
@@ -209,9 +209,6 @@ class _FantaTechSwitchCardState extends State<FantaTechSwitchCard> {
                                           ),
                                     SizedBox(height: buttonSize * 0.05),
                                     Text(
-                                      // Label still reflects the real on/off
-                                      // state — only the LED color meaning
-                                      // is reversed, not what "ON"/"OFF" says.
                                       disabled ? 'Offline' : (widget.isOn ? 'ON' : 'OFF'),
                                       style: TextStyle(
                                         fontSize: buttonSize * 0.13,
