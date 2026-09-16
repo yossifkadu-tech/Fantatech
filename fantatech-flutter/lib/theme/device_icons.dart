@@ -294,8 +294,11 @@ class MaterialSymbolsIconSet extends DeviceIconSet {
 
   @override
   String? photoAsset(DeviceType type) => switch (type) {
-        DeviceType.smartSwitch => 'assets/images/devices/switch.png',
-        DeviceType.smartPlug   => 'assets/images/devices/socket.png',
-        _                      => null,
+        DeviceType.smartSwitch    => 'assets/images/devices/switch.png',
+        DeviceType.smartPlug      => 'assets/images/devices/socket.png',
+        DeviceType.airConditioner => 'assets/images/categories/ac.png',
+        DeviceType.camera         => 'assets/images/categories/cameras.png',
+        DeviceType.solar          => 'assets/images/categories/solar.png',
+        _                         => null,
       };
 }

@@ -120,6 +120,7 @@ flutter:
     - assets/images/rooms/
     - assets/images/sensors/
     - assets/images/devices/
+    - assets/images/categories/
 
   fonts:
     # Bundled Noto fallbacks — guarantee Amharic (Ge'ez) + Arabic glyphs
