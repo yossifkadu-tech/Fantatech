@@ -1520,7 +1520,7 @@ class _ShChip extends StatelessWidget {
             Text(label,
                 style: TextStyle(
                   fontSize: 10.5,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w800,
                   color: context.tText2(muted ? 0.45 : 0.62),
                 ),
                 maxLines: 1,
