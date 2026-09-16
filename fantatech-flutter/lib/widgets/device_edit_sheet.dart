@@ -583,12 +583,21 @@ class _EntityEditSheetState extends State<_EntityEditSheet> {
                           fontFamily: 'monospace')),
                 ],
               ] else if (widget.onSetTuyaDp != null)
-                ..._tuyaDps!.entries.map((e) => _TuyaDpRow(
-                      code: e.key,
-                      value: e.value,
-                      color: color,
-                      onSet: widget.onSetTuyaDp!,
-                    )),
+                ..._tuyaDps!.entries.map((e) {
+                  final meta = _kKnownTuyaDps[e.key];
+                  if (meta != null && meta.readOnly) {
+                    return _TuyaReadingRow(
+                        code: e.key, meta: meta, value: e.value);
+                  }
+                  return _TuyaDpRow(
+                    code: e.key,
+                    label: meta?.label,
+                    icon: meta?.icon,
+                    value: e.value,
+                    color: color,
+                    onSet: widget.onSetTuyaDp!,
+                  );
+                }),
             ],
             const SizedBox(height: 10),
             GestureDetector(
@@ -633,11 +642,15 @@ class _EntityEditSheetState extends State<_EntityEditSheet> {
 // ─────────────────────────────────────────────────────────────────────────────
 class _TuyaDpRow extends StatefulWidget {
   final String code;
+  final String? label;
+  final IconData? icon;
   final dynamic value;
   final Color color;
   final void Function(String code, dynamic value) onSet;
   const _TuyaDpRow({
     required this.code,
+    this.label,
+    this.icon,
     required this.value,
     required this.color,
     required this.onSet,
@@ -667,13 +680,24 @@ class _TuyaDpRowState extends State<_TuyaDpRow> {
         children: [
           Expanded(
             flex: 2,
-            child: Text(widget.code,
-                style: TextStyle(
-                    color: context.tText2(0.7),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (widget.icon != null) ...[
+                  Icon(widget.icon, size: 14, color: widget.color),
+                  const SizedBox(width: 4),
+                ],
+                Flexible(
+                  child: Text(widget.label ?? widget.code,
+                      style: TextStyle(
+                          color: context.tText2(0.7),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis),
+                ),
+              ],
+            ),
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -736,6 +760,95 @@ class _TuyaDpRowState extends State<_TuyaDpRow> {
                     ],
                   ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// _kKnownTuyaDps — display metadata (Hebrew label, icon, editable vs.
+// read-only) for Tuya's publicly-documented standard-instruction-set DP
+// codes on human-presence / illuminance sensors. NOT protocol logic (that
+// stays in tuya_cloud_client.dart) — purely how to *show* a code we
+// already received, so a code this table doesn't recognize still renders
+// correctly via the generic _TuyaDpRow fallback above instead of breaking.
+// Codes/units per Tuya's public docs for the 'hps' (human presence sensor)
+// category — not verified against this specific device's actual DP list
+// yet, hence the safe fallback rather than assuming every device has all
+// of these.
+class _TuyaDpMeta {
+  final String label;
+  final IconData icon;
+  final bool readOnly;
+  final String? unit;
+  const _TuyaDpMeta(this.label, this.icon,
+      {this.readOnly = false, this.unit});
+}
+
+final Map<String, _TuyaDpMeta> _kKnownTuyaDps = {
+  'presence_state': const _TuyaDpMeta('מצב נוכחות', Symbols.sensors,
+      readOnly: true),
+  'illuminance_value': const _TuyaDpMeta('עוצמת תאורה', Symbols.light_mode,
+      readOnly: true, unit: 'Lux'),
+  'sensitivity': const _TuyaDpMeta('רגישות זיהוי', Symbols.tune),
+  'near_detection':
+      const _TuyaDpMeta('טווח זיהוי מינימלי', Symbols.social_distance, unit: 'ס"מ'),
+  'far_detection':
+      const _TuyaDpMeta('טווח זיהוי מקסימלי', Symbols.social_distance, unit: 'ס"מ'),
+  'nobody_time': const _TuyaDpMeta('זמן עד "אין נוכחות"', Symbols.timer),
+};
+
+/// Common raw values for [_TuyaDpMeta]-known enum-like DPs, translated for
+/// display only — the underlying value sent back on write (for editable
+/// ones) is always the untranslated original.
+String _translateKnownValue(String code, dynamic value) {
+  if (code == 'presence_state' && value is String) {
+    return switch (value) {
+      'none' => 'אין נוכחות',
+      'presence' => 'זוהתה נוכחות',
+      'moving' => 'זוהתה תנועה',
+      _ => value,
+    };
+  }
+  return '$value';
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// _TuyaReadingRow — a known, read-only Tuya DP (a live sensor reading, not
+// a setting) shown with its translated label/icon/unit instead of the
+// generic editable row — there's nothing to "apply" for a live reading.
+// ─────────────────────────────────────────────────────────────────────────────
+class _TuyaReadingRow extends StatelessWidget {
+  final String code;
+  final _TuyaDpMeta meta;
+  final dynamic value;
+  const _TuyaReadingRow(
+      {required this.code, required this.meta, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    final display = meta.unit != null
+        ? '$value ${meta.unit}'
+        : _translateKnownValue(code, value);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Icon(meta.icon, size: 14, color: context.tText2(0.55)),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(meta.label,
+                style: TextStyle(
+                    color: context.tText2(0.7),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600)),
+          ),
+          Text(display,
+              style: TextStyle(
+                  color: context.tText,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700)),
         ],
       ),
     );
