@@ -65,6 +65,14 @@ class TuyaCloudClient {
   /// instead of both looking identical to the caller.
   static String lastStatusRawResponse = '';
 
+  /// Same idea again, for the last [sendCommands] call. sendCommands()
+  /// itself only ever returned a bare bool — a rejected command (wrong DP
+  /// code, project not authorized for the command endpoint, device
+  /// offline on Tuya's side, etc.) was indistinguishable from "the
+  /// physical device just didn't respond", with nothing to diagnose why a
+  /// toggle silently did nothing.
+  static String lastCommandRawResponse = '';
+
   final String clientId;
   final String clientSecret;
   final TuyaRegion region;
@@ -443,7 +451,12 @@ class TuyaCloudClient {
     final path = '/v1.0/devices/$tuyaDeviceId/commands';
     final body = jsonEncode({'commands': commands});
     final resp = await _signedPost(path, token, body);
-    if (resp == null) return false;
+    if (resp == null) {
+      lastCommandRawResponse =
+          'POST $path\nbody: $body\n\nNo response from Tuya (network/timeout).';
+      return false;
+    }
+    lastCommandRawResponse = 'POST $path\nbody: $body\n\n$resp';
     try {
       final parsed = jsonDecode(resp) as Map<String, dynamic>;
       return parsed['success'] == true;

@@ -232,13 +232,24 @@ class DeviceCommander {
                     : 'switch_1';
       }
 
-      return client.sendCommands(
+      final ok = await client.sendCommands(
         token: token,
         tuyaDeviceId: tuyaDeviceId,
         commands: [
           {'code': dpCode, 'value': on},
         ],
       );
+      if (!ok) {
+        // sendCommands only ever returned a bare bool — a rejected command
+        // (wrong DP code for this device, Tuya project not authorized for
+        // the command endpoint, device actually offline, ...) was
+        // indistinguishable from "nothing happened, no idea why". Log
+        // Tuya's real response so a failure like this is diagnosable
+        // instead of a silent dead end.
+        debugPrint('[Tuya] command failed for $id (dpCode=$dpCode): '
+            '${TuyaCloudClient.lastCommandRawResponse}');
+      }
+      return ok;
     }
 
     // ── LAN-direct (Shelly / Sonoff / Tuya / Kasa / Tapo / ESPHome) ────────────
