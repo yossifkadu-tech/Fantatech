@@ -1379,7 +1379,7 @@ class _SmartHomeBanner extends StatelessWidget {
                           icon: Symbols.toggle_on,
                           photoAsset: DeviceIcons.photoAsset(DeviceType.smartSwitch),
                           value: switchesOn,
-                          label: heLabel('תאורה', s.switchesCategory),
+                          label: heLabel('מתגי תאורה', s.switchesCategory),
                           color: AppColors.plugColor,
                           // switchesAll counts every smartSwitch Device
                           // regardless of source, but SmartSwitchHubScreen

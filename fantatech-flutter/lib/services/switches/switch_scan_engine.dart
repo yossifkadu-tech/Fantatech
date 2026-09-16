@@ -901,16 +901,26 @@ class SwitchScanEngine extends ChangeNotifier {
     final vendor     = d['manufacturer']  as String?;
     final ieee       = d['ieee_address']  as String?;
 
-    // Check if this device has a toggleable state
+    // Check if this device has a toggleable (settable) state. A Zigbee2MQTT
+    // expose's `access` bitmask is 1=published(readable), 2=set(writable),
+    // 4=get — a battery sensor's contact/motion/water-leak reading is often
+    // also modeled as `{type: 'binary', name: 'state', access: 1}` (read-
+    // only), which this used to match just as eagerly as a real switch's
+    // writable state and pull the sensor into the switch list. Requiring
+    // the SET bit is what actually distinguishes "can be turned on/off"
+    // from "reports on/off".
+    bool isSettable(Map expMap) =>
+        ((expMap['access'] as num?)?.toInt() ?? 0) & 2 != 0;
+
     final definition = d['definition'] as Map<String, dynamic>?;
     final exposes    = definition?['exposes'] as List?;
     bool hasState = false;
     if (exposes != null) {
       for (final exp in exposes) {
         final expMap = exp as Map<String, dynamic>;
-        if (expMap['type'] == 'switch' ||
-            (expMap['type'] == 'binary' &&
-                expMap['name'] == 'state')) {
+        if ((expMap['type'] == 'switch' ||
+                (expMap['type'] == 'binary' && expMap['name'] == 'state')) &&
+            isSettable(expMap)) {
           hasState = true;
           break;
         }
@@ -918,7 +928,8 @@ class SwitchScanEngine extends ChangeNotifier {
         final features = expMap['features'] as List?;
         if (features != null) {
           for (final f in features) {
-            if ((f as Map)['name'] == 'state') {
+            final fMap = f as Map;
+            if (fMap['name'] == 'state' && isSettable(fMap)) {
               hasState = true;
               break;
             }

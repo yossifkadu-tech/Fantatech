@@ -216,6 +216,13 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.select((AppState st) => st.strings);
+    // Per user request: this screen's own title used to say "מפסקים"
+    // (s.switchesCategory's base Hebrew string) while every entry point
+    // that leads here — the Smart Home dashboard chip and the Smart Home
+    // tab's category grid — already say "מתגי תאורה". One name across all
+    // three, matching the two chips rather than the generic string.
+    final isHebrew = context.select((AppState st) => st.locale) == AppLocale.hebrew;
+    final title = isHebrew ? 'מתגי תאורה' : s.switchesCategory;
     return Container(
       padding: const EdgeInsets.fromLTRB(8, 8, 16, 0),
       child: Row(
@@ -230,7 +237,7 @@ class _Header extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(s.switchesCategory,
+                Text(title,
                     style: TextStyle(
                         color: context.tText,
                         fontSize: 18,
