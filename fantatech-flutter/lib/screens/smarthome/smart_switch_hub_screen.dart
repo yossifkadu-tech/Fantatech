@@ -20,6 +20,7 @@ import '../../services/switches/smart_switch_models.dart';
 import '../../services/switches/switch_controller.dart';
 import '../../services/switches/switch_scan_engine.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/device_icons.dart';
 import '../../widgets/device_edit_sheet.dart';
 import 'switch_detail_screen.dart';
 
@@ -886,6 +887,7 @@ class _SwitchCardState extends State<_SwitchCard> {
                         .toUpperCase(),
                     onTap: () => _toggle(0),
                     size: 38,
+                    photoAsset: DeviceIcons.photoAsset(DeviceType.smartSwitch),
                   ),
                   const SizedBox(width: 12),
                   Expanded(

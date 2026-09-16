@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../models/app_state.dart';
 import '../../models/device.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/device_icons.dart';
 import '../../widgets/device_edit_sheet.dart';
 import '../../widgets/ft_nav.dart';
 
@@ -206,8 +207,15 @@ class _ACCard extends StatelessWidget {
                       : context.tText2(0.06),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(Symbols.hvac,
-                    color: on ? _kBlue : context.tText2(0.3), size: 22),
+                child: DeviceIcons.photoAsset(DeviceType.airConditioner) != null
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.asset(
+                            DeviceIcons.photoAsset(DeviceType.airConditioner)!,
+                            fit: BoxFit.cover),
+                      )
+                    : Icon(Symbols.hvac,
+                        color: on ? _kBlue : context.tText2(0.3), size: 22),
               ),
               const SizedBox(width: 12),
               Expanded(

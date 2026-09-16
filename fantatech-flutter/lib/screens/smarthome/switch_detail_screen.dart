@@ -117,6 +117,9 @@ class SwitchGlowToggle extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
   final double size;
+  /// Real device photo (e.g. DeviceIcons.photoAsset) shown instead of the
+  /// generic power glyph when set.
+  final String? photoAsset;
 
   const SwitchGlowToggle({
     super.key,
@@ -124,6 +127,7 @@ class SwitchGlowToggle extends StatelessWidget {
     required this.label,
     required this.onTap,
     this.size = 220,
+    this.photoAsset,
   });
 
   // Below this diameter the "ON"/"OFF" text becomes too small to read, so
@@ -165,8 +169,14 @@ class SwitchGlowToggle extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Symbols.power_settings_new,
-                  color: on ? Colors.white : context.tText2(0.35), size: iconSize),
+              photoAsset != null
+                  ? ClipOval(
+                      child: Image.asset(photoAsset!,
+                          width: iconSize * 1.6, height: iconSize * 1.6,
+                          fit: BoxFit.cover),
+                    )
+                  : Icon(Symbols.power_settings_new,
+                      color: on ? Colors.white : context.tText2(0.35), size: iconSize),
               if (showLabel) ...[
                 SizedBox(height: size * 0.036),
                 Text(
