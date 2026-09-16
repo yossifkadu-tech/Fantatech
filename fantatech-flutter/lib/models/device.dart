@@ -248,6 +248,27 @@ class AppNotification {
     required this.timestamp,
     this.isRead = false,
   });
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'title': title,
+        'deviceId': deviceId,
+        'deviceType': deviceType.name,
+        'timestamp': timestamp.toIso8601String(),
+        'isRead': isRead,
+      };
+
+  factory AppNotification.fromJson(Map<String, dynamic> json) => AppNotification(
+        id: json['id'] as String,
+        title: json['title'] as String,
+        deviceId: json['deviceId'] as String,
+        deviceType: DeviceType.values.firstWhere(
+          (e) => e.name == json['deviceType'],
+          orElse: () => DeviceType.unknown,
+        ),
+        timestamp: DateTime.parse(json['timestamp'] as String),
+        isRead: json['isRead'] as bool? ?? false,
+      );
 }
 
 class SecurityEvent {

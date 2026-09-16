@@ -557,6 +557,7 @@ class AppState extends ChangeNotifier {
       deviceType: d.type,
       timestamp: DateTime.now(),
     ));
+    _saveNotificationsToPrefs();
     if (isLeak) {
       _leakAlertActive = true;
       _leakAlertName = d.name;
@@ -581,6 +582,7 @@ class AppState extends ChangeNotifier {
       deviceType: d.type,
       timestamp: DateTime.now(),
     ));
+    _saveNotificationsToPrefs();
   }
   AppLocale _locale = AppLocale.hebrew;
   bool _keepShabbat = false;
@@ -1568,6 +1570,7 @@ class AppState extends ChangeNotifier {
         deviceType: device.type,
         timestamp: DateTime.now(),
       ));
+      _saveNotificationsToPrefs();
     } else {
       _devices[idx] = device;
     }
@@ -1644,6 +1647,7 @@ class AppState extends ChangeNotifier {
     final idx = _appNotifications.indexWhere((n) => n.id == id);
     if (idx >= 0) {
       _appNotifications[idx].isRead = true;
+      _saveNotificationsToPrefs();
       notifyListeners();
     }
   }
@@ -1652,17 +1656,30 @@ class AppState extends ChangeNotifier {
     for (final n in _appNotifications) {
       n.isRead = true;
     }
+    _saveNotificationsToPrefs();
     notifyListeners();
   }
 
   void dismissNotification(String id) {
     _appNotifications.removeWhere((n) => n.id == id);
+    _saveNotificationsToPrefs();
     notifyListeners();
   }
 
   void clearNotifications() {
     _appNotifications.clear();
+    _saveNotificationsToPrefs();
     notifyListeners();
+  }
+
+  Future<void> _saveNotificationsToPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    // Cap at 200 — this list only ever grows otherwise (device adds,
+    // sensor alerts, offline/online events), and nothing currently trims
+    // it, so it would keep accumulating forever without a bound.
+    final capped = _appNotifications.take(200).toList();
+    final jsonList = capped.map((n) => jsonEncode(n.toJson())).toList();
+    await prefs.setStringList('ft_notifications', jsonList);
   }
 
   // ── SharedPreferences persistence ────────────────────────────
@@ -1819,6 +1836,15 @@ class AppState extends ChangeNotifier {
     }
     _removedDeviceIds = (prefs.getStringList('ft_removed_device_ids') ?? [])
         .toSet();
+    // Was never persisted at all — every notification (device-connected,
+    // sensor alert, offline/online) vanished the moment the app process
+    // was killed or restarted, regardless of how recently it fired.
+    final notifJsonList = prefs.getStringList('ft_notifications') ?? [];
+    if (notifJsonList.isNotEmpty) {
+      _appNotifications = notifJsonList
+          .map((s) => AppNotification.fromJson(jsonDecode(s) as Map<String, dynamic>))
+          .toList();
+    }
     final cameraJsonList = prefs.getStringList('ft_cameras') ?? [];
     if (cameraJsonList.isNotEmpty) {
       _cameras = cameraJsonList
