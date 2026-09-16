@@ -143,11 +143,6 @@ class TuyaCloudClient {
             ' (id: tuya_$id, online: $online)');
         if (type == null) continue; // skip hubs only — everything else maps to a type
 
-        // The device-list endpoint includes each device's current DP values
-        // in 'status' — read the on/off one instead of always importing as
-        // off. Different device generations use different codes for the
-        // same concept, so check every switch-like code this app might see.
-        bool isOn = false;
         // 'cur_power' is Tuya's standard live-power DP for metering sockets
         // (kept in the 'cz' category), reported in units of 0.1 W — hence
         // the /10. Devices that don't report it (most switches, and plugs
@@ -158,20 +153,34 @@ class TuyaCloudClient {
         final statusList = d['status'] as List<dynamic>? ?? const [];
         // Every DP Tuya reports for this device, kept verbatim (code →
         // value) — not just the ones this app already understands
-        // (switch/power above). Devices like sensors report vendor- and
+        // (switch/power below). Devices like sensors report vendor- and
         // model-specific config DPs (sensitivity, delay, detection range,
         // etc.) that have no normalized FantaTech capability; surfacing
         // them raw here is what lets the edit sheet offer a "Tuya advanced
         // settings" section for whatever a specific device actually
         // exposes, instead of guessing DP names that vary by model.
         final dps = <String, dynamic>{};
+        // A multi-gang switch (e.g. a 3-way wall switch) reports one DP per
+        // gang — switch_1, switch_2, switch_3 — not a single switch_1 for
+        // "the device". This used to only ever read switch_1, so gang 2 and
+        // 3 were never imported as anything at all (their DPs still landed
+        // in 'dps' above, but no Device was ever created to represent or
+        // control them) — user-reported: a 3-gang "מפסק ראשי" only ever
+        // showed as one switch. Collect every numbered channel found;
+        // channel 1 also accepts the older bare 'switch'/'switch_led' codes
+        // some single-gang devices still use instead of 'switch_1'.
+        final channelStates = <int, bool>{};
+        final channelDpCode = RegExp(r'^switch_(\d+)$');
         for (final s in statusList) {
           final entry = s as Map<String, dynamic>;
           final code = entry['code'] as String?;
           if (code == null) continue;
           dps[code] = entry['value'];
-          if (code == 'switch_1' || code == 'switch' || code == 'switch_led') {
-            isOn = entry['value'] == true;
+          final m = channelDpCode.firstMatch(code);
+          if (m != null) {
+            channelStates[int.parse(m.group(1)!)] = entry['value'] == true;
+          } else if (code == 'switch' || code == 'switch_led') {
+            channelStates[1] = entry['value'] == true;
           } else if (code == 'cur_power') {
             final raw = entry['value'] as num?;
             if (raw != null) watts = raw / 10;
@@ -188,27 +197,49 @@ class TuyaCloudClient {
         // which sensors don't have, so it would silently stay false
         // forever regardless of real motion/contact/leak state).
         final detected = _sensorDetectedFromDps(type, dps);
-        if (detected != null) isOn = detected;
 
-        devices.add(Device(
-          id: 'tuya_$id',
-          name: name,
-          type: type,
-          isOn: isOn,
-          status: online ? DeviceStatus.online : DeviceStatus.offline,
-          source: 'gateway',
-          attributes: {
-            'manufacturer': 'Tuya/Moes',
-            'model': d['product_name'] as String? ?? category,
-            'protocol': 'tuya',
-            'tuyaId': id,
-            'category': category,
-            if (watts != null) 'watts': watts,
-            if (dps.isNotEmpty) 'tuyaDps': dps,
-            if (detected != null)
-              DeviceCapabilities.binaryStateKey(type)!: detected,
-          },
-        ));
+        final baseAttrs = {
+          'manufacturer': 'Tuya/Moes',
+          'model': d['product_name'] as String? ?? category,
+          'protocol': 'tuya',
+          'tuyaId': id,
+          'category': category,
+          if (watts != null) 'watts': watts,
+          if (dps.isNotEmpty) 'tuyaDps': dps,
+          if (detected != null) DeviceCapabilities.binaryStateKey(type)!: detected,
+        };
+
+        if (channelStates.length > 1) {
+          // Real multi-gang device — one Device per gang, same '_chN'
+          // id convention the LAN switch scanner already uses
+          // (smart_switch_hub_screen.dart's _addToHome), so both import
+          // paths produce ids DeviceCommander can route the same way.
+          final channels = channelStates.keys.toList()..sort();
+          for (final ch in channels) {
+            devices.add(Device(
+              id: 'tuya_${id}_ch$ch',
+              // Matches the LAN switch scanner's own multi-channel naming
+              // convention (smart_switch_hub_screen.dart's _addToHome).
+              name: '$name — Channel $ch',
+              type: type,
+              isOn: channelStates[ch]!,
+              status: online ? DeviceStatus.online : DeviceStatus.offline,
+              source: 'gateway',
+              attributes: {...baseAttrs, 'channel': '$ch'},
+            ));
+          }
+        } else {
+          final isOn = detected ?? (channelStates[1] ?? false);
+          devices.add(Device(
+            id: 'tuya_$id',
+            name: name,
+            type: type,
+            isOn: isOn,
+            status: online ? DeviceStatus.online : DeviceStatus.offline,
+            source: 'gateway',
+            attributes: baseAttrs,
+          ));
+        }
       }
 
       if (list.isEmpty) {

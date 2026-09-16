@@ -188,9 +188,13 @@ class DeviceCommander {
     // the LAN-scan Tuya-local path below) ──────────────────────────────────
     // Import (TuyaCloudClient.fetchDevices) added these to AppState but
     // never wired a command path back to them — toggling silently did
-    // nothing. 'switch_1' is the modern Tuya DP code for on/off across both
-    // switch ('kg') and socket ('cz') categories; a small number of older
-    // devices on the legacy 'switch' code won't respond to this yet.
+    // nothing. This used to always send 'switch_1' — wrong for a gang
+    // other than the first on a multi-gang device (TuyaCloudClient now
+    // imports each gang as its own Device, id suffixed '_chN' — see its
+    // channelStates handling) and wrong for the small number of older
+    // devices whose single on/off DP is the legacy bare 'switch' or
+    // 'switch_led' code instead of 'switch_1'. Resolve the real code
+    // instead of assuming it.
     if (id.startsWith('tuya_')) {
       final gw = _gateway(gateways, GatewayType.tuyaSmart) ??
           _gateway(gateways, GatewayType.smartLife);
@@ -203,12 +207,36 @@ class DeviceCommander {
           clientId: clientId, clientSecret: clientSecret, region: region);
       final token = await client.getToken();
       if (token == null) return false;
-      final tuyaDeviceId = id.substring('tuya_'.length);
+
+      final chMatch = RegExp(r'^tuya_(.+)_ch(\d+)$').firstMatch(id);
+      final String tuyaDeviceId;
+      final String dpCode;
+      if (chMatch != null) {
+        tuyaDeviceId = chMatch.group(1)!;
+        dpCode = 'switch_${chMatch.group(2)}';
+      } else {
+        tuyaDeviceId = id.substring('tuya_'.length);
+        // A single (non-multi-gang) device's actual on/off DP — read back
+        // from the raw DP dump TuyaCloudClient.fetchDevices already
+        // stashed at import time, so this targets whichever code the
+        // device really reports instead of guessing 'switch_1' for
+        // everything.
+        final knownDps =
+            (device.attributes['tuyaDps'] as Map?)?.cast<String, dynamic>() ?? const {};
+        dpCode = knownDps.containsKey('switch_1')
+            ? 'switch_1'
+            : knownDps.containsKey('switch')
+                ? 'switch'
+                : knownDps.containsKey('switch_led')
+                    ? 'switch_led'
+                    : 'switch_1';
+      }
+
       return client.sendCommands(
         token: token,
         tuyaDeviceId: tuyaDeviceId,
         commands: [
-          {'code': 'switch_1', 'value': on},
+          {'code': dpCode, 'value': on},
         ],
       );
     }
@@ -302,10 +330,17 @@ class DeviceCommander {
         clientId: clientId, clientSecret: clientSecret, region: region);
     final token = await client.getToken();
     if (token == null) return null;
+    // Strip a multi-gang channel suffix ('_chN') if present — every gang
+    // of a multi-gang device is imported as its own Device
+    // (tuya_<realId>_chN, see TuyaCloudClient's channelStates handling)
+    // but they all share one underlying physical Tuya device id, which is
+    // what the token/DP-refresh calls below actually need.
+    final chMatch = RegExp(r'^tuya_(.+)_ch\d+$').firstMatch(deviceId);
+    final realId = chMatch?.group(1) ?? deviceId.substring('tuya_'.length);
     return (
       client: client,
       token: token,
-      deviceId: deviceId.substring('tuya_'.length),
+      deviceId: realId,
     );
   }
 
