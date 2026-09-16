@@ -146,6 +146,38 @@ class HomeUser {
   );
 }
 
+/// Best-guess sensor DeviceType from a device's own name — null when
+/// nothing matches (so the caller leaves the device's type untouched).
+/// Used only to reclassify a switch/plug device that was actually a
+/// sensor's auxiliary toggle (see the load() backfill that calls this).
+DeviceType? _guessSensorTypeFromName(String name) {
+  final k = name.toLowerCase();
+  if (k.contains('motion') || k.contains('תנועה')) return DeviceType.motionSensor;
+  if (k.contains('door') || k.contains('דלת')) return DeviceType.doorSensor;
+  if (k.contains('window') || k.contains('חלון')) return DeviceType.windowSensor;
+  if (k.contains('smoke') || k.contains('עשן')) return DeviceType.smokeSensor;
+  if (k.contains('gas') || k.contains('גז')) return DeviceType.gasSensor;
+  if (k.contains('water') || k.contains('leak') ||
+      k.contains('מים') || k.contains('נזילה')) return DeviceType.waterLeakSensor;
+  if (k.contains('vibration') || k.contains('tamper') || k.contains('רטט')) {
+    return DeviceType.glassBreakSensor;
+  }
+  if (k.contains('co2')) return DeviceType.co2Sensor;
+  if (k.contains('mailbox') || k.contains('תיבת דואר')) return DeviceType.mailboxSensor;
+  // Temperature/humidity has no dedicated DeviceType — ha_sync_service.dart
+  // maps both to motionSensor too, matched here for consistency. Generic
+  // "sensor"/"detector" wording with no more specific keyword above falls
+  // back to the same bucket rather than staying miscategorized as a switch.
+  if (k.contains('temperature') || k.contains('humidity') ||
+      k.contains('t & h') || k.contains('t&h') ||
+      k.contains('חום') || k.contains('לחות') ||
+      k.contains('sensor') || k.contains('detector') ||
+      k.contains('חיישן') || k.contains('חישן') || k.contains('גלאי')) {
+    return DeviceType.motionSensor;
+  }
+  return null;
+}
+
 class AppState extends ChangeNotifier {
   AppState() {
     _initFromPrefs();
@@ -1704,6 +1736,29 @@ class AppState extends ChangeNotifier {
           if (keep.room.isEmpty && d.room.isNotEmpty) keep.room = d.room;
           _devices.remove(d);
         }
+      }
+      // One-time reclassification: switch_scan_engine.dart's HA scan used
+      // to import ANY `switch.*` entity regardless of what it actually
+      // was — a sensor's own auxiliary toggle (reporting/child-lock/etc.)
+      // lives under that same HA domain and inherits its parent device's
+      // name, so a temperature/humidity sensor or a bathroom motion sensor
+      // could end up added here as a "switch" (user-reported: found sitting
+      // in "מתגי תאורה" among real switches). Fixed going forward at the
+      // scan step, but that doesn't touch devices already added under the
+      // wrong type — only devices added via that scan path are eligible
+      // here (identified the same unambiguous way as the two backfills
+      // above: the 'protocol' attribute, or the 'entityId'+'domain' pair),
+      // so a hand-typed or legitimately-named switch is never touched.
+      for (final d in _devices) {
+        if (d.type != DeviceType.smartSwitch && d.type != DeviceType.smartPlug) {
+          continue;
+        }
+        final fromScan = d.attributes.containsKey('protocol') ||
+            (d.attributes.containsKey('entityId') &&
+                d.attributes.containsKey('domain'));
+        if (!fromScan) continue;
+        final guessed = _guessSensorTypeFromName(d.name);
+        if (guessed != null) d.type = guessed;
       }
       _saveDevicesToPrefs();
     }

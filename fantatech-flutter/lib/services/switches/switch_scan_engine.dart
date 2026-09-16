@@ -760,6 +760,23 @@ class SwitchScanEngine extends ChangeNotifier {
         final friendName = attrs['friendly_name'] as String? ?? entityId;
         final isOn     = state == 'on';
 
+        // A `switch.*` entity is HA's own domain for "this is controllable",
+        // but a sensor's own auxiliary toggle (reporting/child-lock/enable)
+        // lives under that same domain and inherits the parent device's
+        // name — e.g. `switch.t_h_sensor_xxx` named "T & H Sensor" — so
+        // domain alone let real sensors into this switches list (user-
+        // reported: a temperature/humidity sensor and a bathroom sensor
+        // both showed up under "מתגי תאורה"). `/api/states` doesn't expose
+        // HA's entity_category (that needs the entity registry, a separate
+        // API this scanner doesn't call), so fall back to the name/id
+        // itself — every reported case had an unambiguous "sensor" word in
+        // it. Not a universal fix (a switch named e.g. "Hallway Sensor
+        // Light" would still be excluded), but far better than importing
+        // every switch-domain entity unconditionally.
+        if (_looksLikeSensorName(friendName) || _looksLikeSensorName(entityId)) {
+          continue;
+        }
+
         _addDevice(SmartSwitchDevice(
           id:       'ha_$entityId',
           name:     friendName,
@@ -784,6 +801,17 @@ class SwitchScanEngine extends ChangeNotifier {
       _setProtocol(SwitchProtocol.haRest, ProtocolScanStatus.error,
           message: e.toString().substring(0, e.toString().length.clamp(0, 40)));
     }
+  }
+
+  static const _sensorNameHints = [
+    'sensor', 'detector', 'temperature', 'humidity', 'motion', 'contact',
+    'leak', 'smoke', 'gas', 'vibration',
+    'חיישן', 'חישן', 'גלאי', 'ניטור',
+  ];
+
+  bool _looksLikeSensorName(String text) {
+    final lower = text.toLowerCase();
+    return _sensorNameHints.any((k) => lower.contains(k));
   }
 
   // ── Zigbee2MQTT ───────────────────────────────────────────────────────────

@@ -58,7 +58,10 @@ extension DeviceStatusX on DeviceStatus {
 class Device {
   final String id;
   String name;
-  final DeviceType type;
+  // Not final: the one-time reclassification backfill in AppState.load()
+  // corrects devices that were imported under the wrong type (see its
+  // comment) and needs to mutate this in place.
+  DeviceType type;
   DeviceStatus status;
   bool isOn;
   Map<String, dynamic> attributes;
