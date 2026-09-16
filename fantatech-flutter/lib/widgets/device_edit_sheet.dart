@@ -47,6 +47,11 @@ Future<void> showEntityEditSheet(
   // rather than guessed at.
   Map<String, dynamic>? tuyaDps,
   void Function(String code, dynamic value)? onSetTuyaDp,
+  // Optional — when provided, shows a "refresh from Tuya" action that
+  // re-fetches this device's full current DP set on demand (the bulk
+  // import list can be a trimmed subset for some categories/models) and
+  // returns the fresh map, or null on failure.
+  Future<Map<String, dynamic>?> Function()? onRefreshTuyaDps,
 }) {
   HapticFeedback.mediumImpact();
   return showModalBottomSheet(
@@ -67,6 +72,7 @@ Future<void> showEntityEditSheet(
       onSchedule: onSchedule,
       tuyaDps: tuyaDps,
       onSetTuyaDp: onSetTuyaDp,
+      onRefreshTuyaDps: onRefreshTuyaDps,
     ),
   );
 }
@@ -98,6 +104,14 @@ Future<void> showDeviceEditSheet(
     tuyaDps: (device.attributes['tuyaDps'] as Map?)?.cast<String, dynamic>(),
     onSetTuyaDp: device.id.startsWith('tuya_')
         ? (code, value) => state.setTuyaDp(device.id, code, value)
+        : null,
+    onRefreshTuyaDps: device.id.startsWith('tuya_')
+        ? () async {
+            final ok = await state.refreshTuyaDps(device.id);
+            return ok
+                ? (device.attributes['tuyaDps'] as Map?)?.cast<String, dynamic>()
+                : null;
+          }
         : null,
   );
 }
@@ -163,6 +177,7 @@ class _EntityEditSheet extends StatefulWidget {
   final VoidCallback? onSchedule;
   final Map<String, dynamic>? tuyaDps;
   final void Function(String code, dynamic value)? onSetTuyaDp;
+  final Future<Map<String, dynamic>?> Function()? onRefreshTuyaDps;
 
   const _EntityEditSheet({
     required this.currentName,
@@ -178,6 +193,7 @@ class _EntityEditSheet extends StatefulWidget {
     this.onSchedule,
     this.tuyaDps,
     this.onSetTuyaDp,
+    this.onRefreshTuyaDps,
   });
 
   @override
@@ -187,6 +203,26 @@ class _EntityEditSheet extends StatefulWidget {
 class _EntityEditSheetState extends State<_EntityEditSheet> {
   late final TextEditingController _ctrl =
       TextEditingController(text: widget.currentName);
+  late Map<String, dynamic>? _tuyaDps = widget.tuyaDps;
+  bool _refreshingTuya = false;
+
+  Future<void> _refreshTuyaDps() async {
+    final cb = widget.onRefreshTuyaDps;
+    if (cb == null || _refreshingTuya) return;
+    setState(() => _refreshingTuya = true);
+    final fresh = await cb();
+    if (!mounted) return;
+    setState(() {
+      _refreshingTuya = false;
+      if (fresh != null) _tuyaDps = fresh;
+    });
+    if (fresh == null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('לא הצלחנו לרענן מ-Tuya — בדוק חיבור לאינטרנט ונסה שוב'),
+        backgroundColor: AppColors.unsecured,
+      ));
+    }
+  }
 
   @override
   void dispose() {
@@ -447,26 +483,58 @@ class _EntityEditSheetState extends State<_EntityEditSheet> {
               ),
             ),
           ],
-          if (widget.tuyaDps != null &&
-              widget.tuyaDps!.isNotEmpty &&
-              widget.onSetTuyaDp != null) ...[
+          if (widget.onSetTuyaDp != null || widget.onRefreshTuyaDps != null) ...[
             const SizedBox(height: 16),
-            Text('הגדרות מתקדמות (Tuya)',
-                style: TextStyle(
-                    color: context.tText2(0.5),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700)),
+            Row(children: [
+              Expanded(
+                child: Text('הגדרות מתקדמות (Tuya)',
+                    style: TextStyle(
+                        color: context.tText2(0.5),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700)),
+              ),
+              if (widget.onRefreshTuyaDps != null)
+                GestureDetector(
+                  onTap: _refreshingTuya ? null : _refreshTuyaDps,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (_refreshingTuya)
+                        SizedBox(
+                          width: 12, height: 12,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: color),
+                        )
+                      else
+                        Icon(Symbols.refresh, size: 14, color: color),
+                      const SizedBox(width: 4),
+                      Text('רענן מ-Tuya',
+                          style: TextStyle(
+                              color: color,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700)),
+                    ],
+                  ),
+                ),
+            ]),
             const SizedBox(height: 2),
             Text(
                 'ערכים גולמיים שהמכשיר מדווח לענן Tuya — לא כל שורה בהכרח ניתנת לעריכה.',
                 style: TextStyle(color: context.tText2(0.4), fontSize: 10.5)),
             const SizedBox(height: 8),
-            ...widget.tuyaDps!.entries.map((e) => _TuyaDpRow(
-                  code: e.key,
-                  value: e.value,
-                  color: color,
-                  onSet: widget.onSetTuyaDp!,
-                )),
+            if (_tuyaDps == null || _tuyaDps!.isEmpty)
+              Text(
+                  _refreshingTuya
+                      ? 'טוען...'
+                      : 'לא נמצאו הגדרות נוספות למכשיר הזה.',
+                  style: TextStyle(color: context.tText2(0.4), fontSize: 12))
+            else if (widget.onSetTuyaDp != null)
+              ..._tuyaDps!.entries.map((e) => _TuyaDpRow(
+                    code: e.key,
+                    value: e.value,
+                    color: color,
+                    onSet: widget.onSetTuyaDp!,
+                  )),
           ],
           const SizedBox(height: 10),
           GestureDetector(

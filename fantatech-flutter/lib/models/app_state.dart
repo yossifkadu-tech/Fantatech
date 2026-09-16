@@ -990,6 +990,24 @@ class AppState extends ChangeNotifier {
     return ok;
   }
 
+  /// Re-fetches every DP Tuya currently reports for device [id] and
+  /// replaces `attributes['tuyaDps']` with the fresh set — see
+  /// [DeviceCommander.refreshTuyaDps]. Returns true if the fetch itself
+  /// succeeded (an empty DP set is still a successful fetch, not a
+  /// failure — some device categories/models genuinely report none).
+  Future<bool> refreshTuyaDps(String id) async {
+    final idx = _devices.indexWhere((d) => d.id == id);
+    if (idx == -1) return false;
+    final device = _devices[idx];
+    final gw = _gateways;
+    if (gw == null) return false;
+    final fresh = await DeviceCommander.refreshTuyaDps(device, gateways: gw);
+    if (fresh == null) return false;
+    device.attributes = {...device.attributes, 'tuyaDps': fresh};
+    notifyListeners();
+    return true;
+  }
+
   /// Awaitable brightness set (0-100) — same "confirm before claiming
   /// success" contract as [setDevicePower], for the AI agent.
   Future<bool> agentSetBrightness(String id, int level) async {

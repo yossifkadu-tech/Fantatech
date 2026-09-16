@@ -237,27 +237,55 @@ class DeviceCommander {
     dynamic value, {
     required GatewayManager gateways,
   }) async {
-    final id = device.id;
-    if (!id.startsWith('tuya_')) return false;
+    final auth = await _tuyaAuth(device.id, gateways);
+    if (auth == null) return false;
+    return auth.client.sendCommands(
+      token: auth.token,
+      tuyaDeviceId: auth.deviceId,
+      commands: [
+        {'code': code, 'value': value},
+      ],
+    );
+  }
 
+  /// Re-fetches every DP Tuya currently has for [device] via the
+  /// single-device status endpoint — more reliable than what
+  /// [TuyaCloudClient.fetchDevices]'s bulk list call captured at import
+  /// time, which can be a trimmed subset for some categories/models. Used
+  /// by the edit sheet's "advanced settings" refresh action. Returns null
+  /// on any failure (no credentials, not a Tuya device, network error).
+  static Future<Map<String, dynamic>?> refreshTuyaDps(
+    Device device, {
+    required GatewayManager gateways,
+  }) async {
+    final auth = await _tuyaAuth(device.id, gateways);
+    if (auth == null) return null;
+    return auth.client.fetchDeviceStatus(
+        token: auth.token, tuyaDeviceId: auth.deviceId);
+  }
+
+  /// Shared credential/token lookup for the Tuya Cloud methods above.
+  static Future<
+      ({TuyaCloudClient client, String token, String deviceId})?> _tuyaAuth(
+    String deviceId,
+    GatewayManager gateways,
+  ) async {
+    if (!deviceId.startsWith('tuya_')) return null;
     final gw = _gateway(gateways, GatewayType.tuyaSmart) ??
         _gateway(gateways, GatewayType.smartLife);
-    if (gw == null) return false;
+    if (gw == null) return null;
     final clientId     = gw.credentials['clientId'];
     final clientSecret = gw.credentials['clientSecret'];
-    if (clientId == null || clientSecret == null) return false;
+    if (clientId == null || clientSecret == null) return null;
     final region = TuyaRegionHost.fromName(gw.credentials['region']);
     final client = TuyaCloudClient(
         clientId: clientId, clientSecret: clientSecret, region: region);
     final token = await client.getToken();
-    if (token == null) return false;
-    final tuyaDeviceId = id.substring('tuya_'.length);
-    return client.sendCommands(
+    if (token == null) return null;
+    return (
+      client: client,
       token: token,
-      tuyaDeviceId: tuyaDeviceId,
-      commands: [
-        {'code': code, 'value': value},
-      ],
+      deviceId: deviceId.substring('tuya_'.length),
     );
   }
 

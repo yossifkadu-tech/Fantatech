@@ -351,6 +351,37 @@ class TuyaCloudClient {
   // ── Fetch token (public for repository use) ───────────────────────────────
   Future<String?> getToken() => _getToken();
 
+  // ── Fetch one device's live status (all DPs) ───────────────────────────────
+  /// GET /v1.0/devices/{id}/status — returns every DP Tuya currently has for
+  /// this device (code → value), as a map. Deliberately separate from the
+  /// bulk associated-users/devices list used by [fetchDevices]: that list
+  /// endpoint's per-device 'status' can be a trimmed subset for some
+  /// categories/models, so this single-device endpoint is the reliable way
+  /// to pull a device's full current DP set on demand (e.g. an "advanced
+  /// settings" refresh button in the edit sheet), not just at import time.
+  Future<Map<String, dynamic>?> fetchDeviceStatus({
+    required String token,
+    required String tuyaDeviceId,
+  }) async {
+    final resp =
+        await _signedGet('/v1.0/devices/$tuyaDeviceId/status', token);
+    if (resp == null) return null;
+    try {
+      final body = jsonDecode(resp) as Map<String, dynamic>;
+      if (body['success'] != true) return null;
+      final list = body['result'] as List<dynamic>? ?? const [];
+      final dps = <String, dynamic>{};
+      for (final entry in list) {
+        final e = entry as Map<String, dynamic>;
+        final code = e['code'] as String?;
+        if (code != null) dps[code] = e['value'];
+      }
+      return dps;
+    } catch (_) {
+      return null;
+    }
+  }
+
   // ── Signed POST (business request) ───────────────────────────────────────
   Future<String?> _signedPost(String path, String token, String body) async {
     final t        = DateTime.now().millisecondsSinceEpoch.toString();
