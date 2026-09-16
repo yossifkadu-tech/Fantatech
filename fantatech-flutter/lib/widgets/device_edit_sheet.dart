@@ -7,6 +7,7 @@ import '../models/app_state.dart';
 import '../models/device.dart';
 import '../models/device_capabilities.dart';
 import '../models/media_module.dart';
+import '../services/gateways/clients/tuya_cloud_client.dart';
 import '../theme/app_theme.dart';
 import '../theme/device_icons.dart';
 import 'schedule_sheet.dart';
@@ -205,16 +206,23 @@ class _EntityEditSheetState extends State<_EntityEditSheet> {
       TextEditingController(text: widget.currentName);
   late Map<String, dynamic>? _tuyaDps = widget.tuyaDps;
   bool _refreshingTuya = false;
+  // Populated after a refresh — the exact request/response Tuya's API gave
+  // (see TuyaCloudClient.lastStatusRawResponse), shown when the DP list
+  // comes back empty so "genuinely no settings" can be told apart from a
+  // masked API error instead of both looking identical.
+  String? _tuyaDiagnostic;
 
   Future<void> _refreshTuyaDps() async {
     final cb = widget.onRefreshTuyaDps;
     if (cb == null || _refreshingTuya) return;
     setState(() => _refreshingTuya = true);
     final fresh = await cb();
+    final diagnostic = TuyaCloudClient.lastStatusRawResponse;
     if (!mounted) return;
     setState(() {
       _refreshingTuya = false;
       if (fresh != null) _tuyaDps = fresh;
+      _tuyaDiagnostic = diagnostic;
     });
     if (fresh == null && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -522,13 +530,29 @@ class _EntityEditSheetState extends State<_EntityEditSheet> {
                 'ערכים גולמיים שהמכשיר מדווח לענן Tuya — לא כל שורה בהכרח ניתנת לעריכה.',
                 style: TextStyle(color: context.tText2(0.4), fontSize: 10.5)),
             const SizedBox(height: 8),
-            if (_tuyaDps == null || _tuyaDps!.isEmpty)
+            if (_tuyaDps == null || _tuyaDps!.isEmpty) ...[
               Text(
                   _refreshingTuya
                       ? 'טוען...'
                       : 'לא נמצאו הגדרות נוספות למכשיר הזה.',
-                  style: TextStyle(color: context.tText2(0.4), fontSize: 12))
-            else if (widget.onSetTuyaDp != null)
+                  style: TextStyle(color: context.tText2(0.4), fontSize: 12)),
+              if (!_refreshingTuya &&
+                  _tuyaDiagnostic != null &&
+                  _tuyaDiagnostic!.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text('פרטים טכניים (לצורך אבחון):',
+                    style: TextStyle(
+                        color: context.tText2(0.4),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600)),
+                const SizedBox(height: 2),
+                SelectableText(_tuyaDiagnostic!,
+                    style: TextStyle(
+                        color: context.tText2(0.4),
+                        fontSize: 9.5,
+                        fontFamily: 'monospace')),
+              ],
+            ] else if (widget.onSetTuyaDp != null)
               ..._tuyaDps!.entries.map((e) => _TuyaDpRow(
                     code: e.key,
                     value: e.value,

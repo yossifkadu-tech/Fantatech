@@ -57,6 +57,13 @@ class TuyaCloudClient {
   /// silently showing "0 imported".
   static String lastRawSummary = '';
 
+  /// Same idea as [lastRawSummary] but for the last [fetchDeviceStatus]
+  /// call — the exact request path and raw response body, so a "no DPs
+  /// returned" result can be told apart from a masked API error (wrong
+  /// API version enabled on the project, missing subscription, etc.)
+  /// instead of both looking identical to the caller.
+  static String lastStatusRawResponse = '';
+
   final String clientId;
   final String clientSecret;
   final TuyaRegion region;
@@ -363,9 +370,13 @@ class TuyaCloudClient {
     required String token,
     required String tuyaDeviceId,
   }) async {
-    final resp =
-        await _signedGet('/v1.0/devices/$tuyaDeviceId/status', token);
-    if (resp == null) return null;
+    final path = '/v1.0/devices/$tuyaDeviceId/status';
+    final resp = await _signedGet(path, token);
+    if (resp == null) {
+      lastStatusRawResponse = 'No response from Tuya (network/timeout) for $path.';
+      return null;
+    }
+    lastStatusRawResponse = 'GET $path\n$resp';
     try {
       final body = jsonDecode(resp) as Map<String, dynamic>;
       if (body['success'] != true) return null;
