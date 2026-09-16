@@ -22,6 +22,12 @@ class _AutomationsScreenState extends State<AutomationsScreen> {
   int _tabIndex = 0; // 0 = all, 1 = recommendations
 
   // Shabbat automations — resolved in the current language.
+  // Left without a triggerType (same as before): candle-lighting/havdalah
+  // times move every week with sunset and location (halachic zmanim) —
+  // there's no zmanim calculation anywhere in this app, so a fixed
+  // triggerHour would just be wrong most weeks. Needs a real zmanim
+  // source (and the user's location) before this can fire correctly,
+  // not a guessed constant.
   List<_AutomationMeta> _shabbatAutomationsFor(S s) => [
     _AutomationMeta(
       recKey: 'shabbat_candles',
@@ -50,6 +56,15 @@ class _AutomationsScreenState extends State<AutomationsScreen> {
       iconColor: const Color(0xFFFFB300),
       name: s.recPeakName,
       description: s.recPeakDesc,
+      // "Turn off non-essential devices between 17:00-20:00" — the engine
+      // only supports a single fire time, not a window, so this fires at
+      // the start of the window. turnOff with no specific device targets
+      // lights only (see AutomationEngine._executeAction) — the closest
+      // built-in match to "non-essential" the engine actually has.
+      triggerType: 'time',
+      triggerHour: 17,
+      triggerMinute: 0,
+      actionType: 'turnOff',
     ),
     _AutomationMeta(
       recKey: 'travel',
@@ -58,6 +73,15 @@ class _AutomationsScreenState extends State<AutomationsScreen> {
       iconColor: AppColors.primary,
       name: s.recTravelName,
       description: s.recTravelDesc,
+      // "Full security when out of town" needs arrival/geofence detection
+      // — AutomationEngine explicitly documents this as not implemented
+      // (no location plumbing at all yet). Recorded as the correct intent
+      // anyway so it starts working automatically the day that lands,
+      // same as a user manually picking "arrival" in the add wizard today
+      // — but until then this recommendation, once activated, will show
+      // as enabled without ever actually firing.
+      triggerType: 'arrival',
+      actionType: 'lock',
     ),
     _AutomationMeta(
       recKey: 'temp',
@@ -66,6 +90,13 @@ class _AutomationsScreenState extends State<AutomationsScreen> {
       iconColor: const Color(0xFFEA4335),
       name: s.recTempName,
       description: s.recTempDesc,
+      // "Keep 22° when someone is home" needs two things the engine can't
+      // supply from a generic template: which specific occupancy sensor
+      // means "someone's home" (the "sensor" trigger type requires one
+      // exact device id), and a set-temperature action (the engine only
+      // has turnOn/turnOff/lock/unlock/openBlind/closeBlind — no
+      // setpoint). Left unwired; needs the user to pick a sensor + AC
+      // unit before this can mean anything specific.
     ),
   ];
 
@@ -466,6 +497,10 @@ class _RecommendationsList extends StatelessWidget {
             name: item.name,
             condition: '',
             action: item.description,
+            triggerType: item.triggerType,
+            triggerHour: item.triggerHour,
+            triggerMinute: item.triggerMinute,
+            actionType: item.actionType,
           ));
         }
       },
@@ -481,6 +516,10 @@ class _RecommendationsList extends StatelessWidget {
             name: name.isEmpty ? item.name : name,
             condition: cond,
             action: action,
+            triggerType: item.triggerType,
+            triggerHour: item.triggerHour,
+            triggerMinute: item.triggerMinute,
+            actionType: item.actionType,
           ));
         }
       },
@@ -1554,6 +1593,16 @@ class _AutomationMeta {
   /// enabled state instead of being a no-op.
   final String recKey;
 
+  // ── What AutomationEngine actually runs, once this becomes a real
+  // Automation — null fields mean "not wired up yet" (see per-item notes
+  // where these are set: some recommendations need a capability the
+  // engine doesn't have at all yet, e.g. arrival/geofencing, halachic
+  // Shabbat times, or a temperature-setpoint action).
+  final String? triggerType;
+  final int? triggerHour;
+  final int? triggerMinute;
+  final String? actionType;
+
   const _AutomationMeta({
     required this.icon,
     required this.iconBg,
@@ -1561,6 +1610,10 @@ class _AutomationMeta {
     required this.name,
     required this.description,
     required this.recKey,
+    this.triggerType,
+    this.triggerHour,
+    this.triggerMinute,
+    this.actionType,
   });
 }
 
