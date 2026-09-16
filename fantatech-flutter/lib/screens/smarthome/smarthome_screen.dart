@@ -408,9 +408,13 @@ class _CategoryChip extends StatelessWidget {
               ? Opacity(
                   opacity: hidden ? 0.45 : 1.0,
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(6),
+                    // Same footprint as the Icon it replaces (22) — a
+                    // bigger photo overflowed this chip's fixed height
+                    // (the outer row is a fixed SizedBox(height: 80), no
+                    // room to grow).
                     child: Image.asset(photoAsset!,
-                        width: 26, height: 26, fit: BoxFit.cover),
+                        width: 22, height: 22, fit: BoxFit.cover),
                   ),
                 )
               : Icon(icon, color: effectiveColor, size: 22),
