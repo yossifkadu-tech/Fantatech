@@ -401,31 +401,31 @@ class _CategoryChip extends StatelessWidget {
         ),
       ),
       padding: const EdgeInsets.symmetric(vertical: 10),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          photoAsset != null
-              ? Opacity(
-                  opacity: hidden ? 0.45 : 1.0,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(6),
-                    // Same footprint as the Icon it replaces (22) — a
-                    // bigger photo overflowed this chip's fixed height
-                    // (the outer row is a fixed SizedBox(height: 80), no
-                    // room to grow).
-                    child: Image.asset(photoAsset!,
-                        width: 22, height: 22, fit: BoxFit.cover),
-                  ),
-                )
-              : Icon(icon, color: effectiveColor, size: 22),
-          const SizedBox(height: 4),
-          // FittedBox guards against a fixed-width chip overflowing when
-          // the device's font-scale setting is large — same fix already
-          // applied to devices_screen.dart's category chips and
-          // home_screen.dart's system-status cards this session.
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
+      // The whole column (icon/photo + label + count) is wrapped in a
+      // FittedBox — the outer row is a fixed SizedBox(height: 80), and on
+      // a device with a larger system font-scale setting the column's
+      // natural height exceeds that budget even with nothing but the
+      // plain icon (user-reported: every chip overflowed by a few pixels,
+      // not just the ones with a photo) — same fix already applied to
+      // devices_screen.dart's category chips and home_screen.dart's
+      // system-status cards this session, just not here yet.
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            photoAsset != null
+                ? Opacity(
+                    opacity: hidden ? 0.45 : 1.0,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: Image.asset(photoAsset!,
+                          width: 22, height: 22, fit: BoxFit.cover),
+                    ),
+                  )
+                : Icon(icon, color: effectiveColor, size: 22),
+            const SizedBox(height: 4),
+            Text(
               label,
               maxLines: 1,
               style: TextStyle(
@@ -433,13 +433,13 @@ class _CategoryChip extends StatelessWidget {
                   fontSize: 11,
                   fontWeight: FontWeight.w600),
             ),
-          ),
-          Text(
-            '$count',
-            style: theme.textTheme.bodySmall
-                ?.copyWith(color: context.tText2(hidden ? 0.28 : 0.55)),
-          ),
-        ],
+            Text(
+              '$count',
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: context.tText2(hidden ? 0.28 : 0.55)),
+            ),
+          ],
+        ),
       ),
     );
 
