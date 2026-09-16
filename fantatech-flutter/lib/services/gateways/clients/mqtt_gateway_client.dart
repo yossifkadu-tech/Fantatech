@@ -141,7 +141,10 @@ class MQTTGatewayClient {
     final dc = (cfg['device_class'] as String? ?? '').toLowerCase();
     switch (domain) {
       case 'light':          return DeviceType.light;
-      case 'switch':         return DeviceType.smartSwitch;
+      // Same MQTT-discovery device_class convention HA itself uses:
+      // 'outlet' means a smart plug, not a generic switch.
+      case 'switch':
+        return dc == 'outlet' ? DeviceType.smartPlug : DeviceType.smartSwitch;
       case 'cover':          return DeviceType.blind;
       case 'fan':            return DeviceType.airConditioner;
       case 'climate':        return DeviceType.airConditioner;

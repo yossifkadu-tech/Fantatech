@@ -174,7 +174,18 @@ class HaImportService {
       DeviceType? type;
       switch (domain) {
         case 'light':  type = DeviceType.light;       lights++;   break;
-        case 'switch': type = DeviceType.smartSwitch; switches++; break;
+        // HA's own `switch` domain distinguishes a smart plug from a
+        // generic switch via device_class: 'outlet' — an authoritative
+        // signal (set by the integration itself), not a guess. Still
+        // counted under `switches` for the import summary — that count
+        // isn't split by plug/switch today, only the actual device type
+        // assigned below needs to be correct.
+        case 'switch':
+          type = (attrs['device_class'] as String?) == 'outlet'
+              ? DeviceType.smartPlug
+              : DeviceType.smartSwitch;
+          switches++;
+          break;
         case 'input_boolean':
                        type = DeviceType.smartSwitch; switches++; break;
         case 'binary_sensor':

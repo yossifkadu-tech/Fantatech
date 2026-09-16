@@ -216,7 +216,15 @@ class HaSyncService {
   static DeviceType? _domainToType(HaEntity e) {
     switch (e.domain) {
       case 'light':               return DeviceType.light;
-      case 'switch':              return DeviceType.smartSwitch;
+      // HA's own `switch` domain distinguishes a smart plug from a generic
+      // switch via device_class: 'outlet' — an authoritative signal (set
+      // by the integration itself), not a guess like the LAN-scanner
+      // classifier has to use. No device_class (or anything else) stays
+      // smartSwitch, same as before.
+      case 'switch':
+        return e.deviceClass == 'outlet'
+            ? DeviceType.smartPlug
+            : DeviceType.smartSwitch;
       case 'cover':               return DeviceType.blind;
       // Smart valves/faucets (water, gas) — HA's `valve` domain uses the
       // same open/closed/position semantics as `cover`, so it reuses the
