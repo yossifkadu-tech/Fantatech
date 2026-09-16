@@ -93,8 +93,10 @@ Future<void> showDeviceEditSheet(
     s: state.strings,
     onRename: (name) => state.updateDeviceName(device.id, name),
     onDelete: () => state.removeDevice(device.id),
-    rooms: state.rooms.map((r) => r['name'] as String? ?? '')
-        .where((r) => r.isNotEmpty).toList(),
+    rooms: state.rooms
+        .map((r) => r['name'] as String? ?? '')
+        .where((r) => r.isNotEmpty)
+        .toList(),
     currentRoom: device.room,
     onAssignRoom: (room) => state.updateDeviceRoom(device.id, room),
     ipAddress: device.attributes['ip'] as String?,
@@ -110,7 +112,8 @@ Future<void> showDeviceEditSheet(
         ? () async {
             final ok = await state.refreshTuyaDps(device.id);
             return ok
-                ? (device.attributes['tuyaDps'] as Map?)?.cast<String, dynamic>()
+                ? (device.attributes['tuyaDps'] as Map?)
+                    ?.cast<String, dynamic>()
                 : null;
           }
         : null,
@@ -126,10 +129,10 @@ Future<void> showMediaEditSheet(
   required AppState state,
 }) {
   final icon = switch (device.kind) {
-    MediaDeviceKind.tv        => Symbols.tv,
-    MediaDeviceKind.soundbar  => Symbols.speaker_group,
-    MediaDeviceKind.speaker   => Symbols.speaker,
-    _                         => Symbols.cast,
+    MediaDeviceKind.tv => Symbols.tv,
+    MediaDeviceKind.soundbar => Symbols.speaker_group,
+    MediaDeviceKind.speaker => Symbols.speaker,
+    _ => Symbols.cast,
   };
   return showEntityEditSheet(
     context,
@@ -139,8 +142,10 @@ Future<void> showMediaEditSheet(
     s: state.strings,
     onRename: (name) => state.updateMediaDeviceName(device.id, name),
     onDelete: () => state.removeMediaDevice(device.id),
-    rooms: state.rooms.map((r) => r['name'] as String? ?? '')
-        .where((r) => r.isNotEmpty).toList(),
+    rooms: state.rooms
+        .map((r) => r['name'] as String? ?? '')
+        .where((r) => r.isNotEmpty)
+        .toList(),
     currentRoom: device.room,
     onAssignRoom: (room) => state.updateMediaDeviceRoom(device.id, room),
   );
@@ -245,13 +250,15 @@ class _EntityEditSheetState extends State<_EntityEditSheet> {
       builder: (ctx) => AlertDialog(
         backgroundColor: sheetContext.tCard,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(widget.currentName, style: TextStyle(color: sheetContext.tText)),
+        title: Text(widget.currentName,
+            style: TextStyle(color: sheetContext.tText)),
         content: Text(s.deviceDeleteConfirm,
             style: TextStyle(color: sheetContext.tText2(0.65))),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text(s.cancel, style: TextStyle(color: sheetContext.tText2(0.6))),
+            child: Text(s.cancel,
+                style: TextStyle(color: sheetContext.tText2(0.6))),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -294,7 +301,8 @@ class _EntityEditSheetState extends State<_EntityEditSheet> {
       debugPrint('[_showRoomPicker] error: $e\n$st');
       if (sheetContext.mounted) {
         ScaffoldMessenger.of(sheetContext).showSnackBar(
-          SnackBar(content: Text('שגיאה בשיוך חדר: $e'),
+          SnackBar(
+              content: Text('שגיאה בשיוך חדר: $e'),
               backgroundColor: Colors.red.shade700),
         );
       }
@@ -313,278 +321,303 @@ class _EntityEditSheetState extends State<_EntityEditSheet> {
         color: context.tCard,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Center(
-            child: Container(
-              width: 36, height: 4,
-              margin: const EdgeInsets.only(bottom: 18),
-              decoration: BoxDecoration(
-                color: context.tText2(0.15),
-                borderRadius: BorderRadius.circular(2),
+      // Scrollable — the Tuya advanced-settings section (esp. its raw
+      // diagnostic dump) has unbounded height, unlike the rest of this
+      // sheet's fixed-size rows; without this it silently overflowed the
+      // screen instead of scrolling.
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 18),
+                decoration: BoxDecoration(
+                  color: context.tText2(0.15),
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
-          ),
-          Row(children: [
-            Container(
-              width: 40, height: 40,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(11),
-              ),
-              child: Icon(widget.icon, color: color, size: 20),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                s.deviceNameLabel,
-                style: TextStyle(
-                    color: context.tText2(0.55),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500),
-              ),
-            ),
-          ]),
-          if (widget.ipAddress != null && widget.ipAddress!.isNotEmpty) ...[
-            const SizedBox(height: 10),
             Row(children: [
-              Icon(Symbols.lan, color: context.tText2(0.4), size: 15),
-              const SizedBox(width: 6),
-              Text('${s.ipAddressLabel}: ',
-                  style: TextStyle(color: context.tText2(0.45), fontSize: 12)),
-              Text(widget.ipAddress!,
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(11),
+                ),
+                child: Icon(widget.icon, color: color, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  s.deviceNameLabel,
                   style: TextStyle(
-                      color: context.tText2(0.7),
+                      color: context.tText2(0.55),
                       fontSize: 12,
-                      fontWeight: FontWeight.w600)),
+                      fontWeight: FontWeight.w500),
+                ),
+              ),
             ]),
-          ],
-          const SizedBox(height: 16),
-          TextField(
-            controller: _ctrl,
-            autofocus: true,
-            style: TextStyle(
-                color: context.tText, fontSize: 15, fontWeight: FontWeight.w600),
-            decoration: InputDecoration(
-              filled: true,
-              fillColor: context.tText2(0.05),
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: color.withValues(alpha: 0.50), width: 1.5),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(children: [
-            Expanded(
-              child: GestureDetector(
-                onTap: () {
-                  final name = _ctrl.text.trim();
-                  if (name.isNotEmpty && name != widget.currentName) {
-                    widget.onRename(name);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(s.deviceRenamed), backgroundColor: color),
-                    );
-                  }
-                  Navigator.pop(context);
-                },
-                child: Container(
-                  height: 44,
-                  decoration:
-                      BoxDecoration(color: color, borderRadius: BorderRadius.circular(12)),
-                  child: Center(
-                    child: Text(s.save,
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700)),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: Container(
-                  height: 44,
-                  decoration: BoxDecoration(
-                      color: context.tText2(0.07), borderRadius: BorderRadius.circular(12)),
-                  child: Center(
-                    child: Text(s.cancel,
-                        style: TextStyle(
-                            color: context.tText2(0.65),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600)),
-                  ),
-                ),
-              ),
-            ),
-          ]),
-          if (widget.onAssignRoom != null) ...[
-            const SizedBox(height: 10),
-            GestureDetector(
-              onTap: () => _showRoomPicker(context),
-              child: Container(
-                height: 44,
-                padding: const EdgeInsets.symmetric(horizontal: 14),
-                decoration: BoxDecoration(
-                  color: context.tText2(0.05),
+            if (widget.ipAddress != null && widget.ipAddress!.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Row(children: [
+                Icon(Symbols.lan, color: context.tText2(0.4), size: 15),
+                const SizedBox(width: 6),
+                Text('${s.ipAddressLabel}: ',
+                    style:
+                        TextStyle(color: context.tText2(0.45), fontSize: 12)),
+                Text(widget.ipAddress!,
+                    style: TextStyle(
+                        color: context.tText2(0.7),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600)),
+              ]),
+            ],
+            const SizedBox(height: 16),
+            TextField(
+              controller: _ctrl,
+              autofocus: true,
+              style: TextStyle(
+                  color: context.tText,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600),
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: context.tText2(0.05),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+                border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
                 ),
-                child: Row(
-                  children: [
-                    Icon(Symbols.meeting_room, color: context.tText2(0.6), size: 18),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(s.assignRoom,
-                          style: TextStyle(
-                              color: context.tText,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600)),
-                    ),
-                    Text(
-                      (widget.currentRoom == null || widget.currentRoom!.isEmpty)
-                          ? s.noRoom
-                          : s.translateRoomKey(widget.currentRoom!),
-                      style: TextStyle(color: context.tText2(0.45), fontSize: 13),
-                    ),
-                    Icon(Symbols.chevron_right, color: context.tText2(0.35), size: 16),
-                  ],
-                ),
-              ),
-            ),
-          ],
-          if (widget.onSchedule != null) ...[
-            const SizedBox(height: 10),
-            GestureDetector(
-              onTap: widget.onSchedule,
-              child: Container(
-                height: 44,
-                padding: const EdgeInsets.symmetric(horizontal: 14),
-                decoration: BoxDecoration(
-                  color: context.tText2(0.05),
+                focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Symbols.schedule, color: context.tText2(0.6), size: 18),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(s.boilerSchedule,
-                          style: TextStyle(
-                              color: context.tText,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600)),
-                    ),
-                    Icon(Symbols.chevron_right, color: context.tText2(0.35), size: 16),
-                  ],
+                  borderSide: BorderSide(
+                      color: color.withValues(alpha: 0.50), width: 1.5),
                 ),
               ),
             ),
-          ],
-          if (widget.onSetTuyaDp != null || widget.onRefreshTuyaDps != null) ...[
             const SizedBox(height: 16),
             Row(children: [
               Expanded(
-                child: Text('הגדרות מתקדמות (Tuya)',
-                    style: TextStyle(
-                        color: context.tText2(0.5),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700)),
-              ),
-              if (widget.onRefreshTuyaDps != null)
-                GestureDetector(
-                  onTap: _refreshingTuya ? null : _refreshTuyaDps,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (_refreshingTuya)
-                        SizedBox(
-                          width: 12, height: 12,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2, color: color),
-                        )
-                      else
-                        Icon(Symbols.refresh, size: 14, color: color),
-                      const SizedBox(width: 4),
-                      Text('רענן מ-Tuya',
-                          style: TextStyle(
-                              color: color,
-                              fontSize: 11,
+                child: GestureDetector(
+                  onTap: () {
+                    final name = _ctrl.text.trim();
+                    if (name.isNotEmpty && name != widget.currentName) {
+                      widget.onRename(name);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                            content: Text(s.deviceRenamed),
+                            backgroundColor: color),
+                      );
+                    }
+                    Navigator.pop(context);
+                  },
+                  child: Container(
+                    height: 44,
+                    decoration: BoxDecoration(
+                        color: color, borderRadius: BorderRadius.circular(12)),
+                    child: Center(
+                      child: Text(s.save,
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
                               fontWeight: FontWeight.w700)),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Container(
+                    height: 44,
+                    decoration: BoxDecoration(
+                        color: context.tText2(0.07),
+                        borderRadius: BorderRadius.circular(12)),
+                    child: Center(
+                      child: Text(s.cancel,
+                          style: TextStyle(
+                              color: context.tText2(0.65),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600)),
+                    ),
+                  ),
+                ),
+              ),
+            ]),
+            if (widget.onAssignRoom != null) ...[
+              const SizedBox(height: 10),
+              GestureDetector(
+                onTap: () => _showRoomPicker(context),
+                child: Container(
+                  height: 44,
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  decoration: BoxDecoration(
+                    color: context.tText2(0.05),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Symbols.meeting_room,
+                          color: context.tText2(0.6), size: 18),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(s.assignRoom,
+                            style: TextStyle(
+                                color: context.tText,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600)),
+                      ),
+                      Text(
+                        (widget.currentRoom == null ||
+                                widget.currentRoom!.isEmpty)
+                            ? s.noRoom
+                            : s.translateRoomKey(widget.currentRoom!),
+                        style: TextStyle(
+                            color: context.tText2(0.45), fontSize: 13),
+                      ),
+                      Icon(Symbols.chevron_right,
+                          color: context.tText2(0.35), size: 16),
                     ],
                   ),
                 ),
-            ]),
-            const SizedBox(height: 2),
-            Text(
-                'ערכים גולמיים שהמכשיר מדווח לענן Tuya — לא כל שורה בהכרח ניתנת לעריכה.',
-                style: TextStyle(color: context.tText2(0.4), fontSize: 10.5)),
-            const SizedBox(height: 8),
-            if (_tuyaDps == null || _tuyaDps!.isEmpty) ...[
-              Text(
-                  _refreshingTuya
-                      ? 'טוען...'
-                      : 'לא נמצאו הגדרות נוספות למכשיר הזה.',
-                  style: TextStyle(color: context.tText2(0.4), fontSize: 12)),
-              if (!_refreshingTuya &&
-                  _tuyaDiagnostic != null &&
-                  _tuyaDiagnostic!.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Text('פרטים טכניים (לצורך אבחון):',
-                    style: TextStyle(
-                        color: context.tText2(0.4),
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600)),
-                const SizedBox(height: 2),
-                SelectableText(_tuyaDiagnostic!,
-                    style: TextStyle(
-                        color: context.tText2(0.4),
-                        fontSize: 9.5,
-                        fontFamily: 'monospace')),
-              ],
-            ] else if (widget.onSetTuyaDp != null)
-              ..._tuyaDps!.entries.map((e) => _TuyaDpRow(
-                    code: e.key,
-                    value: e.value,
-                    color: color,
-                    onSet: widget.onSetTuyaDp!,
-                  )),
-          ],
-          const SizedBox(height: 10),
-          GestureDetector(
-            onTap: () => _confirmDelete(context),
-            child: Container(
-              height: 44,
-              decoration: BoxDecoration(
-                color: AppColors.unsecured.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.unsecured.withValues(alpha: 0.25)),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Symbols.delete, color: AppColors.unsecured, size: 17),
-                  const SizedBox(width: 8),
-                  Text(s.delete,
-                      style: const TextStyle(
-                          color: AppColors.unsecured,
-                          fontSize: 14,
+            ],
+            if (widget.onSchedule != null) ...[
+              const SizedBox(height: 10),
+              GestureDetector(
+                onTap: widget.onSchedule,
+                child: Container(
+                  height: 44,
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  decoration: BoxDecoration(
+                    color: context.tText2(0.05),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Symbols.schedule,
+                          color: context.tText2(0.6), size: 18),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(s.boilerSchedule,
+                            style: TextStyle(
+                                color: context.tText,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600)),
+                      ),
+                      Icon(Symbols.chevron_right,
+                          color: context.tText2(0.35), size: 16),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+            if (widget.onSetTuyaDp != null ||
+                widget.onRefreshTuyaDps != null) ...[
+              const SizedBox(height: 16),
+              Row(children: [
+                Expanded(
+                  child: Text('הגדרות מתקדמות (Tuya)',
+                      style: TextStyle(
+                          color: context.tText2(0.5),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700)),
+                ),
+                if (widget.onRefreshTuyaDps != null)
+                  GestureDetector(
+                    onTap: _refreshingTuya ? null : _refreshTuyaDps,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (_refreshingTuya)
+                          SizedBox(
+                            width: 12,
+                            height: 12,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: color),
+                          )
+                        else
+                          Icon(Symbols.refresh, size: 14, color: color),
+                        const SizedBox(width: 4),
+                        Text('רענן מ-Tuya',
+                            style: TextStyle(
+                                color: color,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700)),
+                      ],
+                    ),
+                  ),
+              ]),
+              const SizedBox(height: 2),
+              Text(
+                  'ערכים גולמיים שהמכשיר מדווח לענן Tuya — לא כל שורה בהכרח ניתנת לעריכה.',
+                  style: TextStyle(color: context.tText2(0.4), fontSize: 10.5)),
+              const SizedBox(height: 8),
+              if (_tuyaDps == null || _tuyaDps!.isEmpty) ...[
+                Text(
+                    _refreshingTuya
+                        ? 'טוען...'
+                        : 'לא נמצאו הגדרות נוספות למכשיר הזה.',
+                    style: TextStyle(color: context.tText2(0.4), fontSize: 12)),
+                if (!_refreshingTuya &&
+                    _tuyaDiagnostic != null &&
+                    _tuyaDiagnostic!.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text('פרטים טכניים (לצורך אבחון):',
+                      style: TextStyle(
+                          color: context.tText2(0.4),
+                          fontSize: 10,
                           fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 2),
+                  SelectableText(_tuyaDiagnostic!,
+                      style: TextStyle(
+                          color: context.tText2(0.4),
+                          fontSize: 9.5,
+                          fontFamily: 'monospace')),
                 ],
+              ] else if (widget.onSetTuyaDp != null)
+                ..._tuyaDps!.entries.map((e) => _TuyaDpRow(
+                      code: e.key,
+                      value: e.value,
+                      color: color,
+                      onSet: widget.onSetTuyaDp!,
+                    )),
+            ],
+            const SizedBox(height: 10),
+            GestureDetector(
+              onTap: () => _confirmDelete(context),
+              child: Container(
+                height: 44,
+                decoration: BoxDecoration(
+                  color: AppColors.unsecured.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                      color: AppColors.unsecured.withValues(alpha: 0.25)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Symbols.delete,
+                        color: AppColors.unsecured, size: 17),
+                    const SizedBox(width: 8),
+                    Text(s.delete,
+                        style: const TextStyle(
+                            color: AppColors.unsecured,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600)),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -696,7 +729,8 @@ class _TuyaDpRowState extends State<_TuyaDpRow> {
                                   child: CircularProgressIndicator(
                                       strokeWidth: 2, color: widget.color),
                                 )
-                              : Icon(Symbols.check, color: widget.color, size: 16),
+                              : Icon(Symbols.check,
+                                  color: widget.color, size: 16),
                         ),
                       ),
                     ],
@@ -739,9 +773,13 @@ class _RoomPickerSheetState extends State<_RoomPickerSheet> {
     return Padding(
       padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-          left: 20, right: 20, top: 16),
+          left: 20,
+          right: 20,
+          top: 16),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Container(width: 36, height: 4,
+        Container(
+            width: 36,
+            height: 4,
             decoration: BoxDecoration(
                 color: context.tText2(0.22),
                 borderRadius: BorderRadius.circular(2))),
@@ -764,14 +802,14 @@ class _RoomPickerSheetState extends State<_RoomPickerSheet> {
 
         // Existing rooms
         ...widget.rooms.map((r) => Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: _RoomTile(
-            label: s.translateRoomKey(r),
-            icon: Symbols.meeting_room,
-            selected: widget.currentRoom == r,
-            onTap: () => Navigator.pop(context, r),
-          ),
-        )),
+              padding: const EdgeInsets.only(bottom: 8),
+              child: _RoomTile(
+                label: s.translateRoomKey(r),
+                icon: Symbols.meeting_room,
+                selected: widget.currentRoom == r,
+                onTap: () => Navigator.pop(context, r),
+              ),
+            )),
 
         // Add new room
         if (_addingNew) ...[
@@ -790,8 +828,8 @@ class _RoomPickerSheetState extends State<_RoomPickerSheet> {
                   border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none),
-                  contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 12),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 ),
                 onSubmitted: (v) {
                   final name = v.trim();
@@ -806,7 +844,8 @@ class _RoomPickerSheetState extends State<_RoomPickerSheet> {
                 if (name.isNotEmpty) Navigator.pop(context, name);
               },
               child: Container(
-                width: 42, height: 42,
+                width: 42,
+                height: 42,
                 decoration: BoxDecoration(
                     color: AppColors.secured.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12)),
@@ -837,13 +876,16 @@ class _RoomTile extends StatelessWidget {
   final VoidCallback onTap;
   final Color? iconColor;
   const _RoomTile(
-      {required this.label, required this.icon, required this.selected,
-       required this.onTap, this.iconColor});
+      {required this.label,
+      required this.icon,
+      required this.selected,
+      required this.onTap,
+      this.iconColor});
 
   @override
   Widget build(BuildContext context) {
-    final color = iconColor ??
-        (selected ? AppColors.primary : context.tText2(0.45));
+    final color =
+        iconColor ?? (selected ? AppColors.primary : context.tText2(0.45));
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -869,8 +911,7 @@ class _RoomTile extends StatelessWidget {
                         selected ? FontWeight.w600 : FontWeight.normal)),
           ),
           if (selected)
-            Icon(Symbols.check_circle,
-                color: AppColors.primary, size: 18),
+            Icon(Symbols.check_circle, color: AppColors.primary, size: 18),
         ]),
       ),
     );
