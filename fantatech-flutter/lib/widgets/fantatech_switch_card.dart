@@ -35,6 +35,12 @@ class FantaTechSwitchCard extends StatefulWidget {
   /// carrying the same generic power glyph.
   final IconData icon;
 
+  /// Real device photo (e.g. DeviceIcons.photoAsset) shown as a small
+  /// badge above the name. Kept out of the toggle circle itself — that
+  /// circle's color/icon-color already encodes on/off state, which a
+  /// full-color photo would obscure.
+  final String? photoAsset;
+
   /// Called with (deviceId, desiredState) on tap. Must resolve to true only
   /// once the backend confirmed the change — the card awaits this future
   /// for its loading state and never assumes success while it's pending.
@@ -52,6 +58,7 @@ class FantaTechSwitchCard extends StatefulWidget {
     this.capabilities = const [],
     this.protocol = '',
     this.icon = Symbols.power_settings_new,
+    this.photoAsset,
   });
 
   @override
@@ -109,6 +116,14 @@ class _FantaTechSwitchCardState extends State<FantaTechSwitchCard> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
+                if (widget.photoAsset != null) ...[
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.asset(widget.photoAsset!,
+                        width: 28, height: 28, fit: BoxFit.cover),
+                  ),
+                  const SizedBox(height: 6),
+                ],
                 Text(
                   widget.deviceName,
                   maxLines: 1,

@@ -400,6 +400,7 @@ class _DevicesScreenState extends State<DevicesScreen> {
                                 isOnline: d.online,
                                 deviceType: d.type.name,
                                 icon: DeviceIcons.forDevice(d),
+                                photoAsset: DeviceIcons.photoAsset(d.type),
                                 onToggle: (id, desired) =>
                                     state.setDevicePower(id, desired),
                               ),
