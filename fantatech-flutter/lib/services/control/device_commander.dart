@@ -248,20 +248,40 @@ class DeviceCommander {
     );
   }
 
-  /// Re-fetches every DP Tuya currently has for [device] via the
-  /// single-device status endpoint — more reliable than what
-  /// [TuyaCloudClient.fetchDevices]'s bulk list call captured at import
-  /// time, which can be a trimmed subset for some categories/models. Used
+  /// Re-fetches every DP Tuya currently has for [device]. Tries the
+  /// single-device status endpoint first (more reliable than the bulk list
+  /// for most categories) — but that endpoint needs a Tuya API subscription
+  /// some projects don't have (`code 28841105 "No permissions"` — a
+  /// project-level authorization gap on iot.tuya.com, not fixable from the
+  /// app). Falls back to [TuyaCloudClient.fetchDevices] — the same bulk
+  /// associated-users/devices call already used for import, which needs no
+  /// extra permission — and pulls this device's 'tuyaDps' back out of that
+  /// result, so a project stuck on that permission gap can still populate
+  /// the advanced-settings section instead of being blocked entirely. Used
   /// by the edit sheet's "advanced settings" refresh action. Returns null
-  /// on any failure (no credentials, not a Tuya device, network error).
+  /// on total failure (no credentials, not a Tuya device, both paths
+  /// erroring).
   static Future<Map<String, dynamic>?> refreshTuyaDps(
     Device device, {
     required GatewayManager gateways,
   }) async {
     final auth = await _tuyaAuth(device.id, gateways);
     if (auth == null) return null;
-    return auth.client.fetchDeviceStatus(
+
+    final direct = await auth.client.fetchDeviceStatus(
         token: auth.token, tuyaDeviceId: auth.deviceId);
+    if (direct != null && direct.isNotEmpty) return direct;
+
+    final bulk = await TuyaCloudClient.fetchDevices(
+      clientId: auth.client.clientId,
+      clientSecret: auth.client.clientSecret,
+      region: auth.client.region,
+    );
+    if (!bulk.isSuccess) return direct; // keep the direct-call diagnostic
+    final matches = bulk.devices.where((d) => d.id == device.id);
+    final match = matches.isEmpty ? null : matches.first;
+    final dps = (match?.attributes['tuyaDps'] as Map?)?.cast<String, dynamic>();
+    return dps ?? direct;
   }
 
   /// Shared credential/token lookup for the Tuya Cloud methods above.
