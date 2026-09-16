@@ -213,6 +213,40 @@ class SmartSwitchDevice {
 
   String get brand => protocol.brand;
 
+  // Plug-form-factor model hints, keyed by the vendor codes/keywords each
+  // prober actually populates `model`/`name` with — see the matching
+  // per-protocol comment where each SmartSwitchDevice is built in
+  // switch_scan_engine.dart. Kept as a single list (not per-protocol)
+  // since none of these prefixes collide across vendors.
+  static const _plugModelHints = [
+    'plug', 'plg', // Shelly: Gen1 "SHPLG-S", Gen2+ appField "PlusPlugS"
+    // TP-Link Kasa plug model prefixes (switches are HS200/210/220, KS2xx)
+    'hs100', 'hs103', 'hs105', 'hs107', 'hs110',
+    'kp1', 'kp4', 'ep1', 'ep2', 'ep4',
+    'p100', 'p105', 'p110', 'p115', // TP-Link Tapo plugs, if ever detected
+  ];
+
+  /// Sonoff/eWeLink "uiid" codes that are plug-shaped devices — S20/S26
+  /// (14), S31/S31 Lite (32), S40 (40). Everything else stored in `model`
+  /// for Sonoff is a bare relay/switch uiid.
+  static const _sonoffPlugUiids = {'14', '32', '40'};
+
+  /// Best-effort plug-vs-switch classification from what the scanner
+  /// actually learned about this device — used to type it correctly on
+  /// add instead of collapsing every found device into DeviceType.smartSwitch
+  /// regardless of its real form factor. Conservative: only Shelly and
+  /// Kasa/Sonoff expose enough real model info to tell reliably; Tapo/
+  /// Tuya-banner/HA/Z2M devices are currently indistinguishable at scan
+  /// time (no authenticated device-info call yet) and default to false
+  /// rather than guess.
+  bool get isPlug {
+    final m = (model ?? '').toLowerCase();
+    if (protocol == SwitchProtocol.sonoffLan) {
+      return _sonoffPlugUiids.contains(model);
+    }
+    return _plugModelHints.any((h) => m.contains(h));
+  }
+
   bool get hasPowerMonitor => channels.any((c) => c.powerWatts != null);
 
   double get totalPowerWatts =>

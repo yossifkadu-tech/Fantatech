@@ -95,7 +95,8 @@ class _SmartSwitchHubViewState extends State<_SmartSwitchHubView> {
     // to false (which would also silently disable the long-press edit sheet
     // on already-added switches, since it's gated on isRegistered).
     final registeredIds = context.read<AppState>().devices
-        .where((d) => d.type == DeviceType.smartSwitch)
+        .where((d) =>
+            d.type == DeviceType.smartSwitch || d.type == DeviceType.smartPlug)
         .map((d) => d.id.replaceFirst(RegExp(r'_ch\d+$'), ''))
         .toSet();
     engine.startScan(
@@ -555,7 +556,12 @@ class _SwitchCardState extends State<_SwitchCard> {
           // the other's on/off count.
           id:   dev.protocol == SwitchProtocol.haRest ? dev.id : '${dev.id}_ch$i',
           name: deviceName,
-          type: DeviceType.smartSwitch,
+          // Every device found here used to land as smartSwitch
+          // regardless of its real form factor — the scanner actually
+          // finds plugs too (Shelly Plug S, Kasa HS1xx/KP1xx, Sonoff
+          // S20/S26/S31/S40), it just never told them apart. dev.isPlug
+          // uses the real model info the probers already collect.
+          type: dev.isPlug ? DeviceType.smartPlug : DeviceType.smartSwitch,
           isOn: ch.isOn,
           status: DeviceStatus.online,
           // 'gateway' (not the default 'manual') — this device was actually
