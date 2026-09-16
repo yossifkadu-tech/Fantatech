@@ -953,18 +953,28 @@ class _SensorsGrid extends StatelessWidget {
               borderRadius: BorderRadius.circular(10),
               border: Border.all(color: _border),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Icon(_sensorIcon(s.deviceClass), color: color, size: 16),
-                Text('${s.state}${s.unit ?? ''}',
-                    style: TextStyle(color: color, fontSize: 14,
-                        fontWeight: FontWeight.bold)),
-                Text(s.friendlyName,
-                    style: const TextStyle(color: _text2, fontSize: 10),
-                    maxLines: 1, overflow: TextOverflow.ellipsis),
-              ],
+            // FittedBox: a no-op at normal font scale, only shrinks when
+            // this fixed childAspectRatio cell is too short for the 3
+            // stacked lines below — same overflow bug shape confirmed
+            // live on the user's device elsewhere in the app. Also guards
+            // the value Text, which had no maxLines/overflow at all.
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: AlignmentDirectional.topStart,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Icon(_sensorIcon(s.deviceClass), color: color, size: 16),
+                  Text('${s.state}${s.unit ?? ''}',
+                      maxLines: 1, overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: color, fontSize: 14,
+                          fontWeight: FontWeight.bold)),
+                  Text(s.friendlyName,
+                      style: const TextStyle(color: _text2, fontSize: 10),
+                      maxLines: 1, overflow: TextOverflow.ellipsis),
+                ],
+              ),
             ),
           );
         },

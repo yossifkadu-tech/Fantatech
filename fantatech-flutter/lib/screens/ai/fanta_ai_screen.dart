@@ -312,7 +312,15 @@ class _FantaAIScreenState extends State<FantaAIScreen>
             physics: const NeverScrollableScrollPhysics(),
             crossAxisSpacing: 12,
             mainAxisSpacing: 12,
-            childAspectRatio: 0.95,
+            // 0.95 was too tight on a larger system font-scale setting —
+            // same overflow bug shape confirmed live elsewhere in the
+            // app. Not fixed with FittedBox here: title/desc both wrap
+            // across up to 2 lines (maxLines: 2), and FittedBox measures
+            // its child with unbounded width, so the text would never
+            // wrap during that measurement and the whole card would
+            // shrink to fit one giant unwrapped line instead — more room
+            // is the correct fix for wrapping text, not FittedBox.
+            childAspectRatio: 0.80,
             children: List.generate(4, (i) {
               const icons = [Symbols.lightbulb, Symbols.shield, Symbols.bedtime, Symbols.notifications];
               const bgColors = [_kAiBlue, AppColors.statusOnline, Color(0xFF9C6FE0), AppColors.statusWarning];

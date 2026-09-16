@@ -415,7 +415,12 @@ class _SubBreakerGrid extends StatelessWidget {
         crossAxisCount: responsiveColumns(context, phoneColumns: 3),
         mainAxisSpacing: 10,
         crossAxisSpacing: 10,
-        childAspectRatio: 0.82,
+        // 0.82 was too tight on a larger system font-scale setting — same
+        // overflow bug shape confirmed live elsewhere in the app. Not
+        // fixed with FittedBox here: _SubBreakerCard's Column uses
+        // Spacer (an Expanded internally) twice, which crashes under
+        // FittedBox's unbounded measurement pass — more room instead.
+        childAspectRatio: 0.68,
       ),
       itemBuilder: (ctx, i) {
         final b = breakers[i];

@@ -145,7 +145,13 @@ class GatewayHubScreen extends StatelessWidget {
                   crossAxisCount:   responsiveColumns(context, phoneColumns: 2),
                   crossAxisSpacing: 10,
                   mainAxisSpacing:  10,
-                  childAspectRatio: 1.35,
+                  // 1.35 was too tight on a larger system font-scale
+                  // setting — same overflow bug shape confirmed live
+                  // elsewhere in the app. Not fixed with FittedBox here:
+                  // _GatewayTypeCard's Row uses Spacer (an Expanded
+                  // internally), which crashes under FittedBox's
+                  // unbounded measurement pass — more room instead.
+                  childAspectRatio: 1.15,
                 ),
                 delegate: SliverChildBuilderDelegate(
                   (ctx, i) {

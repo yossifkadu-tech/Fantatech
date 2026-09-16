@@ -561,7 +561,14 @@ class _StoreScreenState extends State<StoreScreen> {
               ),
               SliverToBoxAdapter(
                 child: SizedBox(
-                  height: 200,
+                  // 200 was too tight on a larger system font-scale
+                  // setting — _ProductCard's Column overflowed (same bug
+                  // shape confirmed live elsewhere in the app). Can't fix
+                  // it with FittedBox here since the card has a Spacer
+                  // (an Expanded internally), which crashes under
+                  // FittedBox's unbounded measurement pass — more room is
+                  // the safe fix instead.
+                  height: 224,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -612,7 +619,13 @@ class _StoreScreenState extends State<StoreScreen> {
                     crossAxisCount: responsiveColumns(context, phoneColumns: 2),
                     crossAxisSpacing: 12,
                     mainAxisSpacing: 12,
-                    childAspectRatio: 0.82,
+                    // 0.82 was too tight on a larger system font-scale
+                    // setting — same overflow bug confirmed live
+                    // elsewhere in the app. Can't fix with FittedBox here
+                    // since _ProductCard has a Spacer (an Expanded
+                    // internally), which crashes under FittedBox's
+                    // unbounded measurement pass — more room instead.
+                    childAspectRatio: 0.70,
                   ),
                   delegate: SliverChildBuilderDelegate(
                     (ctx, i) => _ProductCard(

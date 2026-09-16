@@ -332,8 +332,18 @@ class _SensorsTab extends StatelessWidget {
         crossAxisSpacing: 10,
         mainAxisSpacing: 10,
         // Taller than wide — these cards stack icon+name, status, reading
-        // (and sometimes extra readings/buttons for _SensorCard).
-        childAspectRatio: 0.82,
+        // (and sometimes extra readings/buttons for _SensorCard). 0.82 was
+        // too tight: on a device with a larger system font-scale setting
+        // the stacked text/icon rows exceeded it and Flutter rendered its
+        // overflow warning banner right on the card (confirmed live on the
+        // user's device for the same bug shape elsewhere in this screen).
+        // These cards nest Expanded/Flexible internally, so — unlike the
+        // simple chip tiles elsewhere that got wrapped in FittedBox — that
+        // fix isn't safe here (FittedBox gives its child unbounded
+        // constraints to measure, which crashes any Expanded/Flexible
+        // inside a Row/Column at that point); more headroom is the safe
+        // fix instead.
+        childAspectRatio: 0.62,
       ),
       itemCount: totalItems,
       itemBuilder: (_, i) {

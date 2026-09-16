@@ -625,24 +625,32 @@ class _EnergySheet extends StatelessWidget {
                                 ? const [BoxShadow(color: Color(0x0A000000), blurRadius: 6)]
                                 : const [],
                           ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Container(
-                                width: 10, height: 10,
-                                decoration: BoxDecoration(
-                                    shape: BoxShape.circle, color: col),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(d.name,
-                                  style: TextStyle(color: _kDark, fontSize: 11,
-                                      fontWeight: FontWeight.w600),
-                                  maxLines: 1, overflow: TextOverflow.ellipsis,
-                                  textAlign: TextAlign.center),
-                              Text(_breakerLabel(s, d),
-                                  style: TextStyle(
-                                      color: col, fontSize: 10, fontWeight: FontWeight.w700)),
-                            ],
+                          // FittedBox: a no-op at normal font scale, only
+                          // shrinks when this fixed childAspectRatio cell
+                          // is too short for the 3 stacked lines below —
+                          // same overflow bug shape confirmed live on the
+                          // user's device elsewhere in the app.
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  width: 10, height: 10,
+                                  decoration: BoxDecoration(
+                                      shape: BoxShape.circle, color: col),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(d.name,
+                                    style: TextStyle(color: _kDark, fontSize: 11,
+                                        fontWeight: FontWeight.w600),
+                                    maxLines: 1, overflow: TextOverflow.ellipsis,
+                                    textAlign: TextAlign.center),
+                                Text(_breakerLabel(s, d),
+                                    style: TextStyle(
+                                        color: col, fontSize: 10, fontWeight: FontWeight.w700)),
+                              ],
+                            ),
                           ),
                         );
                       }).toList(),

@@ -868,27 +868,35 @@ class _StatCard extends StatelessWidget {
           ),
           const SizedBox(width: AppSpacing.s12),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  value,
-                  style: AppTypography.displaySm.copyWith(
-                    color: context.tText,
-                    fontSize: 24,
+            // FittedBox: a no-op at normal font scale, only shrinks when
+            // this fixed childAspectRatio cell is too short for both
+            // lines below — same overflow bug shape confirmed live on
+            // the user's device elsewhere in the app.
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: AlignmentDirectional.centerStart,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    value,
+                    style: AppTypography.displaySm.copyWith(
+                      color: context.tText,
+                      fontSize: 24,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  label,
-                  style: AppTypography.caption.copyWith(
-                    color: context.tTextSecondary,
+                  const SizedBox(height: 2),
+                  Text(
+                    label,
+                    style: AppTypography.caption.copyWith(
+                      color: context.tTextSecondary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ],
