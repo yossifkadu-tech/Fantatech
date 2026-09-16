@@ -60,13 +60,16 @@ class _DevicesScreenState extends State<DevicesScreen> {
       cats.add(_CategoryMeta(DeviceType.blind, s.blindsCategory, Symbols.blinds, AppColors.primary));
     }
     if (devices.any((d) => d.type == DeviceType.airConditioner || d.type == DeviceType.waterHeater)) {
-      cats.add(_CategoryMeta(DeviceType.airConditioner, s.acCategory, Symbols.hvac, AppColors.acColor));
+      cats.add(_CategoryMeta(DeviceType.airConditioner, s.acCategory, Symbols.hvac, AppColors.acColor,
+          DeviceIcons.photoAsset(DeviceType.airConditioner)));
     }
     if (devices.any((d) => d.type == DeviceType.smartPlug)) {
-      cats.add(_CategoryMeta(DeviceType.smartPlug, s.plugsCategory, Symbols.power, AppColors.plugColor));
+      cats.add(_CategoryMeta(DeviceType.smartPlug, s.plugsCategory, Symbols.power, AppColors.plugColor,
+          DeviceIcons.photoAsset(DeviceType.smartPlug)));
     }
     if (devices.any((d) => d.type == DeviceType.smartSwitch)) {
-      cats.add(_CategoryMeta(DeviceType.smartSwitch, s.switchesCategory, Symbols.toggle_on, AppColors.plugColor));
+      cats.add(_CategoryMeta(DeviceType.smartSwitch, s.switchesCategory, Symbols.toggle_on, AppColors.plugColor,
+          DeviceIcons.photoAsset(DeviceType.smartSwitch)));
     }
     if (devices.any((d) => d.type == DeviceType.motionSensor || d.type == DeviceType.doorSensor || d.type == DeviceType.windowSensor)) {
       cats.add(_CategoryMeta(DeviceType.motionSensor, s.sensorsCategory, Symbols.sensors, AppColors.motionColor));
@@ -285,7 +288,13 @@ class _DevicesScreenState extends State<DevicesScreen> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(cat.icon, color: selected ? cat.color : context.tText2(0.38), size: 18),
+                                cat.photo != null
+                                    ? ClipRRect(
+                                        borderRadius: BorderRadius.circular(5),
+                                        child: Image.asset(cat.photo!,
+                                            width: 18, height: 18, fit: BoxFit.cover),
+                                      )
+                                    : Icon(cat.icon, color: selected ? cat.color : context.tText2(0.38), size: 18),
                                 const SizedBox(height: 3),
                                 Text(cat.label,
                                   style: TextStyle(
@@ -2193,7 +2202,8 @@ class _CategoryMeta {
   final String label;
   final IconData icon;
   final Color color;
-  const _CategoryMeta(this.type, this.label, this.icon, this.color);
+  final String? photo;
+  const _CategoryMeta(this.type, this.label, this.icon, this.color, [this.photo]);
 }
 
 // ─────────────────────────────────────────────────────────────

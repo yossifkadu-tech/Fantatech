@@ -41,48 +41,51 @@ class _Cap {
   // MediaDeviceKind fits (general multimedia tile, receivers — there's no
   // MediaDeviceKind for a receiver specifically).
   final Set<MediaDeviceKind>? matchMediaKinds;
-  const _Cap(this.icon, this.color, this.he, this.en, this.dest,
-      [this.matchTypes, this.matchMediaKinds]);
+  // Real device photo (DeviceIcons.photoAsset) shown instead of [icon] when
+  // present — not const-constructible, since that lookup runs at runtime.
+  final String? photo;
+  _Cap(this.icon, this.color, this.he, this.en, this.dest,
+      [this.matchTypes, this.matchMediaKinds, this.photo]);
 }
 
 // ── Capability catalogue ─────────────────────────────────────────
-const _plugs    = _Cap(Symbols.power,            Color(0xFF42A5F5), 'שקעים חכמים', 'Smart Plugs', _Dest.switches, {DeviceType.smartPlug});
-const _cameras  = _Cap(Symbols.videocam,         Color(0xFF26C6DA), 'מצלמות', 'Cameras', _Dest.cameras);
-const _gates    = _Cap(Symbols.fence,            Color(0xFF8D6E63), 'שערים', 'Gates', _Dest.none, {DeviceType.garage});
-const _media    = _Cap(Symbols.movie,            Color(0xFFE53935), 'מולטימדיה', 'Multimedia', _Dest.media);
-const _switches = _Cap(Symbols.toggle_on,        Color(0xFF7E57C2), 'מפסקים חכמים', 'Smart Switches', _Dest.switches, {DeviceType.smartSwitch});
-const _light    = _Cap(Symbols.lightbulb,        Color(0xFFFFB300), 'תאורה חכמה', 'Smart Lighting', _Dest.none, {DeviceType.light});
-const _warmLight= _Cap(Symbols.wb_incandescent,  Color(0xFFFF8F00), 'תאורה חמה', 'Warm Lighting', _Dest.none, {DeviceType.light});
-const _ac       = _Cap(Symbols.ac_unit,          Color(0xFF29B6F6), 'מזגן ושלטים', 'AC & Remotes', _Dest.none, {DeviceType.airConditioner});
-const _winDoor  = _Cap(Symbols.sensor_window,    Color(0xFF26A69A), 'חיישן חלון/דלת', 'Window/Door Sensor', _Dest.sensors, {DeviceType.doorSensor, DeviceType.windowSensor});
-const _door     = _Cap(Symbols.sensor_door,      Color(0xFF26A69A), 'חיישן דלת', 'Door Sensor', _Dest.sensors, {DeviceType.doorSensor});
-const _blind    = _Cap(Symbols.blinds,           Color(0xFF8E63CE), 'מפסק תריס', 'Blind Switch', _Dest.sensors, {DeviceType.blind});
-const _speakers = _Cap(Symbols.speaker,          Color(0xFF5C6BC0), 'רמקולים', 'Speakers', _Dest.media, null, {MediaDeviceKind.speaker, MediaDeviceKind.soundbar});
-const _receiver = _Cap(Symbols.settings_input_hdmi, Color(0xFF455A64), 'רסיברים', 'Receivers', _Dest.media);
-const _tv       = _Cap(Symbols.tv,               Color(0xFF00897B), 'טלוויזיות חכמות', 'Smart TVs', _Dest.media, null, {MediaDeviceKind.tv});
-const _streamer = _Cap(Symbols.cast,             Color(0xFFAB47BC), 'סטרימרים', 'Streamers', _Dest.media, null, {MediaDeviceKind.castTarget});
-const _intercom = _Cap(Symbols.doorbell,         Color(0xFFEF5350), 'אינטרקום', 'Intercom', _Dest.intercom, {DeviceType.intercom});
-const _smoke    = _Cap(Symbols.local_fire_department, Color(0xFFFF7043), 'גלאי עשן', 'Smoke Detector', _Dest.sensors, {DeviceType.smokeSensor});
-const _gas      = _Cap(Symbols.gas_meter,        Color(0xFFFFA726), 'גלאי גז', 'Gas Detector', _Dest.sensors, {DeviceType.gasSensor});
-const _leak     = _Cap(Symbols.water_damage,     Color(0xFF42A5F5), 'גלאי נזילות', 'Leak Detector', _Dest.sensors, {DeviceType.waterLeakSensor});
+final _plugs    = _Cap(Symbols.power,            Color(0xFF42A5F5), 'שקעים חכמים', 'Smart Plugs', _Dest.switches, {DeviceType.smartPlug}, null, DeviceIcons.photoAsset(DeviceType.smartPlug));
+final _cameras  = _Cap(Symbols.videocam,         Color(0xFF26C6DA), 'מצלמות', 'Cameras', _Dest.cameras, null, null, DeviceIcons.photoAsset(DeviceType.camera));
+final _gates    = _Cap(Symbols.fence,            Color(0xFF8D6E63), 'שערים', 'Gates', _Dest.none, {DeviceType.garage});
+final _media    = _Cap(Symbols.movie,            Color(0xFFE53935), 'מולטימדיה', 'Multimedia', _Dest.media);
+final _switches = _Cap(Symbols.toggle_on,        Color(0xFF7E57C2), 'מפסקים חכמים', 'Smart Switches', _Dest.switches, {DeviceType.smartSwitch}, null, DeviceIcons.photoAsset(DeviceType.smartSwitch));
+final _light    = _Cap(Symbols.lightbulb,        Color(0xFFFFB300), 'תאורה חכמה', 'Smart Lighting', _Dest.none, {DeviceType.light});
+final _warmLight= _Cap(Symbols.wb_incandescent,  Color(0xFFFF8F00), 'תאורה חמה', 'Warm Lighting', _Dest.none, {DeviceType.light});
+final _ac       = _Cap(Symbols.ac_unit,          Color(0xFF29B6F6), 'מזגן ושלטים', 'AC & Remotes', _Dest.none, {DeviceType.airConditioner}, null, DeviceIcons.photoAsset(DeviceType.airConditioner));
+final _winDoor  = _Cap(Symbols.sensor_window,    Color(0xFF26A69A), 'חיישן חלון/דלת', 'Window/Door Sensor', _Dest.sensors, {DeviceType.doorSensor, DeviceType.windowSensor});
+final _door     = _Cap(Symbols.sensor_door,      Color(0xFF26A69A), 'חיישן דלת', 'Door Sensor', _Dest.sensors, {DeviceType.doorSensor});
+final _blind    = _Cap(Symbols.blinds,           Color(0xFF8E63CE), 'מפסק תריס', 'Blind Switch', _Dest.sensors, {DeviceType.blind});
+final _speakers = _Cap(Symbols.speaker,          Color(0xFF5C6BC0), 'רמקולים', 'Speakers', _Dest.media, null, {MediaDeviceKind.speaker, MediaDeviceKind.soundbar});
+final _receiver = _Cap(Symbols.settings_input_hdmi, Color(0xFF455A64), 'רסיברים', 'Receivers', _Dest.media);
+final _tv       = _Cap(Symbols.tv,               Color(0xFF00897B), 'טלוויזיות חכמות', 'Smart TVs', _Dest.media, null, {MediaDeviceKind.tv});
+final _streamer = _Cap(Symbols.cast,             Color(0xFFAB47BC), 'סטרימרים', 'Streamers', _Dest.media, null, {MediaDeviceKind.castTarget});
+final _intercom = _Cap(Symbols.doorbell,         Color(0xFFEF5350), 'אינטרקום', 'Intercom', _Dest.intercom, {DeviceType.intercom});
+final _smoke    = _Cap(Symbols.local_fire_department, Color(0xFFFF7043), 'גלאי עשן', 'Smoke Detector', _Dest.sensors, {DeviceType.smokeSensor});
+final _gas      = _Cap(Symbols.gas_meter,        Color(0xFFFFA726), 'גלאי גז', 'Gas Detector', _Dest.sensors, {DeviceType.gasSensor});
+final _leak     = _Cap(Symbols.water_damage,     Color(0xFF42A5F5), 'גלאי נזילות', 'Leak Detector', _Dest.sensors, {DeviceType.waterLeakSensor});
 
 // ── Per-room-type capability sets ────────────────────────────────
 // _odor (no matching DeviceType exists — replaced elsewhere in the app by
 // co2/freeze/tamper/mailbox sensors), _ambiance ("scenes") and _voice
 // (Alexa/Siri) were removed — nothing in the device model backs them, so
 // they could never be anything but permanently-decorative dead buttons.
-const _living = <_Cap>[
+final _living = <_Cap>[
   _light, _switches, _plugs, _ac, _blind,
   _cameras, _gates, _winDoor,
   _media, _tv, _streamer, _speakers, _receiver,
 ];
-const _garden = <_Cap>[
+final _garden = <_Cap>[
   _warmLight, _switches, _plugs, _cameras, _streamer, _gates, _intercom,
 ];
-const _kitchen = <_Cap>[
+final _kitchen = <_Cap>[
   _light, _switches, _plugs, _winDoor, _smoke, _gas, _media,
 ];
-const _bathroom = <_Cap>[
+final _bathroom = <_Cap>[
   _switches, _plugs, _door, _leak,
 ];
 
@@ -95,7 +98,7 @@ List<_Cap> _capsFor(String key) {
   if (k.contains('bath') || k.contains('שירות') || k.contains('מקלח') ||
       k.contains('אמבט')) return _bathroom;
   // Bedroom / media / custom rooms → a sensible general set.
-  return const <_Cap>[
+  return <_Cap>[
     _light, _switches, _plugs, _ac, _winDoor, _media, _cameras,
   ];
 }
@@ -391,7 +394,12 @@ class RoomSetupScreen extends StatelessWidget {
                               color: c.color.withValues(alpha: 0.14),
                               borderRadius: BorderRadius.circular(13),
                             ),
-                            child: Icon(c.icon, color: c.color, size: 24),
+                            child: c.photo != null
+                                ? ClipRRect(
+                                    borderRadius: BorderRadius.circular(13),
+                                    child: Image.asset(c.photo!, fit: BoxFit.cover),
+                                  )
+                                : Icon(c.icon, color: c.color, size: 24),
                           ),
                           const SizedBox(height: 8),
                           Text(
@@ -536,8 +544,14 @@ class _ClimateCard extends StatelessWidget {
                 color: AppColors.acColor.withValues(alpha: 0.14),
                 borderRadius: BorderRadius.circular(11),
               ),
-              child: Icon(Symbols.ac_unit,
-                  color: AppColors.acColor, size: 20),
+              child: DeviceIcons.photoAsset(DeviceType.airConditioner) != null
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(11),
+                      child: Image.asset(
+                          DeviceIcons.photoAsset(DeviceType.airConditioner)!,
+                          fit: BoxFit.cover),
+                    )
+                  : Icon(Symbols.ac_unit, color: AppColors.acColor, size: 20),
             ),
             const SizedBox(width: 10),
             Expanded(

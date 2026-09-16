@@ -728,6 +728,7 @@ class _TodaysEnergyCards extends StatelessWidget {
                 MaterialPageRoute(builder: (_) => const SmartSwitchHubScreen())),
             child: _TodayEnergyCard(
               icon: Symbols.toggle_on,
+              photoAsset: DeviceIcons.photoAsset(DeviceType.smartSwitch),
               iconColor: AppColors.plugColor,
               title: s.switchesCategory,
               lines: [
@@ -2554,8 +2555,15 @@ class _QaDevicesPanel extends StatelessWidget {
                             color: (d.isOn ? _kOrange : _kGrey).withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: Icon(_iconForType(d.type),
-                              color: d.isOn ? _kOrange : _kGrey, size: 18),
+                          child: DeviceIcons.photoAsset(d.type) != null
+                              ? ClipRRect(
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: Image.asset(
+                                      DeviceIcons.photoAsset(d.type)!,
+                                      fit: BoxFit.cover),
+                                )
+                              : Icon(DeviceIcons.forDevice(d),
+                                  color: d.isOn ? _kOrange : _kGrey, size: 18),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
@@ -2710,17 +2718,6 @@ class _QaDevicesPanel extends StatelessWidget {
       ],
     );
   }
-
-  IconData _iconForType(DeviceType t) => switch (t) {
-    DeviceType.light          => Symbols.lightbulb,
-    DeviceType.airConditioner => Symbols.thermostat,
-    DeviceType.smartLock      => Symbols.lock,
-    DeviceType.doorSensor     => Symbols.sensor_door,
-    DeviceType.smartPlug      => Symbols.power,
-    DeviceType.waterHeater    => Symbols.water_drop,
-    DeviceType.intercom       => Symbols.doorbell,
-    _                         => Symbols.devices,
-  };
 
   void _showEdit(BuildContext context, Device d) {
     showModalBottomSheet(
@@ -2937,7 +2934,14 @@ class _QaCamerasPanel extends StatelessWidget {
                   color: _kOrange.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Symbols.videocam, color: _kOrange, size: 18),
+                child: DeviceIcons.photoAsset(DeviceType.camera) != null
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: Image.asset(
+                            DeviceIcons.photoAsset(DeviceType.camera)!,
+                            fit: BoxFit.cover),
+                      )
+                    : const Icon(Symbols.videocam, color: _kOrange, size: 18),
               ),
               const SizedBox(width: 10),
               Expanded(
