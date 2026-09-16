@@ -37,9 +37,16 @@ class _NotificationsScreenState extends State<NotificationsScreen>
     return s.timeDayAgo.replaceAll('{n}', '${diff.inDays}');
   }
 
+  // n.title is now the complete, already-localized message (AppState
+  // builds it per notification kind — device connected / sensor alert /
+  // offline / online) — this used to force EVERY notification's title
+  // through the "device connected" template regardless of what it
+  // actually was, turning a real alert like "⚠️ Water leak detected — X"
+  // into garbled nonsense wrapped a second time as if it were a
+  // connection event.
   _Notification _toUiNotif(AppNotification n, S s) => _Notification(
     id: n.id,
-    title: s.deviceConnectedFmt.replaceAll('{name}', n.title),
+    title: n.title,
     time: _relativeTime(n.timestamp, s),
     icon: _iconForType(n.deviceType),
     iconColor: _colorForType(n.deviceType),

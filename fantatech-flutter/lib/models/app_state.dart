@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart' show mapEquals;
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'device.dart';
+import 'device_capabilities.dart';
 import 'face_analysis.dart';
 import 'known_person.dart';
 import 'media_module.dart';
@@ -481,8 +482,19 @@ class AppState extends ChangeNotifier {
       final idx = _devices.indexWhere((d) => d.id == f.id);
       if (idx == -1) continue;
       final cur = _devices[idx];
-      final wasDetected = cur.attributes['detected'] == true;
-      final nowDetected = f.attributes['detected'] == true;
+
+      // Real per-type binary-state key (motion → 'detected', door/window →
+      // 'open', water leak → 'water_leak', smoke → 'smoke', gas → 'gas',
+      // glass-break → 'vibration') — this used to be hardcoded to
+      // 'detected' for every sensor type, so only motion sensors ever
+      // actually raised an alert; a door opening, a real water leak, smoke,
+      // or gas being detected silently did nothing.
+      final key = DeviceCapabilities.binaryStateKey(cur.type);
+      final wasTriggered = key != null && cur.attributes[key] == true;
+      final nowTriggered = key != null && f.attributes[key] == true;
+
+      final wasOffline = cur.status == DeviceStatus.offline;
+      final nowOffline = f.status == DeviceStatus.offline;
 
       final mergedAttrs = {...cur.attributes, ...f.attributes};
       // Only mark the poll as having changed anything when something
@@ -499,8 +511,17 @@ class AppState extends ChangeNotifier {
       }
 
       // Rising edge on a sensor → raise an alert.
-      if (!wasDetected && nowDetected) {
+      if (key != null && !wasTriggered && nowTriggered) {
         _raiseSensorAlert(cur);
+      }
+
+      // A device going offline/back online — real, and applies to every
+      // device type (switch/plug/sensor/camera/whatever), not just
+      // sensors. Didn't exist before this at all.
+      if (!wasOffline && nowOffline) {
+        _raiseConnectivityNotification(cur, offline: true);
+      } else if (wasOffline && !nowOffline) {
+        _raiseConnectivityNotification(cur, offline: false);
       }
     }
     if (changed) notifyListeners();
@@ -517,13 +538,21 @@ class AppState extends ChangeNotifier {
   }
 
   void _raiseSensorAlert(Device d) {
+    final he = _locale == AppLocale.hebrew;
+    final event = switch (d.type) {
+      DeviceType.waterLeakSensor  => he ? 'זוהתה נזילת מים' : 'Water leak detected',
+      DeviceType.smokeSensor      => he ? 'זוהה עשן'        : 'Smoke detected',
+      DeviceType.gasSensor        => he ? 'זוהה גז'          : 'Gas detected',
+      DeviceType.doorSensor       => he ? 'הדלת נפתחה'       : 'Door opened',
+      DeviceType.windowSensor     => he ? 'החלון נפתח'       : 'Window opened',
+      DeviceType.glassBreakSensor => he ? 'זוהתה רטיטה/שבירה' : 'Vibration/break detected',
+      DeviceType.motionSensor     => he ? 'זוהתה תנועה'      : 'Motion detected',
+      _                           => he ? 'זוהה אירוע'       : 'Event detected',
+    };
     final isLeak = d.type == DeviceType.waterLeakSensor;
-    final title = isLeak
-        ? '⚠️ Water leak detected — ${d.name}'
-        : '⚠️ Alert — ${d.name}';
     _appNotifications.insert(0, AppNotification(
       id: 'alert_${d.id}_${DateTime.now().millisecondsSinceEpoch}',
-      title: title,
+      title: '⚠️ $event — ${d.name}',
       deviceId: d.id,
       deviceType: d.type,
       timestamp: DateTime.now(),
@@ -532,6 +561,26 @@ class AppState extends ChangeNotifier {
       _leakAlertActive = true;
       _leakAlertName = d.name;
     }
+  }
+
+  /// Real connectivity notification for ANY device type going offline or
+  /// coming back — didn't exist before this at all (only sensor triggers
+  /// raised a notification, and only motion sensors' really worked — see
+  /// _mergeFreshDevices). Applies uniformly to switches, plugs, sensors,
+  /// cameras, everything, since going offline means the same thing for
+  /// any of them.
+  void _raiseConnectivityNotification(Device d, {required bool offline}) {
+    final he = _locale == AppLocale.hebrew;
+    final title = offline
+        ? (he ? '${d.name} התנתק מהרשת' : '${d.name} went offline')
+        : (he ? '${d.name} חזר להיות מחובר' : '${d.name} is back online');
+    _appNotifications.insert(0, AppNotification(
+      id: '${offline ? 'offline' : 'online'}_${d.id}_${DateTime.now().millisecondsSinceEpoch}',
+      title: title,
+      deviceId: d.id,
+      deviceType: d.type,
+      timestamp: DateTime.now(),
+    ));
   }
   AppLocale _locale = AppLocale.hebrew;
   bool _keepShabbat = false;
@@ -1506,9 +1555,15 @@ class AppState extends ChangeNotifier {
     if (idx == -1) {
       if (_removedDeviceIds.contains(device.id)) return;
       _devices.add(device);
+      // Fully-formatted here (not just the raw device name) — the
+      // notifications screen used to force EVERY notification's title
+      // through this exact "connected" template, including sensor alerts
+      // and (once added) offline/online ones, garbling them into
+      // nonsense. Each notification now carries its own real, complete
+      // message; the UI just displays it as-is.
       _appNotifications.insert(0, AppNotification(
         id: 'notif_${device.id}_${DateTime.now().millisecondsSinceEpoch}',
-        title: device.name,
+        title: strings.deviceConnectedFmt.replaceAll('{name}', device.name),
         deviceId: device.id,
         deviceType: device.type,
         timestamp: DateTime.now(),
