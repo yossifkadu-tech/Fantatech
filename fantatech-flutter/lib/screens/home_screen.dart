@@ -10,6 +10,7 @@ import '../services/automation_engine.dart';
 import '../services/gateways/gateway_manager.dart';
 import '../services/gateways/gateway_model.dart';
 import '../services/schedule_service.dart';
+import '../theme/device_icons.dart';
 import 'gateways/gateway_hub_screen.dart';
 import 'ai/fanta_ai_screen.dart';
 import 'smarthome/scan_discovery_screen.dart';
@@ -745,6 +746,7 @@ class _TodaysEnergyCards extends StatelessWidget {
                 MaterialPageRoute(builder: (_) => const SolarScreen())),
             child: _TodayEnergyCard(
               icon: Symbols.solar_power,
+              photoAsset: DeviceIcons.photoAsset(DeviceType.solar),
               iconColor: const Color(0xFFFFB800),
               title: s.solarTitle,
               lines: [s.notConnectedLabel],
@@ -761,11 +763,15 @@ class _TodayEnergyCard extends StatelessWidget {
   final Color iconColor;
   final String title;
   final List<String> lines;
+  /// Real device photo, e.g. from DeviceIcons.photoAsset — shown instead
+  /// of [icon] when present.
+  final String? photoAsset;
   const _TodayEnergyCard({
     required this.icon,
     required this.iconColor,
     required this.title,
     required this.lines,
+    this.photoAsset,
   });
 
   @override
@@ -781,7 +787,13 @@ class _TodayEnergyCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(children: [
-            Icon(icon, color: iconColor, size: 18),
+            photoAsset != null
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(5),
+                    child: Image.asset(photoAsset!,
+                        width: 18, height: 18, fit: BoxFit.cover),
+                  )
+                : Icon(icon, color: iconColor, size: 18),
             const SizedBox(width: 6),
             Expanded(
               child: Text(title,
@@ -1149,6 +1161,7 @@ class _SecurityBanner extends StatelessWidget {
                             MaterialPageRoute(builder: (_) => const SmartLockHubScreen())))),
                     Expanded(child: _ShChip(
                         icon: Symbols.videocam,
+                        photoAsset: DeviceIcons.photoAsset(DeviceType.camera),
                         value: cameras,
                         label: heLabel('מצלמות', s.navCameras),
                         color: AppColors.networkColor,
@@ -1398,6 +1411,7 @@ class _SmartHomeBanner extends StatelessWidget {
                       // חכם" category grid (SmartHomeScreen).
                       Expanded(child: _ShChip(
                           icon: Symbols.thermostat,
+                          photoAsset: DeviceIcons.photoAsset(DeviceType.airConditioner),
                           value: acOn,
                           label: heLabel('מזגנים', s.qaAc),
                           color: AppColors.acColor,
@@ -1439,12 +1453,16 @@ class _ShChip extends StatelessWidget {
   final String label;
   final Color color;
   final VoidCallback? onTap;
+  /// Real device photo, e.g. from DeviceIcons.photoAsset — shown instead
+  /// of [icon] when present.
+  final String? photoAsset;
   const _ShChip({
     required this.icon,
     required this.value,
     required this.label,
     required this.color,
     this.onTap,
+    this.photoAsset,
   });
 
   @override
@@ -1468,9 +1486,16 @@ class _ShChip extends StatelessWidget {
                 color: color.withValues(alpha: muted ? 0.10 : 0.18),
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon,
-                  color: muted ? color.withValues(alpha: 0.55) : color,
-                  size: 19),
+              child: photoAsset != null
+                  ? ClipOval(
+                      child: Opacity(
+                        opacity: muted ? 0.55 : 1.0,
+                        child: Image.asset(photoAsset!, fit: BoxFit.cover),
+                      ),
+                    )
+                  : Icon(icon,
+                      color: muted ? color.withValues(alpha: 0.55) : color,
+                      size: 19),
             ),
             const SizedBox(height: 5),
             if (value != null)
