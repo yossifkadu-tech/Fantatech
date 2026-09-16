@@ -24,6 +24,7 @@ class _AutomationsScreenState extends State<AutomationsScreen> {
   // Shabbat automations — resolved in the current language.
   List<_AutomationMeta> _shabbatAutomationsFor(S s) => [
     _AutomationMeta(
+      recKey: 'shabbat_candles',
       icon: Symbols.wb_twilight,
       iconBg: const Color(0xFF2A2000),
       iconColor: const Color(0xFFFFD700),
@@ -31,6 +32,7 @@ class _AutomationsScreenState extends State<AutomationsScreen> {
       description: s.shabbatCandlesDesc,
     ),
     _AutomationMeta(
+      recKey: 'shabbat_havdalah',
       icon: Symbols.nights_stay,
       iconBg: const Color(0xFF1A0A2A),
       iconColor: const Color(0xFF9B8CF5),
@@ -42,6 +44,7 @@ class _AutomationsScreenState extends State<AutomationsScreen> {
   // Recommended automations — resolved in the current language.
   List<_AutomationMeta> _recommendationsFor(S s) => [
     _AutomationMeta(
+      recKey: 'peak',
       icon: Symbols.wb_sunny,
       iconBg: const Color(0xFF2A1F00),
       iconColor: const Color(0xFFFFB300),
@@ -49,6 +52,7 @@ class _AutomationsScreenState extends State<AutomationsScreen> {
       description: s.recPeakDesc,
     ),
     _AutomationMeta(
+      recKey: 'travel',
       icon: Symbols.security,
       iconBg: const Color(0xFF0A1A2A),
       iconColor: AppColors.primary,
@@ -56,6 +60,7 @@ class _AutomationsScreenState extends State<AutomationsScreen> {
       description: s.recTravelDesc,
     ),
     _AutomationMeta(
+      recKey: 'temp',
       icon: Symbols.thermostat,
       iconBg: const Color(0xFF1A0A0A),
       iconColor: const Color(0xFFEA4335),
@@ -431,26 +436,56 @@ class _RecommendationsList extends StatelessWidget {
         ),
       );
 
-  Widget _cardFor(_AutomationMeta item, AppState state) => _AutomationCard(
-        icon: item.icon,
-        iconColor: item.iconColor,
-        iconBg: item.iconBg,
-        name: item.name,
-        description: item.description,
-        enabled: false,
-        rawName: item.name,
-        rawCondition: '',
-        rawAction: item.description,
-        onToggle: () {},
-        onSave: (name, cond, action) {
+  Widget _cardFor(_AutomationMeta item, AppState state) {
+    final recId = 'rec_${item.recKey}';
+    Automation? existing;
+    for (final a in state.automations) {
+      if (a.id == recId) { existing = a; break; }
+    }
+    final enabled = existing?.isEnabled ?? false;
+    return _AutomationCard(
+      icon: item.icon,
+      iconColor: item.iconColor,
+      iconBg: item.iconBg,
+      name: item.name,
+      description: item.description,
+      enabled: enabled,
+      rawName: item.name,
+      rawCondition: '',
+      rawAction: item.description,
+      // Was a no-op (`() {}`) — this recommendation's Switch showed but
+      // never actually changed anything. Now: first tap creates the real
+      // Automation (enabled by default), later taps flip its isEnabled —
+      // same recId every time, so this never creates a duplicate.
+      onToggle: () {
+        if (existing != null) {
+          state.toggleAutomation(existing.id);
+        } else {
           state.addAutomation(Automation(
-            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            id: recId,
+            name: item.name,
+            condition: '',
+            action: item.description,
+          ));
+        }
+      },
+      onSave: (name, cond, action) {
+        if (existing != null) {
+          state.updateAutomation(existing.id,
+              name: name.isEmpty ? item.name : name,
+              condition: cond,
+              action: action);
+        } else {
+          state.addAutomation(Automation(
+            id: recId,
             name: name.isEmpty ? item.name : name,
             condition: cond,
             action: action,
           ));
-        },
-      );
+        }
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -471,29 +506,7 @@ class _RecommendationsList extends StatelessWidget {
         ],
         ...items.asMap().entries.map((e) => Padding(
               padding: EdgeInsets.only(bottom: e.key < items.length - 1 ? 12 : 0),
-              child: Builder(builder: (ctx) {
-                final item = e.value;
-                return _AutomationCard(
-          icon: item.icon,
-          iconColor: item.iconColor,
-          iconBg: item.iconBg,
-          name: item.name,
-          description: item.description,
-          enabled: false,
-          rawName: item.name,
-          rawCondition: '',
-          rawAction: item.description,
-          onToggle: () {},
-          onSave: (name, cond, action) {
-            state.addAutomation(Automation(
-              id: DateTime.now().millisecondsSinceEpoch.toString(),
-              name: name.isEmpty ? item.name : name,
-              condition: cond,
-              action: action,
-            ));
-          },
-        );
-              }),
+              child: _cardFor(e.value, state),
             )),
       ],
     );
@@ -1535,6 +1548,11 @@ class _AutomationMeta {
   final Color iconColor;
   final String name;
   final String description;
+  /// Stable identity for this recommendation, independent of locale/order —
+  /// used to find (or create) the real Automation it turns into once the
+  /// user activates it, so the toggle can reflect and change its actual
+  /// enabled state instead of being a no-op.
+  final String recKey;
 
   const _AutomationMeta({
     required this.icon,
@@ -1542,6 +1560,7 @@ class _AutomationMeta {
     required this.iconColor,
     required this.name,
     required this.description,
+    required this.recKey,
   });
 }
 
