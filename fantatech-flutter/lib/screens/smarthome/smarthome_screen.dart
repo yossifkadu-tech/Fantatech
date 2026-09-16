@@ -55,7 +55,7 @@ class _SmartHomeScreenState extends State<SmartHomeScreen> {
   }
 
   // ── Category metadata keyed by layout item type ──────────────────────────
-  Map<String, ({String label, DeviceType type, IconData icon, Color color, Widget? dest})>
+  Map<String, ({String label, DeviceType type, IconData icon, Color color, Widget? dest, String? photo})>
       _catMeta(S s, BuildContext ctx) {
     // Per user-supplied mockup: Hebrew-only label overrides, matching the
     // ones applied to the home screen's category row list. Left out of the
@@ -67,14 +67,14 @@ class _SmartHomeScreenState extends State<SmartHomeScreen> {
     String heLabel(String hebrew, String fallback) => isHebrew ? hebrew : fallback;
 
     return {
-    'cat_light':  (label: s.lightsCategory,   type: DeviceType.light,           icon: DeviceIcons.icon(DeviceType.light),           color: DeviceIcons.color(DeviceType.light),           dest: const LightsHubScreen()),
-    'cat_blind':  (label: s.blindsCategory,   type: DeviceType.blind,           icon: DeviceIcons.icon(DeviceType.blind),           color: DeviceIcons.color(DeviceType.blind),           dest: const BlindHubScreen()),
-    'cat_ac':     (label: s.acCategory,       type: DeviceType.airConditioner,  icon: DeviceIcons.icon(DeviceType.airConditioner),  color: DeviceIcons.color(DeviceType.airConditioner),  dest: const ACHubScreen()),
-    'cat_plug':   (label: heLabel('שקעים חכמים', s.plugsCategory), type: DeviceType.smartPlug,       icon: DeviceIcons.icon(DeviceType.smartPlug),       color: DeviceIcons.color(DeviceType.smartPlug),       dest: const DevicesScreen(initialCategory: DeviceType.smartPlug)),
-    'cat_switch': (label: heLabel('מתגי תאורה', s.switchesCategory), type: DeviceType.smartSwitch,     icon: DeviceIcons.icon(DeviceType.smartSwitch),     color: DeviceIcons.color(DeviceType.smartSwitch),     dest: const SmartSwitchHubScreen()),
-    'cat_sensor':   (label: s.sensorsCategory,  type: DeviceType.motionSensor, icon: DeviceIcons.icon(DeviceType.motionSensor), color: DeviceIcons.color(DeviceType.motionSensor), dest: const SensorHubScreen()),
-    'cat_intercom': (label: s.intercomCategory, type: DeviceType.intercom,    icon: DeviceIcons.icon(DeviceType.intercom),     color: DeviceIcons.color(DeviceType.intercom),     dest: const IntercomHubScreen()),
-    'cat_vacuum':   (label: s.vacuumCategory,   type: DeviceType.robotVacuum, icon: DeviceIcons.icon(DeviceType.robotVacuum),  color: DeviceIcons.color(DeviceType.robotVacuum),  dest: const RobotVacuumHubScreen()),
+    'cat_light':  (label: s.lightsCategory,   type: DeviceType.light,           icon: DeviceIcons.icon(DeviceType.light),           color: DeviceIcons.color(DeviceType.light),           dest: const LightsHubScreen(), photo: DeviceIcons.photoAsset(DeviceType.light)),
+    'cat_blind':  (label: s.blindsCategory,   type: DeviceType.blind,           icon: DeviceIcons.icon(DeviceType.blind),           color: DeviceIcons.color(DeviceType.blind),           dest: const BlindHubScreen(), photo: DeviceIcons.photoAsset(DeviceType.blind)),
+    'cat_ac':     (label: s.acCategory,       type: DeviceType.airConditioner,  icon: DeviceIcons.icon(DeviceType.airConditioner),  color: DeviceIcons.color(DeviceType.airConditioner),  dest: const ACHubScreen(), photo: DeviceIcons.photoAsset(DeviceType.airConditioner)),
+    'cat_plug':   (label: heLabel('שקעים חכמים', s.plugsCategory), type: DeviceType.smartPlug,       icon: DeviceIcons.icon(DeviceType.smartPlug),       color: DeviceIcons.color(DeviceType.smartPlug),       dest: const DevicesScreen(initialCategory: DeviceType.smartPlug), photo: DeviceIcons.photoAsset(DeviceType.smartPlug)),
+    'cat_switch': (label: heLabel('מתגי תאורה', s.switchesCategory), type: DeviceType.smartSwitch,     icon: DeviceIcons.icon(DeviceType.smartSwitch),     color: DeviceIcons.color(DeviceType.smartSwitch),     dest: const SmartSwitchHubScreen(), photo: DeviceIcons.photoAsset(DeviceType.smartSwitch)),
+    'cat_sensor':   (label: s.sensorsCategory,  type: DeviceType.motionSensor, icon: DeviceIcons.icon(DeviceType.motionSensor), color: DeviceIcons.color(DeviceType.motionSensor), dest: const SensorHubScreen(), photo: null),
+    'cat_intercom': (label: s.intercomCategory, type: DeviceType.intercom,    icon: DeviceIcons.icon(DeviceType.intercom),     color: DeviceIcons.color(DeviceType.intercom),     dest: const IntercomHubScreen(), photo: null),
+    'cat_vacuum':   (label: s.vacuumCategory,   type: DeviceType.robotVacuum, icon: DeviceIcons.icon(DeviceType.robotVacuum),  color: DeviceIcons.color(DeviceType.robotVacuum),  dest: const RobotVacuumHubScreen(), photo: null),
     };
   }
 
@@ -188,6 +188,7 @@ class _SmartHomeScreenState extends State<SmartHomeScreen> {
                                   child: _CategoryChip(
                                     label: m.label,
                                     icon: m.icon,
+                                    photoAsset: m.photo,
                                     color: m.color,
                                     count: count,
                                     hidden: !item.visible,
@@ -217,6 +218,7 @@ class _SmartHomeScreenState extends State<SmartHomeScreen> {
                               return _CategoryChip(
                                 label: m.label,
                                 icon: m.icon,
+                                photoAsset: m.photo,
                                 color: m.color,
                                 count: count,
                                 hidden: false,
@@ -365,6 +367,7 @@ class _CategoryChip extends StatelessWidget {
   final bool editMode;
   final VoidCallback? onTap;
   final VoidCallback? onHide;
+  final String? photoAsset;
 
   const _CategoryChip({
     required this.label,
@@ -375,6 +378,7 @@ class _CategoryChip extends StatelessWidget {
     required this.editMode,
     this.onTap,
     this.onHide,
+    this.photoAsset,
   });
 
   @override
@@ -400,7 +404,16 @@ class _CategoryChip extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: effectiveColor, size: 22),
+          photoAsset != null
+              ? Opacity(
+                  opacity: hidden ? 0.45 : 1.0,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.asset(photoAsset!,
+                        width: 26, height: 26, fit: BoxFit.cover),
+                  ),
+                )
+              : Icon(icon, color: effectiveColor, size: 22),
           const SizedBox(height: 4),
           // FittedBox guards against a fixed-width chip overflowing when
           // the device's font-scale setting is large — same fix already

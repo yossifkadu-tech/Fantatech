@@ -1377,6 +1377,7 @@ class _SmartHomeBanner extends StatelessWidget {
                                   initialCategory: DeviceType.waterHeater))))),
                       Expanded(child: _ShChip(
                           icon: Symbols.toggle_on,
+                          photoAsset: DeviceIcons.photoAsset(DeviceType.smartSwitch),
                           value: switchesOn,
                           label: heLabel('תאורה', s.switchesCategory),
                           color: AppColors.plugColor,
@@ -1395,6 +1396,7 @@ class _SmartHomeBanner extends StatelessWidget {
                                   initialCategory: DeviceType.smartSwitch))))),
                       Expanded(child: _ShChip(
                           icon: Symbols.power,
+                          photoAsset: DeviceIcons.photoAsset(DeviceType.smartPlug),
                           value: plugsOn,
                           label: heLabel('שקעים', s.qaPlugs),
                           color: AppColors.plugColor,

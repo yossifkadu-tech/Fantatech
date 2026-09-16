@@ -116,14 +116,6 @@ class _FantaTechSwitchCardState extends State<FantaTechSwitchCard> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                if (widget.photoAsset != null) ...[
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.asset(widget.photoAsset!,
-                        width: 28, height: 28, fit: BoxFit.cover),
-                  ),
-                  const SizedBox(height: 6),
-                ],
                 Text(
                   widget.deviceName,
                   maxLines: 1,
@@ -201,11 +193,20 @@ class _FantaTechSwitchCardState extends State<FantaTechSwitchCard> {
                               : Column(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(
-                                      disabled ? Symbols.wifi_off : widget.icon,
-                                      size: buttonSize * 0.34,
-                                      color: _ledActive ? Colors.white : _offIconGray,
-                                    ),
+                                    (!disabled && widget.photoAsset != null)
+                                        ? ClipOval(
+                                            child: Image.asset(
+                                              widget.photoAsset!,
+                                              width: buttonSize * 0.42,
+                                              height: buttonSize * 0.42,
+                                              fit: BoxFit.cover,
+                                            ),
+                                          )
+                                        : Icon(
+                                            disabled ? Symbols.wifi_off : widget.icon,
+                                            size: buttonSize * 0.34,
+                                            color: _ledActive ? Colors.white : _offIconGray,
+                                          ),
                                     SizedBox(height: buttonSize * 0.05),
                                     Text(
                                       // Label still reflects the real on/off
