@@ -118,6 +118,7 @@ flutter:
     - assets/images/main.jpg
     - assets/images/app_icon.png
     - assets/images/rooms/
+    - assets/images/sensors/
 
   fonts:
     # Bundled Noto fallbacks — guarantee Amharic (Ge'ez) + Arabic glyphs

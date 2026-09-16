@@ -22,6 +22,7 @@ import '../../services/sensors/sensor_models.dart';
 import '../../services/sensors/sensor_scan_engine.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/device_icons.dart';
+import '../../utils/responsive.dart';
 import '../../widgets/device_edit_sheet.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -388,8 +389,16 @@ class _SensorsTab extends StatelessWidget {
           onScan: onScan);
     }
 
-    return ListView.builder(
+    return GridView.builder(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: responsiveColumns(context, phoneColumns: 2),
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+        // Taller than wide — these cards stack icon+name, status, reading
+        // (and sometimes extra readings/buttons for _SensorCard).
+        childAspectRatio: 0.82,
+      ),
       itemCount: totalItems,
       itemBuilder: (_, i) {
         if (i < engine.sensors.length) {
@@ -398,6 +407,63 @@ class _SensorsTab extends StatelessWidget {
         return _SavedSensorCard(
             device: savedDevices[i - engine.sensors.length]);
       },
+    );
+  }
+}
+
+// ── Sensor card icon photos ───────────────────────────────────────────────────
+// Real device renders (user-supplied) for the sensor categories that have
+// one, keyed by the identifier each card actually has at hand — DeviceType
+// for a saved device (distinguishes door/window, gas/smoke, etc.), the
+// narrower SensorType for a live LAN-scan result (collapses some of those
+// distinctions, hence door.png doubling as the generic "contact" image).
+// Falls back to the existing Symbols icon wherever a category has no photo.
+String? _sensorPhotoForDeviceType(DeviceType type) => switch (type) {
+      DeviceType.doorSensor       => 'assets/images/sensors/door.png',
+      DeviceType.windowSensor     => 'assets/images/sensors/window.png',
+      DeviceType.smokeSensor      => 'assets/images/sensors/smoke.png',
+      DeviceType.gasSensor        => 'assets/images/sensors/gas.png',
+      DeviceType.waterLeakSensor  => 'assets/images/sensors/water_leak.png',
+      DeviceType.glassBreakSensor => 'assets/images/sensors/tamper.png',
+      DeviceType.tamperSensor     => 'assets/images/sensors/tamper.png',
+      DeviceType.co2Sensor        => 'assets/images/sensors/co2.png',
+      DeviceType.mailboxSensor    => 'assets/images/sensors/mailbox.png',
+      DeviceType.motionSensor     => 'assets/images/sensors/motion.png',
+      _                           => null,
+    };
+
+String? _sensorPhotoForSensorType(SensorType type) => switch (type) {
+      SensorType.motion      => 'assets/images/sensors/motion.png',
+      SensorType.contact     => 'assets/images/sensors/door.png',
+      SensorType.smoke       => 'assets/images/sensors/smoke.png',
+      SensorType.water       => 'assets/images/sensors/water_leak.png',
+      SensorType.vibration   => 'assets/images/sensors/tamper.png',
+      SensorType.temperature => 'assets/images/sensors/temp_humidity.png',
+      SensorType.humidity    => 'assets/images/sensors/temp_humidity.png',
+      _                      => null,
+    };
+
+/// Icon panel shared by both sensor card types — a real device photo when
+/// [photoAsset] is available, the themed Symbols icon otherwise.
+class _SensorIconPanel extends StatelessWidget {
+  final String? photoAsset;
+  final IconData icon;
+  final Color color;
+  const _SensorIconPanel(
+      {required this.photoAsset, required this.icon, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 52, height: 52,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(13),
+      ),
+      child: photoAsset != null
+          ? Image.asset(photoAsset!, fit: BoxFit.cover)
+          : Icon(icon, color: color, size: 26),
     );
   }
 }
@@ -434,100 +500,87 @@ class _SavedSensorCard extends StatelessWidget {
       onLongPress: () => showDeviceEditSheet(context,
           device: device, state: context.read<AppState>()),
       child: Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
-        color: triggered
-            ? color.withValues(alpha: 0.10)
-            : context.tText2(0.04),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: triggered
-              ? color.withValues(alpha: 0.40)
-              : context.tText2(0.07),
-          width: 1.2,
+        decoration: BoxDecoration(
+          color: context.tCard,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: triggered
+                ? color.withValues(alpha: 0.35)
+                : context.tText2(0.08),
+            width: triggered ? 1.4 : 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: context.tText2(0.06),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
+          ],
         ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Row(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Icon + pulse dot
-            SizedBox(
-              width: 44, height: 44,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Container(
-                    width: 44, height: 44,
-                    decoration: BoxDecoration(
-                      color: color.withValues(alpha: 0.12),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(type.icon, color: color, size: 22),
-                  ),
-                  if (triggered)
-                    Positioned(
-                      right: 2, top: 2,
-                      child: Container(
-                        width: 10, height: 10,
-                        decoration: BoxDecoration(
-                          color: color,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                                color: color.withValues(alpha: 0.6),
-                                blurRadius: 6),
-                          ],
-                        ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _SensorIconPanel(
+                  photoAsset: _sensorPhotoForDeviceType(device.type),
+                  icon: type.icon,
+                  color: color,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(device.name,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                                color: context.tText,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700)),
                       ),
-                    ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(device.name,
-                      style: TextStyle(
-                          color: context.tText,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 2),
-                  Row(children: [
-                    _Tag(
-                      device.attributes['protocol'] as String? ?? 'wifi',
-                      AppColors.primary,
-                    ),
-                    const SizedBox(width: 5),
-                    _Tag(type.displayName, color),
-                  ]),
-                  const SizedBox(height: 5),
-                  Text(
-                    type.triggeredLabel(triggered),
-                    style: TextStyle(
-                      color: triggered ? color : context.tText2(0.45),
-                      fontSize: 12,
-                      fontWeight: triggered
-                          ? FontWeight.w600
-                          : FontWeight.normal,
-                    ),
+                      Icon(Symbols.chevron_right,
+                          color: context.tText2(0.3), size: 16),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-            // Online/offline indicator
-            Container(
-              width: 8, height: 8,
-              decoration: BoxDecoration(
-                color: online ? AppColors.secured : AppColors.unsecured,
-                shape: BoxShape.circle,
+            const SizedBox(height: 10),
+            // Health/connectivity — distinct from the reading below.
+            Row(children: [
+              Container(
+                width: 7, height: 7,
+                decoration: BoxDecoration(
+                  color: online ? AppColors.secured : AppColors.unsecured,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 5),
+              Text(online ? 'תקין' : 'לא מחובר',
+                  style: TextStyle(
+                      color: online ? AppColors.secured : AppColors.unsecured,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700)),
+            ]),
+            const SizedBox(height: 3),
+            // Live reading — what the sensor is actually reporting.
+            Text(
+              type.triggeredLabel(triggered),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: triggered ? color : context.tText2(0.5),
+                fontSize: 12,
+                fontWeight: triggered ? FontWeight.w600 : FontWeight.normal,
               ),
             ),
           ],
         ),
-      ),
       ),
     );
   }
@@ -595,187 +648,181 @@ class _SensorCardState extends State<_SensorCard> {
     final triggered = s.isTriggered;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: triggered == true
-            ? color.withValues(alpha: 0.10)
-            : context.tText2(0.04),
-        borderRadius: BorderRadius.circular(14),
+        color: context.tCard,
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: triggered == true
-              ? color.withValues(alpha: 0.40)
-              : context.tText2(0.07),
-          width: 1.2,
+              ? color.withValues(alpha: 0.35)
+              : context.tText2(0.08),
+          width: triggered == true ? 1.4 : 1,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: context.tText2(0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Row(
-          children: [
-            // ── State dot + type icon ────────────────────────────────────────
-            SizedBox(
-              width: 44, height: 44,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Container(
-                    width: 44, height: 44,
-                    decoration: BoxDecoration(
-                      color: color.withValues(alpha: 0.12),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(s.type.icon, color: color, size: 22),
-                  ),
-                  // Triggered pulse dot
-                  if (triggered == true)
-                    Positioned(
-                      right: 2, top: 2,
-                      child: Container(
-                        width: 10, height: 10,
-                        decoration: BoxDecoration(
-                          color: color,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(color: color.withValues(alpha: 0.6),
-                                blurRadius: 6)
-                          ],
-                        ),
-                      ),
-                    ),
-                ],
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _SensorIconPanel(
+                photoAsset: _sensorPhotoForSensorType(s.type),
+                icon: s.type.icon,
+                color: color,
               ),
-            ),
-            const SizedBox(width: 12),
-
-            // ── Info ─────────────────────────────────────────────────────────
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(s.name,
-                      style: TextStyle(
-                          color: context.tText,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 2),
-                  Row(children: [
-                    _Tag(s.protocol.displayName, s.protocol.color),
-                    const SizedBox(width: 5),
-                    _Tag(s.type.displayName, s.type.color),
-                  ]),
-                  const SizedBox(height: 5),
-                  // State label
-                  Text(
-                    s.type.triggeredLabel(triggered),
-                    style: TextStyle(
-                        color: triggered == true ? color : context.tText2(0.38),
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700),
-                  ),
-                  // Extra readings
-                  if (s.temperature != null || s.humidity != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 3),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (s.temperature != null) ...[
-                            Icon(DeviceIcons.forHaDeviceClass('temperature'),
-                                size: 12, color: context.tText2(0.54)),
-                            const SizedBox(width: 2),
-                            Text('${s.temperature!.toStringAsFixed(1)} °C',
-                                style: TextStyle(
-                                    color: context.tText2(0.54), fontSize: 11)),
-                          ],
-                          if (s.temperature != null && s.humidity != null)
-                            const SizedBox(width: 8),
-                          if (s.humidity != null) ...[
-                            Icon(DeviceIcons.forHaDeviceClass('humidity'),
-                                size: 12, color: context.tText2(0.54)),
-                            const SizedBox(width: 2),
-                            Text('${s.humidity!.toStringAsFixed(0)} %',
-                                style: TextStyle(
-                                    color: context.tText2(0.54), fontSize: 11)),
-                          ],
-                        ],
-                      ),
-                    ),
-                  if (s.batteryPercent != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 2),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(DeviceIcons.batteryIcon(s.batteryPercent),
-                              size: 12,
-                              color: s.batteryPercent! < 20
-                                  ? AppColors.statusAlarm
-                                  : context.tText2(0.38)),
-                          const SizedBox(width: 2),
-                          Text('${s.batteryPercent} %',
-                              style: TextStyle(
-                                  color: s.batteryPercent! < 20
-                                      ? AppColors.statusAlarm
-                                      : context.tText2(0.38),
-                                  fontSize: 11)),
-                        ],
-                      ),
-                    ),
-                ],
-              ),
-            ),
-
-            // ── Buttons ──────────────────────────────────────────────────────
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Refresh
-                GestureDetector(
-                  onTap: _refresh,
-                  child: Container(
-                    width: 34, height: 34,
-                    decoration: BoxDecoration(
-                      color: context.tText2(0.06),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: _refreshing
-                        ? const Padding(
-                            padding: EdgeInsets.all(8),
-                            child: CircularProgressIndicator(
-                                strokeWidth: 1.8,
-                                color: AppColors.primary))
-                        : Icon(Symbols.refresh,
-                            color: context.tText2(0.54), size: 18),
-                  ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(s.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                            color: context.tText,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 2),
+                    Row(children: [
+                      _Tag(s.protocol.displayName, s.protocol.color),
+                      const SizedBox(width: 5),
+                      _Tag(s.type.displayName, s.type.color),
+                    ]),
+                  ],
                 ),
-                const SizedBox(height: 6),
-                // Add to home
-                if (!s.isRegistered)
-                  GestureDetector(
-                    onTap: _addToHome,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: color.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(
-                            color: color.withValues(alpha: 0.40)),
-                      ),
-                      child: Text(str.add,
-                          style: TextStyle(
-                              color: color,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700)),
-                    ),
-                  )
-                else
-                  Icon(Symbols.check_circle,
-                      color: color, size: 20),
-              ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          // Health/connectivity — distinct from the reading below.
+          Row(children: [
+            Container(
+              width: 7, height: 7,
+              decoration: BoxDecoration(
+                color: s.isOnline ? AppColors.secured : AppColors.unsecured,
+                shape: BoxShape.circle,
+              ),
             ),
-          ],
-        ),
+            const SizedBox(width: 5),
+            Text(s.isOnline ? 'תקין' : 'לא מחובר',
+                style: TextStyle(
+                    color: s.isOnline ? AppColors.secured : AppColors.unsecured,
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w700)),
+          ]),
+          const SizedBox(height: 3),
+          // Live reading — what the sensor is actually reporting.
+          Text(
+            s.type.triggeredLabel(triggered),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+                color: triggered == true ? color : context.tText2(0.5),
+                fontSize: 12,
+                fontWeight:
+                    triggered == true ? FontWeight.w600 : FontWeight.normal),
+          ),
+          // Extra readings
+          if (s.temperature != null || s.humidity != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (s.temperature != null) ...[
+                    Icon(DeviceIcons.forHaDeviceClass('temperature'),
+                        size: 12, color: context.tText2(0.54)),
+                    const SizedBox(width: 2),
+                    Text('${s.temperature!.toStringAsFixed(1)} °C',
+                        style: TextStyle(
+                            color: context.tText2(0.54), fontSize: 11)),
+                  ],
+                  if (s.temperature != null && s.humidity != null)
+                    const SizedBox(width: 8),
+                  if (s.humidity != null) ...[
+                    Icon(DeviceIcons.forHaDeviceClass('humidity'),
+                        size: 12, color: context.tText2(0.54)),
+                    const SizedBox(width: 2),
+                    Text('${s.humidity!.toStringAsFixed(0)} %',
+                        style: TextStyle(
+                            color: context.tText2(0.54), fontSize: 11)),
+                  ],
+                ],
+              ),
+            ),
+          if (s.batteryPercent != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(DeviceIcons.batteryIcon(s.batteryPercent),
+                      size: 12,
+                      color: s.batteryPercent! < 20
+                          ? AppColors.statusAlarm
+                          : context.tText2(0.38)),
+                  const SizedBox(width: 2),
+                  Text('${s.batteryPercent} %',
+                      style: TextStyle(
+                          color: s.batteryPercent! < 20
+                              ? AppColors.statusAlarm
+                              : context.tText2(0.38),
+                          fontSize: 11)),
+                ],
+              ),
+            ),
+          const SizedBox(height: 8),
+          // ── Buttons ──────────────────────────────────────────────────────
+          Row(
+            children: [
+              GestureDetector(
+                onTap: _refresh,
+                child: Container(
+                  width: 30, height: 30,
+                  decoration: BoxDecoration(
+                    color: context.tText2(0.06),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: _refreshing
+                      ? const Padding(
+                          padding: EdgeInsets.all(7),
+                          child: CircularProgressIndicator(
+                              strokeWidth: 1.8, color: AppColors.primary))
+                      : Icon(Symbols.refresh,
+                          color: context.tText2(0.54), size: 16),
+                ),
+              ),
+              const Spacer(),
+              if (!s.isRegistered)
+                GestureDetector(
+                  onTap: _addToHome,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: color.withValues(alpha: 0.40)),
+                    ),
+                    child: Text(str.add,
+                        style: TextStyle(
+                            color: color,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700)),
+                  ),
+                )
+              else
+                Icon(Symbols.check_circle, color: color, size: 20),
+            ],
+          ),
+        ],
       ),
     );
   }
