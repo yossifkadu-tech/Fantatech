@@ -359,21 +359,47 @@ class TuyaCloudClient {
   Future<String?> getToken() => _getToken();
 
   // ── Fetch one device's live status (all DPs) ───────────────────────────────
-  /// GET /v1.0/devices/{id}/status — returns every DP Tuya currently has for
-  /// this device (code → value), as a map. Deliberately separate from the
-  /// bulk associated-users/devices list used by [fetchDevices]: that list
-  /// endpoint's per-device 'status' can be a trimmed subset for some
-  /// categories/models, so this single-device endpoint is the reliable way
-  /// to pull a device's full current DP set on demand (e.g. an "advanced
-  /// settings" refresh button in the edit sheet), not just at import time.
+  /// Returns every DP Tuya currently has for this device (code → value), as
+  /// a map. Deliberately separate from the bulk associated-users/devices
+  /// list used by [fetchDevices]: that list endpoint's per-device 'status'
+  /// can be a trimmed subset for some categories/models, so a single-device
+  /// endpoint is the reliable way to pull a device's full current DP set on
+  /// demand (e.g. an "advanced settings" refresh button in the edit sheet),
+  /// not just at import time.
+  ///
+  /// Tries the newer `/v1.0/iot-03/devices/{id}/status` endpoint first —
+  /// the older plain `/v1.0/devices/{id}/status` returns `code 2003
+  /// "function not support"` for device categories onboarded through
+  /// Tuya's newer "quick response"/data-model flow (seen live on a
+  /// presence/illuminance sensor whose Smart Life app clearly shows this
+  /// data, so the device itself is not the problem). Falls back to the
+  /// older endpoint for any device category where that's what actually
+  /// works, keeping both raw responses in [lastStatusRawResponse] if both
+  /// fail so a still-unexplained case is diagnosable without guessing a
+  /// third path blind.
   Future<Map<String, dynamic>?> fetchDeviceStatus({
     required String token,
     required String tuyaDeviceId,
   }) async {
-    final path = '/v1.0/devices/$tuyaDeviceId/status';
+    final modern = await _fetchStatusFrom(
+        '/v1.0/iot-03/devices/$tuyaDeviceId/status', token);
+    if (modern != null) return modern;
+    final modernLog = lastStatusRawResponse;
+
+    final legacy =
+        await _fetchStatusFrom('/v1.0/devices/$tuyaDeviceId/status', token);
+    if (legacy != null) return legacy;
+
+    lastStatusRawResponse = '$modernLog\n\n$lastStatusRawResponse';
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> _fetchStatusFrom(
+      String path, String token) async {
     final resp = await _signedGet(path, token);
     if (resp == null) {
-      lastStatusRawResponse = 'No response from Tuya (network/timeout) for $path.';
+      lastStatusRawResponse =
+          'No response from Tuya (network/timeout) for $path.';
       return null;
     }
     lastStatusRawResponse = 'GET $path\n$resp';
