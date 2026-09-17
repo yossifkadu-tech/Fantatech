@@ -18,6 +18,13 @@ def on_connect(client, userdata, flags, rc, props=None):
     # Generic device topics
     client.subscribe("devices/+/state")
     client.subscribe("devices/+/online")
+    # Commands published by rule_engine.py / the generic /api/devices/{id}/cmd
+    # and /toggle endpoints. Protocol-owning bridges (wifi, zigbee) already
+    # subscribe to this same topic for their own devices independently —
+    # the hub adds its own subscription here so Tuya devices (which have no
+    # separate bridge process) get dispatched too. See main.py's
+    # on_mqtt_message() and tuya_manager.handle_device_cmd().
+    client.subscribe("devices/+/cmd")
     client.subscribe("bridges/+/status")
     # Tasmota topics (tele/TOPIC/STATE, tele/TOPIC/SENSOR, stat/TOPIC/POWER)
     client.subscribe("tele/+/STATE")

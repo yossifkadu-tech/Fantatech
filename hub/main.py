@@ -17,6 +17,7 @@ from database import init_db, update_device_state, get_device, get_all_devices, 
 from mqtt_client import start as mqtt_start, register_handler, publish
 from rule_engine import start as rules_start
 from ws_manager import manager
+import tuya_manager
 
 HUB_VERSION = "2.0.0"
 IS_WIN = platform.system() == "Windows"
@@ -147,6 +148,23 @@ async def on_mqtt_message(topic: str, payload):
                     message=f"'{d['name']}' reconnected",
                     device_id=device_id, device_name=d["name"],
                 )
+
+    # -- devices/{id}/cmd: dispatch to TuyaManager when the target device is
+    # Tuya-protocol. wifi/zigbee bridges already own this same topic for
+    # their own devices independently (multiple MQTT subscribers is normal);
+    # for anything else, handle_device_cmd() returns None and this is a
+    # no-op. See tuya_manager.handle_device_cmd().
+    elif len(parts) == 3 and parts[0] == "devices" and parts[2] == "cmd":
+        device_id = parts[1]
+        cmd_payload = payload if isinstance(payload, dict) else {}
+        cmd_result = await tuya_manager.handle_device_cmd(device_id, cmd_payload)
+        if cmd_result is not None:
+            connection = "offline"
+            if cmd_result.ok:
+                connection = "online_local" if cmd_result.via == "local" else "online_cloud"
+            await manager.broadcast("device_connection", {
+                "id": device_id, "connection": connection, "ok": cmd_result.ok,
+            })
 
     # ג”€ג”€ Tasmota: tele/{topic}/STATE ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€
     elif len(parts) == 3 and parts[0] == "tele" and parts[2] == "STATE":

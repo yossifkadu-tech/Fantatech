@@ -39,6 +39,23 @@ def normalize_mode(mode: Optional[str]) -> str:
     return mode if mode in VALID_MODES else "local_first"
 
 
+async def resolve_cloud_creds() -> Optional[dict]:
+    """Decrypted, in-memory-only — never returned from an endpoint as-is.
+    The single shared place that turns the persisted (encrypted) Tuya Cloud
+    credentials into what execute_command()/get_status() need; both
+    routers/tuya.py's REST endpoints and handle_device_cmd() (the MQTT
+    path, below) go through this instead of each keeping their own copy."""
+    from database import get_tuya_cloud_creds
+    creds = await get_tuya_cloud_creds()
+    if not creds:
+        return None
+    return {
+        "region": creds["region"],
+        "access_id": creds["access_id"],
+        "access_secret": decrypt_field(creds["access_secret"]),
+    }
+
+
 class TuyaResult:
     """Uniform result shape for control/status/test — always says which
     driver actually served the request, so callers (and the UI) can show
@@ -252,3 +269,38 @@ async def get_diagnostics(device: dict, cloud_creds: Optional[dict] = None) -> d
         "commandTest": local_result.ok,
         "cloudConnection": cloud_result.ok,
     }
+
+
+async def handle_device_cmd(device_id: str, payload: dict) -> Optional[TuyaResult]:
+    """Entry point for the generic devices/{id}/cmd MQTT topic (see
+    main.py's on_mqtt_message) — the same topic rule_engine.py's
+    automations already publish to by default, and the same topic
+    /api/devices/{id}/cmd and /toggle publish to. Before this, nothing
+    subscribed to that topic on Tuya devices' behalf, so an automation or
+    the generic toggle endpoint silently did nothing for them; wifi/zigbee
+    devices are unaffected — their own bridge processes already own this
+    topic for their devices independently, MQTT allows multiple
+    subscribers.
+
+    Returns None (not "this device, but it failed") when device_id isn't a
+    Tuya-protocol device at all, so main.py knows not to broadcast a
+    Tuya-specific connection-status event for someone else's device.
+    """
+    from database import get_device
+    from mqtt_client import publish
+
+    device = await get_device(device_id)
+    if not device or device.get("protocol") != "tuya":
+        return None
+
+    cloud_creds = await resolve_cloud_creds()
+    result = await execute_command(device, payload, cloud_creds)
+    if result.ok:
+        # Republish as the generic devices/{id}/state topic so the existing
+        # state-update handler (DB write + WebSocket broadcast) picks it up
+        # exactly like it would for a real bridge-reported state change —
+        # no separate DB/broadcast code needed here.
+        publish(f"devices/{device_id}/state", payload)
+    else:
+        print(f"[TuyaManager] Command failed for {device_id} via {result.via}: {result.error}")
+    return result

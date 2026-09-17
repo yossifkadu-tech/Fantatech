@@ -644,18 +644,6 @@ async def migrate_plaintext_secrets():
         print(f"[Tuya] Encrypted {migrated} plaintext local_key value(s) at rest.")
 
 
-async def _resolve_cloud_creds() -> Optional[dict]:
-    """Decrypted, in-memory-only — never returned from an endpoint as-is."""
-    creds = await get_tuya_cloud_creds()
-    if not creds:
-        return None
-    return {
-        "region": creds["region"],
-        "access_id": creds["access_id"],
-        "access_secret": decrypt_field(creds["access_secret"]),
-    }
-
-
 # ── Cloud credentials (persisted once, used for cloud_first/cloud_only and
 #    local-fail fallback so callers never need to carry Tuya Cloud secrets
 #    around per-request) ─────────────────────────────────────────────────────
@@ -726,7 +714,7 @@ async def _get_tuya_device_or_404(device_id: str) -> dict:
 @router.post("/manager/control/{device_id}")
 async def manager_control(device_id: str, data: ManagerControlIn):
     d = await _get_tuya_device_or_404(device_id)
-    cloud_creds = await _resolve_cloud_creds()
+    cloud_creds = await tuya_manager.resolve_cloud_creds()
     result = await tuya_manager.execute_command(d, data.payload, cloud_creds)
     if not result.ok:
         raise HTTPException(502, result.to_dict())
@@ -736,7 +724,7 @@ async def manager_control(device_id: str, data: ManagerControlIn):
 @router.get("/manager/status/{device_id}")
 async def manager_status(device_id: str):
     d = await _get_tuya_device_or_404(device_id)
-    cloud_creds = await _resolve_cloud_creds()
+    cloud_creds = await tuya_manager.resolve_cloud_creds()
     result = await tuya_manager.get_status(d, cloud_creds)
     if not result.ok:
         raise HTTPException(502, result.to_dict())
@@ -746,14 +734,14 @@ async def manager_status(device_id: str):
 @router.get("/manager/diagnostics/{device_id}")
 async def manager_diagnostics(device_id: str):
     d = await _get_tuya_device_or_404(device_id)
-    cloud_creds = await _resolve_cloud_creds()
+    cloud_creds = await tuya_manager.resolve_cloud_creds()
     return await tuya_manager.get_diagnostics(d, cloud_creds)
 
 
 @router.get("/manager/connection-status/{device_id}")
 async def manager_connection_status(device_id: str):
     d = await _get_tuya_device_or_404(device_id)
-    cloud_creds = await _resolve_cloud_creds()
+    cloud_creds = await tuya_manager.resolve_cloud_creds()
     return {"connection": await tuya_manager.get_connection_status(d, cloud_creds)}
 
 
