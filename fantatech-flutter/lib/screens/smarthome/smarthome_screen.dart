@@ -73,7 +73,7 @@ class _SmartHomeScreenState extends State<SmartHomeScreen> {
     'cat_plug':   (label: heLabel('שקעים חכמים', s.plugsCategory), type: DeviceType.smartPlug,       icon: DeviceIcons.icon(DeviceType.smartPlug),       color: DeviceIcons.color(DeviceType.smartPlug),       dest: const DevicesScreen(initialCategory: DeviceType.smartPlug), photo: DeviceIcons.photoAsset(DeviceType.smartPlug)),
     'cat_switch': (label: s.switchesCategory, type: DeviceType.smartSwitch,     icon: DeviceIcons.icon(DeviceType.smartSwitch),     color: DeviceIcons.color(DeviceType.smartSwitch),     dest: const SmartSwitchHubScreen(), photo: DeviceIcons.photoAsset(DeviceType.smartSwitch)),
     'cat_sensor':   (label: s.sensorsCategory,  type: DeviceType.motionSensor, icon: DeviceIcons.icon(DeviceType.motionSensor), color: DeviceIcons.color(DeviceType.motionSensor), dest: const SensorHubScreen(), photo: null),
-    'cat_intercom': (label: s.intercomCategory, type: DeviceType.intercom,    icon: DeviceIcons.icon(DeviceType.intercom),     color: DeviceIcons.color(DeviceType.intercom),     dest: const IntercomHubScreen(), photo: null),
+    'cat_intercom': (label: s.intercomCategory, type: DeviceType.intercom,    icon: DeviceIcons.icon(DeviceType.intercom),     color: DeviceIcons.color(DeviceType.intercom),     dest: const IntercomHubScreen(), photo: DeviceIcons.photoAsset(DeviceType.intercom)),
     'cat_vacuum':   (label: s.vacuumCategory,   type: DeviceType.robotVacuum, icon: DeviceIcons.icon(DeviceType.robotVacuum),  color: DeviceIcons.color(DeviceType.robotVacuum),  dest: const RobotVacuumHubScreen(), photo: null),
     };
   }

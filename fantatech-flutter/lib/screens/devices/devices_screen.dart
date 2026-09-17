@@ -57,7 +57,8 @@ class _DevicesScreenState extends State<DevicesScreen> {
       cats.add(_CategoryMeta(DeviceType.light, s.lightsCategory, Symbols.lightbulb, AppColors.lightColor));
     }
     if (devices.any((d) => d.type == DeviceType.blind)) {
-      cats.add(_CategoryMeta(DeviceType.blind, s.blindsCategory, Symbols.blinds, AppColors.primary));
+      cats.add(_CategoryMeta(DeviceType.blind, s.blindsCategory, Symbols.blinds, AppColors.primary,
+          DeviceIcons.photoAsset(DeviceType.blind)));
     }
     if (devices.any((d) => d.type == DeviceType.airConditioner || d.type == DeviceType.waterHeater)) {
       cats.add(_CategoryMeta(DeviceType.airConditioner, s.acCategory, Symbols.hvac, AppColors.acColor,

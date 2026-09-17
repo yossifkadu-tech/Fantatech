@@ -299,6 +299,10 @@ class MaterialSymbolsIconSet extends DeviceIconSet {
         DeviceType.airConditioner => 'assets/images/categories/ac.png',
         DeviceType.camera         => 'assets/images/categories/cameras.png',
         DeviceType.solar          => 'assets/images/categories/solar.png',
+        DeviceType.intercom       => 'assets/images/devices/intercom.png',
+        DeviceType.waterHeater    => 'assets/images/devices/water_heater.png',
+        DeviceType.smartLock      => 'assets/images/devices/smart_lock.png',
+        DeviceType.blind          => 'assets/images/devices/blind.png',
         _                         => null,
       };
 }

@@ -1163,6 +1163,7 @@ class _SecurityBanner extends StatelessWidget {
                             MaterialPageRoute(builder: (_) => const SensorHubScreen())))),
                     Expanded(child: _ShChip(
                         icon: Symbols.lock,
+                        photoAsset: DeviceIcons.photoAsset(DeviceType.smartLock),
                         value: locks,
                         label: heLabel('מנעולים', s.qaLock),
                         color: AppColors.primary,
@@ -1178,6 +1179,7 @@ class _SecurityBanner extends StatelessWidget {
                             MaterialPageRoute(builder: (_) => const CamerasScreen())))),
                     Expanded(child: _ShChip(
                         icon: Symbols.blinds,
+                        photoAsset: DeviceIcons.photoAsset(DeviceType.blind),
                         value: blinds,
                         label: heLabel('תריסים', s.blindsCategory),
                         color: AppColors.plugColor,
@@ -1185,6 +1187,7 @@ class _SecurityBanner extends StatelessWidget {
                             MaterialPageRoute(builder: (_) => const BlindHubScreen())))),
                     Expanded(child: _ShChip(
                         icon: Symbols.doorbell,
+                        photoAsset: DeviceIcons.photoAsset(DeviceType.intercom),
                         value: intercoms,
                         label: heLabel('אינטרקום', s.planIntercomLabel),
                         color: AppColors.cameraColor,
@@ -1378,6 +1381,7 @@ class _SmartHomeBanner extends StatelessWidget {
                     children: [
                       Expanded(child: _ShChip(
                           icon: Symbols.water_drop,
+                          photoAsset: DeviceIcons.photoAsset(DeviceType.waterHeater),
                           value: heaterOn,
                           label: heLabel('דוד חכם', s.qaWaterHeater),
                           color: AppColors.networkColor,
@@ -1433,6 +1437,7 @@ class _SmartHomeBanner extends StatelessWidget {
                       // search-bar pill higher up the dashboard.
                       Expanded(child: _ShChip(
                           icon: Symbols.auto_awesome,
+                          photoAsset: 'assets/images/categories/ai.png',
                           value: null,
                           label: heLabel('עוזר AI', 'Fanta AI'),
                           color: AppColors.primary,
