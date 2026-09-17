@@ -2,8 +2,26 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from database import get_all_devices, get_device, upsert_device, delete_device, add_history, pin_device, rename_device, add_notification
 from mqtt_client import publish
+from secret_store import mask
 
 router = APIRouter()
+
+# Any config key whose name contains one of these (case-insensitive) is
+# treated as a secret and masked before leaving the hub via this generic
+# API — protocol-agnostic on purpose, so a future integration's credential
+# field is covered without this router needing to know about it.
+_SECRET_KEY_HINTS = ("local_key", "secret", "password", "token")
+
+
+def _sanitize_device(d: dict) -> dict:
+    config = d.get("config")
+    if not isinstance(config, dict):
+        return d
+    masked = {
+        k: (mask(v) if isinstance(v, str) and any(h in k.lower() for h in _SECRET_KEY_HINTS) else v)
+        for k, v in config.items()
+    }
+    return {**d, "config": masked}
 
 
 class DeviceIn(BaseModel):
@@ -33,7 +51,7 @@ class RenameIn(BaseModel):
 
 @router.get("/")
 async def list_devices():
-    return await get_all_devices()
+    return [_sanitize_device(d) for d in await get_all_devices()]
 
 
 @router.get("/{device_id}")
@@ -41,7 +59,7 @@ async def get_one(device_id: str):
     d = await get_device(device_id)
     if not d:
         raise HTTPException(404, "Device not found")
-    return d
+    return _sanitize_device(d)
 
 
 @router.post("/")
@@ -55,13 +73,13 @@ async def add_device(d: DeviceIn):
             message=f"Type: {d.type} · Protocol: {d.protocol}{' · ' + d.label if d.label else ''}",
             device_id=d.id, device_name=d.name,
         )
-    return await get_device(d.id)
+    return _sanitize_device(await get_device(d.id))
 
 
 @router.put("/{device_id}")
 async def update_device(device_id: str, d: DeviceIn):
     await upsert_device({**d.model_dump(), "id": device_id})
-    return await get_device(device_id)
+    return _sanitize_device(await get_device(device_id))
 
 
 @router.delete("/{device_id}")
@@ -97,7 +115,7 @@ async def pin(device_id: str, p: PinIn):
 @router.put("/{device_id}/rename")
 async def rename(device_id: str, r: RenameIn):
     await rename_device(device_id, r.name, r.label)
-    return await get_device(device_id)
+    return _sanitize_device(await get_device(device_id))
 
 
 @router.post("/{device_id}/toggle")

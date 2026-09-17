@@ -20,7 +20,11 @@ from typing import Optional, List
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from database import upsert_device, get_all_devices
+from database import (
+    upsert_device, get_all_devices, get_device,
+    save_tuya_pairing, get_all_tuya_pairings,
+)
+from secret_store import encrypt_field, decrypt_field
 
 router = APIRouter()
 IS_WIN = platform.system() == "Windows"
@@ -28,7 +32,8 @@ IS_WIN = platform.system() == "Windows"
 # ── In-memory state ───────────────────────────────────────────────────────────
 _scan_cache:   list  = []       # last LAN scan results
 _scan_ts:      float = 0        # epoch of last scan
-_paired:       dict  = {}       # device_id → {ip, local_key, name, ...}
+# Pairings themselves are persisted (see database.tuya_pairings) so they
+# survive a hub restart — no more in-memory-only _paired dict.
 
 TUYA_TYPE_MAP = {
     "gateway": "gateway", "hub": "gateway", "bridge": "gateway",
@@ -259,6 +264,7 @@ async def tuya_scan(force: bool = False):
     out = []
     existing_ids = {d.get("config", {}).get("tuya_device_id", "")
                     for d in await get_all_devices()}
+    paired_ids = {p["device_id"] for p in await get_all_tuya_pairings()}
     for d in devices:
         gw_id = d.get("gwId") or d.get("id") or ""
         out.append({
@@ -270,7 +276,7 @@ async def tuya_scan(force: bool = False):
             "product_key":d.get("productKey", ""),
             "is_gateway": ("gateway" in (d.get("name","") + d.get("productKey","")).lower()
                            or d.get("ability", 0) & 128 != 0),
-            "already_paired": gw_id in _paired or gw_id in existing_ids,
+            "already_paired": gw_id in paired_ids or gw_id in existing_ids,
         })
 
     _scan_cache = out
@@ -291,11 +297,11 @@ async def tuya_pair(data: PairIn):
     if "error" in status and not status.get("dps"):
         raise HTTPException(400, f"לא ניתן להתחבר: {status.get('error','שגיאה לא ידועה')}")
 
-    _paired[data.device_id] = {
-        "ip": data.ip, "local_key": data.local_key,
-        "name": data.name, "version": data.version,
-        "paired_at": time.time(),
-    }
+    await save_tuya_pairing(
+        device_id=data.device_id, ip=data.ip,
+        local_key=encrypt_field(data.local_key),
+        name=data.name, version=data.version,
+    )
     return {"ok": True, "dps": status.get("dps", {})}
 
 
@@ -348,7 +354,7 @@ async def import_gateway(data: ImportGatewayIn):
         "config": {
             "tuya_device_id": data.device_id,
             "tuya_ip":        data.ip,
-            "tuya_local_key": data.local_key,
+            "tuya_local_key": encrypt_field(data.local_key),
             "tuya_version":   data.version,
             "source":         "tuya_gateway",
         },
@@ -377,7 +383,7 @@ async def import_subdevice(data: ImportSubIn):
         "config": {
             "tuya_device_id":      data.gateway_device_id,
             "tuya_ip":             data.gateway_ip,
-            "tuya_local_key":      data.gateway_local_key,
+            "tuya_local_key":      encrypt_field(data.gateway_local_key),
             "tuya_node_id":        data.node_id,
             "source":              "tuya_subdevice",
         },
@@ -515,7 +521,7 @@ async def cloud_import(data: CloudImportIn):
             "config": {
                 "tuya_device_id": dev_id,
                 "tuya_ip":        ip,
-                "tuya_local_key": local_key,
+                "tuya_local_key": encrypt_field(local_key),
                 "tuya_version":   "3.3",
                 "category":       dev.category,
                 "source":         "smartlife_cloud",
@@ -533,6 +539,37 @@ async def cloud_import(data: CloudImportIn):
         "skipped":  len(skipped),
         "devices":  imported,
     }
+
+
+async def migrate_plaintext_secrets():
+    """
+    One-time, best-effort startup pass: re-encrypts any tuya_local_key still
+    sitting in plaintext in devices.config from before secret_store existed
+    (devices imported by an older build of this router). Safe to call on
+    every startup — encrypt_field() is idempotent, so already-encrypted
+    values are left alone and this is a no-op on a fully-migrated DB.
+    """
+    try:
+        devices = await get_all_devices()
+    except Exception as e:
+        print(f"[Tuya] Secret migration skipped — could not read devices: {e}")
+        return
+    migrated = 0
+    for d in devices:
+        if d.get("protocol") != "tuya":
+            continue
+        config = d.get("config") or {}
+        key = config.get("tuya_local_key", "")
+        if not key or key.startswith("enc:"):
+            continue
+        config["tuya_local_key"] = encrypt_field(key)
+        try:
+            await upsert_device({**d, "config": config})
+            migrated += 1
+        except Exception as e:
+            print(f"[Tuya] Secret migration failed for device {d.get('id')}: {e}")
+    if migrated:
+        print(f"[Tuya] Encrypted {migrated} plaintext local_key value(s) at rest.")
 
 
 @router.get("/help")

@@ -270,6 +270,7 @@ def _register_mdns(ip: str):
 @app.on_event("startup")
 async def startup():
     await init_db()
+    await tuya.migrate_plaintext_secrets()
 
     # Start MQTT broker in background thread (non-blocking)
     threading.Thread(target=_start_mqtt_broker, daemon=True).start()

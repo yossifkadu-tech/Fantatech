@@ -9,3 +9,4 @@ __pycache__/
 .env
 hub/venv/
 hub/__pycache__/
+hub/.secret.key

@@ -70,6 +70,15 @@ async def init_db():
                 read        INTEGER DEFAULT 0,
                 ts          INTEGER NOT NULL
             );
+
+            CREATE TABLE IF NOT EXISTS tuya_pairings (
+                device_id   TEXT PRIMARY KEY,
+                ip          TEXT NOT NULL,
+                local_key   TEXT NOT NULL,
+                name        TEXT DEFAULT '',
+                version     REAL DEFAULT 3.3,
+                paired_at   INTEGER DEFAULT 0
+            );
         """)
         await db.commit()
 
@@ -342,6 +351,43 @@ async def mark_all_notifications_read():
 async def clear_notifications():
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute("DELETE FROM notifications")
+        await db.commit()
+
+
+async def save_tuya_pairing(device_id: str, ip: str, local_key: str, name: str = "", version: float = 3.3):
+    """local_key is stored exactly as given — callers encrypt it (see
+    secret_store.encrypt_field) before calling this; this layer doesn't know
+    or care whether the value is encrypted."""
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            "INSERT INTO tuya_pairings (device_id, ip, local_key, name, version, paired_at) "
+            "VALUES (?,?,?,?,?,?) "
+            "ON CONFLICT(device_id) DO UPDATE SET "
+            "  ip=excluded.ip, local_key=excluded.local_key, "
+            "  name=excluded.name, version=excluded.version, paired_at=excluded.paired_at",
+            (device_id, ip, local_key, name, version, int(time.time()))
+        )
+        await db.commit()
+
+
+async def get_tuya_pairing(device_id: str) -> dict | None:
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT * FROM tuya_pairings WHERE device_id=?", (device_id,)) as cur:
+            row = await cur.fetchone()
+            return dict(row) if row else None
+
+
+async def get_all_tuya_pairings() -> list:
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT * FROM tuya_pairings") as cur:
+            return [dict(r) for r in await cur.fetchall()]
+
+
+async def delete_tuya_pairing(device_id: str):
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute("DELETE FROM tuya_pairings WHERE device_id=?", (device_id,))
         await db.commit()
 
 
