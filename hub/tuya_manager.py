@@ -23,6 +23,7 @@ already-slow cloud call just compounds the latency) — it either fails and
 the mode's fallback rule takes over, or it doesn't.
 """
 import asyncio
+import os
 from typing import Optional
 
 from secret_store import decrypt_field
@@ -33,6 +34,12 @@ CLOUD_TIMEOUT_MS = 8000
 RETRY_DELAYS_MS = [100, 300]  # 2 retries after the first attempt = 3 tries total
 
 VALID_MODES = {"local_first", "cloud_first", "local_only", "cloud_only"}
+
+# ── Background polling (below) ──────────────────────────────────────────────
+POLL_INTERVAL_SECONDS = int(os.getenv("TUYA_POLL_INTERVAL_SECONDS", "30"))
+POLL_STAGGER_SECONDS = 0.5  # gap between devices within one cycle, so a LAN
+                             # with several Tuya devices isn't hit with a
+                             # burst of simultaneous UDP round-trips
 
 
 def normalize_mode(mode: Optional[str]) -> str:
@@ -271,6 +278,29 @@ async def get_diagnostics(device: dict, cloud_creds: Optional[dict] = None) -> d
     }
 
 
+# In-memory only — this is a live/transient signal (what actually served
+# the last request), not history, so it doesn't need to survive a hub
+# restart. Shared between handle_device_cmd() and the poll loop so neither
+# re-broadcasts a connection status the other one already reported.
+_last_connection: dict = {}
+
+
+def _connection_from_result(result: TuyaResult) -> str:
+    if not result.ok:
+        return "offline"
+    return "online_local" if result.via == "local" else "online_cloud"
+
+
+async def _broadcast_connection_if_changed(device_id: str, connection: str, ok: bool):
+    if _last_connection.get(device_id) == connection:
+        return
+    _last_connection[device_id] = connection
+    from ws_manager import manager
+    await manager.broadcast("device_connection", {
+        "id": device_id, "connection": connection, "ok": ok,
+    })
+
+
 async def handle_device_cmd(device_id: str, payload: dict) -> Optional[TuyaResult]:
     """Entry point for the generic devices/{id}/cmd MQTT topic (see
     main.py's on_mqtt_message) — the same topic rule_engine.py's
@@ -283,8 +313,8 @@ async def handle_device_cmd(device_id: str, payload: dict) -> Optional[TuyaResul
     subscribers.
 
     Returns None (not "this device, but it failed") when device_id isn't a
-    Tuya-protocol device at all, so main.py knows not to broadcast a
-    Tuya-specific connection-status event for someone else's device.
+    Tuya-protocol device at all, so main.py knows this wasn't its topic to
+    handle.
     """
     from database import get_device
     from mqtt_client import publish
@@ -303,4 +333,74 @@ async def handle_device_cmd(device_id: str, payload: dict) -> Optional[TuyaResul
         publish(f"devices/{device_id}/state", payload)
     else:
         print(f"[TuyaManager] Command failed for {device_id} via {result.via}: {result.error}")
+    await _broadcast_connection_if_changed(device_id, _connection_from_result(result), result.ok)
     return result
+
+
+# Poll-to-poll comparison baseline, kept separate from devices.state.
+# get_status()'s local path returns raw {"dps": {"1": true, ...}} (DP
+# number -> value); handle_device_cmd() writes devices.state as the
+# command's own payload shape instead (e.g. {"state": "ON"}), since there's
+# no DatapointMapper yet to translate between the two vocabularies (see the
+# tuya skill's DatapointMapper note). Diffing a poll result against
+# devices.state would therefore look "changed" on every single poll after
+# the first command a device ever received — comparing against the
+# previous poll's own raw dps instead avoids that false-positive entirely.
+_last_poll_state: dict = {}
+
+
+async def _poll_once():
+    """One pass over every Tuya device: read status (respecting each
+    device's own connection_mode) and broadcast/persist only what actually
+    changed. Never raises — a single device's failure is logged and
+    skipped so it can't take the whole loop down."""
+    from database import get_all_devices, update_device_state
+
+    cloud_creds = await resolve_cloud_creds()
+    devices = [d for d in await get_all_devices() if d.get("protocol") == "tuya"]
+
+    for device in devices:
+        device_id = device.get("id", "")
+        try:
+            config = device.get("config") or {}
+            if not config.get("tuya_device_id"):
+                continue  # nothing to poll — no local or cloud identity at all
+
+            result = await get_status(device, cloud_creds)
+            was_online = bool(device.get("online"))
+            state_changed = result.ok and result.data and result.data != _last_poll_state.get(device_id)
+
+            if result.ok != was_online or state_changed:
+                new_state = result.data if (result.ok and result.data) else (device.get("state") or {})
+                await update_device_state(device_id, new_state, online=result.ok)
+                from ws_manager import manager
+                await manager.broadcast("device_state", {
+                    "id": device_id, "state": new_state, "online": result.ok,
+                })
+            if result.ok and result.data:
+                _last_poll_state[device_id] = result.data
+
+            await _broadcast_connection_if_changed(
+                device_id, _connection_from_result(result), result.ok
+            )
+        except Exception as e:
+            print(f"[TuyaManager] Poll failed for {device_id}: {e}")
+
+        await asyncio.sleep(POLL_STAGGER_SECONDS)
+
+
+async def poll_loop(interval_seconds: int = POLL_INTERVAL_SECONDS):
+    """Runs until cancelled — start with asyncio.create_task() at hub
+    startup (see main.py's startup()/shutdown()). Sleeps interval_seconds
+    *after* each full pass rather than on a fixed wall-clock schedule, so a
+    slow cycle (many devices, several offline and timing out) can never
+    overlap with the next one instead of piling up concurrent polls."""
+    print(f"[TuyaManager] Background poll loop started (every {interval_seconds}s)")
+    while True:
+        try:
+            await _poll_once()
+        except asyncio.CancelledError:
+            raise
+        except Exception as e:
+            print(f"[TuyaManager] Poll cycle error: {e}")
+        await asyncio.sleep(interval_seconds)

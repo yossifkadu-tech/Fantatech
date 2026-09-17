@@ -21,6 +21,7 @@ import tuya_manager
 
 HUB_VERSION = "2.0.0"
 IS_WIN = platform.system() == "Windows"
+_tuya_poll_task: asyncio.Task | None = None
 
 app = FastAPI(title="Fantatech Home & Security", version=HUB_VERSION)
 
@@ -157,14 +158,7 @@ async def on_mqtt_message(topic: str, payload):
     elif len(parts) == 3 and parts[0] == "devices" and parts[2] == "cmd":
         device_id = parts[1]
         cmd_payload = payload if isinstance(payload, dict) else {}
-        cmd_result = await tuya_manager.handle_device_cmd(device_id, cmd_payload)
-        if cmd_result is not None:
-            connection = "offline"
-            if cmd_result.ok:
-                connection = "online_local" if cmd_result.via == "local" else "online_cloud"
-            await manager.broadcast("device_connection", {
-                "id": device_id, "connection": connection, "ok": cmd_result.ok,
-            })
+        await tuya_manager.handle_device_cmd(device_id, cmd_payload)
 
     # ג”€ג”€ Tasmota: tele/{topic}/STATE ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€
     elif len(parts) == 3 and parts[0] == "tele" and parts[2] == "STATE":
@@ -300,6 +294,9 @@ async def startup():
     mqtt_start(loop)
     rules_start(loop)
 
+    global _tuya_poll_task
+    _tuya_poll_task = asyncio.create_task(tuya_manager.poll_loop())
+
     ip   = get_local_ip()
     port = os.getenv("HUB_PORT", "8080")
     print(f"\n{'='*55}")
@@ -316,6 +313,16 @@ async def startup():
 
     # Register mDNS so app can find Hub by name (fantatech-hub.local)
     threading.Thread(target=_register_mdns, args=(ip,), daemon=True).start()
+
+
+@app.on_event("shutdown")
+async def shutdown():
+    if _tuya_poll_task is not None:
+        _tuya_poll_task.cancel()
+        try:
+            await _tuya_poll_task
+        except asyncio.CancelledError:
+            pass
 
     await _auto_connect_wifi()
     await _subscribe_zigbee_devices()
