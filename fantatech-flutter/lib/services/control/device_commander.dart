@@ -397,29 +397,100 @@ class DeviceCommander {
     String? presetMode,
     required GatewayManager gateways,
   }) async {
-    if (!device.id.startsWith('ha_')) return false;
-    final gw = _gateway(gateways, GatewayType.homeAssistant);
-    if (gw == null) return false;
-    final ip       = gw.credentials['ip'];
-    final token    = gw.credentials['token'];
-    final entityId = device.attributes['entityId'] as String?;
-    if (ip == null || token == null || entityId == null) return false;
+    if (device.id.startsWith('ha_')) {
+      final gw = _gateway(gateways, GatewayType.homeAssistant);
+      if (gw == null) return false;
+      final ip       = gw.credentials['ip'];
+      final token    = gw.credentials['token'];
+      final entityId = device.attributes['entityId'] as String?;
+      if (ip == null || token == null || entityId == null) return false;
 
-    if (hvacMode != null) {
-      return HaGatewayClient.setHvacMode(ip, token, entityId, hvacMode);
+      if (hvacMode != null) {
+        return HaGatewayClient.setHvacMode(ip, token, entityId, hvacMode);
+      }
+      if (temperature != null) {
+        return HaGatewayClient.setClimateTemperature(ip, token, entityId, temperature);
+      }
+      if (fanMode != null) {
+        return HaGatewayClient.setFanMode(ip, token, entityId, fanMode);
+      }
+      if (swingMode != null) {
+        return HaGatewayClient.setSwingMode(ip, token, entityId, swingMode);
+      }
+      if (presetMode != null) {
+        return HaGatewayClient.setPresetMode(ip, token, entityId, presetMode);
+      }
+      return false;
     }
-    if (temperature != null) {
-      return HaGatewayClient.setClimateTemperature(ip, token, entityId, temperature);
+
+    // ── Tuya Cloud AC (category "kt", already correctly imported as
+    // DeviceType.airConditioner — see tuya_cloud_client.dart's
+    // _categoryToType) ──────────────────────────────────────────────────
+    // Cloud's /commands endpoint takes named codes (unlike the local LAN
+    // protocol's raw DP numbers), so this can reuse the same
+    // TuyaCloudClient.sendCommands path the tuya_ setOnOff branch above
+    // uses. Code names are Tuya's own documented standard instruction set
+    // for category "kt" (temp_set, mode, fan_speed_enum, switch_horizontal)
+    // — not invented — but real-world devices vary (same reason the switch
+    // branch resolves switch_1/switch/switch_led instead of assuming one),
+    // so this reads tuyaDps for whichever variant this specific device
+    // actually reports before falling back to the documented default.
+    // Unverified against a live Tuya AC — no such device was available to
+    // test with; flag any failure via the debugPrint below rather than a
+    // silent dead end, same as the switch branch already does.
+    //
+    // tuyahub_ (local-hub) ACs are NOT handled here — the hub's local
+    // control path only accepts raw numeric Tuya DPs, and there's no
+    // DatapointMapper yet to translate a named climate code into the
+    // right number for an unknown device/model (see the tuya skill's
+    // DatapointMapper note). Falls through to `return false` below,
+    // same as any other unrouted device.
+    if (device.id.startsWith('tuya_') && device.type == DeviceType.airConditioner) {
+      final gw = _gateway(gateways, GatewayType.tuyaSmart) ??
+          _gateway(gateways, GatewayType.smartLife);
+      if (gw == null) return false;
+      final clientId     = gw.credentials['clientId'];
+      final clientSecret = gw.credentials['clientSecret'];
+      if (clientId == null || clientSecret == null) return false;
+      final region = TuyaRegionHost.fromName(gw.credentials['region']);
+      final client = TuyaCloudClient(
+          clientId: clientId, clientSecret: clientSecret, region: region);
+      final token = await client.getToken();
+      if (token == null) return false;
+
+      final knownDps =
+          (device.attributes['tuyaDps'] as Map?)?.cast<String, dynamic>() ?? const {};
+      final chMatch = RegExp(r'^tuya_(.+)_ch(\d+)$').firstMatch(device.id);
+      final tuyaDeviceId = chMatch?.group(1) ?? device.id.substring('tuya_'.length);
+
+      Map<String, dynamic>? command;
+      if (hvacMode != null) {
+        final code = knownDps.containsKey('work_mode') ? 'work_mode' : 'mode';
+        command = {'code': code, 'value': hvacMode};
+      } else if (temperature != null) {
+        final code = knownDps.containsKey('temp_set_f') ? 'temp_set_f' : 'temp_set';
+        command = {'code': code, 'value': temperature.round()};
+      } else if (fanMode != null) {
+        final code = knownDps.containsKey('speed') ? 'speed' : 'fan_speed_enum';
+        command = {'code': code, 'value': fanMode};
+      } else if (swingMode != null) {
+        final code = knownDps.containsKey('windspeed') ? 'windspeed' : 'switch_horizontal';
+        command = {'code': code, 'value': swingMode == 'on'};
+      }
+      // presetMode has no standard Tuya "kt" DP equivalent (eco/away/boost
+      // presets aren't part of Tuya's documented AC schema) — left
+      // unhandled rather than guessing one, per project rule 9.
+      if (command == null) return false;
+
+      final ok = await client.sendCommands(
+          token: token, tuyaDeviceId: tuyaDeviceId, commands: [command]);
+      if (!ok) {
+        debugPrint('[Tuya] climate command failed for ${device.id} ($command): '
+            '${TuyaCloudClient.lastCommandRawResponse}');
+      }
+      return ok;
     }
-    if (fanMode != null) {
-      return HaGatewayClient.setFanMode(ip, token, entityId, fanMode);
-    }
-    if (swingMode != null) {
-      return HaGatewayClient.setSwingMode(ip, token, entityId, swingMode);
-    }
-    if (presetMode != null) {
-      return HaGatewayClient.setPresetMode(ip, token, entityId, presetMode);
-    }
+
     return false;
   }
 
