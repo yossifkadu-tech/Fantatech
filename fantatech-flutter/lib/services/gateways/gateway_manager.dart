@@ -31,6 +31,8 @@ import 'clients/zwave_client.dart';
 import 'clients/ifttt_client.dart';
 import 'clients/irobot_client.dart';
 import 'clients/xiaomi_vacuum_client.dart';
+import '../hub/hub_config.dart';
+import '../hub/hub_rest_client.dart';
 
 class GatewayManager extends ChangeNotifier {
   static const _uuid = Uuid();
@@ -561,6 +563,34 @@ class GatewayManager extends ChangeNotifier {
         ));
         return GatewayConnectResult.ok({});
       }
+
+      // ── FantaTech Hub (self-hosted local server, hub/) ─────────────────────
+      case GatewayType.localHub: {
+        final hubIp   = fields['ip']   ?? '';
+        final hubPort = int.tryParse(fields['port'] ?? '') ?? 8080;
+        final apiKey  = fields['apiKey'] ?? '';
+        if (hubIp.isEmpty) return const GatewayConnectResult.fail('Hub IP address is required');
+        final client = HubRestClient(HubConfig(
+          baseUrl: 'http://$hubIp:$hubPort',
+          apiKey:  apiKey.isEmpty ? null : apiKey,
+        ));
+        final result = await client.get<List<dynamic>>('/api/devices');
+        if (result is HubErr<List<dynamic>>) {
+          return GatewayConnectResult.fail(
+              'Cannot reach FantaTech Hub at $hubIp:$hubPort (${result.error.message})');
+        }
+        final deviceCount = (result as HubOk<List<dynamic>>).data.length;
+        _addConnection(GatewayConnection(
+          id:          _uuid.v4(),
+          type:        type,
+          displayName: 'FantaTech Hub ($hubIp)',
+          credentials: {'ip': hubIp, 'port': '$hubPort', 'apiKey': apiKey},
+          isConnected: true,
+          lastSync:    DateTime.now(),
+          deviceCount: deviceCount,
+        ));
+        return GatewayConnectResult.ok({'deviceCount': '$deviceCount'});
+      }
     }
   }
 
@@ -913,8 +943,79 @@ class GatewayManager extends ChangeNotifier {
       case GatewayType.ifttt:
         return GatewayImportResult.success([]);
 
+      // ── FantaTech Hub (self-hosted local server, hub/) ─────────────────────
+      // Only imports Tuya-protocol devices from the hub for now — the hub
+      // also carries wifi/zigbee devices from its own bridges, but this app
+      // already has its own direct integrations for those; importing them
+      // again here would create duplicate Device entries with a different
+      // id scheme. Tuya is the one protocol this app can't yet control
+      // local-first with cloud fallback on its own (see the tuya skill),
+      // which is the whole reason this gateway type exists.
+      case GatewayType.localHub: {
+        final hubIp   = _str('ip');
+        final hubPort = int.tryParse(_str('port')) ?? 8080;
+        final apiKey  = _str('apiKey');
+        if (hubIp.isEmpty) return const GatewayImportResult.failure('Missing hub IP');
+        final client = HubRestClient(HubConfig(
+          baseUrl: 'http://$hubIp:$hubPort',
+          apiKey:  apiKey.isEmpty ? null : apiKey,
+        ));
+        final result = await client.get<List<dynamic>>('/api/devices');
+        if (result is HubErr<List<dynamic>>) {
+          return GatewayImportResult.failure(result.error.message);
+        }
+        final all = (result as HubOk<List<dynamic>>).data;
+        final mapped = all
+            .whereType<Map<String, dynamic>>()
+            .where((d) => d['protocol'] == 'tuya')
+            .map((d) {
+          final config = (d['config'] as Map?)?.cast<String, dynamic>() ?? const {};
+          final state  = (d['state']  as Map?)?.cast<String, dynamic>() ?? const {};
+          return Device(
+            id:         'tuyahub_${d['id']}',
+            name:       (d['name'] as String?) ?? 'Tuya Device',
+            type:       _hubTypeToDeviceType(d['type'] as String?, config),
+            status:     d['online'] == true ? DeviceStatus.online : DeviceStatus.offline,
+            isOn:       state['state'] == 'ON',
+            attributes: {'hubDeviceId': d['id'], 'hubType': d['type'], ...config},
+            room:       (d['room'] as String?) ?? '',
+            source:     'gateway',
+          );
+        }).toList();
+        return GatewayImportResult.success(mapped);
+      }
+
       default:
         return const GatewayImportResult.failure('Not supported yet');
+    }
+  }
+
+  /// Maps the hub's own normalized type string (hub/routers/tuya.py's
+  /// TUYA_TYPE_MAP — gateway/light/switch/dimmer/sensor/motion/door/smoke/
+  /// lock/fan/camera) to this app's DeviceType. The hub can't distinguish a
+  /// plug from a switch on its own (both guess to "switch"); Tuya's own
+  /// category code can when it's present (cloud-imported devices carry it
+  /// in config['category'] — see hub/routers/tuya.py's cloud-import path).
+  /// "fan" has no matching DeviceType anywhere in this app (checked —
+  /// there simply isn't one), so it falls to unknown rather than guessing
+  /// something misleading, matching this app's existing convention for
+  /// genuinely unmapped categories.
+  DeviceType _hubTypeToDeviceType(String? hubType, Map<String, dynamic> config) {
+    switch (hubType) {
+      case 'gateway': return DeviceType.gateway;
+      case 'light':
+      case 'dimmer':  return DeviceType.light;
+      case 'switch':
+        return (config['category'] as String?) == 'cz'
+            ? DeviceType.smartPlug
+            : DeviceType.smartSwitch;
+      case 'sensor':
+      case 'motion':  return DeviceType.motionSensor;
+      case 'door':    return DeviceType.doorSensor;
+      case 'smoke':   return DeviceType.smokeSensor;
+      case 'lock':    return DeviceType.smartLock;
+      case 'camera':  return DeviceType.camera;
+      default:        return DeviceType.unknown;
     }
   }
 

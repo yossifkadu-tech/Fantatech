@@ -29,6 +29,8 @@ import '../gateways/clients/z2m_client.dart';
 import '../gateways/clients/hue_client.dart';
 import '../gateways/clients/ha_gateway_client.dart';
 import '../gateways/clients/tuya_cloud_client.dart';
+import '../hub/hub_config.dart';
+import '../hub/hub_rest_client.dart';
 import '../gateways/clients/aqara_hub_client.dart';
 import '../gateways/clients/irobot_client.dart';
 import '../gateways/clients/xiaomi_vacuum_client.dart';
@@ -250,6 +252,35 @@ class DeviceCommander {
             '${TuyaCloudClient.lastCommandRawResponse}');
       }
       return ok;
+    }
+
+    // ── Tuya via a self-hosted FantaTech Hub (local-first + cloud fallback,
+    // TuyaManager — see the hub's own /api/tuya/manager/control/{id}) ───────
+    // Distinct id prefix from the direct-cloud 'tuya_' path above — a
+    // GatewayType.localHub import (gateway_manager.dart) creates these, and
+    // routes through the hub's own connection-mode/retry/fallback logic
+    // instead of always hitting Tuya Cloud directly.
+    if (id.startsWith('tuyahub_')) {
+      final gw = _gateway(gateways, GatewayType.localHub);
+      if (gw == null) return false;
+      final ip     = gw.credentials['ip'];
+      final port   = gw.credentials['port'] ?? '8080';
+      final apiKey = gw.credentials['apiKey'];
+      if (ip == null) return false;
+      final hubDeviceId = id.substring('tuyahub_'.length);
+      final client = HubRestClient(HubConfig(
+        baseUrl: 'http://$ip:$port',
+        apiKey:  (apiKey == null || apiKey.isEmpty) ? null : apiKey,
+      ));
+      final result = await client.post<Map<String, dynamic>>(
+        '/api/tuya/manager/control/$hubDeviceId',
+        {'payload': {'state': on ? 'ON' : 'OFF'}},
+      );
+      if (result is HubErr<Map<String, dynamic>>) {
+        debugPrint('[TuyaHub] command failed for $id: ${result.error.message}');
+        return false;
+      }
+      return true;
     }
 
     // ── LAN-direct (Shelly / Sonoff / Tuya / Kasa / Tapo / ESPHome) ────────────

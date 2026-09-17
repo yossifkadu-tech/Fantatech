@@ -29,6 +29,7 @@ enum GatewayType {
   ifttt,           // IFTTT Webhooks
   irobot,          // iRobot Roomba/Braava (local MQTTS)
   xiaomiVacuum,    // Xiaomi/Mi Robot Vacuum (local miIO/UDP)
+  localHub,        // Self-hosted FantaTech Hub (hub/, local REST API)
 }
 
 // ── Connection field descriptor ────────────────────────────────────────────
@@ -730,6 +731,47 @@ class GatewayRegistry {
           hint:      '32-character hex token',
           icon:      Symbols.key,
           inputType: FieldInputType.token,
+        ),
+      ],
+    ),
+
+    // ── FantaTech Hub (local) ────────────────────────────────────────────────
+    GatewayMeta(
+      type:        GatewayType.localHub,
+      name:        'FantaTech Hub',
+      subtitle:    'Local · Tuya Local-First',
+      description: 'Connect to your own FantaTech Hub running on this network for local-first Tuya control with cloud fallback.',
+      icon:        Symbols.dns,
+      color:       Color(0xFFFF6600),
+      setupSteps: [
+        'Make sure the FantaTech Hub is running on your PC/Raspberry Pi (start-hub.bat / start-hub.sh).',
+        'The hub prints its IP address and port when it starts — enter them below.',
+        'Devices already imported into the hub (via its own Tuya Cloud link) will be imported here too.',
+      ],
+      fields: [
+        GatewayFieldDef(
+          key:       'ip',
+          label:     'Hub IP Address',
+          hint:      '192.168.1.x',
+          icon:      Symbols.wifi,
+          inputType: FieldInputType.ip,
+        ),
+        GatewayFieldDef(
+          key:          'port',
+          label:        'Port',
+          hint:         '8080',
+          icon:         Symbols.settings_ethernet,
+          inputType:    FieldInputType.port,
+          defaultValue: '8080',
+          required:     false,
+        ),
+        GatewayFieldDef(
+          key:          'apiKey',
+          label:        'API Key (optional)',
+          hint:         'leave empty — not required yet',
+          icon:         Symbols.key,
+          inputType:    FieldInputType.token,
+          required:     false,
         ),
       ],
     ),
