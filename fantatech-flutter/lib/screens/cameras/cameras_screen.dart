@@ -6,6 +6,7 @@ import 'package:network_info_plus/network_info_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import '../../models/app_state.dart';
+import '../../models/camera_button_spec.dart';
 import '../../models/device.dart';
 import '../../models/layout_item.dart';
 import '../../theme/app_theme.dart';
@@ -904,10 +905,66 @@ class _FullscreenCameraState extends State<_FullscreenCamera>
     super.dispose();
   }
 
+  /// Real snapshot: opens the camera's actual current still (its real
+  /// snapshotUrl, the same one the live-view widgets already fetch) full-
+  /// screen and zoomable — previously this button only showed a "captured"
+  /// SnackBar with no image ever fetched. Saving it to the device gallery
+  /// would need a new package (none of gal/image_gallery_saver/similar is
+  /// a dependency of this project yet) plus Android/iOS storage-permission
+  /// setup — flagged rather than added silently; this view-only version
+  /// needs no new dependency and already lets the user use their own
+  /// device's screenshot/share gesture on the enlarged image.
   void _takeScreenshot(S s) {
+    final spec = CameraButtonSpec.forAction(widget.camera, CameraAction.snapshot);
+    if (!spec.isSupported) {
+      _showHonestSnack(s.snapshotUnavailable);
+      return;
+    }
+    showDialog(
+      context: context,
+      barrierColor: Colors.black87,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(16),
+        child: Stack(
+          alignment: AlignmentDirectional.topEnd,
+          children: [
+            InteractiveViewer(
+              child: Image.network(
+                widget.camera.snapshotUrl!,
+                fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) =>
+                    Center(child: Text(s.snapshotUnavailable,
+                        style: const TextStyle(color: Colors.white))),
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Symbols.close, color: Colors.white),
+              onPressed: () => Navigator.pop(ctx),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Record has no backend anywhere in this project yet (see
+  /// CameraButtonSpec — isSupported is always false for CameraAction.record
+  /// today) — this shows that honestly instead of flipping a fake
+  /// recording indicator like the button used to.
+  void _handleRecordTap(S s) {
+    final spec = CameraButtonSpec.forAction(widget.camera, CameraAction.record);
+    if (!spec.isSupported) {
+      _showHonestSnack(s.recordingNotSupported);
+      return;
+    }
+    setState(() => _recording = !_recording);
+  }
+
+  void _showHonestSnack(String message) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(s.screenshotLabel),
-      backgroundColor: AppColors.primary,
+      content: Text(message),
+      backgroundColor: AppColors.unsecured,
       duration: const Duration(seconds: 2),
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -1093,7 +1150,7 @@ class _FullscreenCameraState extends State<_FullscreenCamera>
                     label:   s.recordLabel,
                     color:   AppColors.unsecured,
                     active:  _recording,
-                    onTap:   () => setState(() => _recording = !_recording),
+                    onTap:   () => _handleRecordTap(s),
                   ),
                 ],
               ),

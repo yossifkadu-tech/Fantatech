@@ -985,6 +985,8 @@ class S {
   final String confirmDisarmTitle;
   final String confirmDisarmBody;
   final String confirmDisarmConfirm;
+  final String snapshotUnavailable;
+  final String recordingNotSupported;
   final String roomNameMedia;
   final String mediaRoomTitle;
   final String roomOccupantLabel;
@@ -1436,6 +1438,8 @@ class S {
     this.confirmDisarmTitle    = 'Disarm security?',
     this.confirmDisarmBody     = 'This will turn off alarm protection for your home.',
     this.confirmDisarmConfirm  = 'Disarm',
+    this.snapshotUnavailable    = 'No snapshot available for this camera',
+    this.recordingNotSupported  = 'Recording is not supported for this camera yet',
     this.roomNameMedia       = 'Media',
     this.roomNameBathroom    = 'Bathroom',
     this.roomNameStorage     = 'Storage',
@@ -2316,6 +2320,7 @@ class S {
     camMotion: 'תנועה מזוהה', camOnline: 'מקוון', camOffline: 'לא מקוון', locationUnavailable: 'מיקום לא זמין', gatewaysManage: 'נהל', gatewaysTitle: 'גשרים', statusOffline: 'לא מקוון',
     secArmStayBtn: 'הפעל בבית', secDisarmBtn: 'נטרל',
     confirmDisarmTitle: 'לנטרל את מערכת האבטחה?', confirmDisarmBody: 'זה יכבה את הגנת האזעקה בבית שלך.', confirmDisarmConfirm: 'נטרל',
+    snapshotUnavailable: 'אין תמונה זמינה למצלמה הזו', recordingNotSupported: 'הקלטה עדיין לא נתמכת למצלמה הזו',
     roomNameMedia: 'מדיה', mediaRoomTitle: 'מדיה',
     roomOccupantLabel: 'מי משתמש בחדר?', occupantNone: 'ללא', occupantKids: 'ילדים', occupantAdults: 'מבוגרים',
     navHome: 'בית', navCameras: 'מצלמות', navSecurity: 'אבטחה', navProfile: 'פרופיל', navAutomations: 'אוטומציות',
