@@ -1,5 +1,5 @@
-@echo off
-title Fantatech Home & Security Hub
+﻿@echo off
+title Fantatech Home ^& Security Hub
 color 0A
 chcp 65001 >nul 2>&1
 set PYTHONIOENCODING=utf-8
