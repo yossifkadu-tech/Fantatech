@@ -38,8 +38,11 @@ class CommandResult {
 
 /// Pure — no AppState involved. Returns the immediate offline result, or
 /// null when the caller should proceed to actually send the command.
-CommandResult? resolveOfflineGuard(bool deviceOnline) {
-  if (!deviceOnline) {
+/// Pass [Device.status]'s `isControllable` (true unless DeviceStatus.
+/// offline) here, not a strict online check — a device in a warning/alert/
+/// alarm/info state is still reachable and shouldn't be blocked.
+CommandResult? resolveOfflineGuard(bool deviceControllable) {
+  if (!deviceControllable) {
     return const CommandResult(CommandOutcome.offline, 'Device is offline');
   }
   return null;
@@ -63,7 +66,11 @@ Future<CommandResult> sendDeviceCommand(
     return const CommandResult(CommandOutcome.failed, 'Device not found');
   }
 
-  final offlineResult = resolveOfflineGuard(device.online);
+  // device.status.isControllable, not device.online — a device in a
+  // warning/alert/alarm/info state is still reachable and controllable;
+  // only DeviceStatus.offline itself should block a command (see
+  // AppState's own command methods, which apply the same fix).
+  final offlineResult = resolveOfflineGuard(device.status.isControllable);
   if (offlineResult != null) return offlineResult;
 
   try {

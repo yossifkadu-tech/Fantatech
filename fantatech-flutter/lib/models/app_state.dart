@@ -1043,6 +1043,13 @@ class AppState extends ChangeNotifier {
     final idx = _devices.indexWhere((d) => d.id == id);
     if (idx == -1) return; // device removed (e.g. by a concurrent gateway sync)
     final device = _devices[idx];
+    // Offline guard — same contract as device_command.dart's
+    // resolveOfflineGuard(): no network/gateway call is even attempted, and
+    // the UI never optimistically flips a device known to be unreachable.
+    // Centralized here so this holds regardless of which screen/caller
+    // (a UI widget, an automation, the AI agent) reaches this method — a
+    // caller that skips its own local isOnline check no longer bypasses it.
+    if (!device.status.isControllable) return;
     final wantOn = !device.isOn;
     // Optimistic UI update — feels instant to the user.
     device.isOn = wantOn;
@@ -1068,6 +1075,7 @@ class AppState extends ChangeNotifier {
     final idx = _devices.indexWhere((d) => d.id == id);
     if (idx == -1) return false;
     final device = _devices[idx];
+    if (!device.status.isControllable) return false; // offline guard — see toggleDevice's comment
     final was = device.isOn;
     device.isOn = on;
     notifyListeners();
@@ -1089,6 +1097,7 @@ class AppState extends ChangeNotifier {
     final idx = _devices.indexWhere((d) => d.id == id);
     if (idx == -1) return false;
     final device = _devices[idx];
+    if (!device.status.isControllable) return false; // offline guard — see toggleDevice's comment
     final dps = Map<String, dynamic>.from(
         device.attributes['tuyaDps'] as Map? ?? {});
     final was = dps[code];
@@ -1129,6 +1138,7 @@ class AppState extends ChangeNotifier {
   Future<bool> agentSetBrightness(String id, int level) async {
     final idx = _devices.indexWhere((d) => d.id == id);
     if (idx == -1) return false;
+    if (!_devices[idx].status.isControllable) return false; // offline guard — see toggleDevice's comment
     final gw = _gateways;
     if (gw == null) return false;
     return DeviceCommander.setBrightness(_devices[idx], level, gateways: gw);
@@ -1138,6 +1148,7 @@ class AppState extends ChangeNotifier {
   Future<bool> agentSetCoverPosition(String id, int position) async {
     final idx = _devices.indexWhere((d) => d.id == id);
     if (idx == -1) return false;
+    if (!_devices[idx].status.isControllable) return false; // offline guard — see toggleDevice's comment
     final gw = _gateways;
     if (gw == null) return false;
     final ok = await DeviceCommander.setCoverPosition(_devices[idx], position,
@@ -1155,6 +1166,7 @@ class AppState extends ChangeNotifier {
       {String? hvacMode, double? temperature, String? fanMode}) async {
     final idx = _devices.indexWhere((d) => d.id == id);
     if (idx == -1) return false;
+    if (!_devices[idx].status.isControllable) return false; // offline guard — see toggleDevice's comment
     final gw = _gateways;
     if (gw == null) return false;
     return DeviceCommander.setClimate(_devices[idx],
@@ -1189,6 +1201,7 @@ class AppState extends ChangeNotifier {
     if (gw == null) return;
     final idx = _devices.indexWhere((d) => d.id == id);
     if (idx == -1) return;
+    if (!_devices[idx].status.isControllable) return; // offline guard — see toggleDevice's comment
     DeviceCommander.stopCover(_devices[idx], gateways: gw);
   }
 
@@ -1197,6 +1210,7 @@ class AppState extends ChangeNotifier {
     if (gw == null) return;
     final idx = _devices.indexWhere((d) => d.id == id);
     if (idx == -1) return;
+    if (!_devices[idx].status.isControllable) return; // offline guard — see toggleDevice's comment
     DeviceCommander.vacuumCommand(_devices[idx], action, gateways: gw);
   }
 
@@ -1209,6 +1223,10 @@ class AppState extends ChangeNotifier {
 
     final gw = _gateways;
     if (gw == null) return;
+    // Offline guard — see toggleDevice's comment. The local attribute above
+    // is still recorded (harmless bookkeeping even for an unreachable
+    // device), but no command is sent to hardware that can't receive it.
+    if (!device.status.isControllable) return;
 
     // Fire-and-forget: mirror brightness to the physical light/dimmer —
     // without this the slider only edits the local attribute map.
