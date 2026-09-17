@@ -275,11 +275,15 @@ def _ssdp_worker(port: int):
         mreq = socket.inet_aton(MCAST_GRP) + socket.inet_aton("0.0.0.0")
         sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
         sock.settimeout(1.5)
-        print(f"[Alexa/SSDP] Listening on {MCAST_GRP}:{MCAST_PORT} — Alexa discovery active ✅")
+        print(f"[Alexa/SSDP] Listening on {MCAST_GRP}:{MCAST_PORT} - Alexa discovery active")
     except OSError as e:
-        print(f"[Alexa/SSDP] ⚠️  Could not bind port 1900: {e}")
-        print("[Alexa/SSDP] ➜  Run hub as Administrator for automatic Alexa discovery")
-        print("[Alexa/SSDP] ➜  Alternative: in Alexa app → Add Device → Philips Hue → enter IP manually")
+        # Plain ASCII on purpose — a non-UTF-8 console codepage (e.g. cp1255
+        # on Hebrew Windows) can't encode emoji/arrows and would raise
+        # UnicodeEncodeError right here, silently killing this thread even
+        # after a successful bind (that's what happened before this fix).
+        print(f"[Alexa/SSDP] WARNING: Could not bind port 1900: {e}")
+        print("[Alexa/SSDP] -> Run hub as Administrator for automatic Alexa discovery")
+        print("[Alexa/SSDP] -> Alternative: in Alexa app -> Add Device -> Philips Hue -> enter IP manually")
         return
 
     ip = _local_ip()
