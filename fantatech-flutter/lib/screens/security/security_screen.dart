@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../models/app_state.dart';
+import '../../models/alarm_button_spec.dart';
 import '../../models/device.dart';
 import '../../models/layout_item.dart';
 import '../../theme/app_theme.dart';
@@ -411,7 +412,7 @@ class _SecurityScreenState extends State<SecurityScreen>
             isSecured: allOk,
             scaleAnim: _shieldScale,
             glowAnim: _shieldGlow,
-            onToggle: state.toggleSecurity,
+            onToggle: () => _handleShieldTap(context, state, s),
             onLongPress: () => _showSecurityOptions(context, state, s),
             securedText: s.homeSecured,
             notSecuredText: s.homeNotSecured,
@@ -651,6 +652,57 @@ class _SecurityScreenState extends State<SecurityScreen>
     if (s == _SensorStatus.open) return isDoor ? Symbols.lock_open : Symbols.window;
     if (s == _SensorStatus.notConnected) return Symbols.link_off;
     return isDoor ? Symbols.lock : Symbols.shield;
+  }
+
+  /// The shield's tap target — arms/disarms via [AlarmButtonExecutor], which
+  /// now sends a real command to a connected alarm-panel gateway (Ajax/
+  /// Risco/PIMA) when one exists (see AppState.armDisarmSecurity). Disarm
+  /// requires confirmation first — [AlarmButtonSpec] flags this itself, per
+  /// the project requirement that a sensitive action (one that reduces
+  /// security) always confirms before applying.
+  Future<void> _handleShieldTap(
+      BuildContext context, AppState state, S s) async {
+    final spec = AlarmButtonSpec.forAction(
+      state.isSecured ? AlarmAction.disarm : AlarmAction.arm,
+      state.securityMode,
+    );
+    if (spec.requiresConfirmation) {
+      final confirmed = await _confirmDisarm(context, s);
+      if (confirmed != true) return;
+    }
+    HapticFeedback.mediumImpact();
+    await AlarmButtonExecutor.execute(spec, state);
+  }
+
+  Future<bool?> _confirmDisarm(BuildContext context, S s) {
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(children: [
+          const Icon(Symbols.lock_open,
+              color: AppColors.statusAlarm, size: 22),
+          const SizedBox(width: 10),
+          Expanded(child: Text(s.confirmDisarmTitle,
+              style: const TextStyle(fontSize: 16))),
+        ]),
+        content: Text(s.confirmDisarmBody,
+            style: const TextStyle(fontSize: 14)),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(s.cancel)),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.statusAlarm),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(s.confirmDisarmConfirm,
+                style: const TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showSecurityOptions(BuildContext context, AppState state, S s) {

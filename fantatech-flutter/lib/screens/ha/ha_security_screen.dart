@@ -156,7 +156,7 @@ class _AlarmPanel extends StatelessWidget {
                     icon: const Icon(Symbols.lock_open, size: 18),
                     label: const Text('כבה אזעקה',
                         style: TextStyle(fontWeight: FontWeight.w600)),
-                    onPressed: () => ha.disarmAlarm(alarm.entityId),
+                    onPressed: () => _confirmDisarm(context, ha, alarm.entityId),
                   ),
                 ),
             ],
@@ -164,6 +164,44 @@ class _AlarmPanel extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  /// Disarm reduces security, so it confirms first — the arm buttons
+  /// (home/away/night) don't, matching the same "only the sensitive
+  /// direction confirms" rule the main Security screen's shield follows
+  /// (see AlarmButtonSpec.forAction's requiresConfirmation).
+  Future<void> _confirmDisarm(
+      BuildContext context, HaProvider ha, String entityId) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: _card,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(children: [
+          Icon(Symbols.lock_open, color: _red, size: 22),
+          SizedBox(width: 10),
+          Text('לכבות את האזעקה?',
+              style: TextStyle(color: _text1, fontSize: 16)),
+        ]),
+        content: const Text('זה יכבה את הגנת האזעקה בבית שלך.',
+            style: TextStyle(color: _text2, fontSize: 14)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('ביטול', style: TextStyle(color: _text2)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: _red),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('כבה אזעקה',
+                style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      ha.disarmAlarm(entityId);
+    }
   }
 
   String _label(String state) {

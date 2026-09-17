@@ -982,6 +982,9 @@ class S {
   final String statusOffline;
   final String secArmStayBtn;
   final String secDisarmBtn;
+  final String confirmDisarmTitle;
+  final String confirmDisarmBody;
+  final String confirmDisarmConfirm;
   final String roomNameMedia;
   final String mediaRoomTitle;
   final String roomOccupantLabel;
@@ -1430,6 +1433,9 @@ class S {
     this.statusOffline       = 'Offline',
     this.secArmStayBtn       = 'Arm (Stay)',
     this.secDisarmBtn        = 'Disarm',
+    this.confirmDisarmTitle    = 'Disarm security?',
+    this.confirmDisarmBody     = 'This will turn off alarm protection for your home.',
+    this.confirmDisarmConfirm  = 'Disarm',
     this.roomNameMedia       = 'Media',
     this.roomNameBathroom    = 'Bathroom',
     this.roomNameStorage     = 'Storage',
@@ -2308,7 +2314,9 @@ class S {
     adAddLink: 'הוסף קישור', adCustomLink: 'קישור מותאם',
     systemStatus: 'סטטוס מערכת', statusInternet: 'אינטרנט', statusSensors: 'חיישנים', connectedLabel: 'מחובר',
     camMotion: 'תנועה מזוהה', camOnline: 'מקוון', camOffline: 'לא מקוון', locationUnavailable: 'מיקום לא זמין', gatewaysManage: 'נהל', gatewaysTitle: 'גשרים', statusOffline: 'לא מקוון',
-    secArmStayBtn: 'הפעל בבית', secDisarmBtn: 'נטרל', roomNameMedia: 'מדיה', mediaRoomTitle: 'מדיה',
+    secArmStayBtn: 'הפעל בבית', secDisarmBtn: 'נטרל',
+    confirmDisarmTitle: 'לנטרל את מערכת האבטחה?', confirmDisarmBody: 'זה יכבה את הגנת האזעקה בבית שלך.', confirmDisarmConfirm: 'נטרל',
+    roomNameMedia: 'מדיה', mediaRoomTitle: 'מדיה',
     roomOccupantLabel: 'מי משתמש בחדר?', occupantNone: 'ללא', occupantKids: 'ילדים', occupantAdults: 'מבוגרים',
     navHome: 'בית', navCameras: 'מצלמות', navSecurity: 'אבטחה', navProfile: 'פרופיל', navAutomations: 'אוטומציות',
     greetingPrefix: 'שלום', homeSecured: 'הבית שלך מוגן', homeNotSecured: 'הבית לא מוגן',

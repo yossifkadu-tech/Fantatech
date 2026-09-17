@@ -71,7 +71,12 @@ abstract class AlarmButtonExecutor {
   /// Applies [spec.targetMode]. Callers MUST have already obtained user
   /// confirmation when [spec.requiresConfirmation] is true — this method
   /// does not prompt, it only ever applies the change once told to.
-  static void execute(AlarmButtonSpec spec, AppState state) {
-    state.setSecurityMode(spec.targetMode);
+  ///
+  /// Routes through AppState.armDisarmSecurity, which sends a real command
+  /// to a connected alarm-panel gateway (Ajax/Risco/PIMA) when one exists,
+  /// and reverts the optimistic state change if that command fails — see
+  /// its own doc comment. Returns whether the change actually took effect.
+  static Future<bool> execute(AlarmButtonSpec spec, AppState state) {
+    return state.armDisarmSecurity(spec.targetMode);
   }
 }

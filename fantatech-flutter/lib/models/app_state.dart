@@ -16,6 +16,7 @@ import '../mock/mock_data.dart';
 import '../l10n/strings.dart';
 import '../services/ai/azure_face_service.dart';
 import '../services/control/device_commander.dart';
+import '../services/control/security_commander.dart';
 import '../services/gateways/gateway_manager.dart';
 import '../services/ha/ha_entity.dart';
 import '../services/ha/ha_provider.dart';
@@ -955,6 +956,38 @@ class AppState extends ChangeNotifier {
     _guestTimer?.cancel();
     _guestTimer = null;
     notifyListeners();
+  }
+
+  /// Real arm/disarm — same optimistic-update-then-revert-on-failure
+  /// contract as [setDevicePower]. Sends an actual command to a connected
+  /// alarm-panel gateway (Ajax/Risco/PIMA) via [SecurityCommander] when one
+  /// exists; when none is connected this behaves exactly like
+  /// [toggleSecurity]/[setSecurityMode] always did — local-only state, always
+  /// "succeeds" — so nobody without a real panel sees any change in
+  /// behavior. Callers (the security screen's shield, a future arm/disarm
+  /// button) are responsible for confirming with the user before calling
+  /// this with a disarm target — this method does not prompt, matching
+  /// [AlarmButtonExecutor]'s own documented contract.
+  Future<bool> armDisarmSecurity(SecurityMode target) async {
+    final was = _securityMode;
+    _securityMode = target;
+    _guestTimer?.cancel();
+    _guestTimer = null;
+    notifyListeners();
+
+    final gw = _gateways;
+    if (gw == null) return true;
+
+    final ok = await SecurityCommander.armDisarm(
+      target != SecurityMode.disarmed,
+      gateways: gw,
+      devices: _devices,
+    );
+    if (!ok) {
+      _securityMode = was;
+      notifyListeners();
+    }
+    return ok;
   }
 
   // ── Guest / Welcome mode ──────────────────────────────────────────────────
