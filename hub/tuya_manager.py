@@ -1,0 +1,254 @@
+"""
+TuyaManager — local-first / cloud-fallback command & status orchestration
+for Tuya devices, sitting on top of the existing LAN (tinytuya.Device) and
+Cloud (tinytuya.Cloud) primitives already in routers/tuya.py. This module
+owns *which* driver to use and when; routers/tuya.py's blocking helpers
+still own the actual protocol calls — nothing here talks to tinytuya
+directly.
+
+Connection modes (per device, stored in devices.config.connection_mode,
+default "local_first" when absent — see routers/tuya.py's
+/connection-mode/{id} endpoints):
+  local_first  - try local, fall back to cloud on failure (default)
+  cloud_first  - try cloud, fall back to local on failure
+  local_only   - local only, never fall back
+  cloud_only   - cloud only, never fall back
+
+Retry policy for the local attempt: a short, configurable backoff sequence
+(RETRY_DELAYS_MS) before giving up — a single flaky UDP round-trip on the
+LAN shouldn't force a cloud round-trip when a quick retry would have
+worked. Cloud isn't retried the same way (HTTP over the internet doesn't
+have the same "just resend the UDP packet" failure mode, and retrying an
+already-slow cloud call just compounds the latency) — it either fails and
+the mode's fallback rule takes over, or it doesn't.
+"""
+import asyncio
+from typing import Optional
+
+from secret_store import decrypt_field
+
+LOCAL_COMMAND_TIMEOUT_MS = 2500
+LOCAL_STATUS_TIMEOUT_MS = 2500
+CLOUD_TIMEOUT_MS = 8000
+RETRY_DELAYS_MS = [100, 300]  # 2 retries after the first attempt = 3 tries total
+
+VALID_MODES = {"local_first", "cloud_first", "local_only", "cloud_only"}
+
+
+def normalize_mode(mode: Optional[str]) -> str:
+    return mode if mode in VALID_MODES else "local_first"
+
+
+class TuyaResult:
+    """Uniform result shape for control/status/test — always says which
+    driver actually served the request, so callers (and the UI) can show
+    "🟠 Local" vs "☁ Cloud" instead of just success/failure."""
+
+    def __init__(self, ok: bool, via: str, data: Optional[dict] = None, error: Optional[str] = None):
+        self.ok = ok
+        self.via = via  # "local" | "cloud" | "none"
+        self.data = data or {}
+        self.error = error
+
+    def to_dict(self) -> dict:
+        d = {"ok": self.ok, "via": self.via, **self.data}
+        if self.error:
+            d["error"] = self.error
+        return d
+
+
+def _device_local_args(device: dict):
+    config = device.get("config") or {}
+    ip = config.get("tuya_ip", "")
+    device_id = config.get("tuya_device_id", "")
+    local_key = decrypt_field(config.get("tuya_local_key", ""))
+    version = config.get("tuya_version", 3.3)
+    return ip, device_id, local_key, version
+
+
+async def _run_with_timeout(loop, fn, args, timeout_ms: int):
+    return await asyncio.wait_for(
+        loop.run_in_executor(None, fn, *args),
+        timeout=timeout_ms / 1000,
+    )
+
+
+async def _local_control(loop, device: dict, payload: dict) -> TuyaResult:
+    from routers.tuya import _control_device_blocking  # local import: avoids a circular import at module load
+    ip, device_id, local_key, version = _device_local_args(device)
+    if not (ip and device_id and local_key):
+        return TuyaResult(False, "local", error="device is missing ip/device_id/local_key")
+
+    last_error = "unknown local error"
+    for delay_ms in [0] + RETRY_DELAYS_MS:
+        if delay_ms:
+            await asyncio.sleep(delay_ms / 1000)
+        try:
+            result = await _run_with_timeout(
+                loop, _control_device_blocking, (ip, device_id, local_key, payload, version),
+                timeout_ms=LOCAL_COMMAND_TIMEOUT_MS,
+            )
+            if result.get("ok"):
+                return TuyaResult(True, "local")
+            last_error = result.get("error", last_error)
+        except asyncio.TimeoutError:
+            last_error = f"local command timed out after {LOCAL_COMMAND_TIMEOUT_MS}ms"
+        except Exception as e:
+            last_error = str(e)
+    return TuyaResult(False, "local", error=last_error)
+
+
+async def _local_status(loop, device: dict) -> TuyaResult:
+    from routers.tuya import _get_status_blocking
+    ip, device_id, local_key, _ = _device_local_args(device)
+    if not (ip and device_id and local_key):
+        return TuyaResult(False, "local", error="device is missing ip/device_id/local_key")
+    try:
+        status = await _run_with_timeout(
+            loop, _get_status_blocking, (ip, device_id, local_key),
+            timeout_ms=LOCAL_STATUS_TIMEOUT_MS,
+        )
+        if "error" in status and not status.get("dps"):
+            return TuyaResult(False, "local", error=status["error"])
+        return TuyaResult(True, "local", data=status)
+    except asyncio.TimeoutError:
+        return TuyaResult(False, "local", error=f"local status read timed out after {LOCAL_STATUS_TIMEOUT_MS}ms")
+    except Exception as e:
+        return TuyaResult(False, "local", error=str(e))
+
+
+async def _cloud_control(loop, device: dict, payload: dict, cloud_creds: Optional[dict]) -> TuyaResult:
+    from routers.tuya import _cloud_control_blocking
+    if not cloud_creds:
+        return TuyaResult(False, "cloud", error="no Tuya Cloud credentials configured (see /api/tuya/cloud-credentials)")
+    device_id = (device.get("config") or {}).get("tuya_device_id", "")
+    if not device_id:
+        return TuyaResult(False, "cloud", error="device is missing tuya_device_id")
+    try:
+        result = await _run_with_timeout(
+            loop, _cloud_control_blocking,
+            (cloud_creds["region"], cloud_creds["access_id"], cloud_creds["access_secret"], device_id, payload),
+            timeout_ms=CLOUD_TIMEOUT_MS,
+        )
+        if result.get("ok"):
+            return TuyaResult(True, "cloud")
+        return TuyaResult(False, "cloud", error=result.get("error", "unknown cloud error"))
+    except asyncio.TimeoutError:
+        return TuyaResult(False, "cloud", error=f"cloud command timed out after {CLOUD_TIMEOUT_MS}ms")
+    except Exception as e:
+        return TuyaResult(False, "cloud", error=str(e))
+
+
+async def _cloud_status(loop, device: dict, cloud_creds: Optional[dict]) -> TuyaResult:
+    from routers.tuya import _cloud_status_blocking
+    if not cloud_creds:
+        return TuyaResult(False, "cloud", error="no Tuya Cloud credentials configured (see /api/tuya/cloud-credentials)")
+    device_id = (device.get("config") or {}).get("tuya_device_id", "")
+    if not device_id:
+        return TuyaResult(False, "cloud", error="device is missing tuya_device_id")
+    try:
+        status = await _run_with_timeout(
+            loop, _cloud_status_blocking,
+            (cloud_creds["region"], cloud_creds["access_id"], cloud_creds["access_secret"], device_id),
+            timeout_ms=CLOUD_TIMEOUT_MS,
+        )
+        if "error" in status:
+            return TuyaResult(False, "cloud", error=status["error"])
+        return TuyaResult(True, "cloud", data=status)
+    except asyncio.TimeoutError:
+        return TuyaResult(False, "cloud", error=f"cloud status read timed out after {CLOUD_TIMEOUT_MS}ms")
+    except Exception as e:
+        return TuyaResult(False, "cloud", error=str(e))
+
+
+async def execute_command(device: dict, payload: dict, cloud_creds: Optional[dict] = None) -> TuyaResult:
+    """device: a hub device dict (database.get_device()'s shape), whose
+    config carries tuya_device_id/tuya_ip/tuya_local_key(encrypted)/
+    tuya_version/connection_mode. cloud_creds: {"region", "access_id",
+    "access_secret"} (plaintext access_secret — decrypt before calling
+    this), or None if no Tuya Cloud account is configured on this hub."""
+    mode = normalize_mode((device.get("config") or {}).get("connection_mode"))
+    loop = asyncio.get_running_loop()
+
+    if mode == "local_only":
+        return await _local_control(loop, device, payload)
+    if mode == "cloud_only":
+        return await _cloud_control(loop, device, payload, cloud_creds)
+    if mode == "cloud_first":
+        result = await _cloud_control(loop, device, payload, cloud_creds)
+        return result if result.ok else await _local_control(loop, device, payload)
+    # local_first (default)
+    result = await _local_control(loop, device, payload)
+    return result if result.ok else await _cloud_control(loop, device, payload, cloud_creds)
+
+
+async def get_status(device: dict, cloud_creds: Optional[dict] = None) -> TuyaResult:
+    mode = normalize_mode((device.get("config") or {}).get("connection_mode"))
+    loop = asyncio.get_running_loop()
+
+    if mode == "local_only":
+        return await _local_status(loop, device)
+    if mode == "cloud_only":
+        return await _cloud_status(loop, device, cloud_creds)
+    if mode == "cloud_first":
+        result = await _cloud_status(loop, device, cloud_creds)
+        return result if result.ok else await _local_status(loop, device)
+    # local_first (default)
+    result = await _local_status(loop, device)
+    return result if result.ok else await _cloud_status(loop, device, cloud_creds)
+
+
+async def get_connection_status(device: dict, cloud_creds: Optional[dict] = None) -> str:
+    """One of: online_local | online_cloud | offline | unsupported.
+    ("connecting"/"unknown" are UI-transient states the hub has no reason
+    to report from a point-in-time check — they belong to whatever is
+    polling this, not to a single request/response.)"""
+    config = device.get("config") or {}
+    if not config.get("tuya_device_id"):
+        return "unsupported"
+    result = await get_status(device, cloud_creds)
+    if not result.ok:
+        return "offline"
+    return "online_local" if result.via == "local" else "online_cloud"
+
+
+async def get_diagnostics(device: dict, cloud_creds: Optional[dict] = None) -> dict:
+    """Never includes secrets, even masked — there's nothing secret-shaped
+    in this response to begin with.
+
+    commandTest deliberately does NOT send a real state-changing command —
+    flipping a switch just to answer "can I control this?" would be a
+    surprising side effect of what's supposed to be a read-only diagnostics
+    check. It reuses the same signal as stateRead (a successful local
+    round-trip proves the device accepts authenticated local requests,
+    which is what actually gates control) instead.
+    """
+    import socket
+    config = device.get("config") or {}
+    ip = config.get("tuya_ip", "")
+    ip_reachable = False
+    if ip:
+        try:
+            with socket.create_connection((ip, 6668), timeout=1.5):
+                ip_reachable = True
+        except OSError:
+            ip_reachable = False
+
+    local_result = await get_status(
+        {**device, "config": {**config, "connection_mode": "local_only"}}
+    )
+    cloud_result = (
+        await get_status({**device, "config": {**config, "connection_mode": "cloud_only"}}, cloud_creds)
+        if cloud_creds else TuyaResult(False, "cloud", error="not configured")
+    )
+
+    return {
+        "network": ip_reachable or cloud_result.ok,
+        "ipReachable": ip_reachable,
+        "protocolDetected": bool(config.get("tuya_version")),
+        "authentication": local_result.ok or cloud_result.ok,
+        "localConnection": local_result.ok,
+        "stateRead": local_result.ok or cloud_result.ok,
+        "commandTest": local_result.ok,
+        "cloudConnection": cloud_result.ok,
+    }

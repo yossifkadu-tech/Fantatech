@@ -23,8 +23,10 @@ from pydantic import BaseModel
 from database import (
     upsert_device, get_all_devices, get_device,
     save_tuya_pairing, get_all_tuya_pairings,
+    save_tuya_cloud_creds, get_tuya_cloud_creds, delete_tuya_cloud_creds,
 )
-from secret_store import encrypt_field, decrypt_field
+from secret_store import encrypt_field, decrypt_field, mask
+import tuya_manager
 
 router = APIRouter()
 IS_WIN = platform.system() == "Windows"
@@ -164,6 +166,68 @@ def _get_status_blocking(ip: str, device_id: str, local_key: str) -> dict:
         return {"error": str(e)}
 
 
+# ── Cloud control/status (fallback path for TuyaManager) ───────────────────────
+# Cloud's /commands endpoint takes named "code"s (switch_1, bright_value,
+# temp_value, ...), not raw DP numbers like the local protocol does — this
+# mirrors the same code names the Flutter app's own Tuya cloud client
+# already uses (tuya_cloud_client.dart), not a guess made up for this file.
+# A raw numeric payload key (e.g. {"7": true}) is passed through as its own
+# code string, since some generic/OEM devices have no friendly code and
+# Tuya accepts the DP number itself as the code in that case.
+
+def _payload_to_cloud_commands(payload: dict) -> list:
+    if "state" in payload:
+        val = str(payload["state"]).upper() in ("ON", "1", "TRUE")
+        return [{"code": "switch_1", "value": val}]
+    if "brightness" in payload:
+        return [{"code": "bright_value", "value": int(payload["brightness"])}]
+    if "color_temp" in payload:
+        return [{"code": "temp_value", "value": int(payload["color_temp"])}]
+    return [{"code": str(k), "value": v} for k, v in payload.items()]
+
+
+def _cloud_control_blocking(region: str, access_id: str, access_secret: str,
+                              device_id: str, payload: dict) -> dict:
+    """Send a command via Tuya Cloud (Open API) — used as the local-control
+    fallback. Blocking — run in executor."""
+    try:
+        import tinytuya
+    except ImportError:
+        return {"ok": False, "error": "tinytuya not installed"}
+
+    try:
+        cloud = tinytuya.Cloud(apiRegion=region, apiKey=access_id, apiSecret=access_secret)
+        commands = _payload_to_cloud_commands(payload)
+        result = cloud.sendcommand(device_id, {"commands": commands})
+        if isinstance(result, dict) and result.get("success"):
+            return {"ok": True}
+        return {"ok": False, "error": (result or {}).get("msg", str(result))}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+def _cloud_status_blocking(region: str, access_id: str, access_secret: str,
+                             device_id: str) -> dict:
+    """Read device status via Tuya Cloud. Blocking — run in executor."""
+    try:
+        import tinytuya
+    except ImportError:
+        return {"error": "tinytuya not installed"}
+
+    try:
+        cloud = tinytuya.Cloud(apiRegion=region, apiKey=access_id, apiSecret=access_secret)
+        result = cloud.getstatus(device_id)
+        if isinstance(result, dict) and result.get("success"):
+            # Normalize to the same {"dps": {...}} shape _get_status_blocking
+            # returns, but keyed by cloud "code" instead of raw DP number —
+            # callers that need DP numbers specifically should use the local
+            # path; this is best-effort for display/diagnostics.
+            return {"dps": {item.get("code"): item.get("value") for item in result.get("result", [])}}
+        return {"error": (result or {}).get("msg", str(result))}
+    except Exception as e:
+        return {"error": str(e)}
+
+
 # ── Pydantic models ───────────────────────────────────────────────────────────
 
 class PairIn(BaseModel):
@@ -224,6 +288,14 @@ class CloudImportIn(BaseModel):
     access_id:     str
     access_secret: str
     devices:       List[CloudDeviceIn]
+
+# ── TuyaManager models ────────────────────────────────────────────────────────
+
+class ConnectionModeIn(BaseModel):
+    mode: str  # local_first | cloud_first | local_only | cloud_only
+
+class ManagerControlIn(BaseModel):
+    payload: dict
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
@@ -570,6 +642,119 @@ async def migrate_plaintext_secrets():
             print(f"[Tuya] Secret migration failed for device {d.get('id')}: {e}")
     if migrated:
         print(f"[Tuya] Encrypted {migrated} plaintext local_key value(s) at rest.")
+
+
+async def _resolve_cloud_creds() -> Optional[dict]:
+    """Decrypted, in-memory-only — never returned from an endpoint as-is."""
+    creds = await get_tuya_cloud_creds()
+    if not creds:
+        return None
+    return {
+        "region": creds["region"],
+        "access_id": creds["access_id"],
+        "access_secret": decrypt_field(creds["access_secret"]),
+    }
+
+
+# ── Cloud credentials (persisted once, used for cloud_first/cloud_only and
+#    local-fail fallback so callers never need to carry Tuya Cloud secrets
+#    around per-request) ─────────────────────────────────────────────────────
+
+@router.post("/cloud-credentials")
+async def save_cloud_credentials(data: CloudCredsIn):
+    await save_tuya_cloud_creds(
+        region=data.region, access_id=data.access_id,
+        access_secret=encrypt_field(data.access_secret),
+    )
+    return {"ok": True}
+
+
+@router.get("/cloud-credentials")
+async def get_cloud_credentials():
+    """Never returns the real secret — existence + masked preview only."""
+    creds = await get_tuya_cloud_creds()
+    if not creds:
+        return {"configured": False}
+    return {
+        "configured":    True,
+        "region":        creds["region"],
+        "access_id":     mask(creds["access_id"]),
+        "access_secret": mask(creds["access_secret"]),
+    }
+
+
+@router.delete("/cloud-credentials")
+async def remove_cloud_credentials():
+    await delete_tuya_cloud_creds()
+    return {"ok": True}
+
+
+# ── Connection mode (per device: local_first / cloud_first / local_only /
+#    cloud_only — see tuya_manager.py) ──────────────────────────────────────
+
+@router.put("/connection-mode/{device_id}")
+async def set_connection_mode(device_id: str, data: ConnectionModeIn):
+    if data.mode not in tuya_manager.VALID_MODES:
+        raise HTTPException(400, f"Invalid mode — must be one of {sorted(tuya_manager.VALID_MODES)}")
+    d = await get_device(device_id)
+    if not d:
+        raise HTTPException(404, "Device not found")
+    config = {**(d.get("config") or {}), "connection_mode": data.mode}
+    await upsert_device({**d, "config": config})
+    return {"ok": True, "connection_mode": data.mode}
+
+
+@router.get("/connection-mode/{device_id}")
+async def get_connection_mode(device_id: str):
+    d = await get_device(device_id)
+    if not d:
+        raise HTTPException(404, "Device not found")
+    return {"connection_mode": tuya_manager.normalize_mode((d.get("config") or {}).get("connection_mode"))}
+
+
+# ── TuyaManager-driven control/status (looks the device up from the hub DB
+#    instead of requiring the caller to know its ip/local_key, unlike the
+#    raw /control, /status/{id} endpoints above) ────────────────────────────
+
+async def _get_tuya_device_or_404(device_id: str) -> dict:
+    d = await get_device(device_id)
+    if not d or d.get("protocol") != "tuya":
+        raise HTTPException(404, "Tuya device not found")
+    return d
+
+
+@router.post("/manager/control/{device_id}")
+async def manager_control(device_id: str, data: ManagerControlIn):
+    d = await _get_tuya_device_or_404(device_id)
+    cloud_creds = await _resolve_cloud_creds()
+    result = await tuya_manager.execute_command(d, data.payload, cloud_creds)
+    if not result.ok:
+        raise HTTPException(502, result.to_dict())
+    return result.to_dict()
+
+
+@router.get("/manager/status/{device_id}")
+async def manager_status(device_id: str):
+    d = await _get_tuya_device_or_404(device_id)
+    cloud_creds = await _resolve_cloud_creds()
+    result = await tuya_manager.get_status(d, cloud_creds)
+    if not result.ok:
+        raise HTTPException(502, result.to_dict())
+    return result.to_dict()
+
+
+@router.get("/manager/diagnostics/{device_id}")
+async def manager_diagnostics(device_id: str):
+    d = await _get_tuya_device_or_404(device_id)
+    cloud_creds = await _resolve_cloud_creds()
+    return await tuya_manager.get_diagnostics(d, cloud_creds)
+
+
+@router.get("/manager/connection-status/{device_id}")
+async def manager_connection_status(device_id: str):
+    d = await _get_tuya_device_or_404(device_id)
+    cloud_creds = await _resolve_cloud_creds()
+    return {"connection": await tuya_manager.get_connection_status(d, cloud_creds)}
 
 
 @router.get("/help")

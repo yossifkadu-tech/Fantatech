@@ -79,6 +79,14 @@ async def init_db():
                 version     REAL DEFAULT 3.3,
                 paired_at   INTEGER DEFAULT 0
             );
+
+            CREATE TABLE IF NOT EXISTS tuya_cloud_creds (
+                id            TEXT PRIMARY KEY DEFAULT 'default',
+                region        TEXT NOT NULL,
+                access_id     TEXT NOT NULL,
+                access_secret TEXT NOT NULL,
+                updated_at    INTEGER DEFAULT 0
+            );
         """)
         await db.commit()
 
@@ -388,6 +396,36 @@ async def get_all_tuya_pairings() -> list:
 async def delete_tuya_pairing(device_id: str):
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute("DELETE FROM tuya_pairings WHERE device_id=?", (device_id,))
+        await db.commit()
+
+
+async def save_tuya_cloud_creds(region: str, access_id: str, access_secret: str):
+    """access_secret is stored exactly as given — callers encrypt it (see
+    secret_store.encrypt_field) before calling this, same convention as
+    save_tuya_pairing."""
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            "INSERT INTO tuya_cloud_creds (id, region, access_id, access_secret, updated_at) "
+            "VALUES ('default',?,?,?,?) "
+            "ON CONFLICT(id) DO UPDATE SET "
+            "  region=excluded.region, access_id=excluded.access_id, "
+            "  access_secret=excluded.access_secret, updated_at=excluded.updated_at",
+            (region, access_id, access_secret, int(time.time()))
+        )
+        await db.commit()
+
+
+async def get_tuya_cloud_creds() -> dict | None:
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT * FROM tuya_cloud_creds WHERE id='default'") as cur:
+            row = await cur.fetchone()
+            return dict(row) if row else None
+
+
+async def delete_tuya_cloud_creds():
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute("DELETE FROM tuya_cloud_creds WHERE id='default'")
         await db.commit()
 
 
