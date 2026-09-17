@@ -144,7 +144,7 @@ class Device {
     const prefixes = [
       'dirigera_', 'hue_', 'hue_light_', 'hue_sensor_',
       'deconz_', 'deconz_light_', 'deconz_sensor_',
-      'z2m_', 'mqtt_', 'st_', 'tuya_',
+      'z2m_', 'mqtt_', 'st_', 'tuya_', 'tuyahub_',
       'ha_', 'smartthings_',
       'aqara-', 'irobot_', 'xiaomi_vacuum_',
       'ajax-', 'risco-', 'pima-', 'zwave-',
