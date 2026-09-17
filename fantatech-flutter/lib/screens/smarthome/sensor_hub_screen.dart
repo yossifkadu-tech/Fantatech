@@ -14,6 +14,7 @@ import 'package:provider/provider.dart';
 
 import '../../models/app_state.dart';
 import '../../models/device.dart';
+import '../../models/device_capabilities.dart';
 import '../../services/discovery/ha_client.dart';
 import '../../services/gateways/gateway_manager.dart';
 import '../../services/gateways/gateway_types.dart';
@@ -534,6 +535,41 @@ class _SavedSensorCard extends StatelessWidget {
 
 // ── Sensor card ───────────────────────────────────────────────────────────────
 
+/// Builds the Device this sensor is represented as in AppState — shared by
+/// _addToHome() (first registration) and _SensorCardState._refresh() (every
+/// subsequent reading), so both stay in sync on exactly what a sensor's
+/// Device looks like. Includes the real per-type binary-state key
+/// (DeviceCapabilities.binaryStateKey — 'detected' for motion, 'open' for
+/// contact) in attributes; without it, AppState's rising-edge alert logic
+/// (_mergeFreshDevices/_raiseSensorAlert) has nothing to compare against,
+/// since it never reads `isOn` for this — only the gateway-polled devices
+/// this app already imports (DIRIGERA/deCONZ/Z2M/Tuya/HA/...) populate
+/// this key today; a LAN-scanned sensor registered here never did.
+Device _sensorToDevice(SmartSensor s) {
+  final type = s.type == SensorType.motion
+      ? DeviceType.motionSensor
+      : s.type == SensorType.contact
+          ? DeviceType.doorSensor
+          : DeviceType.motionSensor;
+  final key = DeviceCapabilities.binaryStateKey(type);
+  return Device(
+    id:   'sensor-${s.id}',
+    name: s.name,
+    type: type,
+    isOn: s.isTriggered ?? false,
+    status: s.isOnline ? DeviceStatus.online : DeviceStatus.offline,
+    source: 'gateway',
+    attributes: {
+      'ip':       s.ip ?? '',
+      'brand':    s.brand,
+      'protocol': s.protocol.name,
+      'type':     s.type.name,
+      ...s.connectionData,
+      if (key != null && s.isTriggered != null) key: s.isTriggered,
+    },
+  );
+}
+
 class _SensorCard extends StatefulWidget {
   final SmartSensor sensor;
   const _SensorCard({required this.sensor});
@@ -549,34 +585,24 @@ class _SensorCardState extends State<_SensorCard> {
     if (_refreshing) return;
     setState(() => _refreshing = true);
     await SensorController.refresh(s);
-    if (mounted) setState(() => _refreshing = false);
+    if (mounted) {
+      setState(() => _refreshing = false);
+      // Feed this reading through AppState's real rising-edge-alert /
+      // connectivity-notification pipeline — previously this only ever
+      // mutated the local SmartSensor object; the app never learned about
+      // it unless the user happened to also be looking at this exact
+      // screen. Only meaningful once the sensor is actually a Device
+      // (i.e. already added to home) — nothing to merge into otherwise.
+      if (s.isRegistered) {
+        context.read<AppState>().reportDeviceState(_sensorToDevice(s));
+      }
+    }
   }
 
   void _addToHome() {
     final appState = context.read<AppState>();
     final str = appState.strings;
-    appState.upsertDevice(
-      Device(
-        id:   'sensor-${s.id}',
-        name: s.name,
-        type: s.type == SensorType.motion
-            ? DeviceType.motionSensor
-            : s.type == SensorType.contact
-                ? DeviceType.doorSensor
-                : DeviceType.motionSensor,
-        isOn: s.isTriggered ?? false,
-        status: s.isOnline ? DeviceStatus.online : DeviceStatus.offline,
-        source: 'gateway',
-        attributes: {
-          'ip':       s.ip ?? '',
-          'brand':    s.brand,
-          'protocol': s.protocol.name,
-          'type':     s.type.name,
-          ...s.connectionData,
-        },
-      ),
-      userInitiated: true,
-    );
+    appState.upsertDevice(_sensorToDevice(s), userInitiated: true);
     setState(() => s.isRegistered = true);
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(str.switchAddedFmt.replaceAll('{name}', s.name)),

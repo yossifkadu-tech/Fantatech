@@ -477,6 +477,15 @@ class AppState extends ChangeNotifier {
     _monitorTimer = Timer.periodic(const Duration(seconds: 60), (_) => poll());
   }
 
+  /// Public entry point for a device whose fresh state was read by
+  /// something other than the 60s gateway-connection poll above — today
+  /// that's a LAN-direct sensor's manual refresh (sensor_hub_screen.dart),
+  /// which has no GatewayConnection at all and so is invisible to
+  /// fetchAllCurrentDevices(). Runs the exact same rising-edge-alert /
+  /// connectivity-notification / dedup logic gateway-polled devices
+  /// already get — see [_mergeFreshDevices].
+  void reportDeviceState(Device fresh) => _mergeFreshDevices([fresh]);
+
   void _mergeFreshDevices(List<Device> fresh) {
     var changed = false;
     for (final f in fresh) {
